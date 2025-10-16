@@ -25,21 +25,38 @@ jobs:
 
       - name: Upload app to MobSF and run scan
         env:
-           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
+          MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
         continue-on-error: true
         shell: powershell
         run: |
-          $apkFile = Get-ChildItem -Path . -Recurse -Filter *.apk | Select-Object -First 1
+          # Localizar el APK generado
+          $apkFile = Get-ChildItem -Path . -Recurse -Filter '*.apk' | Select-Object -First 1
           if (-not $apkFile) {
             Write-Error "APK file not found. Please ensure the build step produced an APK."
+            exit 1
           }
-          $uploadResponse = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/upload" -Headers @{Authorization=$env:MOBSF_API_KEY} -Method Post -InFile $apkFile.FullName -ContentType "application/octet-stream"
+          # Preparar claves y ruta
+          $apkPath = $apkFile.FullName
+          $apiKey  = $env:MOBSF_API_KEY
+          # Subir el APK a MobSF usando multipart/form-data
+          $uploadResult = curl.exe -s -X POST "http://localhost:8000/api/v1/upload" `
+            -H "Authorization: $apiKey" `
+            -F "file=@$apkPath"
+          $uploadResponse = $uploadResult | ConvertFrom-Json
           $hash = $uploadResponse.hash
           Write-Host "Scan hash: $hash"
-          $scanBody = @{ scan_type = "apk"; hash = $hash; re_scan = $false } | ConvertTo-Json
-          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" -Headers @{Authorization=$env:MOBSF_API_KEY; 'Content-Type'='application/json'} -Method Post -Body $scanBody
-          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json?hash=$hash" -Headers @{Authorization=$env:MOBSF_API_KEY} -Method Get |
-            ConvertTo-Json -Depth 100 | Out-File mobsf_results.json -Encoding utf8
+          # Iniciar el análisis
+          $scanBody = @{ scan_type = 'apk'; hash = $hash; re_scan = $false }
+          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" `
+            -Method Post `
+            -Headers @{ Authorization = $apiKey } `
+            -Body ($scanBody | ConvertTo-Json) `
+            -ContentType 'application/json'
+          # Descargar el reporte JSON y guardarlo
+          $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json?hash=$hash" `
+            -Method Get `
+            -Headers @{ Authorization = $apiKey }
+          $report | ConvertTo-Json | Set-Content mobsf_results.json
 
       - name: Upload MobSF results
         uses: actions/upload-artifact@v4
