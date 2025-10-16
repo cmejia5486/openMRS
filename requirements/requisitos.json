@@ -1,8 +1,2822 @@
 [
   {
+    "puid": "SECM-CAT-ICU-001",
+    "descripcion": "The mobile application should not contain hardcoded details of external resources, credentials, or API keys to prevent unauthorized access and secure the app from vulnerabilities.",
+    "categoria": "ICU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICU-002",
+    "descripcion": "Applications shall not store passwords or secrets in the application binary, nor inhibit backend integration by using generic shared secrets.",
+    "categoria": "ICU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICU-003",
+    "descripcion": "To avoid unauthorized access and reduce the security risks of the application, the requirement is to ensure that hardcoded default credentials are not used in the application.",
+    "categoria": "ICU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICU-004",
+    "descripcion": "The application will validate access to the credentials used in check signatures, with which 2) only a valid app for the organization can be made, and correct API calls corresponding to what is described in mobile app documents.",
+    "categoria": "ICU",
+    "controles": []
+  },
+  {
     "puid": "SECM-CAT-ISU-001",
-    "descripcion": "Las contraseñas de la API se deben rotar cada 90 días",
+    "descripcion": "Development, testing, and production key usage (to prevent cross-environment exposure); Explicit intents when binding to services (to reduce intercept risk) — This means an application should generate environment-specific API keys for these key life stages so that they do not share the same value across development and production environments.",
     "categoria": "ISU",
-    "controles": ["STIG", "IEC 62443"]
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-002",
+    "descripcion": "Applications must not change the SSL verification method that can allow self-signed certificates. Self-signed certificates or a local Certificate Authority (CA) must be used during development to keep with good SSL practices.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-003",
+    "descripcion": "The application shall not contain any unmanaged and unsigned mobile code.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-004",
+    "descripcion": "The application shall not contain any mobile code that is uncategorized or lacks a digital signature.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-005",
+    "descripcion": "The application must remove all code that seems to accept every SSL/TLS certificate, e.g., org.apache.http.conn.ssl.AllowAllHostnameVerifier, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER, post-development cycle for secure certificate validation",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-006",
+    "descripcion": "The application must incorporate look designs to distinguish unauthorized code changes and meddling with the binary.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-007",
+    "descripcion": "The application shall be secure from code signing and execution, including a deny-all, permit-by-exception (whitelist) software execution policy that verifies the source and full intent of software prior to allowing it any level of distribution on an Android platform.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-008",
+    "descripcion": "Ensure that any resources used outside of standard app-store mechanisms are signed and also verify the signature before accepting updates.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-009",
+    "descripcion": "The application shall be subject to periodic security assessments including code reviews, penetration tests, and cryptographic vulnerabilities assessments according to the results of which security holes must be remedied. All findings should be logged, tagged, and resolved before moving them into production.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-010",
+    "descripcion": "The app should not be deployed using the ad-hoc signed certificates that are used during the development and testing phase. For deployment, only production-ready certificates should be used to ensure security and reliability.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-011",
+    "descripcion": "The application must continue with strong access control, and local integrity checks applied to determine if the code has been modified without permission.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-012",
+    "descripcion": "The anti-tampering techniques to prevent code alterations and runtime inspections of your application must be implemented by the application.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-013",
+    "descripcion": "The application should check that all of its elements will be detected and are necessary for the application to function. Constantly manage an inventory of all infrastructure-related assets—including those that are mobile, IoT, and cloud-based—to identify, protect, and remediate any unauthorized or unmanaged asset.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-014",
+    "descripcion": "If a class extending SSLSocketFactory is being used, the checkServerTrusted method of that class must be correctly implemented and must validate the server certificate",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-015",
+    "descripcion": "OS-provided file encryption APIs and secure key storage should be used to encrypt sensitive data (e.g., passwords, authorization tokens) and keep keys secure on the device.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-016",
+    "descripcion": "The application shall restrict the embedding of one data type within another through organization-defined limits to ensure the integrity of the data and to restrict unauthorized nesting of data.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-017",
+    "descripcion": "If tampering or fraud is detected, the application backend server should take the appropriate action based on the integrity check result to implement preventive measures, block potential attacks, and help reduce abuse.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-018",
+    "descripcion": "The application must validate and only accept server responses from backend APIs to ensure the data is both correct and secure.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-019",
+    "descripcion": "The app should not store any biometric data or private keys on the client device, thus would store and process sensitive data only on the server.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-020",
+    "descripcion": "There should be means of providing feedback (e.g., provide a security email address (e.g., security@domain.com)).",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-021",
+    "descripcion": "Application should analyze and perform client-side data processing for sensitive operations (if applicable) to avoid sending confidential data to the server unnecessarily.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-022",
+    "descripcion": "The application must have at least one administrator signed up for receiving update notifications and security alerts to ensure timely patching/updates of both the application as well as its components.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-023",
+    "descripcion": "The application must have a method of forcing updates of the app for critical security patches so that vulnerabilities are resolved before the app is used. It should also be structured in such a way that security updates can be made end-to-end in a timely fashion while respecting app-store approval processes.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-024",
+    "descripcion": "Security updates must all be shipped using an encrypted connection and the security update must be checked from their proper publisher. This ensures the confidentiality and integrity of non-local maintenance and diagnostic communications using cryptographic mechanisms.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-025",
+    "descripcion": "App must validate that resources outside the app-store mechanisms which will be consumed are signed and get validated before updating and applying.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-026",
+    "descripcion": "The application must implement appropriate mechanisms to protect the integrity of its code and resources, preventing unauthorized modifications, and ensuring that only appropriate and authorized content is loaded within the application.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-027",
+    "descripcion": "The user-facing components of the application must be logically or physically separated from the data storage and management interfaces and security functions. And security-related functionality is to be isolated; you can't have someone open an admin function in a different corner of your site.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-028",
+    "descripcion": "Control the application response includes keeping all third-party libraries, frameworks, etc., up-to-date, free from known vulnerabilities and regularly assessing them for potential security threats. Also, it is necessary to perform periodic security updates and vulnerability assessments and keep a record of results for compliance verification purposes.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-029",
+    "descripcion": "The app must timely notifications or alerts for product updates and security patches, containing a description of the issue, a summary of the associated risks, potential mitigations, and instructions on how to obtain it. To accomplish secure updates, a distribution mechanism must also be implemented.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-030",
+    "descripcion": "The app must keep all the SDKs, libraries, and platform components up-to-date with their latest version to patch vulnerabilities and adopt security improvements. Software is periodically updated through patches to cryptographic components and security measures.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-031",
+    "descripcion": "Continuous updating of all software components and third-party libraries (e.g., SDKs, libraries, and cryptographic frameworks) ensures addressing known vulnerabilities by integrating regular security and platform updates to support the latest security features.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-032",
+    "descripcion": "Modify and maintain privileges for software libraries must be controlled within application owners.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-033",
+    "descripcion": "The application shall remove out-of-date components after update installation, disable the use of unsupported components, and be decommissioned when there is no maintenance or vendor support available.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-034",
+    "descripcion": "The application must preserve its own execution domains in each process, must comply with Android's application sandbox model, and must deploy to secure, dedicated platforms for sensitive or high-availability use.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-035",
+    "descripcion": "The application must be free of adware and known malware (via virus-checking against some established library of viruses), and should prevent the execution of malicious code, as well as disallow the uploading of malicious or dangerous-looking scripts or files.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-036",
+    "descripcion": "The application should be built to run in untrusted environments and should only retrieve the absolute minimum amount of information needed to function—limiting the potential for data leakage or corruption.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-037",
+    "descripcion": "The application needs to implement protections against log injection by clients so that event histories in the backend system cannot be corrupted or forged.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-038",
+    "descripcion": "Secure management and protection of the application signing key using hardware security modules (HSMs), air-gapped systems, or key vaults to prevent unauthorized access or misuse.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-039",
+    "descripcion": "Implement mechanisms in the application to detect potentially risky or fraudulent interactions, including interactions coming from tampered versions of the application or untrustworthy environments.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-040",
+    "descripcion": "The application shall implement procedures to notify the user upon the application being deprecated.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-041",
+    "descripcion": "The application must automatically create a notification of detected integrity violations, send it to specialized services to find unauthorized versions of the distribution platforms and remove such versions.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-042",
+    "descripcion": "The application shall enter into a mode of operation that is considered to be a safe state upon detection of conditions that cause the application to enter into a safe state per information defined in CCI-0002856 (CP-12), per the guidance in CCI-0002857 (CP-12).",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-043",
+    "descripcion": "The application must (a) disable all of the functionalities of the application to the extent possible (b) use only approved ports, protocols, and services (c) ensure that any temporary compiled data cannot be compromised.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-044",
+    "descripcion": "Disable JavaScript for WebViews unless it is explicitly required for the functionality of the application and configure WebViews securely to avoid vulnerabilities such as XSS or sensitive data portion leakage.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-045",
+    "descripcion": "Extreme caution must be used when using addJavaScriptInterface() and it must be limited to trusted web content embedded in the APK or internal sources, and WebViews must be configured correctly so that sensitive data does not leak and sensitive functionality is not exposed.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-046",
+    "descripcion": "The WebView must restrict JavaScript execution to only JS within the app package, and properly configured WebViews must not leak sensitive data or functionality.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-047",
+    "descripcion": "The application shall limit access to domains that are not compliant within any third-party components used for embedded browsing that utilize a user-supplied agent (for example, WebViews) as well as disable any platform-supported features that are not used to reduce security risks.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-048",
+    "descripcion": "The application should manage webview caching. It should remove local cache using clearCache() after handling sensitive data and should use server-side headers like no-store to avoid caching sensitive content.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-049",
+    "descripcion": "Display only trusted content in WebView (on older Android versions) to mitigate Man-In-The-Middle web attacks, Updatable Security Provider (for SSL vulnerabilities).",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-050",
+    "descripcion": "The application must make use of WebViews to enable only the minimum set of protocol handlers, ideally limited to HTTPS, and disable potentially dangerous handlers such as file, tel, and app-id.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-051",
+    "descripcion": "The application must ensure that WebViews do not load user-supplied local resources to prevent unauthorized access or malicious content execution.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-052",
+    "descripcion": "The application must validate all input data in WebViews used for network content, ensuring that insecure protocols are not trusted and all incoming data is sanitized.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-053",
+    "descripcion": "The application must implement object serialization using safe serialization APIs to prevent security vulnerabilities such as unauthorized data access or deserialization attacks.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-054",
+    "descripcion": "The application must securely implement object deserialization by validating untrusted data before deserialization and protecting against unauthorized gadget chain execution.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-055",
+    "descripcion": "The application must detect and mitigate interactions from untrustworthy environments, such as rooted or jailbroken devices, and ensure operation only on secure, verified Android-powered devices.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-056",
+    "descripcion": "The application must request the READ_SMS permission only when absolutely necessary, minimize its usage, and securely handle SMS data to prevent misuse or exploitation by malicious third parties.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-057",
+    "descripcion": "The application must ensure that API keys are excluded from version control systems and securely injected during the build process using configuration management tools.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-058",
+    "descripcion": "The application must securely handle API keys during the continuous integration and delivery process using encrypted environment variables or secure vaults. It must also manage keys in the project with tools like Gradle’s secrets-gradle-plugin for injection at build time.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ISU-059",
+    "descripcion": "The application must include execution flow diagrams and design documents demonstrating how deadlock and recursion issues in web services are mitigated during development.",
+    "categoria": "ISU",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-001",
+    "descripcion": "The application must uniquely identify and authenticate non-organizational users and processes acting on their behalf to ensure secure access and prevent unauthorized usage.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-002",
+    "descripcion": "The application must define and document user actions that can be performed without identification or authentication, ensuring they align with the organizational mission and business functions and provide supporting rationale in the security plan.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-003",
+    "descripcion": "The application must prevent non-privileged users from executing privileged functions, including disabling, circumventing, or altering implemented security safeguards or countermeasures.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-004",
+    "descripcion": "The application must terminate all existing user sessions immediately upon account deletion to prevent unauthorized access to application resources.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-005",
+    "descripcion": "The application must automatically terminate non-privileged user sessions and log off users after a 15-minute period of inactivity to enhance security and prevent unauthorized access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-006",
+    "descripcion": "The application must automatically terminate administrator user sessions and log off users after a 10-minute period of inactivity to safeguard access to privileged functions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-007",
+    "descripcion": "The application must ensure that system or application identifiers are not displayed until the log-on process has been successfully completed.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-008",
+    "descripcion": "The application must prevent the display of help messages during the log-on procedure and obscure authentication feedback to avoid aiding unauthorized users or exposing sensitive authentication information.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-009",
+    "descripcion": "The application must encrypt passwords during transmission to ensure that no passwords are sent in clear text over the network.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-010",
+    "descripcion": "The application must validate log-on information only after all input data has been completed and must not indicate which specific part of the input is correct or incorrect in case of an error.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-011",
+    "descripcion": "The application must enforce a limit of three consecutive invalid log-on attempts within a 15-minute time period and lock the account or take other defined actions when the maximum number of unsuccessful attempts is exceeded.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-012",
+    "descripcion": "The application administrator must follow an approved process to unlock locked user accounts, including validating user identity prior to unlocking the account.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-012",
+    "descripcion": "The application administrator must follow an approved process to unlock locked user accounts, including validating user identity prior to unlocking the account.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-013",
+    "descripcion": "The application must display a system use notification banner before granting access, warning users that the system is for authorized use only and providing legal and privacy notices.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-014",
+    "descripcion": "The application must retain the Standard Mandatory DoD Notice and Consent Banner on the screen until the user acknowledges the usage conditions and explicitly logs on for further access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-015",
+    "descripcion": "The application must automatically remove or disable temporary user accounts 72 hours after account creation to prevent unauthorized access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-016",
+    "descripcion": "The application must disable or delete unnecessary user accounts, including built-in accounts, and prevent the creation of unessential accounts during installation.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-017",
+    "descripcion": "The application must replace default passwords with DoD-approved strong passwords and prioritize the use of strong authenticators instead of passwords wherever possible.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-018",
+    "descripcion": "The application must automatically disable user accounts after a 35-day period of inactivity to mitigate unauthorized access risks.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-019",
+    "descripcion": "The application must implement processes or features to prevent the removal or disabling of emergency accounts while the emergency situation is ongoing.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-020",
+    "descripcion": "The application must terminate shared or group account credentials immediately when group members leave, ensuring the security of the group account.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-021",
+    "descripcion": "The application must terminate all user sessions and network connections at the end of a session or after defined inactivity periods, including verifying remote disconnection for non-local maintenance sessions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-022",
+    "descripcion": "The application must provide the capability to limit the number of concurrent logon sessions per user based on organization-defined thresholds.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-023",
+    "descripcion": "The application must uniquely identify and authenticate organizational users and processes acting on their behalf, ensuring that identifiers do not rely on personally identifiable device information and uniquely identify patients within the system.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-024",
+    "descripcion": "The application must implement a formal user registration and authentication process, ensuring that only authorized users can access electronic health information (EHR).",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-025",
+    "descripcion": "The application must enforce approved authorizations for controlling the flow of information within the system and between interconnected systems, adhering to organization-defined data flow control policies.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-026",
+    "descripcion": "The application must implement time-limited user registration for Point of Service (PoS) systems connected to the EHRi, requiring periodic renewal of user registrations to maintain access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-027",
+    "descripcion": "The application must restrict connection times to high-risk EHRi services to enhance security and minimize the risk of unauthorized access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-028",
+    "descripcion": "The application must implement authentication mechanisms that directly verify the end user’s identity rather than relying solely on device identity.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-029",
+    "descripcion": "The application must validate certificates by constructing a certification path, including status information, to an accepted trust anchor when utilizing PKI-based authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-030",
+    "descripcion": "The application must implement a local cache of revocation data to support certification path discovery and validation when network access to revocation information is unavailable during PKI-based authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-031",
+    "descripcion": "The application must map authenticated identities to individual user or group accounts during PKI-based authentication to ensure accurate association of certificate information.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-032",
+    "descripcion": "The application must validate certificates by constructing a certification path, including status information, to an accepted trust anchor during PKI-based authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-033",
+    "descripcion": "The application must implement robust mechanisms to secure local user authentication and mitigate the risk of client-side bypass vulnerabilities, especially on jailbroken or compromised devices.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-034",
+    "descripcion": "The application must implement robust authentication and authorization mechanisms that protect user credentials, ensure access is limited to necessary data, and enforce server-side verification for all client-side controls.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-035",
+    "descripcion": "The application must implement network access control and role-based mechanisms to ensure users and administrators access only the resources required for their roles across all system components and architecture segments.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-036",
+    "descripcion": "The application must avoid using spoof-able values, such as device identifiers or geolocation data, for user authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-037",
+    "descripcion": "The application must use WS-Security to protect messages with time stamps, including creation and expiration times, and sequence numbers to prevent replay attacks and ensure message integrity.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-038",
+    "descripcion": "The application must ensure that each asserting party provides unique assertion ID references for every SAML assertion to maintain assertion integrity and prevent replay attacks.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-039",
+    "descripcion": "The application must validate the validity periods of all WS-Security tokens and SAML assertions to ensure secure communication and prevent the use of expired or invalid credentials.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-040",
+    "descripcion": "The application must use FIPS-approved random number generators to generate SessionIndex in SAML AuthnStatements and ensure encrypted assertions or equivalent confidentiality protections when assertion data passes through intermediaries.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-041",
+    "descripcion": "The application must implement the <NotOnOrAfter> condition in the <SubjectConfirmation> element of SAML assertions to enforce time-bound validity and prevent the reuse of expired assertions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-042",
+    "descripcion": "The application must implement the <NotBefore> and <NotOnOrAfter> conditions or the <OneTimeUse> element within the <Conditions> element in SAML assertions to enforce time-bound validity and restrict reuse.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-043",
+    "descripcion": "The application must ensure that only one <OneTimeUse> element is included in the <Conditions> element of a SAML assertion to maintain the integrity of single-use conditions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-044",
+    "descripcion": "The application must implement persistent authentication as an opt-in feature, ensuring it is not enabled by default to enhance user control and security.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-045",
+    "descripcion": "The application must perform all authentication requests server-side and ensure that application data is only available on the mobile device after successful authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-046",
+    "descripcion": "The application must implement secure password management procedures, prohibit the use of weak authentication methods such as 4-digit PINs, and ensure local authentication mechanisms follow platform best practices.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-047",
+    "descripcion": "The application must enforce a minimum password lifetime of 24 hours to prevent users from bypassing password history requirements by making frequent password changes.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-048",
+    "descripcion": "The application must enforce a maximum password lifetime of 60 days to ensure users regularly update their passwords and maintain strong account security.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-049",
+    "descripcion": "The application must enforce password complexity by requiring at least 15 characters, including one upper-case letter, one lower-case letter, one numeric character, and one special character, to ensure robust user authentication for accessing personal mobile health data.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-050",
+    "descripcion": "The application must enforce a policy requiring at least eight characters to be changed when passwords are updated, ensuring password uniqueness and reducing the risk of reuse.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-051",
+    "descripcion": "The application must prohibit password reuse for at least the last five passwords to ensure strong password security and mitigate risks associated with recycled credentials.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-052",
+    "descripcion": "The application must support the use of temporary passwords for system logons, requiring an immediate change to a permanent password upon first use.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-053",
+    "descripcion": "The application must ensure that passwords can only be changed by the associated user or an administrator to prevent unauthorized modifications.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-054",
+    "descripcion": "The application must enforce strong authentication mechanisms, such as CAC, to establish non-local maintenance and diagnostic sessions to ensure secure access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-055",
+    "descripcion": "The application must implement authorization security controls independent of authentication mechanisms to ensure user permissions are properly verified and not solely reliant on authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-056",
+    "descripcion": "The application must clear sensitive data, reset the application state, and terminate server-side sessions upon session termination, backgrounding, or user logout, ensuring no residual data remains accessible.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-057",
+    "descripcion": "The application must provide a logout function that terminates the authenticated session, invalidates the session on the server side, and destroys session ID cookies upon logoff or application closure.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-058",
+    "descripcion": "The application must implement robust authentication and authorization mechanisms to protect electronic protected health information (ePHI), ensuring that only authorized users and devices can access the system and unknown devices are appropriately challenged.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-059",
+    "descripcion": "The application must implement and manage access rights to ensure that electronically protected health information (ePHI) is accessible only to authorized users or software programs and that access rights are reviewed, modified, and removed in compliance with organizational policies.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-060",
+    "descripcion": "The application must implement federated identity management and modern authentication methods, such as passkeys and Credential Manager, to securely authenticate users and protect access to private data and sensitive operations.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-061",
+    "descripcion": "The application must implement asymmetric cryptography for authentication and authorization, ensuring private keys are securely generated and stored using platform-supported secure hardware, such as a Trusted Execution Environment (TEE) or Secure Element (SE).",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-062",
+    "descripcion": "The application must minimize repeated credential requests by implementing time-bounded, revocable authorization tokens secured in transit using TLS and adhering to the latest authorization standards, such as OAuth 2.0.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-063",
+    "descripcion": "The application must accept FICAM-approved third-party credentials and conform to FICAM-issued technical profiles for services that rely on external identity providers.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-064",
+    "descripcion": "The application must implement robust account and credential management processes, including secure storage, transmission, and handling of user credentials, password management mechanisms, and automated account management functions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-065",
+    "descripcion": "The application must implement a device-specific authentication token that the user can revocate to mitigate unauthorized access risks arising from lost or stolen devices.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-066",
+    "descripcion": "The application must purge credentials or keys from memory immediately after use to minimize exposure, using explicit memory management rather than relying on automatic garbage collection.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-067",
+    "descripcion": "The application must immediately release UI frames containing credentials or keys after their use to prevent unintended exposure.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-068",
+    "descripcion": "The application must implement fine-grained URI access control using the android:grantUriPermissions attribute, FLAG_GRANT_READ_URI_PERMISSION, and FLAG_GRANT_WRITE_URI_PERMISSION in combination with the <grant-uri-permission> element, ensuring sensitive operations are secured with additional authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-069",
+    "descripcion": "The application must enforce a strong password policy and prohibit the reuse or recycling of session IDs to maintain robust authentication security.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-070",
+    "descripcion": "The application must validate session identifiers and ensure their authenticity throughout the session lifecycle, invalidating them upon logout or session termination to prevent unauthorized reuse.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-071",
+    "descripcion": "The application must implement permission-based intent filtering to restrict the handling of sensitive data in intent to authorized applications only.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-072",
+    "descripcion": "The application must implement alternative access controls, such as signature-level protection for inter-process communication (IPC) and adaptive authentication techniques, to enhance security without over-reliance on user-confirmed permissions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-073",
+    "descripcion": "The application must implement permission-based access control for sensitive resources.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-074",
+    "descripcion": "The application must validate and enforce approved authorizations for logical access to information and system resources based on access control policies, ensuring only authorized users and services can access protected data and resources.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-075",
+    "descripcion": "The application must control the export behavior and access permissions of BroadcastReceiver components to prevent unauthorized access and ensure secure communication, particularly for sensitive data and critical functionality.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-076",
+    "descripcion": "The application must implement secure practices for intent broadcasting, using explicit intents or controlled mechanisms to ensure broadcasts are delivered securely and only to intended recipients.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-077",
+    "descripcion": "The application must secure Inter-Process Communication (IPC) calls by implementing checkCallingPermission() for individual IPC requests or using declarative permissions in the manifest to enhance security and maintainability.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-078",
+    "descripcion": "The application must enforce explicit access control checks within Binder or Messenger interfaces to ensure secure communication, as these objects do not support declarative permissions in the manifest.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-079",
+    "descripcion": "The application must implement access control mechanisms for interfaces by using methods like checkCallingPermission() to verify permissions of calling entities, ensuring secure and restricted access to sensitive services and activities.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-080",
+    "descripcion": "The application must implement strong access controls, including secure user authentication, role-based access control (RBAC), and validation of user permissions before granting access to sensitive information or functionality.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-081",
+    "descripcion": "The application must support workgroup-based access control by assigning users to working groups and granting access to records based on group membership while ensuring timely revocation of access privileges when required.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-082",
+    "descripcion": "The application must enforce discretionary access control policies, associating users with patient records to allow or restrict access based on pre-existing relationships while ensuring access privileges are reported for transparency.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-083",
+    "descripcion": "The application must handle failures of unauthorized calls to service interfaces, ensuring appropriate responses are provided when the calling process lacks necessary permissions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-084",
+    "descripcion": "The application must securely implement identity overriding mechanisms using clearCallingIdentity() and restoreCallingIdentity() to ensure temporary privilege escalation is safely managed during external process interactions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-085",
+    "descripcion": "The application must verify permissions before accessing services provided by external applications and handle denied requests gracefully.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-086",
+    "descripcion": "The application must comply with Android's guidelines for bound services when using Binder or Messenger to perform inter-process communication (IPC).",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-087",
+    "descripcion": "The application must ensure secure intent broadcasting by using explicit intents for specific recipients and applying appropriate controls when using ordered broadcasts to prevent unauthorized interception",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-088",
+    "descripcion": "The application must integrate with Android's Credential Manager to provide unified access to authentication methods, including passkeys, passwords, and federated sign-in solutions, ensuring seamless and secure user authentication.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-089",
+    "descripcion": "The application must implement passkeys as a secure and user-friendly alternative to traditional passwords to enhance authentication processes and user experience.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-090",
+    "descripcion": "The application must integrate with Android's autofill framework to streamline authentication processes, securely enabling users to store and retrieve complex passwords via password managers while reducing user errors and friction.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-091",
+    "descripcion": "The application must support biometric authentication methods, such as fingerprint scans or facial recognition, to enhance security for sensitive data in finance, healthcare, or identity management applications.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-092",
+    "descripcion": "The application must implement FaceID and TouchID to unlock biometrically locked secrets and securely protect sensitive authentication materials, such as session tokens.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-093",
+    "descripcion": "The application must validate the presence of enrolled biometric data, such as registered fingerprints or iris scans, before enabling API access for biometric authentication purposes.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-094",
+    "descripcion": "The application must implement secure biometric authentication methods, such as fingerprint or facial recognition, ensuring compatibility with biometric sensors and providing alternative authentication controls when biometric hardware is unavailable.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-095",
+    "descripcion": "The application must enforce step-up authentication for actions involving sensitive data or transactions, requiring additional authentication before granting access or execution.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-096",
+    "descripcion": "The application must ensure authentication requirements for mobile applications are consistent with their web application counterparts, maintaining equivalent or greater authentication factors.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-097",
+    "descripcion": "The mobile application must implement organization-defined out-of-band authentication to enhance security under specified conditions.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-098",
+    "descripcion": "The application must enforce multifactor authentication (MFA) for network access to privileged accounts and sensitive data, incorporating at least two distinct authentication factors for enhanced security.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-99",
+    "descripcion": "The application must accept and electronically verify Personal Identity Verification (PIV) credentials, enforce multifactor authentication (MFA) using CAC or Alt. Token for local and network access, and support PIV credentials from other federal agencies.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-100",
+    "descripcion": "The application must enforce server-side authorization controls to prevent bypass of client-side authorization mechanisms, ensuring secure access to protected resources.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-101",
+    "descripcion": "The application must implement a clear separation of permissions for client-side and server-side components, ensuring accurate definition and enforcement of permissions for both invoking and granting applications.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-102",
+    "descripcion": "The application must enforce all authentication and authorization controls on the server side to ensure security, independent of any client-side enforcement.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-103",
+    "descripcion": "The backend platform must operate with a hardened configuration and apply the latest security patches to the operating system, web server, and other application components to ensure flaw remediation and maintain a secure environment.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-104",
+    "descripcion": "The application must securely manage user sessions after initial authentication by implementing randomly generated session tokens, enforcing proper session timeouts, and securely storing session data on both client and server sides.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-105",
+    "descripcion": "The application must notify users of all login activities associated with their accounts and provide a view of devices accessing the account, with the capability to block specific devices.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-106",
+    "descripcion": "The application must display the time and date of the last successful logon and details of any unsuccessful logon attempts since the last successful logon to improve user awareness and account security.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-107",
+    "descripcion": "Remote endpoints must verify that connecting clients are using the current version of the mobile application to ensure compatibility and security.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-108",
+    "descripcion": "The application must utilize mutual authentication when endpoint device non-repudiation protections are required by DoD policy or by the data owner.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-109",
+    "descripcion": "The application must authenticate all network-connected endpoint devices and perform acceptable user authentication, such as username/password, before establishing connections with a remote service.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-110",
+    "descripcion": "The application must ensure that the remote endpoint uses randomly generated access tokens to authenticate client requests, avoiding the transmission of user credentials.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-111",
+    "descripcion": "The application must ensure that the remote endpoint terminates any existing session when the user logs out.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-112",
+    "descripcion": "The application must clear temporary storage and cookies upon session termination to prevent unauthorized access to sensitive data after the user logs out.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-113",
+    "descripcion": "The application must automatically terminate inactive sessions after a predetermined period of inactivity to prevent unauthorized access, particularly in high-risk locations or when handling sensitive data.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-114",
+    "descripcion": "The application must provide all users with the capability to manually terminate their communication session to ensure user-initiated logoff functionality.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-115",
+    "descripcion": "The application must display an explicit logoff message to users indicating the reliable termination of authenticated communication sessions upon session termination.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-116",
+    "descripcion": "The application must enforce two-factor authentication (2FA) for access to personal health information and ensure it is consistently implemented for sensitive operations.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-117",
+    "descripcion": "The application must ensure that the remote endpoint implements an exponential back-off mechanism or temporarily locks the user account after a predefined number of incorrect authentication attempts to mitigate brute-force attacks.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-118",
+    "descripcion": "The application must enforce a minimum device-access-security policy, ensuring the device is secured with a passcode or equivalent protection method.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-119",
+    "descripcion": "The application must verify the X.509 certificate of the remote endpoint during secure channel establishment, ensuring only certificates signed by a valid Certificate Authority (CA) are accepted, and fail securely if validation fails.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-120",
+    "descripcion": "The application must enhance the security of API communications by replacing static API keys with OAuth 2.0 or other token-based mechanisms, and secure sensitive operations with additional authentication layers.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-121",
+    "descripcion": "The application must implement the OAuth 2.0 authorization framework for API access, restricting API key usage to specific clients, defining minimum access scopes, and enforcing secure authentication protocols.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-122",
+    "descripcion": "The application must generate unique API keys for each application instance to ensure efficient identification and isolation of compromised or unauthorized access.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-123",
+    "descripcion": "The application must enforce IP-based and service-level restrictions on API key usage, associating keys with specific mobile applications, certificates, or platforms to prevent unauthorized access and misuse.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IAA-124",
+    "descripcion": "The application must prevent the exposure of sensitive information, such as usernames or personal data, in error messages or logs, ensuring that error responses are generic and do not reveal the existence of registered accounts.",
+    "categoria": "IAA",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-001",
+    "descripcion": "The application must implement comprehensive input validation mechanisms to safeguard against vulnerabilities and insecure deserialization. All input from external sources, including files, network communications, and inter-process communications, must be validated and sanitized using platform-level security features provided by Android.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-002",
+    "descripcion": "The application must ensure that error messages are generic and do not disclose system details or sensitive data to users. Error messages must only provide information necessary for corrective actions while safeguarding against exploitation by adversaries.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-003",
+    "descripcion": "The application must restrict detailed error messages containing system information or sensitive data to privileged users such as the ISSO, ISSM, or SA. For non-privileged users, error messages must be generic, providing minimal information to avoid exposing system vulnerabilities.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-004",
+    "descripcion": "The application must prevent the population of WebViews loaded from the file URI scheme with user-supplied DOM input to avoid potential security vulnerabilities, such as injection attacks.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-005",
+    "descripcion": "The application must implement policies and procedures to ensure the confidentiality, integrity, and availability of electronic protected health information (ePHI). This includes validating output data to ensure consistency with expected content and preventing unauthorized alterations or destruction of data.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-006",
+    "descripcion": "The application must not disclose unnecessary information, such as technical details of its architecture, during error events to prevent attackers from exploiting sensitive information.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-007",
+    "descripcion": "The system must enforce strict control over the data format during information exchange between applications to ensure data integrity, prevent inconsistencies, and safeguard against potential vulnerabilities.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-008",
+    "descripcion": "The mobile application must validate the information output from designated software programs and/or applications to ensure it aligns with expected content, preventing extraneous or malicious data from being displayed or transmitted.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-009",
+    "descripcion": "The application must implement strict validation and sanitization of all user-supplied URLs or similar requests to prevent Server-Side Request Forgery (SSRF) attacks, ensuring that requests are only sent to trusted and expected destinations.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-010",
+    "descripcion": "The application must prevent canonical representation vulnerabilities by choosing a suitable canonical form and ensuring all user input is canonicalized before performing any authorization or security checks. Security validations must occur after decoding is completed, and the encoding method used must be verified as valid for its intended representation.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-011",
+    "descripcion": "The application must implement robust output sanitization measures to prevent cross-site scripting (XSS) attacks, ensuring all dynamic content displayed in WebViews, forms, or user interfaces is sanitized. This includes safeguarding against reflected, stored, and DOM-based XSS vulnerabilities by neutralizing untrusted input before it is used in dynamically generated content.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-012",
+    "descripcion": "The application must implement output encoding techniques to sanitize data before displaying it in user interfaces or transmitting it over communication channels. This ensures that special characters are rendered safely, preventing unintended behavior or security vulnerabilities such as cross-site scripting (XSS).",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-013",
+    "descripcion": "The mobile healthcare application must be designed to prevent vulnerabilities to XML-oriented attacks by ensuring the use of secure and updated XML parsers and libraries, patching components promptly when vulnerabilities are identified, and implementing input validation for XML data",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-014",
+    "descripcion": "The mobile application must mitigate XML-based DoS attacks by implementing robust mechanisms, such as XML filters, parser options, or gateways, to validate recursive payloads, oversized payloads, and prevent XML entity expansion. It must optimize configurations to limit overlong element names and ensure high message throughput while maintaining protection against service disruption.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-015",
+    "descripcion": "The mobile application must perform context-specific validation for all user inputs, particularly in file uploads or database queries, to prevent vulnerabilities such as path traversal and injection attacks. This includes validating and sanitizing file paths to ensure operations remain confined to designated directories.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-016",
+    "descripcion": "The mobile application must validate and sanitize all inputs from external sources and users, including data received through the UI, inter-process communication (IPC) mechanisms such as intents, custom URLs, and network sources, to prevent injection attacks and ensure input integrity.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-017",
+    "descripcion": "The mobile application must perform rigorous input validation for all data retrieved from external storage, treating it as untrusted input to prevent unauthorized access, data corruption, or injection attacks.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-018",
+    "descripcion": "The mobile application must restrict access to device storage by implementing a whitelist of allowed file paths when arbitrary file selection is permitted, ensuring that only intended files are accessible. Additionally, comprehensive escape syntax must be applied to mitigate injection risks during file path handling.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-019",
+    "descripcion": "The application must enforce strict input size limitations to prevent excessive or malicious data from being passed to interpreters, ensuring data is within acceptable length parameters.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-020",
+    "descripcion": "The application must implement robust data format verification for all file path inputs, avoiding reliance on character blocking or replacement mechanisms, to ensure only valid and intended paths are processed.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-021",
+    "descripcion": "The application must disable keyboard caching for text inputs that handle sensitive data, such as credentials or personal information, to prevent unintended exposure or unauthorized access.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-022",
+    "descripcion": "The application must disable auto-correction and auto-suggestion features for input fields that handle sensitive data to prevent unintended disclosure or storage of sensitive information in predictive text systems.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-023",
+    "descripcion": "The application must restrict the use of third-party keyboards for input fields that handle sensitive data, such as credentials or payment information, and should use a custom keyboard for secure inputs instead.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-024",
+    "descripcion": "The application must disable clipboard functionalities, including cut, copy, and paste, for text fields containing sensitive data or restrict clipboard access to the application only.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-025",
+    "descripcion": "The application must implement input field masking for sensitive data, such as passwords and PINs, ensuring that they are not displayed in clear text during entry or stored as plain text.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IOV-026",
+    "descripcion": "The application must validate all input data received through intent filters in intent receivers, ensuring the data conforms to the expected format and preventing unintended manipulation or execution.",
+    "categoria": "IOV",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-001",
+    "descripcion": "The application must avoid reliance on a single insecure communication channel, such as email or SMS, for critical operations like enrollment and account recovery, ensuring multi-factor authentication mechanisms leverage secure channels.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-002",
+    "descripcion": "The application must avoid using SMS, MMS, or notifications to transfer sensitive data, opting instead for secure IP-based protocols such as Firebase Cloud Messaging (FCM) to ensure encrypted and authenticated communication.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-003",
+    "descripcion": "The application must apply an additional layer of encryption to sensitive data before transmitting it through the SSL/TLS channel, ensuring confidentiality even in the event of SSL/TLS vulnerabilities.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-004",
+    "descripcion": "The application must prioritize secure and authenticated communication methods, such as Firebase Cloud Messaging (FCM) or encrypted IP-based networking protocols, instead of relying on SMS for app-server interactions.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-005",
+    "descripcion": "The application must treat SMS data as originating from untrusted sources and avoid performing sensitive operations based on unauthenticated SMS data. Safeguards against spoofing and interception must be implemented to mitigate risks associated with SMS as an insecure communication method.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-006",
+    "descripcion": "The application must assume that the network layer is unsecure and susceptible to eavesdropping. Implement end-to-end encryption and other secure communication practices to safeguard sensitive data transmitted over the network.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-007",
+    "descripcion": "The application must restrict the exposure of sensitive information via broadcast intents, especially when handling SMS messages. Broadcast messages must be secured, limited to authorized applications, and sensitive data must not be transmitted using insecure methods such as SMS or MMS.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-008",
+    "descripcion": "The mobile application must ensure the confidentiality and integrity of electronically transmitted data, including electronic protected health information (ePHI), by implementing industry-standard encryption protocols (e.g., TLS/SSL) and integrity controls during data transmission.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-009",
+    "descripcion": "The mobile application must use hashed values derived from secure hash functions (e.g., SHA-256 or bcrypt) as primary keys or identifiers to avoid directly storing or transmitting personal information.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-010",
+    "descripcion": "The mobile application must ensure confidentiality and integrity of information during reception by enforcing TLS encryption for all data exchanges.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-011",
+    "descripcion": "The mobile application must sign critical message elements in SOAP messages requiring integrity, including Message ID, Service Request, Timestamp, SAML Assertion, and Message elements.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-012",
+    "descripcion": "The mobile application must ensure the confidentiality and integrity of transmitted information by requiring TLS encryption for all communications. Cryptographic mechanisms such as HMAC-SHA1, HMAC-SHA-256, HMAC-SHA-512, or GCM mode must be implemented to prevent unauthorized disclosure and detect tampering during data transmission.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-013",
+    "descripcion": "The mobile application must validate all data downloaded over insecure protocols, such as HTTP. Input validation must be enforced on all responses, particularly when processing data in WebView components or handling responses to HTTP intents, to ensure untrusted data does not compromise application security.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-014",
+    "descripcion": "The mobile application must configure all session cookies to include the HTTPOnly flag to prevent client-side scripts from accessing session cookies, mitigating the risk of cross-site scripting (XSS) attacks.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-015",
+    "descripcion": "The mobile application must configure all session cookies to include the Secure flag, ensuring that cookies are only transmitted over encrypted HTTPS connections to prevent their exposure in plaintext communication.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-016",
+    "descripcion": "The mobile application must only use certificates signed by a trusted Certificate Authority (CA) and ensure strict certificate validation, including checking for self-signed, expired, revoked, or misconfigured certificates. Connections with endpoints offering invalid certificates must not be allowed.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-017",
+    "descripcion": "The application must prevent the exposure of sensitive data through Inter-Process Communication (IPC) mechanisms by ensuring strict access controls and verifying that permission-protected data is not accessible to unauthorized clients. Sensitive functionality must not be exported via IPC unless adequately protected.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-018",
+    "descripcion": "The application must secure Inter-Process Communication (IPC) mechanisms by implementing permissions using the <permission> element for sensitive components like ContentProvider. For IPC between apps by the same developer, signature protection must be used. Explicit intents must be utilized over implicit ones for asynchronous IPC to prevent data exposure.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-019",
+    "descripcion": "The application must ensure that all external connections to third-party entities, such as analytics providers or social networks, use SSL/TLS for secure communication when running routines through the browser or WebView. Mixed SSL sessions must be avoided to protect the user’s session ID and data integrity.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-020",
+    "descripcion": "The application must ensure that session IDs are not exposed to unauthorized entities and must implement measures to protect session IDs from interception, manipulation, or unauthorized reus.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-021",
+    "descripcion": "The application must enforce the use of secure communication protocols, such as HTTPS, for all network communication involving sensitive data. Connections over unsecured protocols, such as HTTP, must be blocked, and HTTPS must be used by default, especially on unsecured networks like public Wi-Fi.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-022",
+    "descripcion": "The application must secure all network communication with SSL/TLS protocols to ensure the confidentiality and integrity of transmitted data, particularly for sensitive operations such as API calls, authentication, and data exchanges. Mutual authentication must be utilized when handling non-releasable or highly sensitive data.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-023",
+    "descripcion": "The application must implement short-lived access tokens for API calls and operations to minimize the exposure of sensitive credentials. Authentication tokens must be required for all subsequent requests, especially those involving privileged access or sensitive data modifications.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-024",
+    "descripcion": "The application must implement encrypted socket-level communication using HTTPS URIs or the SSLSocket class for secure file retrieval and data transmission. Additional hostname verification precautions must be applied when using SSLSocket to prevent man-in-the-middle (MITM) attacks. All network traffic must follow best practices for securing data privacy and integrity during transit.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-025",
+    "descripcion": "The application must utilize only DoD-approved Public Key Infrastructure (PKI) certificate authorities (CAs) for the verification of protected session establishments. Configure the application to ensure all DoD-signed certificates are validated using DoD-approved PKI CAs exclusively.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-026",
+    "descripcion": "The application must enforce secure communication by utilizing strong, industry-standard cipher suites with appropriate key lengths and transport layer encryption protocols, such as HTTPS or TLS, for all network traffic. Implement strict certificate validation and ensure consistent use of secure channels across the app.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-027",
+    "descripcion": "The application must implement FIPS 140-2-validated cryptographic modules for encryption, key exchange, digital signatures, random number generation, and hash functionality. Secure communication channels, such as IPSec or TLS, must protect all stored, collected, and exchanged data with encryption mechanisms aligned with current best practices.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-028",
+    "descripcion": "The application must avoid binding to the non-specific IP address INADDR_ANY. Instead, it must bind only to specific and secure IP addresses to restrict unauthorized access and prevent unintended exposure to all network interfaces.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-029",
+    "descripcion": "The application must not override the onReceivedSslError method to bypass SSL certificate validation, ensuring that invalid SSL certificates are not accepted.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-030",
+    "descripcion": "The application must establish secure TLS connections only after verifying the identity of the endpoint server using trusted certificates in the key chain and enforcing SSL chain verification.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-031",
+    "descripcion": "The application must leverage platform-specific mechanisms, such as App Transport Security (ATS) in iOS and clear text traffic opt-out in Android, to enforce additional security requirements for HTTP-based networking requests.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICO-032",
+    "descripcion": "The application must alert users through the user interface (UI) if the peer certificate does not match the expected certificate, providing clear warnings and the option to abort further interaction.",
+    "categoria": "ICO",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-001",
+    "descripcion": "The application must assign and enforce the use of unique user identifiers (IDs) to track and manage user activity, ensuring each user can be uniquely identified in combination with additional attributes such as jurisdictional or organizational identifiers. These IDs must also prevent session fixation and unauthorized reuse of session identifiers.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-002",
+    "descripcion": "The application must individually authenticate users with unique credentials before granting access to group accounts or resources associated with group authenticators.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-003",
+    "descripcion": "The application must use non-persistent and app-specific identifiers instead of device hardware identifiers (e.g., IMEI, UDID) to ensure privacy and prevent cross-app tracking.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-004",
+    "descripcion": "The application must assess the necessity of collecting personally identifiable information (PII), such as name, address, gender, and age, and minimize the collection of sensitive data wherever possible.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-005",
+    "descripcion": "The application must associate and retain organization-defined security attributes with information during storage and processing. These attributes must include organization-defined security values and must persist across storage and processing activities.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-006",
+    "descripcion": "The mobile application must clear or overwrite memory blocks used to process sensitive data, such as Personally Identifiable Information (PII), location data, or authentication credentials. Additionally, sensitive personal data must not be retained beyond its required use, and temporary storage must adhere to strict access controls.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-007",
+    "descripcion": "The system must replace critical Personally Identifiable Information (PII) with less sensitive data when possible, such as replacing detailed location information with approximate location. The application must also implement processes to securely handle, classify, retain, and dispose of data based on sensitivity.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-008",
+    "descripcion": "The system must provide an option to reduce the frequency of Personally Identifiable Information (PII) updates, such as reducing the update interval for user location from every minute to every hour. The application must ensure data is securely identified, classified, handled, and disposed of following organizational policies.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-009",
+    "descripcion": "The system must implement mechanisms to automatically delete Personally Identifiable Information (PII) after a defined retention period, such as retaining only data from the last week.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-010",
+    "descripcion": "The system must allow users to manage access to their personal information at any time, including granting or revoking access to specific data.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-011",
+    "descripcion": "The system must retain a complete history of PHI (Protected Health Information), including its former content, and track details of who accessed, modified, or entered the data, along with timestamps. This functionality must be available in both EHRi systems and PoS systems connected to EHRi.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-012",
+    "descripcion": "The system must implement procedures to collect, review, and retain audit logs of all significant events, including access reports and security incident tracking, ensuring compliance with regulatory requirements and supporting investigation and recovery processes.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-013",
+    "descripcion": "The application must implement logging mechanisms to audit the execution of privileged functions. Each log entry must include, at a minimum, the specific action taken, the date, and the time of the event.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-014",
+    "descripcion": "The mobile application must ensure that error messages are only transmitted to authorized destinations, including audit logs, the Mobile Device Management (MDM) system, or the device display. Error messages must not be sent to unauthorized entities.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-015",
+    "descripcion": "The application must ensure that server logs adequately capture information about established connections, including parsing HTTP headers like X-Forwarded-For in cases involving multiple intermediate proxies.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-016",
+    "descripcion": "The mobile health application must retain adequate logs on the back-end to support incident detection, response, and forensic analysis, ensuring compliance with applicable data protection laws and regulations. These logs should record security-relevant events while maintaining the privacy of sensitive health data.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-017",
+    "descripcion": "Mobile health applications must audit and log all non-local maintenance and diagnostic sessions, capturing organization-defined auditable events. Additionally, cryptographic mechanisms must be implemented to protect the integrity of communications during such sessions, ensuring that remote maintenance is secure and traceable.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-018",
+    "descripcion": "Mobile health applications must generate audit records for the creation of session IDs, ensuring that each session initiation event is logged with relevant details such as timestamp, session identifier, and associated user account.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-019",
+    "descripcion": "Mobile health applications must generate audit records for the destruction of session IDs, capturing relevant details such as the session ID, timestamp, and associated user account to enhance traceability and security.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-020",
+    "descripcion": "Mobile health applications must generate audit records for the renewal of session IDs, capturing details such as session ID, timestamp, user account, and changes in privileges or permissions, to ensure transparency and traceability.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-021",
+    "descripcion": "Mobile health applications must enable audit record generation for HTTP headers, including User-Agent, Referer, GET, and POST, capturing relevant data to support forensic analysis and incident detection.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-022",
+    "descripcion": "Mobile health applications must generate audit records for session timeout events, capturing details such as user ID, session duration, and timestamp to ensure traceability and compliance with security standards.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-023",
+    "descripcion": "Mobile health applications must retain audit trails for at least one year for non-SAMI data and five years for applications processing SAMI (Sensitive Application Management Information) data to ensure traceability, compliance, and forensic analysis capabilities.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-024",
+    "descripcion": "Mobile health applications must ensure that no sensitive data, including personally identifiable information (PII) or sensitive health information, is written to application logs. Logs must only capture essential data necessary for troubleshooting while maintaining confidentiality and security.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-025",
+    "descripcion": "Mobile health applications must ensure that sensitive data, including database administration credentials and health-related information, is removed or sanitized from production database exports and backups. Backups must be excluded from device-level and cloud synchronization mechanisms to prevent unauthorized access.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-026",
+    "descripcion": "Mobile health applications must disable debugging features and limit logging in production environments to prevent inadvertent exposure of sensitive information. Personally identifiable information (PII) must not be logged, and logging levels must be configurable using debug flags and custom logging classes.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-027",
+    "descripcion": "The application must prevent the unintentional storage or exposure of sensitive data, ensuring that any sensitive data (including keys) is encrypted and stored in a tamper-proof, platform-supported area if required.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-028",
+    "descripcion": "The mobile application must implement security controls to prevent unauthorized and unintended information transfer via shared system resources. Data classification mechanisms should be utilized to manage sensitive information, ensuring that personal or confidential data is not exposed or shared without explicit justification and user consent.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-029",
+    "descripcion": "The mobile application must apply data classification practices and enforce strict access boundaries to safeguard sensitive information. It must ensure that personal, confidential, or health-related data is only processed, stored, or shared when explicitly required and authorized. The application should actively prevent data leakage through shared system resources by validating access, restricting exposure, and minimizing unnecessary interactions with third-party components.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-030",
+    "descripcion": "The mobile health application must identify and clearly document all sensitive data elements and their associated protection requirements. This includes maintaining a Security Classification Guide for classified or sensitive data and implementing measures to prevent data leakage in publicly accessible locations.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-031",
+    "descripcion": "The mobile health application must have the capability to mark sensitive or classified output when required, ensuring that sensitive data is not unintentionally exposed or shared with unauthorized third parties. The application must minimize sensitive data access, adhere to the principle of minimal disclosure, and securely manage sensitive data in the UI and storage.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-032",
+    "descripcion": "The mobile health application must encrypt all multimedia content, including audio, video, and file-sharing data, to ensure secure storage and transfer in telehealth systems.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-033",
+    "descripcion": "The mobile health application must prevent the unintentional exposure of sensitive data (e.g., passwords, credit card details) through the user interface or screenshots. Mechanisms such as disabling screen capture or notifying users of security implications must be implemented.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-034",
+    "descripcion": "The mobile application must not use URL-embedded session IDs to ensure the security of session management. Session ID information must be securely transmitted via cookies or other secure mechanisms. Sensitive functionality must not be exposed via custom URL schemes unless robust protection measures are implemented.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-035",
+    "descripcion": "The mobile application must ensure that, when using JavaScript code running in the context of a file scheme URL, all unused platform-supported attributes are disabled. Specifically, the application must restrict access to content from other file scheme URLs and content from any origin unless explicitly required and securely implemented.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-036",
+    "descripcion": "The mobile application must remove sensitive data from views when transitioning to the background. If the platform retains a screenshot of the visible screen in local storage during backgrounding (e.g., iOS), the application must either disable backgrounding or apply a blurred screen overlay to protect sensitive data.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-037",
+    "descripcion": "The mobile application must exclude sensitive user interface elements from being accessed by custom accessibility applications, particularly on platforms like Android that support such permissions. Sensitive data must not be exposed through accessibility features.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-038",
+    "descripcion": "The mobile application must ensure that passwords and cryptographic keys are not visible in any cache, application logs, or debug information to prevent unintended exposure of sensitive data.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-039",
+    "descripcion": "The mobile application must require user re-authentication when transitioning from background to foreground if it contains sensitive data. Alternatively, the application must verify that the device is secured with a PIN, pattern, or password.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-040",
+    "descripcion": "The mobile application must enforce re-authentication for users and devices under organization-defined circumstances, such as privilege escalation, role changes, or after a defined time period. Dual authorization must be enforced for specific privileged commands or critical actions as required by organizational policies.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-041",
+    "descripcion": "The mobile application must inspect custom notifications for sensitive content and provide users with the ability to disable notifications or hide sensitive information within notification content.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IPC-042",
+    "descripcion": "The mobile health application must inform users about the confidentiality of personal health information (PHI) accessed or processed by the system. This includes displaying confidentiality notices at login, labeling hardcopy outputs containing PHI as confidential, and providing clear privacy policies in compliance with applicable privacy regulations.",
+    "categoria": "IPC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-001",
+    "descripcion": "The mobile health application installation package must be digitally signed using FIPS 186-3 approved methods or equivalent. The app must ensure only signed and provisioned packages are installed, preventing unsigned patches or service packs. Additionally, a cryptographic hash value must be provided for administrator verification before installation.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-002",
+    "descripcion": "The mobile health application must implement mechanisms to detect and handle interactions from modified or tampered app binaries. The app must verify its code integrity at runtime and react to integrity violations by preventing unauthorized modifications and safeguarding data.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-003",
+    "descripcion": "The mobile health application must ensure that all debugging symbols and verbose logging or debugging messages are removed from production builds. Native binaries should not include debugging symbols, and the app must not generate verbose error messages that expose sensitive information.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-004",
+    "descripcion": "The mobile health application must be built in release mode for production deployment. The build settings must ensure that the app is non-debuggable and optimized for security, with all debug-related functionalities disabled.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-005",
+    "descripcion": "The mobile health application must implement robust error handling mechanisms to prevent error handling vulnerabilities. Proper return codes and exception handling must be implemented throughout the application to ensure secure and predictable behavior during runtime anomalies.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-006",
+    "descripcion": "The mobile health application must prioritize the use of the Android SDK over native code to enhance security, portability, and maintainability. Where native code is necessary, memory corruption vulnerabilities such as buffer overflows must be mitigated through memory protection techniques like data execution prevention (DEP) and address space layout randomization (ASLR). Static analysis tools must be employed during the development process to detect and remediate memory management issues.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-007",
+    "descripcion": "The mobile health application must ensure that all permissions are explicitly declared and managed according to the Android permission model, even when utilizing native code. Developers must adhere to Linux security practices, such as the Secure Programming Guidelines, to mitigate risks associated with memory handling, file operations, and processing external inputs in a native code environment.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-008",
+    "descripcion": "The mobile health application must ensure that the final build does not include source code, unreferenced code, or subroutines that are never invoked during operation. Exceptions are allowed only for software components and libraries from approved third-party products explicitly required for the application’s functionality.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-009",
+    "descripcion": "The mobile health application must not load code from outside the APK package to prevent vulnerabilities such as code injection or tampering. Dynamically loaded code must comply with platform-specific and regulatory restrictions, ensuring strict version control, testing, and security verification.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-010",
+    "descripcion": "The mobile health application must mitigate SQL injection vulnerabilities by using parameterized queries and prepared statements for all database operations. User input must be validated and sanitized to prevent the injection of unauthorized SQL commands. Concatenation of user data into SQL queries is strictly prohibited.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-011",
+    "descripcion": "The mobile health application must mitigate command injection vulnerabilities by validating and sanitizing all user inputs before executing any system or OS commands. Input filtering must escape or neutralize special characters that could be exploited to alter the intended behavior of commands.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-012",
+    "descripcion": "The mobile health application must implement validation and error-handling mechanisms to prevent null pointer dereference vulnerabilities, ensuring that all pointers are checked for null values before dereferencing.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-013",
+    "descripcion": "The mobile health application must implement replay-resistant authentication mechanisms for both privileged and non-privileged accounts to prevent unauthorized access through replay attacks.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-014",
+    "descripcion": "The mobile health application must implement rate-limiting mechanisms for authentication and authorization requests to prevent brute-force attacks. This includes account lockouts, CAPTCHAs, or additional user verification measures after multiple failed login attempts.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-015",
+    "descripcion": "The mobile health application must disable interaction events when the app interface is obscured by another layer to prevent tapjacking attacks. This ensures that users do not unknowingly interact with hidden views or unauthorized overlays.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-016",
+    "descripcion": "The mobile health application must implement secure coding practices to prevent vulnerabilities such as buffer overflows, including the use of secure functions and careful handling of native code. Functions and code paths vulnerable to overflow attacks must be identified and replaced with secure alternatives.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-017",
+    "descripcion": "The mobile health application must ensure that all calculations and operations involving integers are securely implemented to prevent integer overflows or wraparounds. This includes validating input ranges and employing safe arithmetic operations to mitigate risks.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-018",
+    "descripcion": "The mobile health application must prevent vulnerabilities arising from race conditions by implementing proper synchronization mechanisms. All shared resources accessed by concurrent processes or threads must be protected to ensure consistency and integrity during execution.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-019",
+    "descripcion": "The mobile health application must implement strict bounds checking for all memory operations to prevent out-of-bounds reads and writes. This includes validating buffer sizes, performing pointer arithmetic safely, and avoiding memory access outside the allocated boundaries. Proper error handling and memory management practices must also be enforced to prevent memory corruption vulnerabilities.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-020",
+    "descripcion": "The mobile health application must leverage Android's security features, such as Address Space Layout Randomization (ASLR) and Data Execution Prevention (DEP), to protect against memory corruption vulnerabilities. Input validation and safe memory management practices must also be implemented to mitigate issues such as use-after-free errors and other memory handling flaws.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-021",
+    "descripcion": "The mobile health application must adhere to secure memory management best practices when using native code. This includes preventing vulnerabilities such as buffer overflows, use-after-free errors, and memory leaks through careful coding, testing, and adherence to platform-specific security guidelines.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-022",
+    "descripcion": "The mobile health application must implement safeguards to prevent vulnerabilities related to integer arithmetic, such as integer overflows, underflows, or wraparounds. These issues can lead to incorrect calculations, resource mismanagement, or security vulnerabilities.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-023",
+    "descripcion": "The mobile health application must avoid using API calls that enable bridging between dynamic code (e.g., JavaScript) and native code (e.g., Objective-C or Kotlin). This prevents potential security vulnerabilities where injection attacks in the dynamic code could lead to unauthorized execution of native code.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-024",
+    "descripcion": "The mobile health application must ensure that any dynamically loaded code inherits the same security permissions as the application and maintains user trust by adhering to the application’s defined security policies. All dynamically loaded components must be secure, validated, and aligned with the permissions granted to the application.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-025",
+    "descripcion": "The mobile health application must ensure that dynamically executed code is loaded exclusively from secure, verified sources. Code from insecure sources, such as unencrypted network transmissions or world-writable locations like external storage, must not be loaded to mitigate risks of unauthorized access or malicious code execution.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-026",
+    "descripcion": "The mobile health application must ensure that any dynamically loaded code is transmitted over secure, encrypted channels (e.g., HTTPS) and stored in tamper-proof locations to prevent unauthorized access or modification by other applications or users.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-027",
+    "descripcion": "The mobile health application must package dynamically loaded modules directly within the APK whenever feasible. These modules should be implemented as native libraries or classes loaded using DexClassLoader to prevent tampering or alteration by external applications.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-028",
+    "descripcion": "The mobile health application must ensure that no sensitive data, such as location or other private information, is unintentionally transferred between the mobile device and web-server backends or other external interfaces. This includes data embedded within file metadata.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-029",
+    "descripcion": "The mobile health application must implement robust anti-static analysis mechanisms, including code obfuscation, to impede reverse engineering. This includes using obfuscation tools, compiling natively when feasible, and ensuring that obfuscation balances complexity with operational correctness of dependent features.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-030",
+    "descripcion": "The mobile health application must ensure that memory in unmanaged code is securely allocated, used, and freed to prevent vulnerabilities such as memory leaks, use-after-free errors, and buffer overflows.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-031",
+    "descripcion": "The mobile health application must integrate with the Play Integrity API to ensure that interactions and server requests originate from a legitimate, untampered app binary running on a genuine Android device.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-032",
+    "descripcion": "The mobile health application must initialize all parameter values upon startup to ensure predictable behavior, prevent unintentional data leakage, and avoid reliance on uninitialized or potentially unsafe variables.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-033",
+    "descripcion": "The mobile health app must verify integrity at startup to detect tampering or redistribution, alert stakeholders, and mitigate risks, such as removing unauthorized copies. Annual testing of initialization, shutdown, and abort scenarios must ensure system security.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IBP-034",
+    "descripcion": "The mobile health application system must evaluate application binaries to identify critical content or high popularity that may necessitate binary protection. For applications requiring such protection, a thorough threat modeling analysis must be conducted to identify relevant risks and their potential financial impact.",
+    "categoria": "IBP",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-001",
+    "descripcion": "The system must enforce secure default configurations for assets and software, minimizing permissions and restricting sensitive access.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-002",
+    "descripcion": "The system must ensure all security controls are centrally implemented and configuration settings are documented and monitored.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-003",
+    "descripcion": "The system must implement protections against Denial-of-Service (DoS) attacks, including rate limiting, throttling, and QoS technologies.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-004",
+    "descripcion": "The application must default to a secure state in the event of initialization, shutdown, or abort failures, ensuring no unintended access or exposure.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-005",
+    "descripcion": "The application must preserve critical information during a system failure to facilitate root cause analysis and ensure minimal disruption to operations upon recovery.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-006",
+    "descripcion": "The application must shut down or implement compensating controls upon audit system failure, ensuring continued compliance or secure operation.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-007",
+    "descripcion": "The application must incorporate redundancy mechanisms to ensure high availability in critical environments, mitigating single points of failure.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-008",
+    "descripcion": "The application must not modify or request operating system parameters unless essential for its functionality, and privileged access must be restricted and managed to prevent integrity issues or privilege escalation.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-009",
+    "descripcion": "The application must enforce execution policies to prevent unauthorized program execution and restrict privilege levels to the minimum necessary, in compliance with organizational policies and terms of software usage.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-010",
+    "descripcion": "The mobile application must not lock or restrict file permissions in a way that prevents the operating system or authorized backup tools from copying application files.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-011",
+    "descripcion": "The mobile application must not alter the file permissions of any files outside its scope of operation, ensuring it modifies only files dedicated to its own functionality.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-012",
+    "descripcion": "The application must prioritize the use of existing system-defined permissions to meet security requirements before defining new permissions.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-013",
+    "descripcion": "The application must adhere to the least privilege principle, requiring only the minimum set of permissions necessary for functionality while avoiding unnecessary or excessive permissions.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-014",
+    "descripcion": "The application must request only the minimum number of permissions strictly necessary for its core functionality, avoiding any unnecessary or non-essential permissions.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-015",
+    "descripcion": "The application must notify System Administrators and Information System Security Officers (ISSOs) of account lifecycle events, including creation, modification, enabling, disabling, and removal.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-016",
+    "descripcion": "The application must be designed to avoid requiring sensitive permissions by utilizing alternative methods, such as generating unique identifiers internally without accessing device information.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-017",
+    "descripcion": "The application must support dynamic permission management, enabling content providers to grant or revoke data access case-by-case and allowing secure, runtime permission additions when necessary.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-018",
+    "descripcion": "The mobile health application must minimize the use of dangerous-level permissions and avoid insecure file permissions, ensuring requests are clear and necessary to prevent user confusion or deterred installation.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-019",
+    "descripcion": "The mobile health application must prevent other applications or non-privileged processes from modifying its software libraries.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-020",
+    "descripcion": "The mobile health application must clear all cookies and user-tracking information upon termination to prevent unauthorized access or identity tracking.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-021",
+    "descripcion": "The mobile health application must utilize ports and protocols in alignment with organizational and DoD Ports, Protocols, and Services Management (DoD PPSM) guidelines.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-022",
+    "descripcion": "The mobile health application must synchronize its internal clocks with the authoritative time source provided by the Mobile Operating System (MOS).",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-023",
+    "descripcion": "The mobile health application must activate free security features offered by the toolchain, including byte-code minification, stack protection, Position Independent Executable (PIE) support, and automatic reference counting.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-024",
+    "descripcion": "The mobile health application must implement signature-level protection for private data, ensuring that only applications signed with the same developer key can access sensitive features or data.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-025",
+    "descripcion": "The mobile health application must verify the correct operation of security functions on system startup, restart, or upon command by a privileged user.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-026",
+    "descripcion": "The mobile health application must notify the ISSO (Information System Security Officer) and ISSM (Information System Security Manager) of any failed security verification tests.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-027",
+    "descripcion": "The mobile health application must alert administrators when low resource conditions, such as insufficient memory or CPU overload, are detected.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-028",
+    "descripcion": "Mobile health applications must declare new permissions in the app manifest using the <permission> element, ensuring proper reference and control by dependent applications.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-029",
+    "descripcion": "Each service class in mobile health applications must have a <service> declaration in the AndroidManifest.xml file, with explicitly defined accessibility attributes to prevent unintentional exposure to other applications.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-030",
+    "descripcion": "Mobile health applications must restrict access to services by using the android:permission attribute in the <service> declaration. For apps targeting Android 5.0 (API level 21) or higher, JobScheduler must be used instead of continuous background services to optimize resource usage and efficiency.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-031",
+    "descripcion": "Mobile health applications must explicitly manage export settings and permissions in the manifest to ensure sensitive services are not unintentionally exposed.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-032",
+    "descripcion": "Mobile health applications must restrict API key usage by applying IP address, app package name, or certificate fingerprint restrictions and monitor API usage for anomalies.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-033",
+    "descripcion": "Mobile health applications must implement regular API key rotation, adhering to ISO 27001 or similar standards, to reduce the risk of key exposure and unauthorized access.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-034",
+    "descripcion": "Mobile health applications must implement an automated key management system to rotate API keys at regular intervals, reducing human error and ensuring compliance with security policies.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-035",
+    "descripcion": "Mobile health applications must define and enforce an API key expiration policy to ensure keys are invalidated and replaced before expiration, reducing the risk of unauthorized access or misuse.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-036",
+    "descripcion": "Mobile health applications must implement notification and monitoring mechanisms to alert administrators before API key expiration, ensuring sufficient time for key rotation without service interruption.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-037",
+    "descripcion": "Mobile health applications must support the immediate revocation and replacement of compromised API keys.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-038",
+    "descripcion": "Mobile health applications must implement certificate pinning to restrict trusted certificates to a predefined set, ensuring secure communication with backend servers and mitigating risks from compromised Certificate Authorities.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-039",
+    "descripcion": "Mobile health applications must implement a streamlined API key revocation process to address security incidents or vulnerabilities, ensuring continuity of service by quickly issuing new keys.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-040",
+    "descripcion": "Mobile health applications must disable metadata publishing, such as WSDL documents, to prevent unintended exposure of sensitive service metadata.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-SMC-041",
+    "descripcion": "Mobile health applications must control the export status of services by explicitly setting android:exported attributes to define accessibility.",
+    "categoria": "SMC",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-001",
+    "descripcion": "The mobile health application must ensure secure audit logging for all access, updates, or overrides of PHI. This includes logging user interactions with patient records, consent directive overrides, and access to locked or masked data. Logs must remain operational and accessible whenever the system is in use.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-002",
+    "descripcion": "The mobile health application must ensure audit logs are retained for a period determined by clinical and legal standards, enabling after-the-fact investigation of security incidents. Additionally, the system must provide reporting capabilities to support these investigations.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-003",
+    "descripcion": "The mobile health application must implement user audit controls that log the user's unique identifier, data subject identifier, performed function, and timestamp for all actions involving sensitive data.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-004",
+    "descripcion": "The mobile health application must generate audit records that log the start and end times of each user session to ensure accurate tracking of user activity.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-005",
+    "descripcion": "The mobile health application must implement centralized audit logging with time-stamped correlation, unique application identifiers, and configurable log content to ensure comprehensive and secure audit record aggregation.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-006",
+    "descripcion": "The mobile health application must off-load audit records to a separate system or media at scheduled intervals, ensuring secure and reliable log storage..",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-007",
+    "descripcion": "The mobile health application must provide immediate warnings to system administrators (SA) and Information System Security Officers (ISSO) when the audit record storage reaches 75% of its maximum capacity.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-008",
+    "descripcion": "The mobile health application must provide real-time alerts to system administrators (SA) and Information System Security Officers (ISSO) for all audit failure events, ensuring immediate notification when the audit system is at risk of failure or has failed.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-009",
+    "descripcion": "The mobile health application must initiate session auditing immediately upon startup, ensuring all application events are logged from the start of the session.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-010",
+    "descripcion": "The mobile health application must generate audit records for any instance of concurrent logons from different devices or workstations, ensuring detailed tracking of such activities.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-011",
+    "descripcion": "The mobile health application must log all shutdown events in the event logs to ensure comprehensive audit trail coverage.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-012",
+    "descripcion": "The mobile health application must generate and log audit records for all successful and unsuccessful logon attempts, and raise security events for detected log-on breaches.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-013",
+    "descripcion": "The mobile health application must generate and log audit records for privileged activities and system-level access events.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-014",
+    "descripcion": "The mobile health application must generate audit records for both successful and unsuccessful attempts to grant user privileges.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-015",
+    "descripcion": "The mobile health application must generate audit records for both successful and unsuccessful attempts to access security or application objects.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-016",
+    "descripcion": "The mobile health application must generate audit records for both successful and unsuccessful attempts to modify security objects.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-017",
+    "descripcion": "The mobile health application must generate audit records for successful and unsuccessful attempts to delete database security objects.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-018",
+    "descripcion": "The mobile health application must generate audit records for successful and unsuccessful attempts to access security levels.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-019",
+    "descripcion": "The mobile health application must generate audit records for all successful and unsuccessful attempts to modify security levels.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-020",
+    "descripcion": "The mobile health application must generate audit records for all successful and unsuccessful attempts to access protected categories of information, such as classification levels.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-021",
+    "descripcion": "The mobile health application must generate audit records for all successful and unsuccessful attempts to modify protected categories of information, such as classification levels.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-022",
+    "descripcion": "The mobile health application must generate audit records for all successful and unsuccessful attempts to delete protected categories of information, such as classification levels.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-023",
+    "descripcion": "The mobile health application must generate audit records for all successful and unsuccessful attempts to delete security levels.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-024",
+    "descripcion": "The mobile health application must generate audit records for both successful and unsuccessful attempts to modify privileges.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-025",
+    "descripcion": "The mobile health application must log the destination IP addresses for all connections made by the application.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-026",
+    "descripcion": "The mobile health application must log user actions involving data access and changes, specifying the data elements accessed or modified and the corresponding user actions.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-027",
+    "descripcion": "The mobile health application must log all successful and unsuccessful attempts to delete user privileges.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-028",
+    "descripcion": "The mobile health application must generate detailed and time-synchronized audit records containing event type, date and time, user identity, and associated outcomes for security and accountability.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-029",
+    "descripcion": "The mobile health application must automatically log all account lifecycle actions, including creation, modification, enabling, disabling, and removal, capturing account name, event type, and timestamp.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-030",
+    "descripcion": "The mobile health application must log all configuration changes, capturing details of the user account making the change, event type, and timestamp.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-031",
+    "descripcion": "The mobile health application must securely log all accesses, modifications, or archiving of personal health information (PHI), ensuring accountability and non-repudiation for all user interactions.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-032",
+    "descripcion": "The mobile health application must enforce strict access controls for configuration settings, ensuring only authorized users can modify or view application configurations.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-033",
+    "descripcion": "The mobile health application must utilize transaction recovery logs for all database operations, ensuring the ability to restore data integrity in the event of failure or rollback.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-034",
+    "descripcion": "The mobile health application must retain historical records of personal health information updates, including the original data, changes made, and associated audit details such as user identity and timestamps.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-035",
+    "descripcion": "The mobile health application must implement an emergency access procedure to allow authorized access to electronic protected health information (ePHI) during emergencies.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-036",
+    "descripcion": "The mobile health application must maintain a transmission log for messages containing personal health information (PHI), recording metadata such as time, date, origin, and destination, while excluding message content.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-037",
+    "descripcion": "The mobile health application must implement organization-defined data mining detection techniques to monitor and safeguard data storage objects from unauthorized data mining attempts.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-038",
+    "descripcion": "The mobile health application must include facilities for analyzing logs and audit trails to identify users who have accessed or modified patient records, as well as patients whose records were accessed by specific users, within a defined time frame.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-039",
+    "descripcion": "The mobile health application must include an audit reduction capability for on-demand reporting, real-time review, and forensic investigations, supporting both centralized and local audit log analysis.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-040",
+    "descripcion": "Ensure the mobile health application provides an audit reduction and reporting capability that preserves the original content and time ordering of audit records.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-041",
+    "descripcion": "Ensure the mobile health application provides filtering capabilities for audit records, enabling event searches based on organization-defined criteria.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-042",
+    "descripcion": "Ensure the mobile health application employs cryptographic mechanisms to protect the integrity of audit logs, preventing tampering or unauthorized modifications.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-043",
+    "descripcion": "The mobile health application must safeguard audit tools and audit logs from unauthorized deletion by implementing access controls and role-based permissions.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-044",
+    "descripcion": "The mobile health application must safeguard audit tools and audit logs from unauthorized deletion by implementing access controls and role-based permissions.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-045",
+    "descripcion": "The mobile health application must secure access to audit logs and tools by implementing cryptographic hashing, tamper-proof storage, and access safeguards to prevent misuse or compromise.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-046",
+    "descripcion": "The mobile health application must implement automated backup processes to securely copy audit records to a separate system or storage component at least every seven days, in compliance with organizational policies and risk-level guidelines.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-047",
+    "descripcion": "The mobile health application must implement a process to validate the integrity of audit tools by periodically verifying their cryptographic hash values to detect and prevent tampering.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-048",
+    "descripcion": "The mobile health application must ensure that during the uninstallation process, all confidential user data, including health information and app-specific credentials, is securely deleted from the device, storage media, and execution environment.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-049",
+    "descripcion": "The mobile health application must store configuration and control files in a directory separate from user data to enhance security and prevent unauthorized access to application settings.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-050",
+    "descripcion": "The mobile health application must ensure the confidentiality and integrity of stored information by implementing approved cryptographic mechanisms to protect sensitive data elements at rest, in compliance with DoD policy and data owner requirements.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-051",
+    "descripcion": "The mobile health application must prevent the use of insecure cached data in HTTP connections and embedded web browsing components, such as WebViews, by ensuring cache storage is secure and not tampered with.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-052",
+    "descripcion": "The mobile health application must support remote wipe and kill switch capabilities to securely remove sensitive data in case of theft or loss of the device.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-053",
+    "descripcion": "Incorporate an application-specific \"data kill switch\" feature to securely delete sensitive data associated with the mobile health application, ensuring strong user authentication to prevent misuse.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-054",
+    "descripcion": "Ensure the mobile health application does not store sensitive information in hidden fields or embed authentication data in any code, configuration files, or other files.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-055",
+    "descripcion": "Ensure that sensitive data stored by the mobile health application is encrypted and protected based on its classification and retained only for the duration necessary for its functionality.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-056",
+    "descripcion": "Ensure the mobile health application securely deletes all cached data upon termination to prevent sensitive information exposure.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-057",
+    "descripcion": "Ensure the mobile health application removes all temporary files upon termination to prevent unauthorized access to sensitive data.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-058",
+    "descripcion": "Ensure the mobile health application restricts the upload of files to only those of secure and approved types, implementing validation and processing controls to mitigate risks associated with dangerous file types.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-059",
+    "descripcion": "Ensure that database files containing sensitive data, such as iOS WebView caches, are securely and completely removed from the file system to prevent residual data exposure.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-060",
+    "descripcion": "Ensure the mobile application does not write data to persistent memory that is accessible to other applications to prevent unauthorized data access or leakage.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-061",
+    "descripcion": "The mobile health application must ensure correct handling of electronic health records (EHR). It must uniquely identify records and provide functionality to merge multiple records for the same patient/person, ensuring seamless consolidation of unintentional duplicates.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-062",
+    "descripcion": "The mobile health application must ensure protection Against Tampered Executables.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-063",
+    "descripcion": "Sensitive data must never be stored in publicly accessible locations, as external storage is globally readable, writable, and modifiable by other applications.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-064",
+    "descripcion": "The mobile health application must implement monitoring mechanisms to oversee all data interactions with external storage. Only non-sensitive and validated data may be written to or read from external storage to maintain application security and integrity.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-065",
+    "descripcion": "The mobile health application must implement hardware, software, and procedural mechanisms to log and monitor all activities within systems that process or access electronic protected health information (ePHI).",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-066",
+    "descripcion": "The mobile health application must utilize internal storage for storing sensitive data wherever feasible. This approach eliminates the dependency on external storage and reduces the need for storage-related permissions, enhancing the security of sensitive information",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-067",
+    "descripcion": "The mobile health application must utilize content providers for securely sharing data with other app processes. Content providers must implement fine-grained, controlled read and write permissions, ensuring the secure exchange of data while preventing unauthorized access or misuse.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-068",
+    "descripcion": "The mobile health application must enforce secure practices for accessing content providers. All data handling operations, including reading and writing data, must mitigate potential security threats such as unauthorized access and data manipulation.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-069",
+    "descripcion": "For mobile health applications, content providers must use the android:exported attribute to control external access. If a content provider is not intended to be accessed by other applications, the android:exported attribute in the manifest must be set to false. For cases where external access is required, the attribute must be set to true, ensuring proper data sharing while maintaining security.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-070",
+    "descripcion": "Permissions must align with the principle of least privilege, ensuring access is limited to the minimum necessary for the task. Additional permissions may be extended only when explicitly required.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-071",
+    "descripcion": "Mobile health applications must restrict data access to authorized applications as defined by predefined permissions. Shared data files must not be globally accessible. Access should be granted only to applications or entities with the appropriate private and corresponding public keys, ensuring secure and controlled data sharing.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-072",
+    "descripcion": "Mobile health applications must not retain sensitive data in memory for longer than necessary. Sensitive data must be explicitly cleared from memory after its use to reduce the risk of unauthorized access or memory dumps.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-073",
+    "descripcion": "Mobile health applications must utilize secure system credential storage facilities to safeguard sensitive data, including user credentials and cryptographic keys. The application should leverage industry-standard key management practices, storing data using tools like Credential Manager or equivalent secure mechanisms, and avoiding direct storage of sensitive data such as passwords on the device.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-074",
+    "descripcion": "Mobile health applications must implement encryption and decryption mechanisms for all electronic protected health information (ePHI) stored on client devices or transmitted through the application.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-075",
+    "descripcion": "Mobile health applications must ensure that the \"Remember Me\" functionality does not store user passwords on the device. Instead, secure mechanisms such as short-lived tokens or encrypted identifiers should be used to maintain session persistence without compromising the user's credentials.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-076",
+    "descripcion": "API keys and encryption keys used within mobile health applications must not be embedded directly in the source code to prevent exposure through reverse engineering or decompilation. Instead, they must be securely stored using operating system-provided mechanisms, such as the Android Keystore or iOS Keychain.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-077",
+    "descripcion": "Cryptographic keys and user credentials must be securely managed throughout their lifecycle, including generation, storage, transmission, and rotation. Keys must be stored using secure OS-provided mechanisms such as KeyStore or Keychain.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-078",
+    "descripcion": "Applications must utilize platform-provided key-store mechanisms (e.g., Android Keystore, iOS Keychain) at the highest supported security level. Keys and sensitive data must be protected using device passcodes, configured to remain inaccessible when the device is locked.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-079",
+    "descripcion": "Sensitive data must be classified appropriately, stored using file encryption APIs provided by the operating system, and protected by device-level security mechanisms like unlock codes.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-080",
+    "descripcion": "Applications must leverage hardware-level encryption to secure files, utilizing the highest supported security level provided by the device. Application files must be configured to remain protected after the device is locked to ensure data confidentiality.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-081",
+    "descripcion": "Applications must prioritize the use of platform-provided framework functionalities, such as Android Content Providers, for data sharing. Avoid using file system permissions or custom access schemes for managing shared data.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-082",
+    "descripcion": "Applications must prevent interpreted code from directly accessing user data and encrypted storage. Implement strict isolation and controlled access mechanisms to ensure that interpreted code cannot bypass security controls or interact with sensitive data storage areas.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-083",
+    "descripcion": "Applications must avoid using deprecated file modes such as MODE_WORLD_WRITEABLE and MODE_WORLD_READABLE for IPC files to prevent uncontrolled access to sensitive data. Additionally, sensitive IPC must not rely on localhost network ports, which can be accessed by other apps on the device.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-IDS-084",
+    "descripcion": "The application must implement and maintain robust data recovery practices to restore critical enterprise assets, including sensitive health data, to a pre-incident and trusted state. This includes establishing secure and reliable mechanisms for data backup, encryption, and restoration processes.",
+    "categoria": "IDS",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-001",
+    "descripcion": "The mobile application must implement NIST-approved or NSA-approved key management technologies and processes for the production, control, and distribution of asymmetric cryptographic keys. The system must utilize PKI Class 3 or Class 4 certificates and, where applicable, hardware tokens to safeguard private keys. Prepositioned keying materials or approved PKI certificates must be employed to meet recognized cryptographic security standards.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-002",
+    "descripcion": "The mobile application must utilize NIST-approved or NSA-approved key management technologies and processes for the production, control, and distribution of symmetric cryptographic keys. These technologies must ensure robust encryption standards and secure key lifecycle management, including generation, storage, rotation, and destruction..",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-003",
+    "descripcion": "The application must store passwords only in cryptographic representations, using secure hashing algorithms and salting mechanisms to protect against unauthorized access. Passwords must never be stored in plain text or reversible encrypted formats.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-004",
+    "descripcion": "The application must implement salting for all password hashing processes, using strong and unique random salts for each password. Salts must be securely generated and stored alongside cryptographic hash values, ensuring robust protection against precomputed or rainbow table attacks.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-005",
+    "descripcion": "The application must employ Key Derivation Functions (KDFs), such as PBKDF2, bcrypt, or scrypt, for password hashing. These functions must include mechanisms like iteration counts and adaptive work factors to enhance security against brute-force attacks and ensure secure derivation of cryptographic keys from user passwords.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-006",
+    "descripcion": "The application must implement NSA-approved cryptographic mechanisms to protect classified information and comply with applicable federal laws, directives, and industry standards. It must utilize FIPS-validated cryptographic modules for encryption, authentication, and signing application components.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-007",
+    "descripcion": "The application must use FIPS-validated cryptographic modules for generating cryptographic hashes. All hash generation must be performed using FIPS-validated algorithms, ensuring compliance with federal standards for cryptographic security.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-008",
+    "descripcion": "The application must implement NIST FIPS-validated cryptographic mechanisms for generating digital signatures, cryptographic hashes, and ensuring confidentiality of sensitive data in compliance with federal regulations.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-009",
+    "descripcion": "The application must establish and manage cryptographic keys according to defined key management requirements, ensuring secure generation, distribution, storage, access, and destruction.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-010",
+    "descripcion": "The application must encrypt all messages when the SessionIndex is associated with privacy data to safeguard sensitive information during transmission and mitigate risks of unauthorized access or interception.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-011",
+    "descripcion": "The application must implement robust validation and authentication mechanisms to verify the integrity and authenticity of all parties involved in the encryption process.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-012",
+    "descripcion": "The application must verify during the first run that no other application has previously requested the same custom permissions, particularly on platforms older than Android 5.0. This ensures that the permissions are securely associated with the intended application and are not subject to unauthorized access or conflict.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-013",
+    "descripcion": "The application must adhere to the domain name registration infrastructure when declaring custom permissions to prevent collisions or conflicts with permissions declared by other applications.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-014",
+    "descripcion": "The application must restrict access to its components, such as Activities, Services, and Content Providers, ensuring that only authorized applications can start or interact with them. This must be implemented using strict permissions and access controls.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-015",
+    "descripcion": "The application must disable device identifiers after 35 days of inactivity unless cryptographic certificates, such as PKI credentials, are used for authentication.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-016",
+    "descripcion": "The application must use standard cryptographic algorithms provided by the platform, such as AES, RSA, or ECC, through validated cryptographic libraries or frameworks. Avoid the implementation of custom cryptographic algorithms or the use of deprecated cryptographic protocols and ensure compliance with industry-recommended practices for encryption and decryption processes.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-017",
+    "descripcion": "The application must implement Advanced Encryption Standard (AES) for encrypting sensitive data, such as Protected Health Information (PHI). AES encryption must utilize 256-bit keys where supported. If 256-bit AES is unavailable, fallback to 128-bit AES encryption, ensuring compliance with secure cryptographic practices.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-018",
+    "descripcion": "The application must implement Advanced Encryption Standard (AES) for all sensitive data encryption, prioritizing 256-bit keys for robust security. If 256-bit AES is unavailable, the system must fallback to 128-bit AES encryption to maintain secure data protection.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-019",
+    "descripcion": "The application must use the appropriate block cipher mode for encryption based on the context of use. For general encryption, Cipher Block Chaining (CBC) or Galois/Counter Mode (GCM) must be implemented. For streaming data, Counter (CTR) mode is recommended, ensuring no reuse of initialization vectors (IVs) or counters to maintain security.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-020",
+    "descripcion": "The application must not rely solely on symmetric cryptography with hardcoded keys for encryption. Instead, implement secure key management practices, such as dynamically generating or securely retrieving keys at runtime, to enhance the cryptographic security of the application.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-021",
+    "descripcion": "The application must ensure that cryptographic keys are not reused for multiple purposes, such as encrypting data and signing messages. Separate cryptographic keys must be utilized for distinct cryptographic operations to maintain security and prevent key misuse.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-022",
+    "descripcion": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
+    "categoria": "ICR",
+    "controles": []
+  },
+  {
+    "puid": "SECM-CAT-ICR-023",
+    "descripcion": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
+    "categoria": "ICR",
+    "controles": []
   }
 ]
