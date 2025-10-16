@@ -1,0 +1,8 @@
+[
+  {
+    "puid": "SECM-CAT-ISU-001",
+    "descripcion": "Las contraseñas de la API se deben rotar cada 90 días",
+    "categoria": "ISU",
+    "controles": ["STIG", "IEC 62443"]
+  }
+]
