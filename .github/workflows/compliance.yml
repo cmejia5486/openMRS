@@ -1,0 +1,50 @@
+name: Compliance Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --no-cache-dir opa-client
+
+      - name: Collect system data
+        run: |
+          # Placeholder script to collect system data
+          python scripts/recolectar_datos.py
+
+      - name: Run OPA tests
+        run: |
+          # Run OPA tests in the policies directory
+          opa test policies/ -v
+          # Evaluate policies against collected data
+          opa eval --format json -i input.json -d policies/ "data.secmcat.violation"
+
+      - name: Upload compliance report
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-report
+          path: report/
+
+      - name: Comment on pull request
+        if: failure() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: "❌ Cumplimiento fallido. Consulte el reporte adjunto."
