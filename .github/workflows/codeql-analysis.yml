@@ -26,22 +26,8 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-      # Attempt to build the project. Use Maven if available, otherwise try Gradle. Adjust as needed for your project.
-      - name: Build project
-        run: |
-          if [ -f "pom.xml" ]; then
-            mvn -B clean package -DskipTests
-          elif [ -f "gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew build
-          else
-            echo "No recognized build file found, skipping build step."
-          fi
+              build-mode: none
+            languages: ${{ matrix.language }}
+   
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
