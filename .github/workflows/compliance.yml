@@ -14,35 +14,32 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
       - name: Install dependencies
         run: |
           pip install --no-cache-dir opa-client
-
+          # Install OPA CLI
+          curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+          chmod +x opa
+          sudo mv opa /usr/local/bin/
       - name: Collect system data
         run: |
-          # Placeholder script to collect system data
           python scripts/recolectar_datos.py
-
       - name: Run OPA tests
         run: |
           # Run OPA tests in the policies directory
           opa test policies/ -v
-          # Evaluate policies against collected data
-          opa eval --format json -i input.json -d policies/ "data.secmcat.violation"
-
+          # Evaluate policies against collected data and requirements
+          opa eval --format json -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation"
       - name: Upload compliance report
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: compliance-report
           path: report/
-
       - name: Comment on pull request
         if: failure() && github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
