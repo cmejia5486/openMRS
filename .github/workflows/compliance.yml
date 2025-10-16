@@ -1,5 +1,4 @@
 name: Compliance Check
-
 on:
   push:
     branches: [ main ]
@@ -14,10 +13,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+
       - name: Install dependencies
         run: |
           pip install --no-cache-dir opa-client
@@ -25,20 +26,27 @@ jobs:
           curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
           chmod +x opa
           sudo mv opa /usr/local/bin/
+
       - name: Collect system data
         run: |
           python scripts/recolectar_datos.py
+
+      - name: Run OPA tests
+        run: |
+          # Run OPA tests in the policies directory
+          opa test policies/ -v
+
       - name: Run OPA evaluation
         run: |
-          # Run OPA tests and evaluation
-          opa test policies/ -v
+          # Evaluate policies against collected data and requirements
           opa eval --format json -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation"
+
       - name: Upload compliance report
-        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: compliance-report
           path: report/
+
       - name: Comment on pull request
         if: failure() && github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
