@@ -36,7 +36,7 @@ jobs:
           opa eval --format json -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation"
       - name: Upload compliance report
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compliance-report
           path: report/
