@@ -41,7 +41,7 @@ jobs:
           $report | ConvertTo-Json -Depth 100 | Out-File mobsf_results.json -Encoding utf8
 
       - name: Upload MobSF results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mobsf-report
           path: mobsf_results.json
