@@ -27,7 +27,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
               build-mode: none
-            languages: ${{ matrix.language }}
+             languages: ${{ matrix.language }}
    
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
