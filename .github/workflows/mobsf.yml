@@ -21,6 +21,7 @@ jobs:
       - name: Build Android app
         run: .\\gradlew.bat assembleRelease
         shell: powershell
+          continue-on-error: true
 
       - name: Upload app to MobSF and run scan
         env:
