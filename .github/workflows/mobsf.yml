@@ -1,0 +1,59 @@
+name: Mobile Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  mobsf_scan:
+    # Runs on a self‑hosted runner with the label "mobsf" so it can access the local MobSF instance.
+    runs-on: [self-hosted, mobsf]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Java environment to build the Android app. Adjust the version as needed.
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      # Build the Android application. Replace this command if your project uses a different build system.
+      - name: Build Android app
+        run: ./gradlew assembleRelease
+
+      # Install utilities like jq for JSON parsing. On a self‑hosted runner these packages can be installed via apt.
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      # Upload the generated APK to the MobSF server, trigger the scan and download the JSON report.
+      - name: Scan APK with MobSF
+        env:
+          MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
+        run: |
+          # Locate the release APK produced by the build. Modify the pattern if necessary.
+          APK_PATH=$(find . -type f -name "*.apk" | head -n 1)
+          echo "Using APK: $APK_PATH"
+          # Upload the APK to MobSF and capture the returned hash.
+          SCAN_RESPONSE=$(curl -s -F "file=@${APK_PATH}" -H "Authorization: ${MOBSF_API_KEY}" http://localhost:8000/api/v1/upload)
+          SCAN_HASH=$(echo "$SCAN_RESPONSE" | jq -r '.hash')
+          echo "Scan hash: $SCAN_HASH"
+          # Trigger the scan using the obtained hash.
+          curl -s -H "Authorization: ${MOBSF_API_KEY}" -H "Content-Type: application/json" \
+            -d "{\"scan_type\":\"apk\",\"hash\":\"${SCAN_HASH}\",\"re_scan\":false}" \
+            http://localhost:8000/api/v1/scan
+          # Download the JSON report.
+          curl -s -H "Authorization: ${MOBSF_API_KEY}" \
+            "http://localhost:8000/api/v1/report_json?hash=${SCAN_HASH}" \
+            -o mobsf_results.json
+
+      # Upload the MobSF scan results as an artifact for later review.
+      - name: Upload MobSF results
+        uses: actions/upload-artifact@v3
+        with:
+          name: mobsf-report
+          path: mobsf_results.json
