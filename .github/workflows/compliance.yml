@@ -28,12 +28,14 @@ jobs:
       - name: Collect system data
         run: |
           python scripts/recolectar_datos.py
-      - name: Run OPA evaluation and save report
-        run: |
-          # Create report directory
-          mkdir -p report
-          # Evaluate policies against collected data and requirements and save human readable output
-          opa eval --format pretty -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation" > report/compliance_output.txt
+  - name: Run OPA evaluation and save report
+    run: |
+      # Wrap requisitos JSON in object if it's an array
+      python -c "import json; f='requirements/requisitos.json'; data=json.load(open(f)); json.dump({'requisitos': data} if isinstance(data, list) else data, open(f, 'w'))"
+      # Create report directory
+      mkdir -p report
+      # Evaluate policies against collected data and requirements and save human readable output
+      opa eval --format pretty -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation" > report/compliance_output.txtlation" > report/compliance_output.txt
       - name: Upload compliance report
         uses: actions/upload-artifact@v4
         with:
