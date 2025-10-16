@@ -85,8 +85,8 @@ android {
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
         //Mockito
-        testImplementation "org.mockito:mockito-core:5.2.0"
-        testImplementation "org.mockito:mockito-core:2.19.0"
+        testImplementation "org.mockito:mockito-core:5.20.0"
+        testImplementation "org.mockito:mockito-core:5.20.0"
 
         //mockK library
         testImplementation "io.mockk:mockk:1.11.0"
