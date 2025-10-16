@@ -8,9 +8,6 @@ on:
 jobs:
   mobsf_scan:
     runs-on: [self-hosted, mobsf]
-    defaults:
-      run:
-        shell: pwsh
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -22,7 +19,8 @@ jobs:
           java-version: '11'
 
       - name: Build Android app
-        run: .\gradlew.bat assembleRelease
+        run: .\\gradlew.bat assembleRelease
+        shell: powershell
 
       - name: Upload app to MobSF and run scan
         env:
@@ -36,9 +34,9 @@ jobs:
           $hash = $uploadResponse.hash
           Write-Host "Scan hash: $hash"
           $scanBody = @{ scan_type = "apk"; hash = $hash; re_scan = $false } | ConvertTo-Json
-          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" -Headers @{Authorization=$env:MOBSF_API_KEY; 'Content-Type'='application/json'} -Method Post -Body $scanBody
-          $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json?hash=$hash" -Headers @{Authorization=$env:MOBSF_API_KEY} -Method Get
-          $report | ConvertTo-Json -Depth 100 | Out-File mobsf_results.json -Encoding utf8
+          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" -Headers @{Authorization=$env:MOBSF_API_KEY; 'Content-Type' = 'application/json'} -Method Post -Body $scanBody
+          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json?hash=$hash" -Headers @{Authorization=$env:MOBSF_API_KEY} -OutFile mobsf_results.json
+        shell: powershell
 
       - name: Upload MobSF results
         uses: actions/upload-artifact@v4
