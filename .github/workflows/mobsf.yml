@@ -7,7 +7,7 @@ on:
 
 jobs:
   mobsf_scan:
-    runs-on: [self-hosted, mobsf]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
