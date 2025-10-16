@@ -25,7 +25,7 @@ jobs:
 
       - name: Upload app to MobSF and run scan
         env:
-          MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
+             MOBSF_API_KEY: 36086c20a8726eeba91cc8be240e45a7207d6b32765957e623b0a9da54dadd12
         continue-on-error: true
         shell: powershell
         run: |
