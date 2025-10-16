@@ -28,15 +28,14 @@ jobs:
       - name: Collect system data
         run: |
           python scripts/recolectar_datos.py
-      - name: Run OPA tests
+      - name: Run OPA evaluation
         run: |
-          # Run OPA tests in the policies directory
+          # Run OPA tests and evaluation
           opa test policies/ -v
-          # Evaluate policies against collected data and requirements
           opa eval --format json -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation"
-      - name: Upload com4liance report
-           uses: actions/upload-artifact@v4
-        
+      - name: Upload compliance report
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
           name: compliance-report
           path: report/
