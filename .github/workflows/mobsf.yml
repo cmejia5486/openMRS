@@ -7,7 +7,7 @@ on:
 
 jobs:
   mobsf_scan:
-    runs-on: self-hosted        # Usa el runner auto‑hospedado
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -45,13 +45,12 @@ jobs:
           $uploadResponse = $uploadResult | ConvertFrom-Json
           $hash = $uploadResponse.hash
           Write-Host "Scan hash: $hash"
-          # Iniciar el análisis (sin re_scan, que causaba 422)
+          # Iniciar el análisis (especificar Content-Type para evitar 422)
           $scanBody = @{ scan_type = 'apk'; hash = $hash }
           Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" `
             -Method Post `
-            -Headers @{ Authorization = $apiKey } `
-            -Body ($scanBody | ConvertTo-Json) `
-            -ContentType 'application/json'
+            -Headers @{ Authorization = $apiKey; "Content-Type" = "application/json" } `
+            -Body ($scanBody | ConvertTo-Json)
           # Descargar el reporte JSON y guardarlo
           $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json?hash=$hash" `
             -Method Get `
