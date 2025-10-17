@@ -1,10 +1,3 @@
-name: Mobile Security Scan
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-
 jobs:
   mobsf_scan:
     runs-on: self-hosted
@@ -35,26 +28,30 @@ jobs:
             Write-Error "APK file not found. Please ensure the build step produced an APK."
             exit 1
           }
-          # Preparar claves y ruta
+          # Preparar variables
           $apkPath = $apkFile.FullName
           $apiKey  = $env:MOBSF_API_KEY
-          # Subir el APK a MobSF usando multipart/form-data
+
+          # 1. Subir el APK (multipart/form-data)
           $uploadResult = curl.exe -s -X POST "http://localhost:8000/api/v1/upload" `
             -H "Authorization: $apiKey" `
             -F "file=@$apkPath"
           $uploadResponse = $uploadResult | ConvertFrom-Json
           $hash = $uploadResponse.hash
           Write-Host "Scan hash: $hash"
-          # Iniciar el análisis (especificar Content-Type para evitar 422)
-          $scanBody = @{ scan_type = 'apk'; hash = $hash }
+
+          # 2. Iniciar el análisis: solo enviamos hash en formulario
           Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" `
             -Method Post `
-            -Headers @{ Authorization = $apiKey; "Content-Type" = "application/json" } `
-            -Body ($scanBody | ConvertTo-Json)
-          # Descargar el reporte JSON y guardarlo
-          $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json?hash=$hash" `
-            -Method Get `
-            -Headers @{ Authorization = $apiKey }
+            -Headers @{ Authorization = $apiKey } `
+            -Body @{ hash = $hash }
+
+          # 3. Descargar el reporte JSON mediante POST con el hash
+          $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json" `
+            -Method Post `
+            -Headers @{ Authorization = $apiKey } `
+            -Body @{ hash = $hash }
+
           $report | ConvertTo-Json | Set-Content mobsf_results.json
 
       - name: Upload MobSF results
