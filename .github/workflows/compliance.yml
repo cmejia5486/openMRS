@@ -2,11 +2,11 @@ name: Compliance Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]        # ejecuta la auditoría en cada commit a main
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 0 * * 1'
+    - cron: '0 0 * * 1'       # auditoría semanal (opcional)
 
 jobs:
   compliance:
@@ -20,13 +20,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install dependencies and tools
         run: |
           pip install --no-cache-dir opa-python-client
-          # Install OPA CLI
+          # Instalar la CLI de OPA
           curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
-          chmod +x opa
-          sudo mv opa /usr/local/bin/
+          chmod +x opa && sudo mv opa /usr/local/bin/
+          # Instalar pandoc para generar PDF
+          sudo apt-get update -y && sudo apt-get install -y pandoc
 
       - name: Collect system data
         run: |
@@ -37,27 +38,37 @@ jobs:
           python - <<'PY'
           import json
           f = 'requirements/requisitos.json'
-          with open(f) as fh:
+          with open(f, encoding='utf-8') as fh:
             data = json.load(fh)
-          # Si el JSON es un array, lo envuelve bajo la clave 'requisitos'
+          # Si el JSON es una lista, lo envuelve en un objeto { "requisitos": [...] }
           if isinstance(data, list):
-            with open(f, 'w') as out:
-              json.dump({'requisitos': data}, out)
+            with open(f, 'w', encoding='utf-8') as out:
+              json.dump({'requisitos': data}, out, ensure_ascii=False, indent=2)
           PY
 
       - name: Run OPA evaluation and save report
         run: |
           mkdir -p report
-          opa eval --format pretty -i input.json -d policies/ -d requirements/requisitos.json "data.secmcat.violation" > report/compliance_output.txt
+          # Ejecutar las políticas Rego (data.secmcat.violation lista los PUID en incumplimiento)
+          opa eval --format pretty \
+            -i input.json \
+            -d policies/ \
+            -d requirements/requisitos.json \
+            "data.secmcat.violation" > report/compliance_output.txt
 
-      - name: Upload compliance report
+      - name: Generate PDF report
+        run: |
+          pandoc report/compliance_output.txt -o report/compliance_output.pdf
+
+      - name: Upload compliance reports
         uses: actions/upload-artifact@v4
         with:
           name: compliance-report
           path: report/
 
-      - name: Comment on pull request
+      - name: Comment on pull request (optional)
         if: failure() && github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          message: "❌ Cumplimiento fallido. Consulte el reporte adjunto."
+          message: |
+            ❌ Cumplimiento fallido. Revisa el artefacto "compliance-report" para ver qué requisitos no se cumplieron.
