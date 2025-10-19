@@ -2,14 +2,7 @@ permissions:
   contents: write
   pull-requests: write
 
-name: AI Correlation
-
-# This workflow runs when other security workflows complete successfully.
-# It downloads their artifacts, invokes an AI assistant to correlate
-# findings against your security requirements checklist, and publishes
-# a summary report.  To enable this workflow, commit this file to
-# `.github/workflows/` in your repository and provide an `OPENAI_API_KEY`
-# secret in your repository settings.
+name: AI Correlation PR
 
 on:
   workflow_run:
@@ -17,22 +10,24 @@ on:
     types:
       - completed
 
-permissions:
-  contents: read
-  actions: read
-
 jobs:
-  correlate:
-    # only run if the triggering workflow completed successfully
-    if: github.event.workflow_run.conclusion == 'success'
+  ai-correlate:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Generate GitHub App token
+        id: app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          installation_id: ${{ secrets.APP_INSTALLATION_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      # Download artifacts from previous workflows. Adjust names to match
-      # the artifacts produced by your scanners (e.g. 'mobsf-report',
-      # 'reports-codeql', 'reports-trivy', 'compliance-report').
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -45,19 +40,29 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --no-cache-dir openai pandas
+          python -m pip install --no-cache-dir openai pandas sentence-transformers
 
-      - name: Run AI correlation
+      - name: Run AI correlate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python scripts/ai_correlate.py \
             --checklist requirements/checklist.json \
-            --reports reports \
-            --output report/ai_summary.md
+            --sarif reports/*.sarif \
+            --json reports/*.json \
+            --out-md reports/audit-summary.md \
+            --out-json reports/audit-findings.json
 
-      - name: Upload AI summary
-        uses: actions/upload-artifact@v4
+      - name: Create pull request with results
+        uses: peter-evans/create-pull-request@v6
         with:
-          name: ai-summary
-          path: report/
+          token: ${{ steps.app-token.outputs.token }}
+          branch: ai/bot-correlation
+          commit-message: "chore(ai): add correlated security findings"
+          title: "AI: Correlated security findings"
+          body: |
+            Automated correlation of security scans against SEC-CAT* checklist.
+            - Generated `reports/audit-summary.md`
+            - Produced `reports/audit-findings.json`
+          labels: ai, security
+          assignees: ${{ github.actor }}
