@@ -2,6 +2,7 @@
 """
 ai_correlate.py -- correlate security scan reports with a security requirements checklist
 
+
 Runs in CI after security scans complete. It reads a JSON checklist,
 parses JSON reports, and asks an OpenAI model to correlate findings
 to requirements and produce a Markdown summary.
