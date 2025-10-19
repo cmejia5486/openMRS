@@ -26,8 +26,9 @@ jobs:
           # Instalar la CLI de OPA
           curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
           chmod +x opa && sudo mv opa /usr/local/bin/
-          # Instalar pandoc para generar PDF
-          sudo apt-get update -y && sudo apt-get install -y pandoc
+          # Instalar pandoc y tectonic (motor PDF liviano)
+          sudo apt-get update -y
+          sudo apt-get install -y pandoc tectonic
 
       - name: Collect system data
         run: |
@@ -49,16 +50,19 @@ jobs:
       - name: Run OPA evaluation and save report
         run: |
           mkdir -p report
-          # Ejecutar las políticas Rego (data.secmcat.violation lista los PUID en incumplimiento)
           opa eval --format pretty \
             -i input.json \
             -d policies/ \
             -d requirements/requisitos.json \
             "data.secmcat.violation" > report/compliance_output.txt
 
-      - name: Generate PDF report
+      - name: Generate PDF report (pandoc + tectonic)
         run: |
-          pandoc report/compliance_output.txt -o report/compliance_output.pdf
+          # Opcional: convertir a Markdown para mejor formato
+          awk 'BEGIN{print "# Resultados de Compliance\n"}{print}' report/compliance_output.txt > report/compliance_output.md
+          pandoc report/compliance_output.md \
+            --pdf-engine=tectonic \
+            -o report/compliance_output.pdf
 
       - name: Upload compliance reports
         uses: actions/upload-artifact@v4
