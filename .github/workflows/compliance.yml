@@ -26,9 +26,13 @@ jobs:
           # Instalar la CLI de OPA
           curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
           chmod +x opa && sudo mv opa /usr/local/bin/
-          # Instalar pandoc y tectonic (motor PDF liviano)
+          # Instalar Pandoc + TeX Live (PDF engine: xelatex)
           sudo apt-get update -y
-          sudo apt-get install -y pandoc tectonic
+          sudo apt-get install -y pandoc \
+                                  texlive-latex-recommended \
+                                  texlive-latex-extra \
+                                  texlive-fonts-recommended \
+                                  texlive-xetex
 
       - name: Collect system data
         run: |
@@ -56,12 +60,14 @@ jobs:
             -d requirements/requisitos.json \
             "data.secmcat.violation" > report/compliance_output.txt
 
-      - name: Generate PDF report (pandoc + tectonic)
+      - name: Generate PDF report (pandoc + xelatex)
         run: |
-          # Opcional: convertir a Markdown para mejor formato
+          # Opcional: añadir encabezado y convertir a Markdown para mejor formato
           awk 'BEGIN{print "# Resultados de Compliance\n"}{print}' report/compliance_output.txt > report/compliance_output.md
           pandoc report/compliance_output.md \
-            --pdf-engine=tectonic \
+            --pdf-engine=xelatex \
+            -V mainfont="Latin Modern Roman" \
+            -V geometry:margin=1in \
             -o report/compliance_output.pdf
 
       - name: Upload compliance reports
