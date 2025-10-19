@@ -58,7 +58,7 @@ jobs:
       - name: Run AI correlation
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: o4-mini                 # ✅ reasoning/thinking oficial
+          OPENAI_MODEL: gpt-4o-mini                 # ✅ reasoning/thinking oficial
           OPENAI_REASONING_EFFORT: medium       # opcional: low|medium|high
           OPENAI_MAX_OUTPUT_TOKENS: "1500"      # opcional
         run: |
