@@ -57,7 +57,7 @@ def load_checklist(path: str) -> List[Dict[str, Any]]:
 def parse_reports(reports_dir: str) -> List[Any]:
     """Recursively load JSON reports from the given directory (only *.json)."""
     if not os.path.isdir(reports_dir):
-        # No reports directory—return empty list; the prompt manejará el caso.
+        # No reports directory—return empty list; the prompt will handle it.
         return []
     findings = []
     for root, _, files in os.walk(reports_dir):
@@ -117,7 +117,7 @@ def _call_openai_new_sdk(prompt: str, api_key: str, model: str, max_output_token
 
     # --- 1) Try Responses API ---
     try:
-        # Usamos un input 'string' para máxima compatibilidad (evitamos estructura con roles si el backend no la acepta).
+        # Use a single string input for broad compatibility.
         system_preamble = "You are a helpful security auditor."
         unified_input = system_preamble + "\n\n" + prompt
 
@@ -182,7 +182,6 @@ def _call_openai_legacy(prompt: str, api_key: str, model: str, max_output_tokens
 
 def call_openai(prompt: str, api_key: str) -> str:
     """Dispatch to new SDK (with Responses + fallback) or legacy SDK."""
-    # tokens
     try:
         max_output_tokens = int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "1500"))
     except ValueError:

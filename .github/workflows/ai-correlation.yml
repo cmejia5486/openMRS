@@ -14,7 +14,7 @@ on:
       - completed
 
 permissions:
-  actions: write           # ⬅️ necesario para download/upload de artifacts
+  actions: write        # necesario para download/upload de artifacts
   contents: write
   pull-requests: write
 
@@ -41,26 +41,30 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: reports
-          run-id: ${{ github.event.workflow_run.id }}        # ⬅️ toma artifacts del run que disparó este workflow
-          github-token: ${{ steps.app-token.outputs.token }} # ⬅️ usa tu GitHub App token
+          run-id: ${{ github.event.workflow_run.id }}        # artefactos del run que disparó este workflow
+          github-token: ${{ steps.app-token.outputs.token }} # usa tu GitHub App token
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install dependencies (OpenAI SDK nuevo)
         run: |
-          python -m pip install --no-cache-dir --upgrade pip
-          pip install "openai==0.28" pandas sentence-transformers
+          python -m pip install --upgrade pip setuptools wheel
+          pip uninstall -y openai || true
+          pip install --no-cache-dir --upgrade --force-reinstall "openai>=1.55.0" pandas sentence-transformers
 
       - name: Run AI correlation
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5-turbo            # modelo disponible en tu suscripción
+          OPENAI_REASONING_EFFORT: medium      # opcional: low|medium|high
+          OPENAI_MAX_OUTPUT_TOKENS: "1500"     # opcional
         run: |
           mkdir -p report
           python scripts/ai_correlate.py --checklist requirements/requisitos.json --reports reports --output report/audit-summary.md
-          # Duplicate the summary as JSON for compatibility (placeholder)
+          # Duplicado como "json" de compatibilidad (placeholder)
           cp report/audit-summary.md report/audit-findings.json || true
 
       - name: Upload AI reports
