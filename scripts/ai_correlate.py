@@ -13,7 +13,7 @@ Usage:
 
 Environment:
   OPENAI_API_KEY  (required)
-  OPENAI_MODEL                  (optional; SDK>=1.x default: gpt-5-turbo, legacy default: gpt-4)
+  OPENAI_MODEL                  (optional; default: o4-mini for reasoning; fallback: gpt-4o)
   OPENAI_REASONING_EFFORT       (optional; SDK>=1.x only; default: medium)  # low|medium|high
   OPENAI_MAX_OUTPUT_TOKENS      (optional; default: 1500)
 """
@@ -39,6 +39,9 @@ except Exception:
         print("ERROR: Could not import OpenAI SDK. Install either 'openai>=1.0.0' or 'openai==0.28'.", file=sys.stderr)
         print(f"Detail: {e}", file=sys.stderr)
         sys.exit(1)
+
+# Models where temperature is NOT supported (reasoning models).
+REASONING_MODELS = {"o4", "o4-mini", "o3", "o3-mini"}
 
 
 def load_checklist(path: str) -> List[Dict[str, Any]]:
@@ -110,24 +113,30 @@ def create_prompt(checklist: List[Dict[str, Any]], findings: List[Any]) -> str:
 def _call_openai_new_sdk(prompt: str, api_key: str, model: str, max_output_tokens: int, effort: str) -> str:
     """
     Preferred path for SDK >= 1.x.
-    1) Try Responses API
-    2) Fallback to Chat Completions (client.chat.completions.create)
+    - For reasoning models (o4, o4-mini, o3, ...): use Responses WITHOUT temperature.
+    - For general models (gpt-4o, gpt-4o-mini, ...): use Responses WITH temperature and allow Chat fallback.
     """
     client = OpenAIClient(api_key=api_key)
+    is_reasoning = model in REASONING_MODELS
 
-    # --- 1) Try Responses API ---
+    system_preamble = "You are a helpful security auditor."
+    unified_input = system_preamble + "\n\n" + prompt
+
+    # --- Responses API (primary path) ---
     try:
-        # Use a single string input for broad compatibility.
-        system_preamble = "You are a helpful security auditor."
-        unified_input = system_preamble + "\n\n" + prompt
-
-        resp = client.responses.create(
+        kwargs = dict(
             model=model,
             input=unified_input,
-            reasoning={"effort": effort},
             max_output_tokens=max_output_tokens,
-            temperature=0.3,
         )
+        if is_reasoning:
+            # Reasoning models don't accept temperature; include effort.
+            kwargs["reasoning"] = {"effort": effort}
+        else:
+            # Non-reasoning models can accept temperature.
+            kwargs["temperature"] = 0.3
+
+        resp = client.responses.create(**kwargs)
         text = getattr(resp, "output_text", None)
         if not text:
             # Best-effort stitching if output_text is missing
@@ -143,13 +152,15 @@ def _call_openai_new_sdk(prompt: str, api_key: str, model: str, max_output_token
                 text = ""
         if text:
             return text.strip()
-        # If we reach here, try fallback
+        responses_err = RuntimeError("Empty response text from Responses API.")
     except Exception as e_responses:
         responses_err = e_responses
-    else:
-        responses_err = None
 
-    # --- 2) Fallback: Chat Completions (still available in SDK >=1.x) ---
+    # If it's a reasoning model, don't fallback to Chat (muchas veces no existe el alias en Chat).
+    if is_reasoning:
+        raise RuntimeError(f"Responses failed for reasoning model '{model}': {responses_err}")
+
+    # --- Fallback: Chat Completions (solo para modelos no-reasoning, p.ej. gpt-4o) ---
     try:
         resp2 = client.chat.completions.create(
             model=model,
@@ -181,22 +192,24 @@ def _call_openai_legacy(prompt: str, api_key: str, model: str, max_output_tokens
 
 
 def call_openai(prompt: str, api_key: str) -> str:
-    """Dispatch to new SDK (with Responses + fallback) or legacy SDK."""
+    """Dispatch to new SDK (Responses primary; Chat fallback only if non-reasoning) or legacy SDK."""
     try:
         max_output_tokens = int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "1500"))
     except ValueError:
         max_output_tokens = 1500
 
+    # Default to a reasoning model if none provided.
+    model = os.getenv("OPENAI_MODEL", "o4-mini")
+    effort = os.getenv("OPENAI_REASONING_EFFORT", "medium")
+
     if HAVE_NEW_SDK and OpenAIClient is not None:
-        model = os.getenv("OPENAI_MODEL", "gpt-5-turbo")
-        effort = os.getenv("OPENAI_REASONING_EFFORT", "medium")
         return _call_openai_new_sdk(prompt, api_key, model, max_output_tokens, effort)
 
-    # Legacy default model
-    model = os.getenv("OPENAI_MODEL", "gpt-4")
+    # Legacy default (si alguien fija openai==0.28)
     if openai_legacy is None:
         raise RuntimeError("Legacy OpenAI SDK not available and new SDK import failed.")
-    return _call_openai_legacy(prompt, api_key, model, max_output_tokens)
+    legacy_model = os.getenv("OPENAI_MODEL", "gpt-4")
+    return _call_openai_legacy(prompt, api_key, legacy_model, max_output_tokens)
 
 
 def main() -> None:
