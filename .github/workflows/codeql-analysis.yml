@@ -22,7 +22,7 @@ jobs:
         language: [ 'java' ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -30,5 +30,18 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
 
-      - name: Perform CodeQL Analysis
+      # 1) Ejecuta CodeQL y escribe SARIF localmente (además de subir a Code Scanning)
+      - name: Perform CodeQL Analysis (write SARIF locally)
         uses: github/codeql-action/analyze@v3
+        with:
+          # Carpeta dentro del workspace para evitar rutas con ".."
+          output: ${{ github.workspace }}/codeql-sarif
+          # upload: 'always'  # (opcional; 'always' es el valor por defecto)
+
+      # 2) Publica los SARIF como artifact para que el job de IA los consuma
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: ${{ github.workspace }}/codeql-sarif/*.sarif
+          retention-days: 14
