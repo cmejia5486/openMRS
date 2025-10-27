@@ -18,7 +18,7 @@ jobs:
 
       # 1) Ejecuta Trivy y guarda salida JSON en disco (no rompe el job)
       - name: Run Trivy vulnerability scanner (JSON)
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: fs
           scan-ref: .
