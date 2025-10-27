@@ -7,7 +7,7 @@ on:
 
 jobs:
   mobsf_scan:
-    # Usa un runner Windows self-hosted (PowerShell + gradlew.bat)
+    # Runner Windows self-hosted (usa PowerShell y gradlew.bat)
     runs-on: [self-hosted, Windows]
     timeout-minutes: 45
 
@@ -29,7 +29,7 @@ jobs:
         shell: powershell
         run: .\gradlew.bat assembleRelease --stacktrace
 
-      - name: MobSF static & dynamic scan (produce JSONs)
+      - name: MobSF static scan (produce JSON)
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -85,42 +85,12 @@ jobs:
           # 4) Descargar reporte estático
           $staticReport = Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/report_json" -Method Post `
                            -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash }
-          $staticReport | ConvertTo-Json -Depth 100 | Set-Content mobsf_static_results.json -Encoding UTF8
+          $staticReport | ConvertTo-Json -Depth 100 | Set-Content mobsf_results.json -Encoding UTF8
 
-          # ---------- DYNAMIC (OPCIONAL) ----------
-          # Si ya corriste la dinámica en tu entorno, intenta obtener su JSON
-          $dynJsonPath = "mobsf_dynamic_results.json"
-          try {
-            # (Opcional) Cierra sesión dinámica antes de leer artefactos si aplica
-            try {
-              Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/dynamic/stop_analysis" -Method Post `
-                -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash } | Out-Null
-            } catch { }
-
-            $dyn = Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/dynamic/report_json" -Method Post `
-                    -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash }
-            if ($dyn) {
-              $dyn | ConvertTo-Json -Depth 100 | Set-Content $dynJsonPath -Encoding UTF8
-              Write-Host "Dynamic report guardado en $dynJsonPath"
-            } else {
-              Write-Host "No se obtuvo reporte dinámico (posible que no se haya ejecutado la dinámica)."
-            }
-          } catch {
-            Write-Host "No se obtuvo reporte dinámico: $($_.Exception.Message)"
-          }
-
-      - name: Upload MobSF static report
+      - name: Upload MobSF results
         uses: actions/upload-artifact@v4
         with:
-          name: mobsf-static-report
-          path: mobsf_static_results.json
+          name: mobsf-report
+          path: mobsf_results.json
           if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload MobSF dynamic report (if present)
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobsf-dynamic-report
-          path: mobsf_dynamic_results.json
-          if-no-files-found: ignore
           retention-days: 14
