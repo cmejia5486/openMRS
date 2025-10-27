@@ -23,7 +23,9 @@ jobs:
         shell: powershell
         continue-on-error: true
 
+      # ------- ESTÁTICO -------
       - name: Upload app to MobSF and run static scan
+        id: static_scan
         env:
           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
         continue-on-error: true
@@ -35,30 +37,32 @@ jobs:
             Write-Error "APK file not found. Please ensure the build step produced an APK."
             exit 1
           }
-          # Preparar claves y ruta
           $apkPath = $apkFile.FullName
           $apiKey  = $env:MOBSF_API_KEY
 
-          # 1) Subir el APK a MobSF (multipart/form-data)
+          # 1) Subir el APK
           $uploadResult = curl.exe -s -X POST "http://localhost:8000/api/v1/upload" `
             -H "Authorization: $apiKey" `
             -F "file=@$apkPath"
           $uploadResponse = $uploadResult | ConvertFrom-Json
           $hash = $uploadResponse.hash
+          if (-not $hash) { Write-Error "No hash returned from upload."; exit 1 }
           Write-Host "Static scan hash: $hash"
+
+          # Exportar hash para el siguiente paso
+          "hash=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
           # 2) Iniciar análisis estático
           Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" `
-            -Method Post `
+            -Method Post -TimeoutSec 60 `
             -Headers @{ Authorization = $apiKey } `
             -Body @{ hash = $hash } | Out-Null
 
-          # 3) Descargar el reporte JSON estático
+          # 3) Descargar reporte JSON estático
           $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json" `
-            -Method Post `
+            -Method Post -TimeoutSec 60 `
             -Headers @{ Authorization = $apiKey } `
             -Body @{ hash = $hash }
-
           $report | ConvertTo-Json -Depth 100 | Set-Content mobsf_results.json
 
       - name: Upload MobSF static results
@@ -67,56 +71,44 @@ jobs:
           name: mobsf-report
           path: mobsf_results.json
 
-      # ===== Dinámico (opcional, no rompe si no hay análisis dinámico) =====
+      # ------- DINÁMICO (opcional, con timeout y sin re-subir APK) -------
       - name: Try to download MobSF dynamic JSON report
+        if: ${{ steps.static_scan.outputs.hash != '' }}
         env:
           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
         continue-on-error: true
         shell: powershell
         run: |
-          # Reutiliza el APK más reciente y vuelve a obtener el hash (variables no persisten entre pasos)
-          $apkFile = Get-ChildItem -Path . -Recurse -Filter '*.apk' | Select-Object -First 1
-          if (-not $apkFile) {
-            Write-Host "No APK found for dynamic step. Skipping."
-            exit 0
-          }
-          $apkPath = $apkFile.FullName
-          $apiKey  = $env:MOBSF_API_KEY
-
-          # Subir de nuevo para obtener hash
-          $uploadResult = curl.exe -s -X POST "http://localhost:8000/api/v1/upload" `
-            -H "Authorization: $apiKey" `
-            -F "file=@$apkPath"
-          $uploadResponse = $uploadResult | ConvertFrom-Json
-          $hash = $uploadResponse.hash
+          $apiKey = $env:MOBSF_API_KEY
+          $hash   = "${{ steps.static_scan.outputs.hash }}"
           if (-not $hash) {
-            Write-Host "No hash from upload; skipping dynamic report."
+            Write-Host "No hash from previous step; skipping dynamic report."
             exit 0
           }
           Write-Host "Dynamic scan hash: $hash"
 
-          # (Opcional) Intentar cerrar sesión dinámica antes de leer artefactos
+          # (Opcional) cerrar sesión dinámica; ignora si no aplica
           try {
             Invoke-RestMethod -Uri "http://localhost:8000/api/v1/dynamic/stop_analysis" `
-              -Method Post -Headers @{ Authorization = $apiKey } `
+              -Method Post -TimeoutSec 15 `
+              -Headers @{ Authorization = $apiKey } `
               -Body @{ hash = $hash } | Out-Null
-          } catch {
-            Write-Host "stop_analysis not available/needed: $($_.Exception.Message)"
-          }
+          } catch { Write-Host "stop_analysis not needed/available: $($_.Exception.Message)" }
 
-          # Pedir reporte JSON del análisis dinámico (si existiera)
+          # Intentar obtener el reporte dinámico con timeout
           try {
             $dyn = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/dynamic/report_json" `
-              -Method Post -Headers @{ Authorization = $apiKey } `
+              -Method Post -TimeoutSec 30 `
+              -Headers @{ Authorization = $apiKey } `
               -Body @{ hash = $hash }
             if ($dyn) {
               $dyn | ConvertTo-Json -Depth 100 | Set-Content mobsf_dynamic_results.json
               Write-Host "Dynamic report saved to mobsf_dynamic_results.json"
             } else {
-              Write-Host "Dynamic report not available."
+              Write-Host "Dynamic report not available (no dynamic session/results)."
             }
           } catch {
-            Write-Host "Dynamic report endpoint failed: $($_.Exception.Message)"
+            Write-Host "Dynamic report fetch failed: $($_.Exception.Message)"
           }
 
       - name: Upload MobSF dynamic results (if present)
