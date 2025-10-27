@@ -7,62 +7,120 @@ on:
 
 jobs:
   mobsf_scan:
-    runs-on: self-hosted
+    # Usa un runner Windows self-hosted (PowerShell + gradlew.bat)
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 45
+
+    env:
+      MOBSF_URL: ${{ secrets.MOBSF_URL }}       # ej: http://localhost:8000
+      MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Set up JDK 11 (Temurin)
+        uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '11'
 
-      - name: Build Android app
-        run: .\gradlew.bat assembleRelease
+      - name: Build Android app (release)
         shell: powershell
-        continue-on-error: true
+        run: .\gradlew.bat assembleRelease --stacktrace
 
-      - name: Upload app to MobSF and run scan
-        env:
-          MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
-        continue-on-error: true
+      - name: MobSF static & dynamic scan (produce JSONs)
         shell: powershell
         run: |
-          # Localizar el APK generado
-          $apkFile = Get-ChildItem -Path . -Recurse -Filter '*.apk' | Select-Object -First 1
-          if (-not $apkFile) {
-            Write-Error "APK file not found. Please ensure the build step produced an APK."
-            exit 1
+          $ErrorActionPreference = 'Stop'
+
+          if (-not $env:MOBSF_URL) { throw "MOBSF_URL no definido" }
+          if (-not $env:MOBSF_API_KEY) { throw "MOBSF_API_KEY no definido" }
+
+          # APK más reciente en el árbol de build típico
+          $apk = Get-ChildItem -Recurse -Path . -Include *.apk |
+                 Where-Object { $_.FullName -match 'app\\build\\outputs\\apk' } |
+                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $apk) { throw "No se encontró APK generado" }
+          $apkPath = $apk.FullName
+          Write-Host "APK: $apkPath"
+
+          # ---------- STATIC ----------
+          # 1) Upload
+          $upload = & curl.exe -s -X POST "$($env:MOBSF_URL)/api/v1/upload" `
+                     -H "Authorization: $($env:MOBSF_API_KEY)" `
+                     -F "file=@$apkPath"
+          $u = $upload | ConvertFrom-Json
+          if (-not $u.hash) { throw "Upload falló: $upload" }
+          $hash = $u.hash
+          Write-Host "Static scan hash: $hash"
+
+          # 2) Start static scan
+          $scanBody = @{ hash = $hash; scan_type = 'apk' }
+          Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/scan" -Method Post `
+            -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body $scanBody | Out-Null
+
+          # 3) Poll hasta que esté listo (scan_status si existe; si no, intentamos report_json)
+          $maxAttempts = 60; $delay = 10; $done = $false
+          for ($i=0; $i -lt $maxAttempts; $i++) {
+            $statusOk = $false
+            try {
+              $st = Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/scan_status" -Method Post `
+                      -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash }
+              if ($st.scanCompleted -eq $true) { $done = $true; break }
+              $statusOk = $true
+            } catch { }
+
+            if (-not $statusOk) {
+              try {
+                $probe = Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/report_json" -Method Post `
+                          -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash }
+                if ($probe) { $done = $true; break }
+              } catch { }
+            }
+            Start-Sleep -Seconds $delay
           }
-          # Preparar claves y ruta
-          $apkPath = $apkFile.FullName
-          $apiKey  = $env:MOBSF_API_KEY
+          if (-not $done) { throw "El análisis estático no terminó a tiempo" }
 
-          # 1. Subir el APK a MobSF usando multipart/form-data
-          $uploadResult = curl.exe -s -X POST "http://localhost:8000/api/v1/upload" `
-            -H "Authorization: $apiKey" `
-            -F "file=@$apkPath"
-          $uploadResponse = $uploadResult | ConvertFrom-Json
-          $hash = $uploadResponse.hash
-          Write-Host "Scan hash: $hash"
+          # 4) Descargar reporte estático
+          $staticReport = Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/report_json" -Method Post `
+                           -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash }
+          $staticReport | ConvertTo-Json -Depth 100 | Set-Content mobsf_static_results.json -Encoding UTF8
 
-          # 2. Iniciar el análisis (solo se envía el hash, sin scan_type ni re_scan)
-          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" `
-            -Method Post `
-            -Headers @{ Authorization = $apiKey } `
-            -Body @{ hash = $hash }
+          # ---------- DYNAMIC (OPCIONAL) ----------
+          # Si ya corriste la dinámica en tu entorno, intenta obtener su JSON
+          $dynJsonPath = "mobsf_dynamic_results.json"
+          try {
+            # (Opcional) Cierra sesión dinámica antes de leer artefactos si aplica
+            try {
+              Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/dynamic/stop_analysis" -Method Post `
+                -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash } | Out-Null
+            } catch { }
 
-          # 3. Descargar el reporte JSON mediante POST con el mismo hash
-          $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json" `
-            -Method Post `
-            -Headers @{ Authorization = $apiKey } `
-            -Body @{ hash = $hash }
+            $dyn = Invoke-RestMethod -Uri "$($env:MOBSF_URL)/api/v1/dynamic/report_json" -Method Post `
+                    -Headers @{ Authorization = $env:MOBSF_API_KEY } -Body @{ hash = $hash }
+            if ($dyn) {
+              $dyn | ConvertTo-Json -Depth 100 | Set-Content $dynJsonPath -Encoding UTF8
+              Write-Host "Dynamic report guardado en $dynJsonPath"
+            } else {
+              Write-Host "No se obtuvo reporte dinámico (posible que no se haya ejecutado la dinámica)."
+            }
+          } catch {
+            Write-Host "No se obtuvo reporte dinámico: $($_.Exception.Message)"
+          }
 
-          $report | ConvertTo-Json | Set-Content mobsf_results.json
-
-      - name: Upload MobSF results
+      - name: Upload MobSF static report
         uses: actions/upload-artifact@v4
         with:
-          name: mobsf-report
-          path: mobsf_results.json
+          name: mobsf-static-report
+          path: mobsf_static_results.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload MobSF dynamic report (if present)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobsf-dynamic-report
+          path: mobsf_dynamic_results.json
+          if-no-files-found: ignore
+          retention-days: 14
