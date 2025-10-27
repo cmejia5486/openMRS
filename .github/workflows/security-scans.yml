@@ -10,14 +10,63 @@ on:
 
 jobs:
   trivy-scan:
-    name: Trivy File System Scan
+    name: Trivy File System Scan (genera payload para IA)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: actions/checkout@v4
+
+      # 1) Ejecuta Trivy y guarda salida JSON en disco (no rompe el job)
+      - name: Run Trivy vulnerability scanner (JSON)
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln           # solo vulnerabilidades
+          vuln-type: library       # dependencias (no paquetes de SO)
+          format: json
+          output: trivy.json
+          exit-code: '0'           # deja que el job de IA decida
+          ignore-unfixed: true     # opcional: reduce ruido
+
+      # 2) Compacta el JSON a un payload fácil para la IA
+      - name: Build AI payload (agent_payload.json)
+        shell: bash
+        run: |
+          jq -n \
+            --arg repo "${{ github.repository }}" \
+            --arg sha "${{ github.sha }}" \
+            --arg ref "${{ github.ref }}" \
+            --arg run_id "${{ github.run_id }}" \
+            --slurpfile trivy trivy.json \
+            '
+            def findings:
+              ( ($trivy[0].Results // [])
+                | map(. as $r
+                    | ($r.Vulnerabilities // [])
+                    | map({
+                        target: $r.Target,
+                        id: .VulnerabilityID,
+                        pkg: .PkgName,
+                        installed: .InstalledVersion,
+                        fixed: .FixedVersion,
+                        severity: .Severity,
+                        title: .Title,
+                        url: (.PrimaryURL // ( .References|first // null ))
+                      })
+                  )
+                | add // [] );
+
+            {
+              meta: { repo: $repo, sha: $sha, ref: $ref, run_id: $run_id },
+              scan: { tool: "trivy", mode: "fs", schema: "custom:v1" },
+              findings: findings
+            }' > agent_payload.json
+
+      # 3) Publica el payload como artifact para que lo consuma otro job/workflow
+      - name: Upload artifact (payload para IA)
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-payload
+          path: agent_payload.json
+          retention-days: 7
