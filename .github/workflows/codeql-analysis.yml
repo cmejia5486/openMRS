@@ -1,31 +1,18 @@
-name: Static SAST (report only)
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   sast:
     name: SAST (no build, report-only)
-    # No ejecutes si el actor es Dependabot o la rama del PR es dependabot/*
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name || '', 'dependabot/') }}
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
-      security-events: write   # necesario para subir SARIF a Code Scanning
+      security-events: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ---- CodeQL (Java) sin build ----
+      # --- CodeQL (Java) sin build ---
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -35,33 +22,34 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          output: report/codeql           # guarda SARIF localmente aquí
-          category: "java-no-build"
-          upload: true                    # también lo verás en Security → Code scanning
-        continue-on-error: true           # no rompe el job
+          # guarda SARIF localmente y súbelo a Code Scanning
+          output: report/codeql
+          upload: always
 
-      # ---- Detekt (Kotlin) CLI (sin Gradle), salida SARIF ----
-      - name: Set up JDK (Detekt CLI)
+      # --- Detekt (Kotlin) CLI (sin Gradle) ---
+      - name: Set up JDK (for Detekt CLI)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '11'
 
-      - name: Run Detekt (Kotlin)
-        uses: detekt/detekt-action@v1
-        with:
-          # añade tu config si la tienes: '--config detekt.yml'
-          args: --all-rules --report sarif:report/detekt.sarif
-        continue-on-error: true
+      - name: Setup detekt CLI
+        uses: peter-murray/setup-detekt@v3
 
-      # Sube Detekt a Code Scanning (visible en Security)
+      - name: Run detekt (Kotlin → SARIF)
+        run: |
+          mkdir -p report
+          detekt-cli \
+            -i . \
+            --all-rules \
+            --report sarif:report/detekt.sarif || true
+
       - name: Upload Detekt to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: report/detekt.sarif
-        continue-on-error: true
 
-      # ---- Semgrep (Java + Kotlin), salida SARIF ----
+      # --- Semgrep (Java + Kotlin) ---
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -70,19 +58,17 @@ jobs:
       - name: Install Semgrep
         run: pip install --upgrade semgrep
 
-      - name: Run Semgrep (Java + Kotlin)
+      - name: Run Semgrep (→ SARIF)
         run: |
           mkdir -p report
           semgrep --config p/java --config p/kotlin --sarif --output report/semgrep.sarif || true
 
-      # Sube Semgrep a Code Scanning (visible en Security)
       - name: Upload Semgrep to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: report/semgrep.sarif
-        continue-on-error: true
 
-      # ---- Fusionar SARIF y generar resumen legible ----
+      # --- Fusionar SARIF y publicar artefacto ---
       - name: Ensure jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
@@ -90,34 +76,14 @@ jobs:
         shell: bash
         run: |
           shopt -s nullglob
-          mkdir -p report
-          files=(report/*.sarif report/codeql/*.sarif)
+          files=(report/codeql/*.sarif report/detekt.sarif report/semgrep.sarif)
           if [ ${#files[@]} -gt 0 ]; then
             jq -s '{ "version":"2.1.0", "runs": (map(.runs) | add) }' "${files[@]}" > report/merged.sarif
           else
             echo '{ "version":"2.1.0", "runs": [] }' > report/merged.sarif
           fi
 
-      - name: Job Summary (hallazgos)
-        shell: bash
-        run: |
-          echo "## SAST Summary" >> $GITHUB_STEP_SUMMARY
-          if [ -f report/merged.sarif ]; then
-            TOTAL=$(jq '[.runs[].results[]] | length' report/merged.sarif 2>/dev/null || echo 0)
-            echo "**Total findings:** ${TOTAL}" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "| Tool | Findings |" >> $GITHUB_STEP_SUMMARY
-            echo "|------|----------|" >> $GITHUB_STEP_SUMMARY
-            for f in report/codeql/*.sarif report/detekt.sarif report/semgrep.sarif; do
-              [ -f "$f" ] || continue
-              N=$(jq '[.runs[].results[]] | length' "$f" 2>/dev/null || echo 0)
-              echo "| $(basename "$f") | $N |" >> $GITHUB_STEP_SUMMARY
-            done
-          else
-            echo "Sin resultados SARIF." >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Upload findings artifact (para otros jobs)
+      - name: Upload findings artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
