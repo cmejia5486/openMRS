@@ -12,24 +12,14 @@ jobs:
   analyze:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-
-    # 👇 Permisos requeridos para Code Scanning y Pages
     permissions:
       actions: read
-      contents: read
+      contents: write         # 👈 necesario para crear/actualizar Releases
       security-events: write
-      pages: write
-      id-token: write
-
     strategy:
       fail-fast: false
       matrix:
         language: [ 'java' ]
-
-    # 👇 Declaramos el entorno de Pages para exponer la URL pública
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy_pages.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -46,14 +36,15 @@ jobs:
         with:
           output: ${{ github.workspace }}/codeql-sarif
 
-      - name: Upload SARIF artifact (for internal retention)
+      # (Opcional) Conserva SARIF como artifact interno
+      - name: Upload SARIF artifact
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      # ===== Construye payload compacto para IA =====
+      # Construye payload compacto para IA
       - name: Build AI-friendly payload from SARIF (v2)
         shell: bash
         run: |
@@ -229,50 +220,55 @@ jobs:
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      - name: Upload CodeQL agent payload (optional internal)
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-agent-payload
-          path: codeql_agent_payload.json
-          retention-days: 14
-
-      # ===== Publicación en GitHub Pages (enlaces sin autenticación) =====
-      - name: Prepare public bundle
+      # Crea bundle (payload + SARIF) para un único archivo consumible por la IA
+      - name: Build single bundle (codeql-bundle.json)
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p public
           shopt -s nullglob
           SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
           if [ ${#SARIFS[@]} -gt 0 ]; then
             jq -n --slurpfile payload codeql_agent_payload.json --slurpfile sarif "${SARIFS[0]}" \
               '{version:"codeql-bundle:v1", generated_at: (now|todate),
-                items:{ codeql_agent_payload:$payload[0], sarif:$sarif[0] }}' > public/codeql-bundle.json
+                items:{ codeql_agent_payload:$payload[0], sarif:$sarif[0] }}' > codeql-bundle.json
           else
             jq -n --slurpfile payload codeql_agent_payload.json \
               '{version:"codeql-bundle:v1", generated_at: (now|todate),
-                items:{ codeql_agent_payload:$payload[0] }}' > public/codeql-bundle.json
+                items:{ codeql_agent_payload:$payload[0] }}' > codeql-bundle.json
           fi
-          cp codeql_agent_payload.json public/codeql-findings.json
 
-      # 👇 Habilita/crea el sitio si no existe aún
-      - name: Configure GitHub Pages (enable if needed)
-        uses: actions/configure-pages@v5
+      # (Opcional) Guarda también como artifacts internos
+      - name: Upload bundle artifacts
+        uses: actions/upload-artifact@v4
         with:
-          enablement: true  # intenta crear el sitio Pages si aún no existe
+          name: codeql-public-bundle
+          path: |
+            codeql-bundle.json
+            codeql_agent_payload.json
+          retention-days: 14
 
-      - name: Upload bundle to Pages
-        uses: actions/upload-pages-artifact@v3
+      # ===== Publicación en GitHub Releases (enlace sin auth si el repo es público) =====
+      - name: Publish/Update 'codeql-latest' release with JSON assets
+        uses: softprops/action-gh-release@v2
         with:
-          path: public  # publica ambos JSON
+          tag_name: codeql-latest
+          name: CodeQL Bundle (latest)
+          body: |
+            Automated CodeQL results for ${{ github.sha }} on ${{ github.ref_name }}.
+            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          draft: false
+          prerelease: true
+          make_latest: false
+          files: |
+            codeql-bundle.json
+            codeql_agent_payload.json
+          overwrite_files: true   # 👈 sobrescribe assets si ya existen (v2.3.3+)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy to GitHub Pages
-        id: deploy_pages
-        uses: actions/deploy-pages@v4
-
-      - name: Summary with public links
+      - name: Show public download URLs
         shell: bash
         run: |
-          echo "### 🌐 Descarga pública (sin autenticación)" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Bundle JSON**: ${{ steps.deploy_pages.outputs.page_url }}codeql-bundle.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Findings “planos”**: ${{ steps.deploy_pages.outputs.page_url }}codeql-findings.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "### 🔗 Enlaces (públicos si el repo es público)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- codeql-bundle.json: https://github.com/${{ github.repository }}/releases/download/codeql-latest/codeql-bundle.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "- codeql_agent_payload.json: https://github.com/${{ github.repository }}/releases/download/codeql-latest/codeql_agent_payload.json" >> "$GITHUB_STEP_SUMMARY"
