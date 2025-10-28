@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
-      contents: write         # para publicar Release con JSON
+      contents: write
       security-events: write
     strategy:
       fail-fast: false
@@ -25,7 +25,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Detecta layout del repo para fijar un source-root razonable
       - name: Detect layout
         id: detect
         shell: bash
@@ -46,13 +45,12 @@ jobs:
           echo "Kotlin files: $count_kotlin"
           echo "Guessed source-root: $srcroot"
 
-      - name: Initialize CodeQL (no build, extended suite)
+      - name: Initialize CodeQL (no build, wide suite)
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: none
           source-root: ${{ steps.detect.outputs.source_root }}
-          # Usa la suite amplia oficial (incluye seguridad y calidad)
           queries: security-and-quality
 
       - name: Analyze (write SARIF locally)
@@ -60,7 +58,6 @@ jobs:
         with:
           output: ${{ github.workspace }}/codeql-sarif
 
-      # Artefacto SARIF (interno opcional)
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v4
         with:
@@ -68,7 +65,6 @@ jobs:
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      # JSON compacto para IA a partir del SARIF
       - name: Build AI payload (from SARIF)
         shell: bash
         run: |
@@ -103,16 +99,18 @@ jobs:
                 def rules_index: ( [ rules[] | {key: .id, value: .} ] | from_entries );
                 def res: [ runs[]? | .results[]? ];
 
-                def secscore($r; $ri):
-                  ( ($r.properties["security-severity"]
-                      // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
-                def label($s):
+                # === Renombrado: "label" es palabra reservada en jq ===
+                def severity_label($s):
                   if $s == null then "unknown"
                   elif $s >= 9 then "critical"
                   elif $s >= 7 then "high"
                   elif $s >= 4 then "medium"
                   elif $s > 0 then "low"
                   else "unknown" end;
+
+                def secscore($r; $ri):
+                  ( ($r.properties["security-severity"]
+                      // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
 
                 def cwe($ri):
                   ( $ri[.ruleId].properties.tags // [] )
@@ -127,7 +125,7 @@ jobs:
                         rule_id: .ruleId,
                         rule_name: ($RI[.ruleId].name // $RI[.ruleId].shortDescription.text // null),
                         security_severity_score: $s,
-                        security_severity_label: (label($s)),
+                        security_severity_label: (severity_label($s)),
                         level: (.level // "warning"),
                         message: (.message.text // null),
                         file: (.locations[0].physicalLocation.artifactLocation.uri // null),
@@ -152,13 +150,13 @@ jobs:
                       by_rule:
                         ($F | group_by(.rule_id)
                              | map({rule_id: .[0].rule_id, count: length})
-                             | sort_by(-.count) | .[:20]),
+                             | sort_by(.count) | reverse | .[:20]),
                       by_file:
                         ($F | group_by(.file)
                              | map({file: (.[0].file // "<unknown>"), count: length})
-                             | sort_by(-.count) | .[:20]),
+                             | sort_by(.count) | reverse | .[:20]),
                       by_cwe:
-                        ($F | map(.cwe[]) | group_by(.) | map({cwe: .[0], count: length}) | sort_by(-.count) | .[:20])
+                        ($F | map(.cwe[]) | group_by(.) | map({cwe: .[0], count: length}) | sort_by(.count) | reverse | .[:20])
                     },
                     findings: $F
                   }' > codeql_agent_payload.json
@@ -167,8 +165,7 @@ jobs:
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      # Bundle único (payload + primer SARIF) para consumo por IA
-      - name: Build bundle
+      - name: Build bundle (payload + primer SARIF)
         shell: bash
         run: |
           set -euo pipefail
@@ -184,19 +181,11 @@ jobs:
                 items:{ codeql_agent_payload:$payload[0] }}' > codeql-bundle.json
           fi
 
-      # Publica como Release (sin auth si el repo es público)
-      - name: Publish/Update 'codeql-latest' release
-        uses: softprops/action-gh-release@v2
+      - name: Upload bundle for AI job
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: codeql-latest
-          name: CodeQL Bundle (latest)
-          body: "Automated CodeQL results for ${{ github.sha }} on ${{ github.ref_name }}."
-          draft: false
-          prerelease: true
-          make_latest: false
-          files: |
+          name: codeql-bundle
+          path: |
             codeql-bundle.json
             codeql_agent_payload.json
-          overwrite_files: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: 14
