@@ -117,3 +117,4 @@ jobs:
           name: mobsf-dynamic-report
           path: mobsf_dynamic_results.json
           if-no-files-found: ignore
+
