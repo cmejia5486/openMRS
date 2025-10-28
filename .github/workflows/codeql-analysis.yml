@@ -12,18 +12,21 @@ jobs:
   analyze:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    # 👇 Añadimos permisos para Pages (publicación)
+
+    # 👇 Permisos requeridos para Code Scanning y Pages
     permissions:
       actions: read
       contents: read
       security-events: write
-      pages: write           # para deploy-pages
-      id-token: write        # requerido por deploy-pages
+      pages: write
+      id-token: write
+
     strategy:
       fail-fast: false
       matrix:
         language: [ 'java' ]
-    # 👇 Para que GitHub ancle la URL pública en el entorno
+
+    # 👇 Declaramos el entorno de Pages para exponer la URL pública
     environment:
       name: github-pages
       url: ${{ steps.deploy_pages.outputs.page_url }}
@@ -43,14 +46,14 @@ jobs:
         with:
           output: ${{ github.workspace }}/codeql-sarif
 
-      - name: Upload SARIF artifact
+      - name: Upload SARIF artifact (for internal retention)
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      # === Construcción del payload compacto ===
+      # ===== Construye payload compacto para IA =====
       - name: Build AI-friendly payload from SARIF (v2)
         shell: bash
         run: |
@@ -226,15 +229,15 @@ jobs:
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      - name: Upload CodeQL agent payload (artifact interno opcional)
+      - name: Upload CodeQL agent payload (optional internal)
         uses: actions/upload-artifact@v4
         with:
           name: codeql-agent-payload
           path: codeql_agent_payload.json
           retention-days: 14
 
-      # === Bundle único y publicación pública en GitHub Pages ===
-      - name: Prepare public bundle (single JSON)
+      # ===== Publicación en GitHub Pages (enlaces sin autenticación) =====
+      - name: Prepare public bundle
         shell: bash
         run: |
           set -euo pipefail
@@ -250,16 +253,18 @@ jobs:
               '{version:"codeql-bundle:v1", generated_at: (now|todate),
                 items:{ codeql_agent_payload:$payload[0] }}' > public/codeql-bundle.json
           fi
-          # Alias simple solo con findings (por si tu IA prefiere un payload “plano”)
           cp codeql_agent_payload.json public/codeql-findings.json
 
-      - name: Configure GitHub Pages
+      # 👇 Habilita/crea el sitio si no existe aún
+      - name: Configure GitHub Pages (enable if needed)
         uses: actions/configure-pages@v5
+        with:
+          enablement: true  # intenta crear el sitio Pages si aún no existe
 
       - name: Upload bundle to Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: public  # publica ambos JSON
 
       - name: Deploy to GitHub Pages
         id: deploy_pages
