@@ -52,7 +52,6 @@ jobs:
           CS_URL="https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }}"
           TS=$(date -u +%FT%TZ)
           COMMIT_SUBJECT="$(git log -1 --pretty=%s || true)"
-          # Datos del payload del evento (evita interpolaciones vacías en YAML)
           DEFAULT_BRANCH="$(jq -r '.repository.default_branch // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || echo '')"
           PR_NUMBER="$(jq -r '.pull_request.number // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || echo '')"
 
@@ -104,7 +103,6 @@ jobs:
               --arg ts "$TS" \
               --arg lang "${{ matrix.language }}" \
               --slurpfile sarif "$SARIF_FILE" '
-                ### --- TODAS las defs al inicio (sin pipes delante) ---
                 def first_run: ($sarif[0].runs[0] // {});
                 def all_runs: ($sarif[0].runs // []);
                 def tool: (first_run.tool.driver // {});
@@ -225,13 +223,12 @@ jobs:
           path: codeql_agent_payload.json
           retention-days: 14
 
+      # ⬇️ CORREGIDO: usar un único patrón glob
       - name: Merge artifacts into single bundle
         uses: actions/upload-artifact/merge@v4
         with:
           name: codeql-bundle
-          pattern: |
-            codeql-sarif
-            codeql-agent-payload
+          pattern: codeql-*        # <— un solo patrón para ambos artifacts
           retention-days: 14
 
       - name: Build direct artifact download links
