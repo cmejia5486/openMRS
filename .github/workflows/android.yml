@@ -5,25 +5,27 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-    types:
-      - opened
-      - synchronize
+    types: [ opened, synchronize, reopened ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    # No ejecutes si el actor es Dependabot o la rama del PR es dependabot/*
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || '', 'dependabot/') }}
 
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        cache: gradle
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      run: ./gradlew buildDebug
+      - uses: actions/checkout@v4
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew buildDebug
