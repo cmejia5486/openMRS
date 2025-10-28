@@ -43,7 +43,7 @@ jobs:
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      - name: Build AI-friendly payload from SARIF (v2)
+      - name: Build AI-friendly payload from SARIF (v2, fixed)
         shell: bash
         run: |
           set -euo pipefail
@@ -101,17 +101,24 @@ jobs:
               --arg ts "$TS" \
               --arg lang "${{ matrix.language }}" \
               --slurpfile sarif "$SARIF_FILE" '
+                ### --- defs al inicio, sin pipes delante ---
                 def first_run: ($sarif[0].runs[0] // {});
                 def all_runs: ($sarif[0].runs // []);
                 def tool: (first_run.tool.driver // {});
                 def tool_name: (tool.name // null);
                 def tool_version: (tool.semanticVersion // tool.version // null);
                 def tool_ext: (first_run.tool.extensions // []);
-                def rules_index: ([ all_runs[]? | .tool?.driver?.rules[]? ] | INDEX(.id));
+
+                # index de reglas: from_entries para robustez
+                def rules_index:
+                  ( [ all_runs[]? | .tool?.driver?.rules[]?
+                      | {key: .id, value: .} ] | from_entries );
+
                 def all_results: [ all_runs[]? | .results[]? ];
 
                 def secscore($r; $ri):
-                  ( ($r.properties["security-severity"] // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
+                  ( ($r.properties["security-severity"]
+                      // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
 
                 def seclabel($s):
                   if $s == null then "unknown"
@@ -124,8 +131,20 @@ jobs:
                 def cwe_list($ri):
                   ( $ri[.ruleId].properties.tags // [] )
                   | map(select(startswith("external/cwe/cwe-")))
-                  | map(sub("^external/cwe/cwe-"; ""))
-                  ;
+                  | map(sub("^external/cwe/cwe-"; ""));
+
+                def safe_code_flow:
+                  (
+                    (
+                      ((.codeFlows // []) | .[0]? | .threadFlows // [] | .[0]? | .locations // [])
+                      // []
+                    )
+                    | map({
+                        file: .location.physicalLocation.artifactLocation.uri,
+                        line: (.location.physicalLocation.region.startLine // null)
+                      })
+                    | .[:5]
+                  );
 
                 def toFinding($ri):
                   (secscore(.; $ri)) as $score
@@ -145,60 +164,54 @@ jobs:
                       help: ($ri[.ruleId].helpUri // null),
                       rule_tags: ($ri[.ruleId].properties.tags // []),
                       cwe: (cwe_list($ri)),
-                      code_flow: (
-                        .codeFlows[0].threadFlows[0].locations?
-                        | map({file: .location.physicalLocation.artifactLocation.uri,
-                               line: (.location.physicalLocation.region.startLine // null)})
-                        | .[:5]
-                      ) // []
+                      code_flow: safe_code_flow
                     };
+
+                def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
+                def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
 
                 (rules_index) as $RI
                 | (all_results) as $R
                 | ($R | map(toFinding($RI))) as $F
-
-                | def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
-                | def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
-
-                {
-                  meta: {
-                    repo: $repo, sha: $sha, ref: $ref, ref_name: $ref_name,
-                    base_ref: $base_ref, pr_number: $pr_number,
-                    actor: $actor, event: $event, default_branch: $def_branch,
-                    commit_subject: $commit_subject,
-                    run_id: $run_id, run_url: $run_url,
-                    code_scanning_url: $cs_url,
-                    generated_at: $ts
-                  },
-                  scan: {
-                    engine: "codeql", language: $lang, schema: "agent-payload:v2",
-                    tool_name: tool_name, tool_version: tool_version,
-                    query_packs: (tool_ext | map(.name))
-                  },
-                  policy_hints: {
-                    severity_label_thresholds: {critical: ">=9.0", high: "7.0-8.9", medium: "4.0-6.9", low: "0.1-3.9"},
-                    notes: "security_severity_score es numérico (0.0-10.0) y la etiqueta se deriva."
-                  },
-                  summary: {
-                    total: ($F | length),
-                    by_security_severity_label:
-                      (reduce $F[] as $x (sev_init; .[($x.security_severity_label // "unknown")] += 1)),
-                    by_level:
-                      (reduce $F[] as $x (lvl_init; .[($x.level // "warning")] += 1)),
-                    unique_rules: ($F | map(.rule_id) | unique | length),
-                    by_rule:
-                      ($F | group_by(.rule_id)
-                           | map({rule_id: .[0].rule_id, count: length})
-                           | sort_by(-.count) | .[:20]),
-                    by_file:
-                      ($F | group_by(.file)
-                           | map({file: (.[0].file // "<unknown>"), count: length})
-                           | sort_by(-.count) | .[:20]),
-                    by_cwe:
-                      ($F | map(.cwe[]) | group_by(.) | map({cwe: .[0], count: length}) | sort_by(-.count) | .[:20])
-                  },
-                  findings: $F
-                }' > codeql_agent_payload.json
+                | {
+                    meta: {
+                      repo: $repo, sha: $sha, ref: $ref, ref_name: $ref_name,
+                      base_ref: $base_ref, pr_number: $pr_number,
+                      actor: $actor, event: $event, default_branch: $def_branch,
+                      commit_subject: $commit_subject,
+                      run_id: $run_id, run_url: $run_url,
+                      code_scanning_url: $cs_url,
+                      generated_at: $ts
+                    },
+                    scan: {
+                      engine: "codeql", language: $lang, schema: "agent-payload:v2",
+                      tool_name: tool_name, tool_version: tool_version,
+                      query_packs: (tool_ext | map(.name))
+                    },
+                    policy_hints: {
+                      severity_label_thresholds: {critical: ">=9.0", high: "7.0-8.9", medium: "4.0-6.9", low: "0.1-3.9"},
+                      notes: "security_severity_score es numérico (0.0-10.0) y la etiqueta se deriva."
+                    },
+                    summary: {
+                      total: ($F | length),
+                      by_security_severity_label:
+                        (reduce $F[] as $x (sev_init; .[($x.security_severity_label // "unknown")] += 1)),
+                      by_level:
+                        (reduce $F[] as $x (lvl_init; .[($x.level // "warning")] += 1)),
+                      unique_rules: ($F | map(.rule_id) | unique | length),
+                      by_rule:
+                        ($F | group_by(.rule_id)
+                             | map({rule_id: .[0].rule_id, count: length})
+                             | sort_by(-.count) | .[:20]),
+                      by_file:
+                        ($F | group_by(.file)
+                             | map({file: (.[0].file // "<unknown>"), count: length})
+                             | sort_by(-.count) | .[:20]),
+                      by_cwe:
+                        ($F | map(.cwe[]) | group_by(.) | map({cwe: .[0], count: length}) | sort_by(-.count) | .[:20])
+                    },
+                    findings: $F
+                  }' > codeql_agent_payload.json
           fi
 
           echo "Wrote codeql_agent_payload.json"
@@ -207,71 +220,3 @@ jobs:
       - name: Upload CodeQL agent payload
         uses: actions/upload-artifact@v4
         with:
-          name: codeql-agent-payload
-          path: codeql_agent_payload.json
-          retention-days: 14
-
-      - name: Merge artifacts into single bundle
-        uses: actions/upload-artifact/merge@v4
-        with:
-          name: codeql-bundle
-          pattern: |
-            codeql-sarif
-            codeql-agent-payload
-          retention-days: 14
-
-      - name: Build direct artifact download links
-        id: links
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          owner="${GITHUB_REPOSITORY%%/*}"
-          repo="${GITHUB_REPOSITORY#*/}"
-          run_id="${GITHUB_RUN_ID}"
-
-          api="https://api.github.com/repos/$owner/$repo/actions/runs/$run_id/artifacts"
-          json=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-                        -H "X-GitHub-Api-Version: 2022-11-28" "$api")
-
-          get_url () {
-            echo "$json" | jq -r --arg NAME "$1" \
-              '.artifacts[] | select(.name==$NAME) | "https://api.github.com/repos/'"$owner"'/'"$repo"'/actions/artifacts/\(.id)/zip"'
-          }
-
-          sarif_url=$(get_url "codeql-sarif" || true)
-          payload_url=$(get_url "codeql-agent-payload" || true)
-          bundle_url=$(get_url "codeql-bundle" || true)
-
-          {
-            echo "### 🔗 Descargas de artifacts"
-            [ -n "$sarif_url" ] && echo "- [codeql-sarif.zip]($sarif_url)"
-            [ -n "$payload_url" ] && echo "- [codeql-agent-payload.zip]($payload_url)"
-            [ -n "$bundle_url" ] && echo "- [codeql-bundle.zip]($bundle_url)"
-            echo ""
-            echo "_Los enlaces requieren autenticación en GitHub y respetan la retención configurada._"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Comment artifact links on PR
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/github-script@v7
-        env:
-          SARIF_URL: ${{ steps.links.outputs.sarif_url }}
-          PAYLOAD_URL: ${{ steps.links.outputs.payload_url }}
-          BUNDLE_URL: ${{ steps.links.outputs.bundle_url }}
-        with:
-          script: |
-            const lines = [];
-            lines.push('### 🔗 CodeQL artifacts');
-            if (process.env.SARIF_URL) lines.push(`- [codeql-sarif.zip](${process.env.SARIF_URL})`);
-            if (process.env.PAYLOAD_URL) lines.push(`- [codeql-agent-payload.zip](${process.env.PAYLOAD_URL})`);
-            if (process.env.BUNDLE_URL) lines.push(`- [codeql-bundle.zip](${process.env.BUNDLE_URL})`);
-            lines.push('');
-            lines.push('_Los enlaces requieren autenticación y siguen la política de retención._');
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: lines.join('\n')
-            });
