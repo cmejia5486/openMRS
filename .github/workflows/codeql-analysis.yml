@@ -12,14 +12,21 @@ jobs:
   analyze:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    # 👇 Añadimos permisos para Pages (publicación)
     permissions:
       actions: read
       contents: read
       security-events: write
+      pages: write           # para deploy-pages
+      id-token: write        # requerido por deploy-pages
     strategy:
       fail-fast: false
       matrix:
         language: [ 'java' ]
+    # 👇 Para que GitHub ancle la URL pública en el entorno
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy_pages.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -43,7 +50,8 @@ jobs:
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      - name: Build AI-friendly payload from SARIF (v2, fixed)
+      # === Construcción del payload compacto ===
+      - name: Build AI-friendly payload from SARIF (v2)
         shell: bash
         run: |
           set -euo pipefail
@@ -57,6 +65,7 @@ jobs:
 
           shopt -s nullglob
           SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
+
           if [ ${#SARIFS[@]} -eq 0 ]; then
             jq -n \
               --arg repo "${{ github.repository }}" \
@@ -86,6 +95,7 @@ jobs:
                 findings:[]}' > codeql_agent_payload.json
           else
             SARIF_FILE="${SARIFS[0]}"
+
             jq -n \
               --arg repo "${{ github.repository }}" \
               --arg sha "${{ github.sha }}" \
@@ -216,49 +226,48 @@ jobs:
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      - name: Upload CodeQL agent payload
+      - name: Upload CodeQL agent payload (artifact interno opcional)
         uses: actions/upload-artifact@v4
         with:
           name: codeql-agent-payload
           path: codeql_agent_payload.json
           retention-days: 14
 
-      # ⬇️ CORREGIDO: usar un único patrón glob
-      - name: Merge artifacts into single bundle
-        uses: actions/upload-artifact/merge@v4
-        with:
-          name: codeql-bundle
-          pattern: codeql-*        # <— un solo patrón para ambos artifacts
-          retention-days: 14
-
-      - name: Build direct artifact download links
+      # === Bundle único y publicación pública en GitHub Pages ===
+      - name: Prepare public bundle (single JSON)
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          owner="${GITHUB_REPOSITORY%%/*}"
-          repo="${GITHUB_REPOSITORY#*/}"
-          run_id="${GITHUB_RUN_ID}"
+          mkdir -p public
+          shopt -s nullglob
+          SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
+          if [ ${#SARIFS[@]} -gt 0 ]; then
+            jq -n --slurpfile payload codeql_agent_payload.json --slurpfile sarif "${SARIFS[0]}" \
+              '{version:"codeql-bundle:v1", generated_at: (now|todate),
+                items:{ codeql_agent_payload:$payload[0], sarif:$sarif[0] }}' > public/codeql-bundle.json
+          else
+            jq -n --slurpfile payload codeql_agent_payload.json \
+              '{version:"codeql-bundle:v1", generated_at: (now|todate),
+                items:{ codeql_agent_payload:$payload[0] }}' > public/codeql-bundle.json
+          fi
+          # Alias simple solo con findings (por si tu IA prefiere un payload “plano”)
+          cp codeql_agent_payload.json public/codeql-findings.json
 
-          api="https://api.github.com/repos/$owner/$repo/actions/runs/$run_id/artifacts"
-          json=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-                        -H "X-GitHub-Api-Version: 2022-11-28" "$api")
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
-          get_url () {
-            echo "$json" | jq -r --arg NAME "$1" \
-              '.artifacts[] | select(.name==$NAME) | "https://api.github.com/repos/'"$owner"'/'"$repo"'/actions/artifacts/\(.id)/zip"'
-          }
+      - name: Upload bundle to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
 
-          sarif_url=$(get_url "codeql-sarif" || true)
-          payload_url=$(get_url "codeql-agent-payload" || true)
-          bundle_url=$(get_url "codeql-bundle" || true)
+      - name: Deploy to GitHub Pages
+        id: deploy_pages
+        uses: actions/deploy-pages@v4
 
-          {
-            echo "### 🔗 Descargas de artifacts"
-            [ -n "$sarif_url" ] && echo "- [codeql-sarif.zip]($sarif_url)"
-            [ -n "$payload_url" ] && echo "- [codeql-agent-payload.zip]($payload_url)"
-            [ -n "$bundle_url" ] && echo "- [codeql-bundle.zip]($bundle_url)"
-            echo ""
-            echo "_Los enlaces requieren autenticación en GitHub y respetan la retención configurada._"
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Summary with public links
+        shell: bash
+        run: |
+          echo "### 🌐 Descarga pública (sin autenticación)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Bundle JSON**: ${{ steps.deploy_pages.outputs.page_url }}codeql-bundle.json" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Findings “planos”**: ${{ steps.deploy_pages.outputs.page_url }}codeql-findings.json" >> "$GITHUB_STEP_SUMMARY"
