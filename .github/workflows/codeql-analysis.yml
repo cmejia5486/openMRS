@@ -1,4 +1,4 @@
-name: CodeQL Analysis (AI Findings Only)
+name: CodeQL Analysis
 
 on:
   push:
@@ -10,129 +10,25 @@ on:
 
 jobs:
   analyze:
-    name: CodeQL → AI findings JSON
+    name: CodeQL Analysis
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Initialize CodeQL (no build, wide suite)
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: java
+          languages: ${{ matrix.language }}
           build-mode: none
-          # Usamos un set amplio de queries para no ocultar nada relevante
-          queries: security-and-quality
 
-      # Guarda el SARIF localmente (además de subirlo a Code Scanning)
-      - name: Perform CodeQL Analysis (write SARIF locally)
+      - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-        with:
-          output: ${{ github.workspace }}/codeql-sarif
-
-      # Transforma SARIF → JSON compacto para la IA (sin filtrar NADA)
-      - name: Build AI-friendly findings (compact JSON)
-        shell: bash
-        run: |
-          set -euo pipefail
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          TS=$(date -u +%FT%TZ)
-
-          shopt -s nullglob
-          SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
-          if [ ${#SARIFS[@]} -eq 0 ]; then
-            jq -n \
-              --arg repo "${{ github.repository }}" \
-              --arg sha "${{ github.sha }}" \
-              --arg ref "${{ github.ref }}" \
-              --arg run_url "$RUN_URL" \
-              --arg ts "$TS" \
-              '{meta:{repo:$repo,sha:$sha,ref:$ref,run_url:$run_url,generated_at:$ts},
-                summary:{total:0,by_level:{error:0,warning:0,note:0,none:0},
-                         by_severity_label:{critical:0,high:0,medium:0,low:0,unknown:0},
-                         unique_rules:0},
-                findings:[]}' > codeql-ai-findings.json
-          else
-            SARIF_FILE="${SARIFS[0]}"
-            jq -n \
-              --arg repo "${{ github.repository }}" \
-              --arg sha "${{ github.sha }}" \
-              --arg ref "${{ github.ref }}" \
-              --arg run_url "$RUN_URL" \
-              --arg ts "$TS" \
-              --slurpfile sarif "$SARIF_FILE" '
-                # === helpers (sin pipes delante) ===
-                def runs: ($sarif[0].runs // []);
-                def rules: [ runs[]? | .tool?.driver?.rules[]? ];
-                def rules_index: ( [ rules[] | {key: .id, value: .} ] | from_entries );
-                def results: [ runs[]? | .results[]? ];
-
-                def secscore($r; $ri):
-                  ( ($r.properties["security-severity"]
-                      // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
-
-                def severity_label_from_score($s):
-                  if $s == null then "unknown"
-                  elif $s >= 9 then "critical"
-                  elif $s >= 7 then "high"
-                  elif $s >= 4 then "medium"
-                  elif $s > 0 then "low"
-                  else "unknown" end;
-
-                def cwe_list($ri):
-                  ( $ri[.ruleId].properties.tags // [] )
-                  | map(select(startswith("external/cwe/cwe-")))
-                  | map(sub("^external/cwe/cwe-"; ""));
-
-                def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
-                def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
-
-                (rules_index) as $RI
-                | (results) as $R
-                | ($R | map(
-                    (secscore(.; $RI)) as $s
-                    | {
-                        file: (.locations[0].physicalLocation.artifactLocation.uri // null),
-                        startLine: (.locations[0].physicalLocation.region.startLine // null),
-                        endLine: (.locations[0].physicalLocation.region.endLine // null),
-                        rule_id: .ruleId,
-                        rule_name: ($RI[.ruleId].name // $RI[.ruleId].shortDescription.text // null),
-                        level: (.level // "warning"),
-                        severity_score: $s,
-                        severity_label: (severity_label_from_score($s)),
-                        message: (.message.text // null),
-                        help: ($RI[.ruleId].helpUri // null),
-                        rule_tags: ($RI[.ruleId].properties.tags // []),
-                        cwe: (cwe_list($RI))
-                      }
-                  )) as $F
-                | {
-                    meta: {repo:$repo, sha:$sha, ref:$ref, run_url:$run_url, generated_at:$ts},
-                    summary: {
-                      total: ($F | length),
-                      by_level: (reduce $F[] as $x (lvl_init; .[($x.level // "warning")] += 1)),
-                      by_severity_label: (reduce $F[] as $x (sev_init; .[($x.severity_label // "unknown")] += 1)),
-                      unique_rules: ($F | map(.rule_id) | unique | length)
-                    },
-                    findings: $F
-                  }' > codeql-ai-findings.json
-          fi
-
-          echo "Wrote codeql-ai-findings.json"
-          jq -r '"Findings total: \(.summary.total)"' codeql-ai-findings.json || true
-          { echo "### CodeQL → AI summary";
-            jq -r '"- Total findings: \(.summary.total)"' codeql-ai-findings.json;
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      # Sube SOLO el JSON compacto para la IA
-      - name: Upload AI findings artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-ai-findings
-          path: codeql-ai-findings.json
-          retention-days: 14
