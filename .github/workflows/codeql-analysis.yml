@@ -38,7 +38,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: java          # Kotlin queda cubierto por 'java'
-          build-mode: manual
+          build-mode: none
 
       - name: Grant execute permission for Gradle
         run: chmod +x gradlew
