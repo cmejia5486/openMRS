@@ -25,24 +25,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # (Opcional) detectar una source-root razonable
       - name: Detect layout
         id: detect
         shell: bash
         run: |
           set -euo pipefail
           count_java=$(git ls-files '*.java' | wc -l | tr -d ' ')
-          count_kotlin=$(git ls-files '*.kt' '*.kts' 2>/dev/null | wc -l | tr -d ' ')
-          roots=$(git ls-files '*.java' '*.kt' 2>/dev/null | awk -F/ 'NF>1{print $1}' | sort | uniq -c | sort -rn | awk '{print $2}')
+          roots=$(git ls-files '*.java' 2>/dev/null | awk -F/ 'NF>1{print $1}' | sort | uniq -c | sort -rn | awk '{print $2}')
           srcroot="./"
           if [ -n "${roots:-}" ]; then
             first=$(echo "$roots" | head -n1)
             [ -d "$first" ] && srcroot="./$first"
           fi
-          echo "count_java=$count_java"     >> "$GITHUB_OUTPUT"
-          echo "count_kotlin=$count_kotlin" >> "$GITHUB_OUTPUT"
-          echo "source_root=$srcroot"       >> "$GITHUB_OUTPUT"
+          echo "count_java=$count_java"  >> "$GITHUB_OUTPUT"
+          echo "source_root=$srcroot"    >> "$GITHUB_OUTPUT"
           echo "Java files: $count_java"
-          echo "Kotlin files: $count_kotlin"
           echo "Guessed source-root: $srcroot"
 
       - name: Initialize CodeQL (no build, wide suite)
@@ -51,14 +49,14 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
           source-root: ${{ steps.detect.outputs.source_root }}
-          queries: security-and-quality
+          queries: security-and-quality   # suite amplia oficial
 
       - name: Analyze (write SARIF locally)
         uses: github/codeql-action/analyze@v3
         with:
           output: ${{ github.workspace }}/codeql-sarif
 
-      - name: Upload SARIF artifact
+      - name: Upload SARIF artifact (opcional)
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif
@@ -94,12 +92,17 @@ jobs:
               --arg run_url "$RUN_URL" \
               --arg ts "$TS" \
               --slurpfile sarif "$SARIF_FILE" '
+                # ==== defs SIN pipes delante ====
                 def runs: ($sarif[0].runs // []);
                 def rules: [ runs[]? | .tool?.driver?.rules[]? ];
                 def rules_index: ( [ rules[] | {key: .id, value: .} ] | from_entries );
                 def res: [ runs[]? | .results[]? ];
 
-                # === Renombrado: "label" es palabra reservada en jq ===
+                def secscore($r; $ri):
+                  ( ($r.properties["security-severity"]
+                      // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
+
+                # "label" es palabra reservada en jq ⇒ usar otro nombre
                 def severity_label($s):
                   if $s == null then "unknown"
                   elif $s >= 9 then "critical"
@@ -108,14 +111,13 @@ jobs:
                   elif $s > 0 then "low"
                   else "unknown" end;
 
-                def secscore($r; $ri):
-                  ( ($r.properties["security-severity"]
-                      // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
-
                 def cwe($ri):
                   ( $ri[.ruleId].properties.tags // [] )
                   | map(select(startswith("external/cwe/cwe-")))
                   | map(sub("^external/cwe/cwe-"; ""));
+
+                def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
+                def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
 
                 (rules_index) as $RI
                 | (res) as $R
@@ -135,8 +137,6 @@ jobs:
                         cwe: (cwe($RI))
                       }
                   )) as $F
-                | def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
-                | def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
                 | {
                     meta: {repo:$repo, sha:$sha, ref:$ref, run_url:$run_url, generated_at:$ts},
                     scan: {engine:"codeql", language:"java", schema:"agent-payload:v2"},
