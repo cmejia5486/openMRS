@@ -26,27 +26,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      # Gradle 6.5 es compatible con JDK 11 (no con 17)
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '11'
           cache: gradle
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: java          # Kotlin está cubierto por 'java'
+          languages: java          # Kotlin queda cubierto por 'java'
           build-mode: manual
 
       - name: Grant execute permission for Gradle
         run: chmod +x gradlew
 
-      # Ajusta el comando de build a tu proyecto:
-      # - Android app típica: ./gradlew assembleDebug (o :app:assembleDebug)
-      # - Proyecto JVM genérico: ./gradlew build
+      # Ajusta el task según tu proyecto:
+      # - Android app: ./gradlew :app:assembleDebug (requiere SDK Android instalado)
+      # - JVM genérico: ./gradlew build
       - name: Build (manual)
-        run: ./gradlew build
+        run: ./gradlew build -x test --no-daemon --stacktrace
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
