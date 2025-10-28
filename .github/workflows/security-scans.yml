@@ -1,33 +1,53 @@
-name: Security Scans
+name: Security Scans (Trivy → artifact JSON)
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-    
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   trivy-scan:
     name: Trivy File System Scan (genera payload para IA)
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # (OPCIONAL, pero recomendado para Gradle)
+      # Genera gradle.lockfile sin compilar; mejora la resolución de dependencias para el escaneo
+      - name: Generate Gradle lockfile (no build)
+        if: ${{ hashFiles('**/gradle.lockfile') == '' }}
+        uses: actions/setup-java@v4
+        with:
+            distribution: temurin
+            java-version: '11'
+        # Ejecuta resolución de dependencias y escribe locks; no rompe si no hay Gradle
+      - name: Write Gradle dependency locks
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew dependencies --write-locks || true
+          fi
+
       # 1) Ejecuta Trivy y guarda salida JSON en disco (no rompe el job)
       - name: Run Trivy vulnerability scanner (JSON)
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln
-          vuln-type: library
+          scan-type: fs          # escaneo del filesystem del repo
+          scan-ref: .            # raíz del repo
+          scanners: vuln         # solo vulnerabilidades (no secrets/misconfig)
+          vuln-type: library     # dependencias de la app (no OS)
           format: json
           output: trivy.json
-          exit-code: '0'           # deja al job de IA decidir
-          ignore-unfixed: true     # opcional: reduce ruido
+          exit-code: '0'         # no falla el job: dejamos a la IA decidir
 
-      # 2) Metadatos útiles (URL del run, versión Trivy si está disponible)
+      # 2) Metadatos útiles (URL del run, versión Trivy)
       - name: Collect meta
         id: meta
         shell: bash
@@ -35,6 +55,9 @@ jobs:
           echo "run_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           trivy_version=$(trivy --version 2>/dev/null | head -n1 | awk '{print $2}')
           echo "trivy_version=${trivy_version:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       # 3) Construye un payload rico para IA (con resumen y detalles)
       - name: Build AI payload (agent_payload.json)
@@ -57,8 +80,8 @@ jobs:
                      | ($r.Vulnerabilities // [])
                      | map({
                          target: $r.Target,
-                         class: $r.Class,
-                         type:  $r.Type,
+                         class:  $r.Class,
+                         type:   $r.Type,
                          id: .VulnerabilityID,
                          pkg: .PkgName,
                          installed: .InstalledVersion,
@@ -89,9 +112,7 @@ jobs:
                        })
                    )
                  | add // [] );
-
              def sev_init: {"CRITICAL":0,"HIGH":0,"MEDIUM":0,"LOW":0,"UNKNOWN":0};
-
              def summarize($f):
                {
                  total: ($f | length),
@@ -116,7 +137,6 @@ jobs:
                         })
                  )
                };
-
              def policy_hints($f):
                {
                  has_critical: any($f[]; .severity=="CRITICAL"),
@@ -124,10 +144,10 @@ jobs:
                  oldest_published_days:
                    ( if ($f|length)==0 then null
                      else ( [ $f[] | select(.published!=null) | (.published | fromdateiso8601) ]
-                            | min as $min | (now - $min) / 86400 | floor )
+                            | (if length>0 then min else now end) as $min
+                            | (now - $min) / 86400 | floor )
                      end )
                };
-
              (to_findings) as $F
              |
              {
@@ -138,10 +158,12 @@ jobs:
                findings: $F
              }' > agent_payload.json
 
-      # 4) Publica el payload como artifact (consumido por tu job de IA)
+      # 4) Publica el payload y el JSON bruto como artefacto
       - name: Upload artifact (payload para IA)
         uses: actions/upload-artifact@v4
         with:
           name: trivy-payload
-          path: agent_payload.json
+          path: |
+            agent_payload.json
+            trivy.json
           retention-days: 14
