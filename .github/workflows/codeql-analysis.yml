@@ -10,11 +10,11 @@ on:
 
 jobs:
   analyze:
-    name: CodeQL Analysis
+    name: CodeQL (Java, extended)
     runs-on: ubuntu-latest
     permissions:
       actions: read
-      contents: write         # 👈 necesario para crear/actualizar Releases
+      contents: write         # para publicar release con JSON (público si el repo es público)
       security-events: write
     strategy:
       fail-fast: false
@@ -22,21 +22,45 @@ jobs:
         language: [ 'java' ]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
+      # Diagnóstico: cuántos .java / .kt y una source-root aproximada
+      - name: Detect layout
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          count_java=$(git ls-files '*.java' | wc -l | tr -d ' ')
+          count_kotlin=$(git ls-files '*.kt' '*.kts' 2>/dev/null | wc -l | tr -d ' ')
+          # Raíz con más ficheros fuente (nivel 1); si no, usa repo root
+          roots=$(git ls-files '*.java' '*.kt' 2>/dev/null | awk -F/ 'NF>1{print $1}' | sort | uniq -c | sort -rn | awk '{print $2}')
+          srcroot="./"
+          if [ -n "${roots:-}" ]; then
+            first=$(echo "$roots" | head -n1)
+            [ -d "$first" ] && srcroot="./$first"
+          fi
+          echo "count_java=$count_java"        >> $GITHUB_OUTPUT
+          echo "count_kotlin=$count_kotlin"    >> $GITHUB_OUTPUT
+          echo "source_root=$srcroot"          >> $GITHUB_OUTPUT
+          echo "Java files: $count_java"
+          echo "Kotlin files: $count_kotlin"
+          echo "Guessed source-root: $srcroot"
+
+      - name: Initialize CodeQL (Java, no build, extended suites)
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: none
+          source-root: ${{ steps.detect.outputs.source_root }}
+          queries: +security-extended,+security-and-quality
 
-      - name: Perform CodeQL Analysis (write SARIF locally)
+      - name: Analyze (write SARIF locally)
         uses: github/codeql-action/analyze@v3
         with:
           output: ${{ github.workspace }}/codeql-sarif
 
-      # (Opcional) Conserva SARIF como artifact interno
+      # Artefacto SARIF (interno)
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v4
         with:
@@ -44,87 +68,45 @@ jobs:
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      # Construye payload compacto para IA
-      - name: Build AI-friendly payload from SARIF (v2)
+      # JSON compacto para tu agente IA
+      - name: Build AI payload (from SARIF)
         shell: bash
         run: |
           set -euo pipefail
-
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          CS_URL="https://github.com/${{ github.repository }}/security/code-scanning?query=branch%3A${{ github.ref_name }}"
           TS=$(date -u +%FT%TZ)
-          COMMIT_SUBJECT="$(git log -1 --pretty=%s || true)"
-          DEFAULT_BRANCH="$(jq -r '.repository.default_branch // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || echo '')"
-          PR_NUMBER="$(jq -r '.pull_request.number // empty' "$GITHUB_EVENT_PATH" 2>/dev/null || echo '')"
-
           shopt -s nullglob
           SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
-
           if [ ${#SARIFS[@]} -eq 0 ]; then
             jq -n \
               --arg repo "${{ github.repository }}" \
               --arg sha "${{ github.sha }}" \
               --arg ref "${{ github.ref }}" \
-              --arg ref_name "${{ github.ref_name }}" \
-              --arg base_ref "${{ github.base_ref }}" \
-              --arg pr_number "$PR_NUMBER" \
-              --arg actor "${{ github.actor }}" \
-              --arg event "${{ github.event_name }}" \
-              --arg def_branch "$DEFAULT_BRANCH" \
-              --arg commit_subject "$COMMIT_SUBJECT" \
-              --arg run_id "${{ github.run_id }}" \
               --arg run_url "$RUN_URL" \
-              --arg cs_url "$CS_URL" \
               --arg ts "$TS" \
-              --arg lang "${{ matrix.language }}" \
-              '{meta:{repo:$repo,sha:$sha,ref:$ref,ref_name:$ref_name,base_ref:$base_ref,pr_number:$pr_number,
-                      actor:$actor,event:$event,default_branch:$def_branch,commit_subject:$commit_subject,
-                      run_id:$run_id,run_url:$run_url,code_scanning_url:$cs_url,generated_at:$ts},
-                scan:{engine:"codeql",language:$lang,schema:"agent-payload:v2",
-                      tool_name:null,tool_version:null,query_packs:[]},
-                policy_hints:{severity_label_thresholds:{critical:">=9.0",high:"7.0-8.9",medium:"4.0-6.9",low:"0.1-3.9"},
-                              notes:"security_severity_score es numérico (0.0-10.0) y la etiqueta se deriva."},
+              '{meta:{repo:$repo,sha:$sha,ref:$ref,run_url:$run_url,generated_at:$ts},
+                scan:{engine:"codeql",language:"java",schema:"agent-payload:v2"},
                 summary:{total:0,by_security_severity_label:{critical:0,high:0,medium:0,low:0,unknown:0},
                          by_level:{error:0,warning:0,note:0,none:0},unique_rules:0,by_rule:[],by_file:[],by_cwe:[]},
                 findings:[]}' > codeql_agent_payload.json
           else
             SARIF_FILE="${SARIFS[0]}"
-
             jq -n \
               --arg repo "${{ github.repository }}" \
               --arg sha "${{ github.sha }}" \
               --arg ref "${{ github.ref }}" \
-              --arg ref_name "${{ github.ref_name }}" \
-              --arg base_ref "${{ github.base_ref }}" \
-              --arg pr_number "$PR_NUMBER" \
-              --arg actor "${{ github.actor }}" \
-              --arg event "${{ github.event_name }}" \
-              --arg def_branch "$DEFAULT_BRANCH" \
-              --arg commit_subject "$COMMIT_SUBJECT" \
-              --arg run_id "${{ github.run_id }}" \
               --arg run_url "$RUN_URL" \
-              --arg cs_url "$CS_URL" \
               --arg ts "$TS" \
-              --arg lang "${{ matrix.language }}" \
               --slurpfile sarif "$SARIF_FILE" '
-                def first_run: ($sarif[0].runs[0] // {});
-                def all_runs: ($sarif[0].runs // []);
-                def tool: (first_run.tool.driver // {});
-                def tool_name: (tool.name // null);
-                def tool_version: (tool.semanticVersion // tool.version // null);
-                def tool_ext: (first_run.tool.extensions // []);
-
-                def rules_index:
-                  ( [ all_runs[]? | .tool?.driver?.rules[]?
-                      | {key: .id, value: .} ] | from_entries );
-
-                def all_results: [ all_runs[]? | .results[]? ];
+                def runs: ($sarif[0].runs // []);
+                def rules: [ runs[]? | .tool?.driver?.rules[]? ];
+                def rules_index: ( [ rules[] | {key: .id, value: .} ] | from_entries );
+                def res: [ runs[]? | .results[]? ];
 
                 def secscore($r; $ri):
                   ( ($r.properties["security-severity"]
                       // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
-
-                def seclabel($s):
+                def label($s):
                   if $s == null then "unknown"
                   elif $s >= 9 then "critical"
                   elif $s >= 7 then "high"
@@ -132,71 +114,36 @@ jobs:
                   elif $s > 0 then "low"
                   else "unknown" end;
 
-                def cwe_list($ri):
+                def cwe($ri):
                   ( $ri[.ruleId].properties.tags // [] )
                   | map(select(startswith("external/cwe/cwe-")))
                   | map(sub("^external/cwe/cwe-"; ""));
 
-                def safe_code_flow:
-                  (
-                    (.codeFlows // [])
-                    | (if length>0 then .[0].threadFlows else [] end)
-                    | (if length>0 then .[0].locations else [] end)
-                    | map({
-                        file: .location.physicalLocation.artifactLocation.uri,
-                        line: (.location.physicalLocation.region.startLine // null)
-                      })
-                    | .[:5]
-                  ) // [];
-
-                def toFinding($ri):
-                  (secscore(.; $ri)) as $score
-                  | {
-                      rule_id: .ruleId,
-                      rule_name: ($ri[.ruleId].name // $ri[.ruleId].shortDescription.text // null),
-                      rule_precision: ($ri[.ruleId].properties.precision // null),
-                      security_severity_score: $score,
-                      security_severity_label: (seclabel($score)),
-                      level: (.level // "warning"),
-                      message: (.message.text // null),
-                      file: (.locations[0].physicalLocation.artifactLocation.uri // null),
-                      startLine: (.locations[0].physicalLocation.region.startLine // null),
-                      endLine: (.locations[0].physicalLocation.region.endLine // null),
-                      startColumn: (.locations[0].physicalLocation.region.startColumn // null),
-                      snippet: (.locations[0].physicalLocation.region.snippet.text // null),
-                      help: ($ri[.ruleId].helpUri // null),
-                      rule_tags: ($ri[.ruleId].properties.tags // []),
-                      cwe: (cwe_list($ri)),
-                      code_flow: safe_code_flow
-                    };
-
-                def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
-                def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
-
                 (rules_index) as $RI
-                | (all_results) as $R
-                | ($R | map(toFinding($RI))) as $F
+                | (res) as $R
+                | ($R | map(
+                    (secscore(.; $RI)) as $s
+                    | {
+                        rule_id: .ruleId,
+                        rule_name: ($RI[.ruleId].name // $RI[.ruleId].shortDescription.text // null),
+                        security_severity_score: $s,
+                        security_severity_label: (label($s)),
+                        level: (.level // "warning"),
+                        message: (.message.text // null),
+                        file: (.locations[0].physicalLocation.artifactLocation.uri // null),
+                        startLine: (.locations[0].physicalLocation.region.startLine // null),
+                        help: ($RI[.ruleId].helpUri // null),
+                        rule_tags: ($RI[.ruleId].properties.tags // []),
+                        cwe: (cwe($RI))
+                      }
+                  )) as $F
+                | def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
+                | def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
                 | {
-                    meta: {
-                      repo: $repo, sha: $sha, ref: $ref, ref_name: $ref_name,
-                      base_ref: $base_ref, pr_number: $pr_number,
-                      actor: $actor, event: $event, default_branch: $def_branch,
-                      commit_subject: $commit_subject,
-                      run_id: $run_id, run_url: $run_url,
-                      code_scanning_url: $cs_url,
-                      generated_at: $ts
-                    },
-                    scan: {
-                      engine: "codeql", language: $lang, schema: "agent-payload:v2",
-                      tool_name: tool_name, tool_version: tool_version,
-                      query_packs: (tool_ext | map(.name))
-                    },
-                    policy_hints: {
-                      severity_label_thresholds: {critical: ">=9.0", high: "7.0-8.9", medium: "4.0-6.9", low: "0.1-3.9"},
-                      notes: "security_severity_score es numérico (0.0-10.0) y la etiqueta se deriva."
-                    },
+                    meta: {repo:$repo, sha:$sha, ref:$ref, run_url:$run_url, generated_at:$ts},
+                    scan: {engine:"codeql", language:"java", schema:"agent-payload:v2"},
                     summary: {
-                      total: ($F | length),
+                      total: ($F|length),
                       by_security_severity_label:
                         (reduce $F[] as $x (sev_init; .[($x.security_severity_label // "unknown")] += 1)),
                       by_level:
@@ -220,8 +167,8 @@ jobs:
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      # Crea bundle (payload + SARIF) para un único archivo consumible por la IA
-      - name: Build single bundle (codeql-bundle.json)
+      # Bundle único para la IA (payload + SARIF)
+      - name: Build bundle
         shell: bash
         run: |
           set -euo pipefail
@@ -237,38 +184,19 @@ jobs:
                 items:{ codeql_agent_payload:$payload[0] }}' > codeql-bundle.json
           fi
 
-      # (Opcional) Guarda también como artifacts internos
-      - name: Upload bundle artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-public-bundle
-          path: |
-            codeql-bundle.json
-            codeql_agent_payload.json
-          retention-days: 14
-
-      # ===== Publicación en GitHub Releases (enlace sin auth si el repo es público) =====
-      - name: Publish/Update 'codeql-latest' release with JSON assets
+      # Publica como Release (descarga sin auth si el repo es público)
+      - name: Publish/Update 'codeql-latest' release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: codeql-latest
           name: CodeQL Bundle (latest)
-          body: |
-            Automated CodeQL results for ${{ github.sha }} on ${{ github.ref_name }}.
-            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          body: "Automated CodeQL results for ${{ github.sha }} on ${{ github.ref_name }}."
           draft: false
           prerelease: true
           make_latest: false
           files: |
             codeql-bundle.json
             codeql_agent_payload.json
-          overwrite_files: true   # 👈 sobrescribe assets si ya existen (v2.3.3+)
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Show public download URLs
-        shell: bash
-        run: |
-          echo "### 🔗 Enlaces (públicos si el repo es público)" >> "$GITHUB_STEP_SUMMARY"
-          echo "- codeql-bundle.json: https://github.com/${{ github.repository }}/releases/download/codeql-latest/codeql-bundle.json" >> "$GITHUB_STEP_SUMMARY"
-          echo "- codeql_agent_payload.json: https://github.com/${{ github.repository }}/releases/download/codeql-latest/codeql_agent_payload.json" >> "$GITHUB_STEP_SUMMARY"
