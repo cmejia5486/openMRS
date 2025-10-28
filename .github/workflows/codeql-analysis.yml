@@ -20,6 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         language: [ 'java' ]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,14 +35,126 @@ jobs:
       - name: Perform CodeQL Analysis (write SARIF locally)
         uses: github/codeql-action/analyze@v3
         with:
-          # Carpeta dentro del workspace para evitar rutas con ".."
+          # Carpeta dentro del workspace
           output: ${{ github.workspace }}/codeql-sarif
-          # upload: 'always'  # (opcional; 'always' es el valor por defecto)
+          # upload: 'always'  # (por defecto sube a Code Scanning)
 
-      # 2) Publica los SARIF como artifact para que el job de IA los consuma
+      # 2) Subir el SARIF como artefacto reutilizable por otros jobs
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
+          retention-days: 14
+
+      # 3) Convertir SARIF -> payload compacto para IA (resumen + hallazgos)
+      - name: Build AI-friendly payload from SARIF
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TS=$(date -u +%FT%TZ)
+
+          SARIF_FILE="$(ls "$GITHUB_WORKSPACE/codeql-sarif/"*.sarif | head -n1 || true)"
+          if [ -z "${SARIF_FILE:-}" ]; then
+            # Si por alguna razón no hay SARIF, deja un payload vacío pero válido
+            jq -n \
+              --arg repo "${{ github.repository }}" \
+              --arg sha "${{ github.sha }}" \
+              --arg ref "${{ github.ref }}" \
+              --arg run_id "${{ github.run_id }}" \
+              --arg run_url "$RUN_URL" \
+              --arg ts "$TS" \
+              --arg lang "${{ matrix.language }}" \
+              '{meta:{repo:$repo,sha:$sha,ref:$ref,run_id:$run_id,run_url:$run_url,generated_at:$ts},
+                scan:{engine:"codeql",language:$lang,schema:"agent-payload:v1"},
+                summary:{total:0,by_security_severity:{critical:0,high:0,medium:0,low:0,unknown:0},by_level:{error:0,warning:0,note:0,none:0},unique_rules:0,top_rules:[],by_file:[]},
+                findings:[]}' \
+              > codeql_agent_payload.json
+          else
+            jq -n \
+              --arg repo "${{ github.repository }}" \
+              --arg sha "${{ github.sha }}" \
+              --arg ref "${{ github.ref }}" \
+              --arg run_id "${{ github.run_id }}" \
+              --arg run_url "$RUN_URL" \
+              --arg ts "$TS" \
+              --arg lang "${{ matrix.language }}" \
+              --slurpfile s "$SARIF_FILE" '
+              # Toma todos los runs del SARIF
+              def all_runs:  ($s[0].runs // []);
+              # Index de reglas por id para enriquecer resultados
+              def rules_index:
+                ( [ all_runs[]?.tool?.driver?.rules[]? ] | INDEX(.id) );
+
+              # Extrae todos los results
+              def all_results:
+                [ all_runs[]?.results[]? ];
+
+              # Normaliza severidad de seguridad (propiedad recomendada por Code Scanning)
+              def secsev($r; $ri):
+                ( $r.properties["security-severity"] // $ri[$r.ruleId].properties["security-severity"] // "unknown" )
+                | ascii_downcase;
+
+              # Mapea cada resultado a un hallazgo compacto
+              def toFinding($ri):
+                {
+                  rule_id: .ruleId,
+                  rule_name: ($ri[.ruleId].name // $ri[.ruleId].shortDescription.text // null),
+                  security_severity: (secsev(.; $ri)),
+                  level: (.level // "warning"),
+                  message: (.message.text // null),
+                  file: (.locations[0].physicalLocation.artifactLocation.uri // null),
+                  startLine: (.locations[0].physicalLocation.region.startLine // null),
+                  startColumn: (.locations[0].physicalLocation.region.startColumn // null),
+                  help: ($ri[.ruleId].helpUri // null),
+                  rule_tags: ($ri[.ruleId].properties.tags // []),
+                  fingerprints: (.fingerprints // {})
+                };
+
+              (rules_index) as $RI
+              | (all_results) as $R
+              | ($R | map(toFinding($RI))) as $F
+
+              # helpers conteos
+              | def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
+              | def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
+
+              | {
+                  meta: {
+                    repo: $repo, sha: $sha, ref: $ref,
+                    run_id: $run_id, run_url: $run_url,
+                    generated_at: $ts
+                  },
+                  scan: { engine: "codeql", language: $lang, schema: "agent-payload:v1" },
+                  summary: {
+                    total: ($F | length),
+                    by_security_severity:
+                      (reduce $F[] as $x (sev_init; .[($x.security_severity // "unknown")] += 1)),
+                    by_level:
+                      (reduce $F[] as $x (lvl_init; .[($x.level // "warning")] += 1)),
+                    unique_rules: ($F | map(.rule_id) | unique | length),
+                    top_rules:
+                      ($F | group_by(.rule_id)
+                          | map({rule_id: .[0].rule_id, count: length})
+                          | sort_by(-.count) | .[:10]),
+                    by_file:
+                      ($F | group_by(.file)
+                          | map({file: (.[0].file // "<unknown>"), count: length})
+                          | sort_by(-.count) | .[:10])
+                  },
+                  findings: $F
+                }' \
+              > codeql_agent_payload.json
+          fi
+
+          echo "Wrote codeql_agent_payload.json"
+          jq -r '.summary' codeql_agent_payload.json || true
+
+      # 4) Subir el payload compacto como artefacto para el job de IA
+      - name: Upload CodeQL agent payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-agent-payload
+          path: codeql_agent_payload.json
           retention-days: 14
