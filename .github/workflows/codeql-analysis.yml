@@ -31,15 +31,13 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
 
-      # 1) Ejecuta CodeQL y escribe SARIF localmente (además de subir a Code Scanning)
+      # Ejecuta CodeQL y escribe SARIF localmente (además de subir a Code Scanning)
       - name: Perform CodeQL Analysis (write SARIF locally)
         uses: github/codeql-action/analyze@v3
         with:
-          # Carpeta dentro del workspace
           output: ${{ github.workspace }}/codeql-sarif
-          # upload: 'always'  # (por defecto sube a Code Scanning)
 
-      # 2) Subir el SARIF como artefacto reutilizable por otros jobs
+      # Sube el SARIF como artifact reutilizable
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v4
         with:
@@ -47,17 +45,19 @@ jobs:
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      # 3) Convertir SARIF -> payload compacto para IA (resumen + hallazgos)
+      # Convierte SARIF -> payload compacto para IA (robusto, sin problemas de quoting)
       - name: Build AI-friendly payload from SARIF
         shell: bash
         run: |
           set -euo pipefail
+
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           TS=$(date -u +%FT%TZ)
 
-          SARIF_FILE="$(ls "$GITHUB_WORKSPACE/codeql-sarif/"*.sarif | head -n1 || true)"
-          if [ -z "${SARIF_FILE:-}" ]; then
-            # Si por alguna razón no hay SARIF, deja un payload vacío pero válido
+          shopt -s nullglob
+          SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
+          if [ ${#SARIFS[@]} -eq 0 ]; then
+            # Payload vacío pero válido
             jq -n \
               --arg repo "${{ github.repository }}" \
               --arg sha "${{ github.sha }}" \
@@ -72,6 +72,67 @@ jobs:
                 findings:[]}' \
               > codeql_agent_payload.json
           else
+            SARIF_FILE="${SARIFS[0]}"
+
+            # Guardamos el programa jq en un archivo mediante heredoc con comillas literales
+            cat > program.jq <<'JQ'
+def all_runs: ($sarif[0].runs // []);
+def rules_index: ( [ all_runs[]?.tool?.driver?.rules[]? ] | INDEX(.id) );
+def all_results: [ all_runs[]?.results[]? ];
+
+def secsev($r; $ri):
+  ( $r.properties["security-severity"]
+    // $ri[$r.ruleId].properties["security-severity"]
+    // "unknown" ) | ascii_downcase;
+
+def toFinding($ri):
+  {
+    rule_id: .ruleId,
+    rule_name: ($ri[.ruleId].name // $ri[.ruleId].shortDescription.text // null),
+    security_severity: (secsev(.; $ri)),
+    level: (.level // "warning"),
+    message: (.message.text // null),
+    file: (.locations[0].physicalLocation.artifactLocation.uri // null),
+    startLine: (.locations[0].physicalLocation.region.startLine // null),
+    startColumn: (.locations[0].physicalLocation.region.startColumn // null),
+    help: ($ri[.ruleId].helpUri // null),
+    rule_tags: ($ri[.ruleId].properties.tags // []),
+    fingerprints: (.fingerprints // {})
+  };
+
+def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
+def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
+
+(rules_index) as $RI
+| (all_results) as $R
+| ($R | map(toFinding($RI))) as $F
+| {
+    meta: {
+      repo: $repo, sha: $sha, ref: $ref,
+      run_id: $run_id, run_url: $run_url,
+      generated_at: $ts
+    },
+    scan: { engine: "codeql", language: $lang, schema: "agent-payload:v1" },
+    summary: {
+      total: ($F | length),
+      by_security_severity:
+        (reduce $F[] as $x (sev_init; .[($x.security_severity // "unknown")] += 1)),
+      by_level:
+        (reduce $F[] as $x (lvl_init; .[($x.level // "warning")] += 1)),
+      unique_rules: ($F | map(.rule_id) | unique | length),
+      top_rules:
+        ($F | group_by(.rule_id)
+            | map({rule_id: .[0].rule_id, count: length})
+            | sort_by(-.count) | .[:10]),
+      by_file:
+        ($F | group_by(.file)
+            | map({file: (.[0].file // "<unknown>"), count: length})
+            | sort_by(-.count) | .[:10])
+    },
+    findings: $F
+  }
+JQ
+
             jq -n \
               --arg repo "${{ github.repository }}" \
               --arg sha "${{ github.sha }}" \
@@ -80,78 +141,14 @@ jobs:
               --arg run_url "$RUN_URL" \
               --arg ts "$TS" \
               --arg lang "${{ matrix.language }}" \
-              --slurpfile s "$SARIF_FILE" '
-              # Toma todos los runs del SARIF
-              def all_runs:  ($s[0].runs // []);
-              # Index de reglas por id para enriquecer resultados
-              def rules_index:
-                ( [ all_runs[]?.tool?.driver?.rules[]? ] | INDEX(.id) );
-
-              # Extrae todos los results
-              def all_results:
-                [ all_runs[]?.results[]? ];
-
-              # Normaliza severidad de seguridad (propiedad recomendada por Code Scanning)
-              def secsev($r; $ri):
-                ( $r.properties["security-severity"] // $ri[$r.ruleId].properties["security-severity"] // "unknown" )
-                | ascii_downcase;
-
-              # Mapea cada resultado a un hallazgo compacto
-              def toFinding($ri):
-                {
-                  rule_id: .ruleId,
-                  rule_name: ($ri[.ruleId].name // $ri[.ruleId].shortDescription.text // null),
-                  security_severity: (secsev(.; $ri)),
-                  level: (.level // "warning"),
-                  message: (.message.text // null),
-                  file: (.locations[0].physicalLocation.artifactLocation.uri // null),
-                  startLine: (.locations[0].physicalLocation.region.startLine // null),
-                  startColumn: (.locations[0].physicalLocation.region.startColumn // null),
-                  help: ($ri[.ruleId].helpUri // null),
-                  rule_tags: ($ri[.ruleId].properties.tags // []),
-                  fingerprints: (.fingerprints // {})
-                };
-
-              (rules_index) as $RI
-              | (all_results) as $R
-              | ($R | map(toFinding($RI))) as $F
-
-              # helpers conteos
-              | def sev_init: {"critical":0,"high":0,"medium":0,"low":0,"unknown":0};
-              | def lvl_init: {"error":0,"warning":0,"note":0,"none":0};
-
-              | {
-                  meta: {
-                    repo: $repo, sha: $sha, ref: $ref,
-                    run_id: $run_id, run_url: $run_url,
-                    generated_at: $ts
-                  },
-                  scan: { engine: "codeql", language: $lang, schema: "agent-payload:v1" },
-                  summary: {
-                    total: ($F | length),
-                    by_security_severity:
-                      (reduce $F[] as $x (sev_init; .[($x.security_severity // "unknown")] += 1)),
-                    by_level:
-                      (reduce $F[] as $x (lvl_init; .[($x.level // "warning")] += 1)),
-                    unique_rules: ($F | map(.rule_id) | unique | length),
-                    top_rules:
-                      ($F | group_by(.rule_id)
-                          | map({rule_id: .[0].rule_id, count: length})
-                          | sort_by(-.count) | .[:10]),
-                    by_file:
-                      ($F | group_by(.file)
-                          | map({file: (.[0].file // "<unknown>"), count: length})
-                          | sort_by(-.count) | .[:10])
-                  },
-                  findings: $F
-                }' \
-              > codeql_agent_payload.json
+              --slurpfile sarif "$SARIF_FILE" \
+              -f program.jq > codeql_agent_payload.json
           fi
 
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      # 4) Subir el payload compacto como artefacto para el job de IA
+      # Sube el payload compacto como artefacto para el job de IA
       - name: Upload CodeQL agent payload
         uses: actions/upload-artifact@v4
         with:
