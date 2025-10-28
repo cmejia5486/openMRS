@@ -1,0 +1,4 @@
+name: security-only
+disable-default-queries: true
+queries:
+  - uses: security-extended
