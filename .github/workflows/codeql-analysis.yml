@@ -20,6 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         language: [ 'java' ]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -30,5 +31,17 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
 
-      - name: Perform CodeQL Analysis
+      # Genera el SARIF localmente (además de subirlo a Code Scanning)
+      - name: Perform CodeQL Analysis (write SARIF locally)
         uses: github/codeql-action/analyze@v3
+        with:
+          # Carpeta donde guardar los SARIF (por defecto sería ../results)
+          output: ${{ github.workspace }}/codeql-sarif
+
+      # Publica el SARIF como artefacto para que otro job lo descargue
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: ${{ github.workspace }}/codeql-sarif/*.sarif
+          retention-days: 14
