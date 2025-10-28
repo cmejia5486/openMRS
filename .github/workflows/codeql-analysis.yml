@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   sast:
-    name: SAST (no build, report-only)
+    name: SAST (no build, security-only, report-only)
     # Evita ejecutar con Dependabot
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name || '', 'dependabot/') }}
     runs-on: ubuntu-latest
@@ -25,21 +25,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- CodeQL (Java) sin build ---
+      # --- CodeQL (Java) sin build, solo seguridad ---
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java
           build-mode: none
+          config-file: .github/codeql/codeql-security.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          output: report/codeql    # guarda SARIF local
-          upload: always           # y también lo sube a Code Scanning
-        continue-on-error: true    # no falla el job por findings
+          output: report/codeql      # guarda SARIF local
+          upload: always             # y lo sube a Code Scanning
+        continue-on-error: true       # no falla el job por findings
 
-      # --- Detekt (Kotlin) CLI ---
+      # --- Detekt (Kotlin) CLI (solo artefacto, no subir a Security) ---
       - name: Set up JDK (for Detekt CLI)
         uses: actions/setup-java@v4
         with:
@@ -54,13 +55,7 @@ jobs:
           mkdir -p report
           detekt-cli -i . --all-rules --report sarif:report/detekt.sarif || true
 
-      - name: Upload Detekt to Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: report/detekt.sarif
-        continue-on-error: true
-
-      # --- Semgrep (Java + Kotlin) ---
+      # --- Semgrep (Java + Kotlin) security packs ---
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -69,12 +64,32 @@ jobs:
       - name: Install Semgrep
         run: pip install --upgrade semgrep
 
-      - name: Run Semgrep (→ SARIF)
+      - name: Run Semgrep (security packs → SARIF)
         run: |
           mkdir -p report
-          semgrep --config p/java --config p/kotlin --sarif --output report/semgrep.sarif || true
+          semgrep scan \
+            --config p/owasp-top-ten \
+            --config p/security-audit \
+            --config p/secrets \
+            --severity WARNING --severity ERROR \
+            --sarif --output report/semgrep.raw.sarif || true
 
-      - name: Upload Semgrep to Code Scanning
+      # --- Filtrar SARIF de Semgrep (excluir tests y rutas ruidosas) ---
+      - name: Filter Semgrep SARIF (keep app code only)
+        uses: advanced-security/filter-sarif@v1
+        with:
+          input: report/semgrep.raw.sarif
+          output: report/semgrep.sarif
+          # Incluye solo código de app y excluye tests
+          patterns: |
+            -**/test/**
+            -**/androidTest/**
+            -**/*Test*.kt
+            -**/*Test*.java
+            **/src/**
+
+      # Subir a Code Scanning solo los SARIF de seguridad
+      - name: Upload Semgrep (security-only) to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: report/semgrep.sarif
@@ -84,7 +99,7 @@ jobs:
       - name: Ensure jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Merge SARIFs
+      - name: Merge SARIFs (CodeQL + Detekt + Semgrep)
         shell: bash
         run: |
           shopt -s nullglob
@@ -96,7 +111,7 @@ jobs:
             echo '{ "version":"2.1.0", "runs": [] }' > report/merged.sarif
           fi
 
-      - name: Upload findings artifact (para otros jobs)
+      - name: Upload findings artifact (para otros jobs / IA)
         if: always()
         uses: actions/upload-artifact@v4
         with:
