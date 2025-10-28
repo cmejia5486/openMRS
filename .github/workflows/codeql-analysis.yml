@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
-      contents: write
+      contents: write         # necesario para crear/actualizar Releases
       security-events: write
     strategy:
       fail-fast: false
@@ -25,22 +25,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # (Opcional) detectar una source-root razonable
       - name: Detect layout
         id: detect
         shell: bash
         run: |
           set -euo pipefail
-          count_java=$(git ls-files '*.java' | wc -l | tr -d ' ')
           roots=$(git ls-files '*.java' 2>/dev/null | awk -F/ 'NF>1{print $1}' | sort | uniq -c | sort -rn | awk '{print $2}')
           srcroot="./"
           if [ -n "${roots:-}" ]; then
             first=$(echo "$roots" | head -n1)
             [ -d "$first" ] && srcroot="./$first"
           fi
-          echo "count_java=$count_java"  >> "$GITHUB_OUTPUT"
-          echo "source_root=$srcroot"    >> "$GITHUB_OUTPUT"
-          echo "Java files: $count_java"
+          echo "source_root=$srcroot" >> "$GITHUB_OUTPUT"
           echo "Guessed source-root: $srcroot"
 
       - name: Initialize CodeQL (no build, wide suite)
@@ -49,19 +45,12 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
           source-root: ${{ steps.detect.outputs.source_root }}
-          queries: security-and-quality   # suite amplia oficial
+          queries: security-and-quality
 
       - name: Analyze (write SARIF locally)
         uses: github/codeql-action/analyze@v3
         with:
           output: ${{ github.workspace }}/codeql-sarif
-
-      - name: Upload SARIF artifact (opcional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-sarif
-          path: ${{ github.workspace }}/codeql-sarif/*.sarif
-          retention-days: 14
 
       - name: Build AI payload (from SARIF)
         shell: bash
@@ -92,7 +81,6 @@ jobs:
               --arg run_url "$RUN_URL" \
               --arg ts "$TS" \
               --slurpfile sarif "$SARIF_FILE" '
-                # ==== defs SIN pipes delante ====
                 def runs: ($sarif[0].runs // []);
                 def rules: [ runs[]? | .tool?.driver?.rules[]? ];
                 def rules_index: ( [ rules[] | {key: .id, value: .} ] | from_entries );
@@ -102,7 +90,6 @@ jobs:
                   ( ($r.properties["security-severity"]
                       // $ri[$r.ruleId].properties["security-severity"]) | tonumber? );
 
-                # "label" es palabra reservada en jq ⇒ usar otro nombre
                 def severity_label($s):
                   if $s == null then "unknown"
                   elif $s >= 9 then "critical"
@@ -162,30 +149,37 @@ jobs:
                   }' > codeql_agent_payload.json
           fi
 
-          echo "Wrote codeql_agent_payload.json"
-          jq -r '.summary' codeql_agent_payload.json || true
-
-      - name: Build bundle (payload + primer SARIF)
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          SARIFS=("$GITHUB_WORKSPACE/codeql-sarif"/*.sarif)
-          if [ ${#SARIFS[@]} -gt 0 ]; then
-            jq -n --slurpfile payload codeql_agent_payload.json --slurpfile sarif "${SARIFS[0]}" \
-              '{version:"codeql-bundle:v1", generated_at: (now|todate),
-                items:{ codeql_agent_payload:$payload[0], sarif:$sarif[0] }}' > codeql-bundle.json
-          else
-            jq -n --slurpfile payload codeql_agent_payload.json \
-              '{version:"codeql-bundle:v1", generated_at: (now|todate),
-                items:{ codeql_agent_payload:$payload[0] }}' > codeql-bundle.json
+          # Bundle único para la IA
+          if [ -f codeql_agent_payload.json ]; then
+            if [ -f "$GITHUB_WORKSPACE/codeql-sarif/$(basename "${SARIF_FILE:-}")" ]; then
+              jq -n --slurpfile payload codeql_agent_payload.json --slurpfile sarif "$SARIF_FILE" \
+                '{version:"codeql-bundle:v1", generated_at: (now|todate),
+                  items:{ codeql_agent_payload:$payload[0], sarif:$sarif[0] }}' > codeql-bundle.json
+            else
+              jq -n --slurpfile payload codeql_agent_payload.json \
+                '{version:"codeql-bundle:v1", generated_at: (now|todate),
+                  items:{ codeql_agent_payload:$payload[0] }}' > codeql-bundle.json
+            fi
           fi
 
-      - name: Upload bundle for AI job
-        uses: actions/upload-artifact@v4
+      # Publica un Release "codeql-latest" con un único asset: codeql-bundle.json
+      - name: Publish/Update 'codeql-latest' release (direct link if public)
+        uses: softprops/action-gh-release@v2
         with:
-          name: codeql-bundle
-          path: |
-            codeql-bundle.json
-            codeql_agent_payload.json
-          retention-days: 14
+          tag_name: codeql-latest
+          name: CodeQL Bundle (latest)
+          body: "Automated CodeQL results for ${{ github.sha }} on ${{ github.ref_name }}."
+          draft: false
+          prerelease: true
+          make_latest: false
+          files: codeql-bundle.json
+          overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Imprime el enlace directo (funciona sin auth si el repo es público)
+      - name: Print direct download URL
+        shell: bash
+        run: |
+          echo "Direct link (latest):"
+          echo "https://github.com/${{ github.repository }}/releases/latest/download/codeql-bundle.json" | tee -a "$GITHUB_STEP_SUMMARY"
