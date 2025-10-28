@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
-      contents: write         # para publicar release con JSON (público si el repo es público)
+      contents: write         # para publicar Release con JSON
       security-events: write
     strategy:
       fail-fast: false
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Diagnóstico: cuántos .java / .kt y una source-root aproximada
+      # Detecta layout del repo para fijar un source-root razonable
       - name: Detect layout
         id: detect
         shell: bash
@@ -33,34 +33,34 @@ jobs:
           set -euo pipefail
           count_java=$(git ls-files '*.java' | wc -l | tr -d ' ')
           count_kotlin=$(git ls-files '*.kt' '*.kts' 2>/dev/null | wc -l | tr -d ' ')
-          # Raíz con más ficheros fuente (nivel 1); si no, usa repo root
           roots=$(git ls-files '*.java' '*.kt' 2>/dev/null | awk -F/ 'NF>1{print $1}' | sort | uniq -c | sort -rn | awk '{print $2}')
           srcroot="./"
           if [ -n "${roots:-}" ]; then
             first=$(echo "$roots" | head -n1)
             [ -d "$first" ] && srcroot="./$first"
           fi
-          echo "count_java=$count_java"        >> $GITHUB_OUTPUT
-          echo "count_kotlin=$count_kotlin"    >> $GITHUB_OUTPUT
-          echo "source_root=$srcroot"          >> $GITHUB_OUTPUT
+          echo "count_java=$count_java"     >> "$GITHUB_OUTPUT"
+          echo "count_kotlin=$count_kotlin" >> "$GITHUB_OUTPUT"
+          echo "source_root=$srcroot"       >> "$GITHUB_OUTPUT"
           echo "Java files: $count_java"
           echo "Kotlin files: $count_kotlin"
           echo "Guessed source-root: $srcroot"
 
-      - name: Initialize CodeQL (Java, no build, extended suites)
+      - name: Initialize CodeQL (no build, extended suite)
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: none
           source-root: ${{ steps.detect.outputs.source_root }}
-          queries: +security-extended,+security-and-quality
+          # Usa la suite amplia oficial (incluye seguridad y calidad)
+          queries: security-and-quality
 
       - name: Analyze (write SARIF locally)
         uses: github/codeql-action/analyze@v3
         with:
           output: ${{ github.workspace }}/codeql-sarif
 
-      # Artefacto SARIF (interno)
+      # Artefacto SARIF (interno opcional)
       - name: Upload SARIF artifact
         uses: actions/upload-artifact@v4
         with:
@@ -68,7 +68,7 @@ jobs:
           path: ${{ github.workspace }}/codeql-sarif/*.sarif
           retention-days: 14
 
-      # JSON compacto para tu agente IA
+      # JSON compacto para IA a partir del SARIF
       - name: Build AI payload (from SARIF)
         shell: bash
         run: |
@@ -167,7 +167,7 @@ jobs:
           echo "Wrote codeql_agent_payload.json"
           jq -r '.summary' codeql_agent_payload.json || true
 
-      # Bundle único para la IA (payload + SARIF)
+      # Bundle único (payload + primer SARIF) para consumo por IA
       - name: Build bundle
         shell: bash
         run: |
@@ -184,7 +184,7 @@ jobs:
                 items:{ codeql_agent_payload:$payload[0] }}' > codeql-bundle.json
           fi
 
-      # Publica como Release (descarga sin auth si el repo es público)
+      # Publica como Release (sin auth si el repo es público)
       - name: Publish/Update 'codeql-latest' release
         uses: softprops/action-gh-release@v2
         with:
