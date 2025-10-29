@@ -116,8 +116,11 @@ compliant_secure_rng {
 
 compliant_tls_or_pinning {
   tls := getp(input, "tls_enabled", false)
-  good_pinning := mobsf_code_has("android_ssl_pinning")
-  tls == true or good_pinning
+  tls
+}
+
+compliant_tls_or_pinning {
+  mobsf_code_has("android_ssl_pinning")
 }
 
 compliant_no_high_vulns {
