@@ -137,7 +137,7 @@ def main() -> None:
 
     compliance: Dict[str, bool] = {}
     for req in requirements:
-        puid = req.get('puid')
+        puid = req.get('PUID')
         # Default to True (compliant) unless mapping says otherwise
         compliance[puid] = compliance_mapping.get(puid, True)
 
