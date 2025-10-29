@@ -5,28 +5,36 @@ on:
     branches: [ main ]        # ejecuta la auditoría en cada commit a main
   pull_request:
     branches: [ main ]
- 
+
 jobs:
   compliance:
     # No ejecutes si el actor es Dependabot o la rama del PR es dependabot/*
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name || '', 'dependabot/') && (github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # necesario para comentar en PR con sticky-pull-request-comment
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies and tools
+      # Instala OPA de forma fiable (sin curl), fijando versión mayor estable
+      - name: Setup OPA (fiable)
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: '1.x'     # o 'latest' si prefieres
+          static: true
+
+      - name: Show OPA version
+        run: opa version
+
+      - name: Install Pandoc + TeX Live (PDF engine: xelatex)
         run: |
-          pip install --no-cache-dir opa-python-client
-          # Instalar la CLI de OPA
-          curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
-          chmod +x opa && sudo mv opa /usr/local/bin/
-          # Instalar Pandoc + TeX Live (PDF engine: xelatex)
           sudo apt-get update -y
           sudo apt-get install -y pandoc \
                                   texlive-latex-recommended \
@@ -38,14 +46,13 @@ jobs:
         run: |
           python scripts/recolectar_datos.py
 
-      - name: Wrap requisitos JSON
+      - name: Wrap requisitos JSON (si es lista)
         run: |
           python - <<'PY'
-          import json
+          import json, sys
           f = 'requirements/requisitos.json'
           with open(f, encoding='utf-8') as fh:
             data = json.load(fh)
-          # Si el JSON es una lista, lo envuelve en un objeto { "requisitos": [...] }
           if isinstance(data, list):
             with open(f, 'w', encoding='utf-8') as out:
               json.dump({'requisitos': data}, out, ensure_ascii=False, indent=2)
@@ -54,6 +61,7 @@ jobs:
       - name: Run OPA evaluation and save report
         run: |
           mkdir -p report
+          # Consulta principal de violaciones
           opa eval --format pretty \
             -i input.json \
             -d policies/ \
@@ -62,7 +70,7 @@ jobs:
 
       - name: Generate PDF report (pandoc + xelatex)
         run: |
-          # Opcional: añadir encabezado y convertir a Markdown para mejor formato
+          # Encabezado + conversión a PDF
           awk 'BEGIN{print "# Resultados de Compliance\n"}{print}' report/compliance_output.txt > report/compliance_output.md
           pandoc report/compliance_output.md \
             --pdf-engine=xelatex \
@@ -71,6 +79,7 @@ jobs:
             -o report/compliance_output.pdf
 
       - name: Upload compliance reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: compliance-report
