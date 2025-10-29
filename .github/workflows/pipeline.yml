@@ -2,9 +2,10 @@ name: Pipeline (orquestador)
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-  workflow_dispatch:
+    branches:
+      - main
+  pull_request: {}
+  workflow_dispatch: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -54,7 +55,6 @@ jobs:
     uses: ./.github/workflows/ai-correlation.yml
     secrets: inherit
 
-  # Job "noop" para Dependabot (cumple checks requeridos sin ejecutar la pipeline real)
   noop:
     if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-latest
