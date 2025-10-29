@@ -40,13 +40,8 @@ jobs:
     uses: ./.github/workflows/codeql-analysis.yml
     secrets: inherit
 
-  android:
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/android.yml
-    secrets: inherit
-
   compliance:
-    needs: [unit_tests, security_scans, mobsf, codeql_analysis, android]
+    needs: [unit_tests, security_scans, mobsf, codeql_analysis]
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/compliance.yml
     secrets: inherit
