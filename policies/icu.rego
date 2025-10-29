@@ -4,76 +4,74 @@ package secmcat.icu
 
 # Auto-generated helpers (safe getters and detectors)
 
-# Safe getters
-get(obj, key, default) = out {
-  some v
-  v := object.get(obj, key, default)
-  out := v
+# Safe getter
+getp(obj, key, dflt) = out {
+  out := object.get(obj, key, dflt)
 }
 
 # ---- Trivy (agent payload shape) ----
-trivy_findings := get(get(input, "trivy", {}), "findings", [])
+trivy_findings := getp(getp(input, "trivy", {}), "findings", [])
 has_trivy_high_or_critical {
   some i
   f := trivy_findings[i]
-  s := upper(get(f, "severity", ""))
+  s := upper(getp(f, "severity", ""))
   s == "HIGH" or s == "CRITICAL"
 }
 
 # ---- Dependency scanner (generic) ----
-dependency_findings := get(get(input, "dependency", {}), "findings", [])
+dependency_findings := getp(getp(input, "dependency", {}), "findings", [])
 has_dependency_high_or_critical {
   some i
   f := dependency_findings[i]
-  s := upper(get(f, "severity", ""))
+  s := upper(getp(f, "severity", ""))
   s == "HIGH" or s == "CRITICAL"
 }
 
-# ---- CodeQL/SARIF (optional) ----
-codeql := get(input, "codeql", {})
+# ---- CodeQL/SARIF (opcional) ----
+codeql := getp(input, "codeql", {})
 codeql_has_high_or_critical {
   some i
-  run := get(codeql, "runs", [])[i]
-  res := get(run, "results", [])
+  run := getp(getp(codeql, "runs", []), i, {})
+  res := getp(run, "results", [])
   some j
   r := res[j]
-  sev := upper(get(get(r, "properties", {}), "securitySeverity", get(r, "severity", "")))
+  sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
   sev == "HIGH" or sev == "CRITICAL"
 }
 
 # ---- MobSF ----
-mobsf := get(input, "mobsf", {})
-mobsf_manifest_findings := get(get(mobsf, "manifest_analysis", {}), "manifest_findings", [])
-mobsf_code_map := get(get(mobsf, "code_analysis", {}), "findings", {})
+mobsf := getp(input, "mobsf", {})
+mobsf_manifest_findings := getp(getp(mobsf, "manifest_analysis", {}), "manifest_findings", [])
+mobsf_code_map := getp(getp(mobsf, "code_analysis", {}), "findings", {})
 
 mobsf_manifest_has(rule_name) {
   some i
   f := mobsf_manifest_findings[i]
-  get(f, "rule", "") == rule_name
+  getp(f, "rule", "") == rule_name
 }
 
 mobsf_manifest_has_sev(rule_name, min_sev) {
   some i
   f := mobsf_manifest_findings[i]
-  get(f, "rule", "") == rule_name
-  sev := upper(get(f, "severity", ""))
+  getp(f, "rule", "") == rule_name
+  sev := upper(getp(f, "severity", ""))
   wanted := {"CRITICAL":4,"HIGH":3,"WARNING":2,"INFO":1}
   wanted[sev] >= wanted[upper(min_sev)]
 }
 
 mobsf_code_has(key) {
-  v := get(mobsf_code_map, key, null)
+  v := getp(mobsf_code_map, key, null)
   v != null
 }
 
 # Certificate debug check (MobSF summary)
 mobsf_debug_cert_present {
-  summary := get(get(mobsf, "certificate_analysis", {}), "certificate_summary", {})
-  high := get(summary, "high", 0)
+  summary := getp(getp(mobsf, "certificate_analysis", {}), "certificate_summary", {})
+  high := getp(summary, "high", 0)
   high > 0
 }
 
-# Specific common compliance predicates (true == compliant)
+# --------- Predicados de cumplimiento (true == compliant) ---------
 
 compliant_no_hardcoded_secrets {
   not mobsf_code_has("android_hardcoded")
@@ -117,7 +115,7 @@ compliant_secure_rng {
 }
 
 compliant_tls_or_pinning {
-  tls := get(input, "tls_enabled", false)
+  tls := getp(input, "tls_enabled", false)
   good_pinning := mobsf_code_has("android_ssl_pinning")
   tls == true or good_pinning
 }
