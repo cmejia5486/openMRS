@@ -1,6 +1,7 @@
 name: Security Scans (Trivy → artifact JSON)
 
 on:
+  workflow_call:
   push:
     branches: [ main ]
   pull_request:
