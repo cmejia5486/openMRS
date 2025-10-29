@@ -5,9 +5,7 @@ on:
     branches: [ main ]        # ejecuta la auditoría en cada commit a main
   pull_request:
     branches: [ main ]
-  schedule:
-    - cron: '0 0 * * 1'       # auditoría semanal (opcional)
-
+ 
 jobs:
   compliance:
     # No ejecutes si el actor es Dependabot o la rama del PR es dependabot/*
