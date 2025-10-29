@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write   # necesario para comentar en PR con sticky-pull-request-comment
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,17 +24,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Instala OPA de forma fiable (sin curl), fijando versión mayor estable
       - name: Setup OPA (fiable)
         uses: open-policy-agent/setup-opa@v2
         with:
-          version: '1.x'     # o 'latest' si prefieres
+          version: '1.x'
           static: true
 
       - name: Show OPA version
         run: opa version
 
-      - name: Install Pandoc + TeX Live (PDF engine: xelatex)
+      - name: "Install Pandoc + TeX Live (PDF engine: xelatex)"
         run: |
           sudo apt-get update -y
           sudo apt-get install -y pandoc \
@@ -49,7 +49,7 @@ jobs:
       - name: Wrap requisitos JSON (si es lista)
         run: |
           python - <<'PY'
-          import json, sys
+          import json
           f = 'requirements/requisitos.json'
           with open(f, encoding='utf-8') as fh:
             data = json.load(fh)
@@ -61,7 +61,6 @@ jobs:
       - name: Run OPA evaluation and save report
         run: |
           mkdir -p report
-          # Consulta principal de violaciones
           opa eval --format pretty \
             -i input.json \
             -d policies/ \
@@ -70,7 +69,6 @@ jobs:
 
       - name: Generate PDF report (pandoc + xelatex)
         run: |
-          # Encabezado + conversión a PDF
           awk 'BEGIN{print "# Resultados de Compliance\n"}{print}' report/compliance_output.txt > report/compliance_output.md
           pandoc report/compliance_output.md \
             --pdf-engine=xelatex \
