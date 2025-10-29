@@ -2,67 +2,61 @@ name: Pipeline (orquestador)
 
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   pull_request:
   workflow_dispatch:
 
-# Evita carreras por rama/flujo (si empujas varias veces seguidas)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
-  # === FASE 1: 5 workflows en paralelo ===
-  unit_tests:
-    name: unit-tests
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+  unit-tests:
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/unit-tests.yml
     secrets: inherit
 
-  security_scans:
-    name: security-scans
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+  security-scans:
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/security-scans.yml
     secrets: inherit
 
   mobsf:
-    name: mobsf
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/mobsf.yml
     secrets: inherit
 
-  codeql_analysis:
-    name: codeql-analysis
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+  codeql-analysis:
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/codeql-analysis.yml
     secrets: inherit
 
   android:
-    name: android
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/android.yml
     secrets: inherit
 
-  # === FASE 2: depende de los 5 anteriores ===
   compliance:
-    name: compliance
-    needs: [unit_tests, security_scans, mobsf, codeql_analysis, android]
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+    needs:
+      - unit-tests
+      - security-scans
+      - mobsf
+      - codeql-analysis
+      - android
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/compliance.yml
     secrets: inherit
 
-  # === FASE 3: último paso ===
-  ai_correlation:
-    name: ai-correlation
-    needs: [compliance]
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+  ai-correlation:
+    needs:
+      - compliance
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/ai-correlation.yml
     secrets: inherit
 
-  # === Política anti-Dependabot: job "noop" para cumplir checks requeridos ===
+  # Job "noop" para Dependabot (cumple checks requeridos sin ejecutar la pipeline real)
   noop:
-    name: noop (dependabot policy)
-    if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.head_ref || github.ref_name, 'dependabot/') }}
+    if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Dependabot detectado: se omite la pipeline real (noop)."
+      - run: echo "Dependabot detectado: se omite pipeline (noop)."
