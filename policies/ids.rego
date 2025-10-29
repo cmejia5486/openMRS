@@ -15,7 +15,7 @@ has_trivy_high_or_critical {
   some i
   f := trivy_findings[i]
   s := upper(getp(f, "severity", ""))
-  {"HIGH", "CRITICAL"}[s]
+  s == "HIGH" or s == "CRITICAL"
 }
 
 # ---- Dependency scanner (generic) ----
@@ -24,7 +24,7 @@ has_dependency_high_or_critical {
   some i
   f := dependency_findings[i]
   s := upper(getp(f, "severity", ""))
-  {"HIGH", "CRITICAL"}[s]
+  s == "HIGH" or s == "CRITICAL"
 }
 
 # ---- CodeQL/SARIF (opcional) ----
@@ -36,7 +36,7 @@ codeql_has_high_or_critical {
   some j
   r := res[j]
   sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
-  {"HIGH", "CRITICAL"}[sev]
+  sev == "HIGH" or sev == "CRITICAL"
 }
 
 # ---- MobSF ----
@@ -116,8 +116,11 @@ compliant_secure_rng {
 
 compliant_tls_or_pinning {
   tls := getp(input, "tls_enabled", false)
-  good_pinning := mobsf_code_has("android_ssl_pinning")
-  tls == true or good_pinning
+  tls == true
+}
+
+compliant_tls_or_pinning {
+  mobsf_code_has("android_ssl_pinning")
 }
 
 compliant_no_high_vulns {
