@@ -37,7 +37,7 @@ jobs:
     secrets: inherit
 
   compliance:
-    needs: [unit_tests, security_scans, mobsf, codeql_analysis]
+    needs: [security_scans, mobsf, codeql_analysis]
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/compliance.yml
     secrets: inherit
