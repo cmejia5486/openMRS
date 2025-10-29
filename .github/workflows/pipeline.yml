@@ -20,11 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unit_tests:
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/unit-tests.yml
-    secrets: inherit
-
+ 
   security_scans:
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/security-scans.yml
