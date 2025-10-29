@@ -59,4 +59,4 @@ jobs:
     if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Dependabot detectado: se omite pipeline (noop)."
+      - run: echo 'Dependabot detectado: se omite pipeline (noop).'
