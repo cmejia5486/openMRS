@@ -8,6 +8,13 @@ on:
   pull_request: {}
   workflow_dispatch: {}
 
+# 👇 Máximo de permisos que heredan los workflows llamados con "uses:"
+permissions:
+  contents: write          # para checkout/commits (ai-correlation crea rama/commitea)
+  pull-requests: write     # para abrir/actualizar PRs (ai-correlation)
+  actions: write           # para (descargar/subir) artifacts, etc.
+  security-events: write   # para subir SARIF (CodeQL / scanners)
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
