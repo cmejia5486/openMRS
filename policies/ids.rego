@@ -15,7 +15,7 @@ has_trivy_high_or_critical {
   some i
   f := trivy_findings[i]
   s := upper(getp(f, "severity", ""))
-  s == "HIGH" or s == "CRITICAL"
+  {"HIGH", "CRITICAL"}[s]
 }
 
 # ---- Dependency scanner (generic) ----
@@ -24,7 +24,7 @@ has_dependency_high_or_critical {
   some i
   f := dependency_findings[i]
   s := upper(getp(f, "severity", ""))
-  s == "HIGH" or s == "CRITICAL"
+  {"HIGH", "CRITICAL"}[s]
 }
 
 # ---- CodeQL/SARIF (opcional) ----
@@ -36,7 +36,7 @@ codeql_has_high_or_critical {
   some j
   r := res[j]
   sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
-  sev == "HIGH" or sev == "CRITICAL"
+  {"HIGH", "CRITICAL"}[sev]
 }
 
 # ---- MobSF ----
