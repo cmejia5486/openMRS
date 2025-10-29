@@ -5,8 +5,8 @@ on:
   push:
     branches:
       - main
-  pull_request:
-  workflow_dispatch:
+  pull_request: {}
+  workflow_dispatch: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -54,4 +54,4 @@ jobs:
     if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-latest
     steps:
-      - run: printf '%s\n' 'Dependabot detectado: se omite pipeline (noop).'
+      - run: "printf '%s\n' 'Dependabot detectado: se omite pipeline (noop).'"
