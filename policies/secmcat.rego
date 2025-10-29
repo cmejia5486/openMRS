@@ -2,7 +2,6 @@ package secmcat
 
 # Agrega las violaciones de cada módulo individual
 
-import data.secmcat.isu001 as isu001
 import data.secmcat.icu   as icu
 import data.secmcat.isu   as isu
 import data.secmcat.iaa   as iaa
