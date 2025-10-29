@@ -7,7 +7,7 @@ results (derived from manual audit or automated scans) to build an `input.json`
 file consumed by the OPA policies.  The JSON structure includes a
 `compliance` dictionary keyed by each requirement PUID, a map of days since
 last secret rotation, TLS configuration flags, user roles counts, and lists
-of vulnerabilities discovered during container and dependency scans.
+of vulnerabilities discovered during container and dependency scans..
 
 If a `requirements/compliance_status.json` file is present, the boolean
 values from that file will be used; otherwise all requirements default to
