@@ -1,15 +1,12 @@
 name: Mobile Security Scan
 
 on:
-  workflow_call:
   push:
     branches: [ main ]
   pull_request:
 
 jobs:
   mobsf_scan:
-    # No ejecutes si el actor es Dependabot o la rama del PR es dependabot/*
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.head_ref || github.ref_name || '', 'dependabot/') && (github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]') }}
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -120,4 +117,3 @@ jobs:
           name: mobsf-dynamic-report
           path: mobsf_dynamic_results.json
           if-no-files-found: ignore
-
