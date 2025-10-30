@@ -1,11 +1,12 @@
 package secmcat.ids
+import rego.v1
 
 
 
 # Auto-generated helpers (safe getters and detectors)
 
 # Safe getter
-getp(obj, key, dflt) = out if {
+getp(obj, key, dflt) = out {
   out := object.get(obj, key, dflt)
 }
 
@@ -15,7 +16,7 @@ has_trivy_high_or_critical if {
   some i
   f := trivy_findings[i]
   s := upper(getp(f, "severity", ""))
-s in {"HIGH","CRITICAL"}
+  s == "HIGH" or s == "CRITICAL"
 }
 
 # ---- Dependency scanner (generic) ----
@@ -24,7 +25,7 @@ has_dependency_high_or_critical if {
   some i
   f := dependency_findings[i]
   s := upper(getp(f, "severity", ""))
-s in {"HIGH","CRITICAL"}
+  s == "HIGH" or s == "CRITICAL"
 }
 
 # ---- CodeQL/SARIF (opcional) ----
@@ -36,7 +37,7 @@ codeql_has_high_or_critical if {
   some j
   r := res[j]
   sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
-sev in {"HIGH","CRITICAL"}
+  sev == "HIGH" or sev == "CRITICAL"
 }
 
 # ---- MobSF ----
@@ -44,13 +45,13 @@ mobsf := getp(input, "mobsf", {})
 mobsf_manifest_findings := getp(getp(mobsf, "manifest_analysis", {}), "manifest_findings", [])
 mobsf_code_map := getp(getp(mobsf, "code_analysis", {}), "findings", {})
 
-mobsf_manifest_has(rule_name) if {
+mobsf_manifest_has(rule_name) {
   some i
   f := mobsf_manifest_findings[i]
   getp(f, "rule", "") == rule_name
 }
 
-mobsf_manifest_has_sev(rule_name, min_sev) if {
+mobsf_manifest_has_sev(rule_name, min_sev) {
   some i
   f := mobsf_manifest_findings[i]
   getp(f, "rule", "") == rule_name
@@ -59,7 +60,7 @@ mobsf_manifest_has_sev(rule_name, min_sev) if {
   wanted[sev] >= wanted[upper(min_sev)]
 }
 
-mobsf_code_has(key) if {
+mobsf_code_has(key) {
   v := getp(mobsf_code_map, key, null)
   v != null
 }
@@ -114,14 +115,11 @@ compliant_secure_rng if {
   not mobsf_code_has("android_insecure_random")
 }
 
-compliant_tls_or_pinning {
+compliant_tls_or_pinning if {
   tls := getp(input, "tls_enabled", false)
-  tls == true
+  good_pinning := mobsf_code_has("android_ssl_pinning")
+  tls == true or good_pinning
 }
-compliant_tls_or_pinning {
-  mobsf_code_has("android_ssl_pinning")
-}
-
 
 compliant_no_high_vulns if {
   not has_trivy_high_or_critical
