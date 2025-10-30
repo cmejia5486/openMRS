@@ -1,4 +1,4 @@
-package secmcat.iov
+package secmcat.icu
 
 
 
@@ -15,7 +15,7 @@ has_trivy_high_or_critical if {
   some i
   f := trivy_findings[i]
   s := upper(getp(f, "severity", ""))
-  s == "HIGH" or s == "CRITICAL"
+s in {"HIGH","CRITICAL"}
 }
 
 # ---- Dependency scanner (generic) ----
@@ -24,7 +24,7 @@ has_dependency_high_or_critical if {
   some i
   f := dependency_findings[i]
   s := upper(getp(f, "severity", ""))
-  s == "HIGH" or s == "CRITICAL"
+s in {"HIGH","CRITICAL"}
 }
 
 # ---- CodeQL/SARIF (opcional) ----
@@ -36,7 +36,7 @@ codeql_has_high_or_critical if {
   some j
   r := res[j]
   sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
-  sev == "HIGH" or sev == "CRITICAL"
+sev in {"HIGH","CRITICAL"}
 }
 
 # ---- MobSF ----
@@ -114,11 +114,14 @@ compliant_secure_rng if {
   not mobsf_code_has("android_insecure_random")
 }
 
-compliant_tls_or_pinning if {
+compliant_tls_or_pinning {
   tls := getp(input, "tls_enabled", false)
-  good_pinning := mobsf_code_has("android_ssl_pinning")
-  tls == true or good_pinning == true
+  tls == true
 }
+compliant_tls_or_pinning {
+  mobsf_code_has("android_ssl_pinning")
+}
+
 
 compliant_no_high_vulns if {
   not has_trivy_high_or_critical
@@ -136,134 +139,24 @@ compliant_no_debug_certificate if {
 
 
 
-# SECM-CAT-IOV-001
-violation contains "SECM-CAT-IOV-001" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-002
-violation contains "SECM-CAT-IOV-002" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-003
-violation contains "SECM-CAT-IOV-003" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-004
-violation contains "SECM-CAT-IOV-004" if {
-  not compliant_no_raw_sql
-}
-
-# SECM-CAT-IOV-005
-violation contains "SECM-CAT-IOV-005" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-006
-violation contains "SECM-CAT-IOV-006" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-007
-violation contains "SECM-CAT-IOV-007" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-008
-violation contains "SECM-CAT-IOV-008" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-009
-violation contains "SECM-CAT-IOV-009" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-010
-violation contains "SECM-CAT-IOV-010" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-011
-violation contains "SECM-CAT-IOV-011" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-012
-violation contains "SECM-CAT-IOV-012" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-013
-violation contains "SECM-CAT-IOV-013" if {
-  not compliant_no_high_vulns
-}
-
-# SECM-CAT-IOV-014
-violation contains "SECM-CAT-IOV-014" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-015
-violation contains "SECM-CAT-IOV-015" if {
-  not compliant_no_raw_sql
-}
-
-# SECM-CAT-IOV-016
-violation contains "SECM-CAT-IOV-016" if {
-  not compliant_no_raw_sql
-}
-
-# SECM-CAT-IOV-017
-violation contains "SECM-CAT-IOV-017" if {
-  not compliant_no_external_storage
-}
-
-# SECM-CAT-IOV-018
-violation contains "SECM-CAT-IOV-018" if {
-  not compliant_no_raw_sql
-}
-
-# SECM-CAT-IOV-019
-violation contains "SECM-CAT-IOV-019" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-020
-violation contains "SECM-CAT-IOV-020" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-021
-violation contains "SECM-CAT-IOV-021" if {
+# SECM-CAT-ICU-001
+violation contains "SECM-CAT-ICU-001" if {
   not compliant_no_hardcoded_secrets
 }
 
-# SECM-CAT-IOV-022
-violation contains "SECM-CAT-IOV-022" if {
-  not compliant_no_sensitive_logging
-}
-
-# SECM-CAT-IOV-023
-violation contains "SECM-CAT-IOV-023" if {
+# SECM-CAT-ICU-002
+violation contains "SECM-CAT-ICU-002" if {
   not compliant_no_hardcoded_secrets
 }
 
-# SECM-CAT-IOV-024
-violation contains "SECM-CAT-IOV-024" if {
-  not compliant_no_clipboard_sensitive
-}
-
-# SECM-CAT-IOV-025
-violation contains "SECM-CAT-IOV-025" if {
+# SECM-CAT-ICU-003
+violation contains "SECM-CAT-ICU-003" if {
   not compliant_no_hardcoded_secrets
 }
 
-# SECM-CAT-IOV-026
-violation contains "SECM-CAT-IOV-026" if {
-  not compliant_no_sensitive_logging
+# SECM-CAT-ICU-004
+violation contains "SECM-CAT-ICU-004" if {
+  not compliant_no_hardcoded_secrets
 }
 
 
