@@ -21,14 +21,14 @@ concurrency:
 
 jobs:
  
-  security_scans:
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/security-scans.yml
-    secrets: inherit
-
   codeql_analysis:
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/codeql-analysis.yml
+    secrets: inherit
+
+  security_scans:
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    uses: ./.github/workflows/security-scans.yml
     secrets: inherit
  
   #mobsf:
