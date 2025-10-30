@@ -2,10 +2,10 @@ name: Compliance Check
 
 on:
   workflow_call:
-  push:
-    branches: [ main ]        # ejecuta la auditoría en cada commit a main
-  pull_request:
-    branches: [ main ]
+#  push:
+ #   branches: [ main ]        # ejecuta la auditoría en cada commit a main
+ # pull_request:
+  #  branches: [ main ]
 
 jobs:
   compliance:
