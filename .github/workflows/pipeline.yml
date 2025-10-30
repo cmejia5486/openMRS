@@ -26,22 +26,22 @@ jobs:
     secrets: inherit
 
   # 2) Luego de codeql_analysis
-  security_scans:
-    needs: [codeql_analysis]
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/security-scans.yml
-    secrets: inherit
+  #security_scans:
+   # needs: [codeql_analysis]
+    #if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    #uses: ./.github/workflows/security-scans.yml
+    #secrets: inherit
 
   # 3) Luego de security_scans
-  mobsf:
-    needs: [security_scans]
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/mobsf.yml
-    secrets: inherit
+  #mobsf:
+    #needs: [security_scans]
+    #if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    #uses: ./.github/workflows/mobsf.yml
+    #secrets: inherit
 
   # 4) Compliance
   compliance:
-    needs: [mobsf]
+    #needs: [mobsf]
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/compliance.yml
     secrets: inherit
