@@ -25,38 +25,36 @@ jobs:
     uses: ./.github/workflows/codeql-analysis.yml
     secrets: inherit
 
-
-  # 2) Job "noop" para Dependabot
-  noop:
-    if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: "printf '%s\n
-
-  # 3) Luego de codeql_analysis
+  # 2) Luego de codeql_analysis
   security_scans:
     needs: [codeql_analysis]
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/security-scans.yml
     secrets: inherit
 
-  # 4) Luego de security_scans
+  # 3) Luego de security_scans
   mobsf:
     needs: [security_scans]
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/mobsf.yml
     secrets: inherit
 
-  # 5) compliance:
-  compliance:
-     needs: [mobsf]
-     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-     uses: ./.github/workflows/compliance.yml
-     secrets: inherit
-  
+  # (Opcional) encadenar los siguientes:
+  # compliance:
+  #   needs: [mobsf]
+  #   if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+  #   uses: ./.github/workflows/compliance.yml
+  #   secrets: inherit
+  #
   # ai_correlation:
   #   needs: [compliance]
   #   if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
   #   uses: ./.github/workflows/ai-correlation.yml
   #   secrets: inherit
-' 'Dependabot detectado: se omite pipeline (noop).'"
+
+  # Job "noop" para Dependabot
+  noop:
+    if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: "printf '%s\n' 'Dependabot detectado: se omite pipeline (noop).'"
