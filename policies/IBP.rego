@@ -1,5 +1,4 @@
 package secmcat.ibp
-import rego.v1
 
 
 
@@ -12,32 +11,32 @@ getp(obj, key, dflt) = out {
 
 # ---- Trivy (agent payload shape) ----
 trivy_findings := getp(getp(input, "trivy", {}), "findings", [])
-has_trivy_high_or_critical if {
+has_trivy_high_or_critical {
   some i
   f := trivy_findings[i]
   s := upper(getp(f, "severity", ""))
-  s in {"HIGH","CRITICAL"}
+  s in {"HIGH", "CRITICAL"}
 }
 
 # ---- Dependency scanner (generic) ----
 dependency_findings := getp(getp(input, "dependency", {}), "findings", [])
-has_dependency_high_or_critical if {
+has_dependency_high_or_critical {
   some i
   f := dependency_findings[i]
   s := upper(getp(f, "severity", ""))
-  s in {"HIGH","CRITICAL"}
+  s in {"HIGH", "CRITICAL"}
 }
 
 # ---- CodeQL/SARIF (opcional) ----
 codeql := getp(input, "codeql", {})
-codeql_has_high_or_critical if {
+codeql_has_high_or_critical {
   some i
   run := getp(getp(codeql, "runs", []), i, {})
   res := getp(run, "results", [])
   some j
   r := res[j]
   sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
-  sev in {"HIGH","CRITICAL"}
+  sev in {"HIGH", "CRITICAL"}
 }
 
 # ---- MobSF ----
@@ -45,13 +44,13 @@ mobsf := getp(input, "mobsf", {})
 mobsf_manifest_findings := getp(getp(mobsf, "manifest_analysis", {}), "manifest_findings", [])
 mobsf_code_map := getp(getp(mobsf, "code_analysis", {}), "findings", {})
 
-mobsf_manifest_has(rule_name) if {
+mobsf_manifest_has(rule_name) {
   some i
   f := mobsf_manifest_findings[i]
   getp(f, "rule", "") == rule_name
 }
 
-mobsf_manifest_has_sev(rule_name, min_sev) if {
+mobsf_manifest_has_sev(rule_name, min_sev) {
   some i
   f := mobsf_manifest_findings[i]
   getp(f, "rule", "") == rule_name
@@ -60,13 +59,13 @@ mobsf_manifest_has_sev(rule_name, min_sev) if {
   wanted[sev] >= wanted[upper(min_sev)]
 }
 
-mobsf_code_has(key) if {
+mobsf_code_has(key) {
   v := getp(mobsf_code_map, key, null)
   v != null
 }
 
 # Certificate debug check (MobSF summary)
-mobsf_debug_cert_present if {
+mobsf_debug_cert_present {
   summary := getp(getp(mobsf, "certificate_analysis", {}), "certificate_summary", {})
   high := getp(summary, "high", 0)
   high > 0
@@ -74,236 +73,236 @@ mobsf_debug_cert_present if {
 
 # --------- Predicados de cumplimiento (true == compliant) ---------
 
-compliant_no_hardcoded_secrets if {
+compliant_no_hardcoded_secrets {
   not mobsf_code_has("android_hardcoded")
 }
 
-compliant_not_debuggable if {
+compliant_not_debuggable {
   not mobsf_manifest_has_sev("app_is_debuggable", "high")
   not mobsf_code_has("android_aar_jar_debug_enabled")
 }
 
-compliant_no_allow_backup if {
+compliant_no_allow_backup {
   not mobsf_manifest_has("app_allowbackup")
 }
 
-compliant_no_exported_components if {
+compliant_no_exported_components {
   not mobsf_manifest_has("exported_intent_filter_exists")
 }
 
-compliant_secure_min_sdk if {
+compliant_secure_min_sdk {
   not mobsf_manifest_has("vulnerable_os_version")
 }
 
-compliant_no_external_storage if {
+compliant_no_external_storage {
   not mobsf_code_has("android_read_write_external")
 }
 
-compliant_no_sensitive_logging if {
+compliant_no_sensitive_logging {
   not mobsf_code_has("android_logging")
 }
 
-compliant_no_raw_sql if {
+compliant_no_raw_sql {
   not mobsf_code_has("android_sql_raw_query")
 }
 
-compliant_no_weak_hashes if {
+compliant_no_weak_hashes {
   not mobsf_code_has("android_sha1")
 }
 
-compliant_secure_rng if {
+compliant_secure_rng {
   not mobsf_code_has("android_insecure_random")
 }
 
-compliant_tls_or_pinning if {
+compliant_tls_or_pinning {
   tls := getp(input, "tls_enabled", false)
   good_pinning := mobsf_code_has("android_ssl_pinning")
-  tls == true or good_pinning
+  true in {tls, good_pinning}
 }
 
-compliant_no_high_vulns if {
+compliant_no_high_vulns {
   not has_trivy_high_or_critical
   not has_dependency_high_or_critical
   not codeql_has_high_or_critical
 }
 
-compliant_no_clipboard_sensitive if {
+compliant_no_clipboard_sensitive {
   not mobsf_code_has("android_clipboard_copy")
 }
 
-compliant_no_debug_certificate if {
+compliant_no_debug_certificate {
   not mobsf_debug_cert_present
 }
 
 
 
 # SECM-CAT-IBP-001
-violation contains "SECM-CAT-IBP-001" if {
+violation["SECM-CAT-IBP-001"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-002
-violation contains "SECM-CAT-IBP-002" if {
+violation["SECM-CAT-IBP-002"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-003
-violation contains "SECM-CAT-IBP-003" if {
+violation["SECM-CAT-IBP-003"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-004
-violation contains "SECM-CAT-IBP-004" if {
+violation["SECM-CAT-IBP-004"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-005
-violation contains "SECM-CAT-IBP-005" if {
+violation["SECM-CAT-IBP-005"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-006
-violation contains "SECM-CAT-IBP-006" if {
+violation["SECM-CAT-IBP-006"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-007
-violation contains "SECM-CAT-IBP-007" if {
+violation["SECM-CAT-IBP-007"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-008
-violation contains "SECM-CAT-IBP-008" if {
+violation["SECM-CAT-IBP-008"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-009
-violation contains "SECM-CAT-IBP-009" if {
+violation["SECM-CAT-IBP-009"] {
   not compliant_no_raw_sql
 }
 
 # SECM-CAT-IBP-010
-violation contains "SECM-CAT-IBP-010" if {
+violation["SECM-CAT-IBP-010"] {
   not compliant_no_raw_sql
 }
 
 # SECM-CAT-IBP-011
-violation contains "SECM-CAT-IBP-011" if {
+violation["SECM-CAT-IBP-011"] {
   not compliant_no_raw_sql
 }
 
 # SECM-CAT-IBP-012
-violation contains "SECM-CAT-IBP-012" if {
+violation["SECM-CAT-IBP-012"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-013
-violation contains "SECM-CAT-IBP-013" if {
+violation["SECM-CAT-IBP-013"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-014
-violation contains "SECM-CAT-IBP-014" if {
+violation["SECM-CAT-IBP-014"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-015
-violation contains "SECM-CAT-IBP-015" if {
+violation["SECM-CAT-IBP-015"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-016
-violation contains "SECM-CAT-IBP-016" if {
+violation["SECM-CAT-IBP-016"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-017
-violation contains "SECM-CAT-IBP-017" if {
+violation["SECM-CAT-IBP-017"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-018
-violation contains "SECM-CAT-IBP-018" if {
+violation["SECM-CAT-IBP-018"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-019
-violation contains "SECM-CAT-IBP-019" if {
+violation["SECM-CAT-IBP-019"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-020
-violation contains "SECM-CAT-IBP-020" if {
+violation["SECM-CAT-IBP-020"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-021
-violation contains "SECM-CAT-IBP-021" if {
+violation["SECM-CAT-IBP-021"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-022
-violation contains "SECM-CAT-IBP-022" if {
+violation["SECM-CAT-IBP-022"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-023
-violation contains "SECM-CAT-IBP-023" if {
+violation["SECM-CAT-IBP-023"] {
   not compliant_no_raw_sql
 }
 
 # SECM-CAT-IBP-024
-violation contains "SECM-CAT-IBP-024" if {
+violation["SECM-CAT-IBP-024"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-025
-violation contains "SECM-CAT-IBP-025" if {
+violation["SECM-CAT-IBP-025"] {
   not compliant_no_external_storage
 }
 
 # SECM-CAT-IBP-026
-violation contains "SECM-CAT-IBP-026" if {
+violation["SECM-CAT-IBP-026"] {
   not compliant_tls_or_pinning
 }
 
 # SECM-CAT-IBP-027
-violation contains "SECM-CAT-IBP-027" if {
+violation["SECM-CAT-IBP-027"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-028
-violation contains "SECM-CAT-IBP-028" if {
+violation["SECM-CAT-IBP-028"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-029
-violation contains "SECM-CAT-IBP-029" if {
+violation["SECM-CAT-IBP-029"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-030
-violation contains "SECM-CAT-IBP-030" if {
+violation["SECM-CAT-IBP-030"] {
   not compliant_no_high_vulns
 }
 
 # SECM-CAT-IBP-031
-violation contains "SECM-CAT-IBP-031" if {
+violation["SECM-CAT-IBP-031"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-032
-violation contains "SECM-CAT-IBP-032" if {
+violation["SECM-CAT-IBP-032"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-033
-violation contains "SECM-CAT-IBP-033" if {
+violation["SECM-CAT-IBP-033"] {
   not compliant_not_debuggable
 }
 
 # SECM-CAT-IBP-034
-violation contains "SECM-CAT-IBP-034" if {
+violation["SECM-CAT-IBP-034"] {
   not compliant_not_debuggable
 }
 
