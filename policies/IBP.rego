@@ -16,7 +16,7 @@ has_trivy_high_or_critical if {
   some i
   f := trivy_findings[i]
   s := upper(getp(f, "severity", ""))
-  s == "HIGH" or s == "CRITICAL"
+  s in {"HIGH","CRITICAL"}
 }
 
 # ---- Dependency scanner (generic) ----
@@ -25,7 +25,7 @@ has_dependency_high_or_critical if {
   some i
   f := dependency_findings[i]
   s := upper(getp(f, "severity", ""))
-  s == "HIGH" or s == "CRITICAL"
+  s in {"HIGH","CRITICAL"}
 }
 
 # ---- CodeQL/SARIF (opcional) ----
@@ -37,7 +37,7 @@ codeql_has_high_or_critical if {
   some j
   r := res[j]
   sev := upper(getp(getp(r, "properties", {}), "securitySeverity", getp(r, "severity", "")))
-  sev == "HIGH" or sev == "CRITICAL"
+  sev in {"HIGH","CRITICAL"}
 }
 
 # ---- MobSF ----
@@ -45,13 +45,13 @@ mobsf := getp(input, "mobsf", {})
 mobsf_manifest_findings := getp(getp(mobsf, "manifest_analysis", {}), "manifest_findings", [])
 mobsf_code_map := getp(getp(mobsf, "code_analysis", {}), "findings", {})
 
-mobsf_manifest_has(rule_name) {
+mobsf_manifest_has(rule_name) if {
   some i
   f := mobsf_manifest_findings[i]
   getp(f, "rule", "") == rule_name
 }
 
-mobsf_manifest_has_sev(rule_name, min_sev) {
+mobsf_manifest_has_sev(rule_name, min_sev) if {
   some i
   f := mobsf_manifest_findings[i]
   getp(f, "rule", "") == rule_name
@@ -60,7 +60,7 @@ mobsf_manifest_has_sev(rule_name, min_sev) {
   wanted[sev] >= wanted[upper(min_sev)]
 }
 
-mobsf_code_has(key) {
+mobsf_code_has(key) if {
   v := getp(mobsf_code_map, key, null)
   v != null
 }
