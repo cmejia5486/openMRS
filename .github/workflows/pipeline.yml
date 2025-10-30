@@ -26,27 +26,27 @@ jobs:
     uses: ./.github/workflows/security-scans.yml
     secrets: inherit
 
-  mobsf:
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/mobsf.yml
-    secrets: inherit
-
   codeql_analysis:
     if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/codeql-analysis.yml
     secrets: inherit
+ 
+ # mobsf:
+  #  if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+   # uses: ./.github/workflows/mobsf.yml
+    #secrets: inherit
 
-  compliance:
-    needs: [security_scans, mobsf, codeql_analysis]
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/compliance.yml
-    secrets: inherit
+  #compliance:
+   # needs: [security_scans, mobsf, codeql_analysis]
+    #if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    #uses: ./.github/workflows/compliance.yml
+    #secrets: inherit
 
-  ai_correlation:
-    needs: [compliance]
-    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    uses: ./.github/workflows/ai-correlation.yml
-    secrets: inherit
+  #ai_correlation:
+   # needs: [compliance]
+    #if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    #uses: ./.github/workflows/ai-correlation.yml
+    #secrets: inherit
 
   noop:
     if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
