@@ -31,10 +31,10 @@ jobs:
     uses: ./.github/workflows/security-scans.yml
     secrets: inherit
  
-  #mobsf:
-   # if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    #uses: ./.github/workflows/mobsf.yml
-    #secrets: inherit
+  mobsf:
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    uses: ./.github/workflows/mobsf.yml
+    secrets: inherit
 
   #compliance:
    # needs: [security_scans, mobsf, codeql_analysis]
