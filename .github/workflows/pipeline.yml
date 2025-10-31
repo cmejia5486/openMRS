@@ -39,13 +39,6 @@ jobs:
     uses: ./.github/workflows/mobsf.yml
     secrets: inherit
 
-  # 4) Compliance
-  #compliance:
-    #needs: [mobsf]
-   # if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-    #uses: ./.github/workflows/compliance.yml
-    #secrets: inherit
-  #
   # ai_correlation:
   #   needs: [compliance]
   #   if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
