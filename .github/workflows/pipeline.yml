@@ -1,14 +1,13 @@
-# .github/workflows/pipeline.yml
+---
 name: Pipeline (orquestador)
 
-"on":
+on:
   push:
-    branches: [ "main", "**" ]
+    branches:
+      - main
   pull_request: {}
   workflow_dispatch: {}
 
-# El caller debe conceder al menos los permisos que requieren los reusables.
-# Code Scanning (CodeQL/upload-sarif) necesita security-events: write.
 permissions:
   contents: write
   pull-requests: write
@@ -17,49 +16,45 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
+  # 1) Primero
   codeql_analysis:
-    name: CodeQL
-    if: ${{ github.actor != 'dependabot[bot]' &&
-            !(github.head_ref != '' && startsWith(github.head_ref, 'dependabot/')) &&
-            !(github.ref_name != '' && startsWith(github.ref_name, 'dependabot/')) }}
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/codeql-analysis.yml
     secrets: inherit
-    with:
-      languages: "java,kotlin"
-      build-mode: "none"
 
+  # 2) Luego de codeql_analysis
   security_scans:
-    name: Security Scans
     needs: [codeql_analysis]
-    if: ${{ github.actor != 'dependabot[bot]' &&
-            !(github.head_ref != '' && startsWith(github.head_ref, 'dependabot/')) &&
-            !(github.ref_name != '' && startsWith(github.ref_name, 'dependabot/')) }}
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/security-scans.yml
     secrets: inherit
-    with:
-      trivy_path: "."
-      trivy_severity: "CRITICAL,HIGH"
 
+  # 3) Luego de security_scans
   mobsf:
-    name: MobSF
     needs: [security_scans]
-    if: ${{ github.actor != 'dependabot[bot]' &&
-            !(github.head_ref != '' && startsWith(github.head_ref, 'dependabot/')) &&
-            !(github.ref_name != '' && startsWith(github.ref_name, 'dependabot/')) }}
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     uses: ./.github/workflows/mobsf.yml
     secrets: inherit
-    with:
-      apk_glob: "**/*.apk"
-      apk_artifact_name: ""  # si quieres bajar un artefacto previo, pon su nombre
 
+  # 4) Compliance
+  #compliance:
+    #needs: [mobsf]
+   # if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    #uses: ./.github/workflows/compliance.yml
+    #secrets: inherit
+  #
+  # ai_correlation:
+  #   needs: [compliance]
+  #   if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+  #   uses: ./.github/workflows/ai-correlation.yml
+  #   secrets: inherit
+
+  # Job "noop" para Dependabot
   noop:
-    name: No-op para Dependabot
-    if: ${{ github.actor == 'dependabot[bot]' ||
-            (github.head_ref != '' && startsWith(github.head_ref, 'dependabot/')) ||
-            (github.ref_name != '' && startsWith(github.ref_name, 'dependabot/')) }}
+    if: ${{ github.actor == 'dependabot[bot]' || startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-latest
     steps:
-      - run: "printf '%s\n' 'Invocando Job.'"
+      - run: "printf '%s\n' 'Dependabot detectado: se omite pipeline (noop).'"
