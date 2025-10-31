@@ -1,121 +1,217 @@
-name: Mobile Security Scan
+# .github/workflows/mobsf.yml
+name: Mobile Security Scan (auto-discover APK → static & dynamic artifacts)
 
 on:
   workflow_call:
-  #push:
-  #  branches: [ main ]
-  #pull_request:
-  #  branches: [ main ]
+    inputs:
+      run_build:
+        description: "Intentar compilar para generar APK (si falla, no bloquea)"
+        type: boolean
+        required: false
+        default: true
+      try_dynamic_report:
+        description: "Intentar descargar el JSON del análisis dinámico si existe"
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      MOBSF_API_KEY:
+        required: true
+      MOBSF_URL:
+        required: false  # si no se define, usa http://localhost:8000
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   mobsf_scan:
-    runs-on: self-hosted
+    name: MobSF (static + dynamic artifacts)
+    # Omitir Dependabot por actor/branch/PR user
+    if: >-
+      ${{
+        github.actor != 'dependabot[bot]' &&
+        !startsWith(github.ref_name, 'dependabot/') &&
+        (github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]')
+      }}
+    runs-on: self-hosted  # ajusta si tu servidor MobSF está accesible desde otro runner
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # ---------------- Código ----------------
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      # ---------------- Build NO BLOQUEANTE (opcional) ----------------
+      - name: Set up JDK (only if build)
+        if: ${{ inputs.run_build }}
+        uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '11'
+          distribution: temurin
+          java-version: "11"
 
-      - name: Build Android app
-        run: .\gradlew.bat assembleRelease
-        shell: powershell
+      - name: Try Gradle build (non-blocking)
+        if: ${{ inputs.run_build }}
+        id: build_try
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $code = 0
+          if (Test-Path .\gradlew.bat) {
+            .\gradlew.bat assembleRelease
+            $code = $LASTEXITCODE
+          } elseif (Test-Path .\gradlew) {
+            ./gradlew assembleRelease
+            $code = $LASTEXITCODE
+          } else {
+            Write-Host "::notice::No Gradle wrapper; skipping build."
+          }
+          if ($code -ne 0) {
+            Write-Host "::warning::Gradle failed with exit code $code. Will continue with APK autodiscovery."
+          } else {
+            Write-Host "::notice::Gradle build completed (exit $code)."
+          }
+          "gradle_exit=$code" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          exit 0  # clave: el step nunca marca fallo aunque Gradle falle
+
+      # ---------------- Artefactos del RUN (si existen) ----------------
+      - name: Download all artifacts (merge)
+        uses: actions/download-artifact@v4
         continue-on-error: true
+        with:
+          path: artifacts
+          merge-multiple: true  # combina múltiples artefactos en un solo directorio
+      # (v4: artifacts inmutables; combinar con pattern/merge-multiple es el flujo recomendado). :contentReference[oaicite:4]{index=4}
 
-      # ------- ESTÁTICO -------
-      - name: Upload app to MobSF and run static scan
-        id: static_scan
+      # ---------------- Descubrir APK automáticamente ----------------
+      - name: Resolve APK (auto-discovery)
+        id: resolve_apk
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'SilentlyContinue'
+
+          # 1) Preferir outputs clásicos de build
+          $buildApk = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.apk |
+                      Where-Object { $_.FullName -match '\\build\\outputs\\apk\\' } |
+                      Sort-Object LastWriteTime -Descending |
+                      Select-Object -First 1
+
+          # 2) Si no, cualquier *.apk en el repo
+          $repoApk  = $null
+          if (-not $buildApk) {
+            $repoApk = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.apk |
+                       Sort-Object LastWriteTime -Descending |
+                       Select-Object -First 1
+          }
+
+          # 3) Si tampoco, mirar artefactos descargados
+          $artApk = $null
+          if (-not $buildApk -and -not $repoApk -and (Test-Path "artifacts")) {
+            $artApk = Get-ChildItem -Path artifacts -Recurse -Filter *.apk |
+                      Sort-Object LastWriteTime -Descending |
+                      Select-Object -First 1
+          }
+
+          $chosen = $buildApk ?? $repoApk ?? $artApk
+          $src = if     ($buildApk) { "build" }
+                 elseif ($repoApk)  { "repo" }
+                 elseif ($artApk)   { "artifacts" }
+                 else               { "" }
+
+          if ($chosen) {
+            Write-Host "::notice::APK selected ($src): $($chosen.FullName)"
+            "apk_path=$($chosen.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "apk_source=$src"              | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Host "::notice::No APK found in repo nor artifacts. Job will continue without scanning."
+            "apk_path="   | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            "apk_source=" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      # ---------------- Static scan: upload → scan → report_json ----------------
+      # Endpoints documentados por MobSF. :contentReference[oaicite:5]{index=5}
+      - name: MobSF static scan (upload → scan → report_json)
+        if: ${{ steps.resolve_apk.outputs.apk_path != '' }}
+        id: mobsf_static
+        shell: pwsh
         env:
           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
-        continue-on-error: true
-        shell: powershell
+          MOBSF_URL: ${{ secrets.MOBSF_URL }}
         run: |
-          # Localizar el APK generado
-          $apkFile = Get-ChildItem -Path . -Recurse -Filter '*.apk' | Select-Object -First 1
-          if (-not $apkFile) {
-            Write-Error "APK file not found. Please ensure the build step produced an APK."
-            exit 1
+          $apk = "${{ steps.resolve_apk.outputs.apk_path }}"
+          $apiKey = $env:MOBSF_API_KEY
+          if ([string]::IsNullOrWhiteSpace($apiKey)) {
+            Write-Host "::warning::MOBSF_API_KEY not set; skipping scan."
+            exit 0
           }
-          $apkPath = $apkFile.FullName
-          $apiKey  = $env:MOBSF_API_KEY
+          $base = if ([string]::IsNullOrWhiteSpace($env:MOBSF_URL)) { 'http://localhost:8000' } else { $env:MOBSF_URL }
+          New-Item -ItemType Directory -Force -Path reports | Out-Null
 
-          # 1) Subir el APK
-          $uploadResult = curl.exe -s -X POST "http://localhost:8000/api/v1/upload" `
-            -H "Authorization: $apiKey" `
-            -F "file=@$apkPath"
-          $uploadResponse = $uploadResult | ConvertFrom-Json
-          $hash = $uploadResponse.hash
-          if (-not $hash) { Write-Error "No hash returned from upload."; exit 1 }
-          Write-Host "Static scan hash: $hash"
-
-          # Exportar hash para el siguiente paso
+          Write-Host "Uploading APK to $base ..."
+          $upload = curl.exe -s -X POST "$base/api/v1/upload" -H "Authorization: $apiKey" -F "file=@$apk"
+          try { $up = $upload | ConvertFrom-Json } catch { $up = $null }
+          if (-not $up -or -not $up.hash) {
+            Write-Host "::warning::Upload returned no hash. Response: $upload"
+            exit 0
+          }
+          $hash = $up.hash
           "hash=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-          # 2) Iniciar análisis estático
-          Invoke-RestMethod -Uri "http://localhost:8000/api/v1/scan" `
-            -Method Post -TimeoutSec 60 `
-            -Headers @{ Authorization = $apiKey } `
-            -Body @{ hash = $hash } | Out-Null
+          Write-Host "Starting static analysis..."
+          Invoke-RestMethod -Uri "$base/api/v1/scan" -Method Post -Headers @{ Authorization = $apiKey } -Body @{ hash = $hash } | Out-Null
 
-          # 3) Descargar reporte JSON estático
-          $report = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/report_json" `
-            -Method Post -TimeoutSec 60 `
-            -Headers @{ Authorization = $apiKey } `
-            -Body @{ hash = $hash }
-          $report | ConvertTo-Json -Depth 100 | Set-Content mobsf_results.json
+          Write-Host "Downloading static JSON report..."
+          $rep = Invoke-RestMethod -Uri "$base/api/v1/report_json" -Method Post -Headers @{ Authorization = $apiKey } -Body @{ hash = $hash }
+          $rep | ConvertTo-Json -Depth 100 | Set-Content reports/mobsf_static.json -Encoding UTF8
+          Write-Host "::notice::Static report saved to reports/mobsf_static.json"
 
       - name: Upload MobSF static results
         uses: actions/upload-artifact@v4
         with:
-          name: mobsf-report
-          path: mobsf_results.json
+          name: mobsf-static-report
+          path: reports/mobsf_static.json
+          if-no-files-found: error
+          retention-days: 14
 
-      # ------- DINÁMICO (opcional, con timeout y sin re-subir APK) -------
-      - name: Try to download MobSF dynamic JSON report
-        if: ${{ steps.static_scan.outputs.hash != '' }}
+      # ---------------- Dynamic report (opcional, no bloquea) ----------------
+      # Si tu entorno NO ejecutó una sesión dinámica, este paso dejará aviso y seguirá.
+      # Endpoint: /api/v1/dynamic/report_json (Android). :contentReference[oaicite:6]{index=6}
+      - name: Try to fetch dynamic JSON report (non-blocking)
+        if: ${{ inputs.try_dynamic_report && steps.mobsf_static.outputs.hash != '' }}
+        id: mobsf_dynamic
+        shell: pwsh
         env:
           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
-        continue-on-error: true
-        shell: powershell
+          MOBSF_URL: ${{ secrets.MOBSF_URL }}
         run: |
+          $hash = "${{ steps.mobsf_static.outputs.hash }}"
+          if (-not $hash) { Write-Host "No hash from static; skipping dynamic report."; exit 0 }
+
           $apiKey = $env:MOBSF_API_KEY
-          $hash   = "${{ steps.static_scan.outputs.hash }}"
-          if (-not $hash) {
-            Write-Host "No hash from previous step; skipping dynamic report."
-            exit 0
-          }
-          Write-Host "Dynamic scan hash: $hash"
+          $base   = if ([string]::IsNullOrWhiteSpace($env:MOBSF_URL)) { 'http://localhost:8000' } else { $env:MOBSF_URL }
 
-          # (Opcional) cerrar sesión dinámica; ignora si no aplica
           try {
-            Invoke-RestMethod -Uri "http://localhost:8000/api/v1/dynamic/stop_analysis" `
-              -Method Post -TimeoutSec 15 `
-              -Headers @{ Authorization = $apiKey } `
-              -Body @{ hash = $hash } | Out-Null
-          } catch { Write-Host "stop_analysis not needed/available: $($_.Exception.Message)" }
-
-          # Intentar obtener el reporte dinámico con timeout
-          try {
-            $dyn = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/dynamic/report_json" `
-              -Method Post -TimeoutSec 30 `
-              -Headers @{ Authorization = $apiKey } `
-              -Body @{ hash = $hash }
+            $dyn = Invoke-RestMethod -Uri "$base/api/v1/dynamic/report_json" -Method Post -Headers @{ Authorization = $apiKey } -Body @{ hash = $hash }
             if ($dyn) {
-              $dyn | ConvertTo-Json -Depth 100 | Set-Content mobsf_dynamic_results.json
-              Write-Host "Dynamic report saved to mobsf_dynamic_results.json"
+              $dyn | ConvertTo-Json -Depth 100 | Set-Content reports/mobsf_dynamic.json -Encoding UTF8
+              Write-Host "::notice::Dynamic report saved to reports/mobsf_dynamic.json"
+              "dynamic_exists=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             } else {
-              Write-Host "Dynamic report not available (no dynamic session/results)."
+              Write-Host "::notice::No dynamic report available for hash $hash."
+              "dynamic_exists=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             }
           } catch {
-            Write-Host "Dynamic report fetch failed: $($_.Exception.Message)"
+            Write-Host "::notice::Dynamic report not available or endpoint failed: $($_.Exception.Message)"
+            "dynamic_exists=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
       - name: Upload MobSF dynamic results (if present)
+        if: ${{ steps.mobsf_dynamic.outputs.dynamic_exists == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: mobsf-dynamic-report
-          path: mobsf_dynamic_results.json
+          path: reports/mobsf_dynamic.json
           if-no-files-found: ignore
+          retention-days: 14
