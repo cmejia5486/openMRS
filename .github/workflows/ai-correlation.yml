@@ -1,36 +1,53 @@
-# .github/workflows/ai-workflow.yml
 name: AI Correlation
 
 on:
   workflow_call:
     inputs:
       artifact_pattern:
-        description: "Patrón para descargar artefactos de este run (download-artifact)"
+        description: "Patrón para descargar artefactos de este run"
         required: false
         type: string
         default: "*"
       checklist_path:
-        description: "Ruta al checklist de requisitos"
+        description: "Ruta al JSON de requisitos (469)"
         required: false
         type: string
         default: "requirements/requisitos.json"
+      openai_model:
+        description: "Modelo OpenAI"
+        required: false
+        type: string
+        default: "gpt-4o-mini"
+      max_requirements:
+        description: "Límite de requisitos a auditar (-1 = todos)"
+        required: false
+        type: number
+        default: -1
     secrets:
-      APP_ID: { required: true }
-      APP_INSTALLATION_ID: { required: true }
-      APP_PRIVATE_KEY: { required: true }
       OPENAI_API_KEY: { required: true }
+      APP_ID: { required: false }
+      APP_INSTALLATION_ID: { required: false }
+      APP_PRIVATE_KEY: { required: false }
 
 permissions:
-  actions: write
-  contents: write
+  contents: write       # crear PR/commits si hay App
+  actions: write        # descargar artifacts v4
   pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   correlate:
+    name: Correlate SEC-CAT with scan artifacts (DOCX outputs)
+    if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-latest
+
     steps:
-      - name: Generate GitHub App token
+      - name: Generate GitHub App token (optional)
         id: app-token
+        if: ${{ secrets.APP_ID && secrets.APP_INSTALLATION_ID && secrets.APP_PRIVATE_KEY }}
         uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.APP_ID }}
@@ -41,12 +58,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
+          fetch-depth: 0
 
+      # Descarga artifacts del MISMO run (v4, pattern+merge)
       - name: Download artifacts from this run
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
-          pattern: ${{ inputs.artifact_pattern }}   # p.ej. "*" o "mobsf-*"
+          pattern: ${{ inputs.artifact_pattern }}
           merge-multiple: true
           path: reports
 
@@ -55,29 +75,48 @@ jobs:
           echo "=== reports ==="
           ls -lahR reports || true
 
+      # Seguridad: si por alguna razón llegan comprimidos, extraer sin fallar
+      - name: Unpack any zipped artifacts (safe)
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r -d '' z; do
+            found=1
+            echo "Unzipping: $z"
+            d="reports/_unzipped"
+            mkdir -p "$d"
+            unzip -o "$z" -d "$d" >/dev/null
+          done < <(find reports -type f -name '*.zip' -print0 || true)
+          if [ -d reports/_unzipped ]; then
+            rsync -a reports/_unzipped/ reports/ || true
+          fi
+          echo "After unzip:"
+          ls -lahR reports || true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies (OpenAI SDK nuevo)
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip uninstall -y openai || true
-          pip install --no-cache-dir --upgrade --force-reinstall "openai>=1.55.0" pandas sentence-transformers
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir "openai>=1.55.0" python-docx pandas orjson tqdm
 
       - name: Run AI correlation
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: gpt-4o-mini
-          OPENAI_REASONING_EFFORT: medium
-          OPENAI_MAX_OUTPUT_TOKENS: "1500"
+          OPENAI_MODEL: ${{ inputs.openai_model }}
         run: |
           mkdir -p report
-          # Pasa la carpeta con todos los artefactos descomprimidos
-          python scripts/ai_correlate.py --checklist "${{ inputs.checklist_path }}" --reports reports --output report/audit-summary.md
-          # Exporta opcional JSON si tu script lo genera
-          [ -f report/audit-findings.json ] || cp report/audit-summary.md report/audit-findings.json || true
+          python scripts/ai_correlate.py \
+            --checklist "${{ inputs.checklist_path }}" \
+            --reports "reports" \
+            --source-root "." \
+            --output-dir "report" \
+            --max-requirements "${{ inputs.max_requirements }}"
 
       - name: Upload AI reports
         uses: actions/upload-artifact@v4
@@ -85,13 +124,18 @@ jobs:
           name: ai-correlation-reports
           path: report/
 
-      - name: Create pull request
+      - name: Create pull request with outputs (optional)
+        if: ${{ steps.app-token.outputs.token }}
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ steps.app-token.outputs.token }}
-          commit-message: "chore(ai): add correlated security findings"
-          title: "AI: Correlate security findings"
+          add-paths: report/**
+          commit-message: "chore(ai): SEC-CAT adapted, checklist & audit summary"
+          title: "AI: SEC-CAT & audit outputs"
           body: |
-            This pull request contains the correlated security findings generated by the AI assistant.
-            The AI mapped the results of security scans against the requirements listed in '${{ inputs.checklist_path }}' and produced an audit summary and findings report.
+            This PR adds:
+            - SEC-CAT adapted (DOCX)
+            - Compliance checklist (DOCX)
+            - Audit summary (DOCX + MD + JSON)
+            Based on artifacts (MobSF, SAST, Trivy) and requisitos.json.
           branch: ai/correlation-results
