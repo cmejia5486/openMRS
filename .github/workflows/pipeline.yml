@@ -49,7 +49,7 @@ jobs:
       # (tu reusable ya usa pattern y merge-multiple)
       artifact_pattern: "*"
       checklist_path: "requirements/requisitos.json"
-      secrets: inherit
+      secrets: inheri
 
   # Job "noop" para Dependabot
   noop:
