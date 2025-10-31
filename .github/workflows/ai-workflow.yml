@@ -1,4 +1,4 @@
-name: AI Correlation
+name: AI Correlation (SEC-CAT -> Checklist & Summary DOCX)
 
 on:
   workflow_call:
