@@ -39,7 +39,7 @@ jobs:
     uses: ./.github/workflows/mobsf.yml
     secrets: inherit
 
-  # 4) Compliance
+  # 4) Compliance ...
   #compliance:
     #needs: [mobsf]
    # if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
