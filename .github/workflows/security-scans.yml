@@ -26,7 +26,7 @@ jobs:
       # Genera gradle.lockfile sin compilar; mejora la resolución de dependencias para el escaneo
       - name: Generate Gradle lockfile (no build)
         if: ${{ hashFiles('**/gradle.lockfile') == '' }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
             distribution: temurin
             java-version: '11'
