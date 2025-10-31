@@ -55,7 +55,7 @@ jobs:
       - name: Try Gradle build (non-blocking)
         if: ${{ inputs.run_build }}
         id: build_try
-        shell: pwsh
+        shell: push
         run: |
           $ErrorActionPreference = 'Continue'
           $code = 0
@@ -88,7 +88,7 @@ jobs:
       # ---------------- Descubrir APK automáticamente ----------------
       - name: Resolve APK (auto-discovery)
         id: resolve_apk
-        shell: pwsh
+        shell: push
         run: |
           $ErrorActionPreference = 'SilentlyContinue'
 
@@ -135,7 +135,7 @@ jobs:
       - name: MobSF static scan (upload → scan → report_json)
         if: ${{ steps.resolve_apk.outputs.apk_path != '' }}
         id: mobsf_static
-        shell: pwsh
+        shell: push
         env:
           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
           MOBSF_URL: ${{ secrets.MOBSF_URL }}
@@ -181,7 +181,7 @@ jobs:
       - name: Try to fetch dynamic JSON report (non-blocking)
         if: ${{ inputs.try_dynamic_report && steps.mobsf_static.outputs.hash != '' }}
         id: mobsf_dynamic
-        shell: pwsh
+        shell: push
         env:
           MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
           MOBSF_URL: ${{ secrets.MOBSF_URL }}
