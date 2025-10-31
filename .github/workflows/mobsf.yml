@@ -1,5 +1,5 @@
 # .github/workflows/mobsf.yml
-name: Mobile Security Scan (CMD • auto-discover APK → static & dynamic artifacts)
+name: Mobile Security Scan (CMD • auto-discover APK → static & dynamic)
 
 on:
   workflow_call:
@@ -29,7 +29,7 @@ concurrency:
 
 defaults:
   run:
-    shell: cmd  # <<— todo el job en CMD por defecto (se puede sobreescribir por step)
+    shell: cmd   # <<— ejecutar pasos en CMD por defecto (válido en Actions)
 
 jobs:
   mobsf_scan:
@@ -41,13 +41,13 @@ jobs:
         !startsWith(github.ref_name, 'dependabot/') &&
         (github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]')
       }}
-    runs-on: self-hosted  # el runner que ve tu MobSF
+    runs-on: self-hosted  # tu runner Windows que ve el servidor MobSF
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ---------- Build NO BLOQUEANTE (opcional, en CMD) ----------
+      # ---------- Build NO BLOQUEANTE (opcional) ----------
       - name: Set up JDK (only if build)
         if: ${{ inputs.run_build }}
         uses: actions/setup-java@v4
@@ -60,71 +60,76 @@ jobs:
         id: build_try
         run: |
           @echo off
-          setlocal enabledelayedexpansion
-          chcp 65001 >NUL
-          set CODE=0
+          setlocal
+          set "CODE=0"
+          rem NOTA: en CMD NO existe 'else if'; hay que anidar IFs.
           if exist ".\gradlew.bat" (
-            call .\gradlew.bat assembleRelease
-            set CODE=%ERRORLEVEL%
-          ) else if exist ".\gradlew" (
-            rem Si solo hay gradlew (unix), necesitas Git Bash u otro shell para ejecutarlo.
-            echo ::notice::No Gradle wrapper .bat; skipping unix gradlew.
-            set CODE=0
+            call ".\gradlew.bat" assembleRelease
+            set "CODE=%ERRORLEVEL%"
           ) else (
-            echo ::notice::No Gradle wrapper; skipping build.
-            set CODE=0
+            if exist ".\gradlew" (
+              echo ::notice::Se encontró gradlew (Unix). En CMD se omite.
+              set "CODE=0"
+            ) else (
+              echo ::notice::No hay Gradle wrapper; se omite build.
+              set "CODE=0"
+            )
           )
           if not "%CODE%"=="0" (
-            echo ::warning::Gradle failed with exit code %CODE%. Will continue with APK autodiscovery.
+            echo ::warning::Gradle falló con exit %CODE%. Se continuará con autodiscovery de APK.
           ) else (
-            echo ::notice::Gradle build completed (exit %CODE%).
+            echo ::notice::Gradle finalizado (exit %CODE%).
           )
           >>"%GITHUB_OUTPUT%" echo gradle_exit=%CODE%
+          endlocal
+          exit /b 0    # <- pase lo que pase, este step NO falla
 
-      # ---------- Artefactos del RUN (si existen) ----------
+      # ---------- Descargar artefactos del run (si existen) ----------
       - name: Download all artifacts (merge)
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           path: artifacts
-          merge-multiple: true
-      # (v4 tiene nuevas reglas; usa v4 al subir y descargar). :contentReference[oaicite:3]{index=3}
+          merge-multiple: true   # combinar múltiples artefactos en un solo dir
+      # (Con Artifacts v4, usar v4 en subida y descarga; soporta pattern/merge-multiple). 
+      # Ref: GA de v4 y notas de comportamiento. 
 
-      # ---------- Descubrir APK automáticamente (prioridad: build → repo → artifacts) ----------
+      # ---------- Descubrir APK automáticamente ----------
       - name: Resolve APK (auto-discovery, CMD)
         id: resolve_apk
         run: |
           @echo off
-          setlocal enabledelayedexpansion
-          chcp 65001 >NUL
-
+          setlocal
           set "APK="
+
           rem 1) Priorizar build\outputs\apk
-          for /f "delims=" %%F in ('dir /b /s "%GITHUB_WORKSPACE%\*build\outputs\apk\*.apk" 2^>NUL') do (
+          for /f "delims=" %%F in ('dir /b /s "%GITHUB_WORKSPACE%\*.apk" 2^>NUL ^| findstr /i "\\build\\outputs\\apk\\"') do (
             set "APK=%%F"
-            goto after_search
+            goto :got_apk
           )
-          rem 2) Cualquier *.apk en repo
+          rem 2) Cualquier *.apk en el repo
           for /f "delims=" %%F in ('dir /b /s "%GITHUB_WORKSPACE%\*.apk" 2^>NUL') do (
             set "APK=%%F"
-            goto after_search
+            goto :got_apk
           )
           rem 3) Artefactos descargados
           if exist "artifacts" (
             for /f "delims=" %%F in ('dir /b /s "artifacts\*.apk" 2^>NUL') do (
               set "APK=%%F"
-              goto after_search
+              goto :got_apk
             )
           )
 
-          :after_search
+          :got_apk
           if defined APK (
-            echo ::notice::APK selected: %APK%
+            echo ::notice::APK seleccionado: %APK%
             >>"%GITHUB_OUTPUT%" echo apk_path=%APK%
           ) else (
-            echo ::notice::No APK found in repo nor artifacts. Job will continue without scanning.
+            echo ::notice::No se encontró APK en repo ni artefactos. Se omite el escaneo.
             >>"%GITHUB_OUTPUT%" echo apk_path=
           )
+          endlocal
+          exit /b 0
 
       # ---------- Static: upload → scan → report_json ----------
       - name: MobSF static scan (CMD)
@@ -135,13 +140,11 @@ jobs:
           MOBSF_URL: ${{ secrets.MOBSF_URL }}
         run: |
           @echo off
-          setlocal enabledelayedexpansion
-          chcp 65001 >NUL
-
+          setlocal
           set "APK=${{ steps.resolve_apk.outputs.apk_path }}"
           if "%MOBSF_API_KEY%"=="" (
-            echo ::warning::MOBSF_API_KEY not set; skipping scan.
-            goto end
+            echo ::warning::MOBSF_API_KEY no definido; se omite escaneo.
+            endlocal & exit /b 0
           )
           if "%MOBSF_URL%"=="" (
             set "BASE=http://localhost:8000"
@@ -155,12 +158,13 @@ jobs:
           curl -s -X POST "%BASE%/api/v1/upload" -H "Authorization: %MOBSF_API_KEY%" -F "file=@%APK%" > upload.json
 
           rem Extraer hash con PowerShell (llamado desde CMD)
-          for /f "usebackq delims=" %%H in (`powershell -NoProfile -Command "(Get-Content -Raw 'upload.json' | ConvertFrom-Json).hash"`) do (
+          for /f "usebackq delims=" %%H in (`powershell -NoProfile -Command "$h=(Get-Content -Raw 'upload.json' | ConvertFrom-Json).hash; if($h){$h}"`) do (
             set "HASH=%%H"
           )
           if "%HASH%"=="" (
-            echo ::warning::Upload returned no hash.
-            goto end
+            echo ::warning::Upload no devolvió hash. Respuesta:
+            type upload.json
+            endlocal & exit /b 0
           )
           >>"%GITHUB_OUTPUT%" echo hash=%HASH%
 
@@ -170,18 +174,17 @@ jobs:
           rem Report JSON
           curl -s -X POST "%BASE%/api/v1/report_json" -H "Authorization: %MOBSF_API_KEY%" -d "hash=%HASH%" > "reports\mobsf_static.json"
           if exist "reports\mobsf_static.json" (
-            echo ::notice::Static report saved to reports\mobsf_static.json
+            echo ::notice::Static report guardado en reports\mobsf_static.json
           )
-
-          :end
-          rem fin
+          endlocal
+          exit /b 0
 
       - name: Upload MobSF static results
         uses: actions/upload-artifact@v4
         with:
           name: mobsf-static-report
           path: reports/mobsf_static.json
-          if-no-files-found: error
+          if-no-files-found: ignore    # <<— no fallar si no hubo reporte
           retention-days: 14
 
       # ---------- Dynamic report (opcional, no bloquea) ----------
@@ -193,15 +196,12 @@ jobs:
           MOBSF_URL: ${{ secrets.MOBSF_URL }}
         run: |
           @echo off
-          setlocal enabledelayedexpansion
-          chcp 65001 >NUL
-
+          setlocal
           set "HASH=${{ steps.mobsf_static.outputs.hash }}"
           if "%HASH%"=="" (
             echo No hash from static; skipping dynamic report.
-            goto done
+            endlocal & exit /b 0
           )
-
           if "%MOBSF_URL%"=="" (
             set "BASE=http://localhost:8000"
           ) else (
@@ -213,16 +213,15 @@ jobs:
           if exist "reports\mobsf_dynamic.json" (
             for %%A in ("reports\mobsf_dynamic.json") do set SIZE=%%~zA
             if not "%SIZE%"=="0" (
-              echo ::notice::Dynamic report saved to reports\mobsf_dynamic.json
+              echo ::notice::Dynamic report guardado en reports\mobsf_dynamic.json
               >>"%GITHUB_OUTPUT%" echo dynamic_exists=true
-              goto done
+              endlocal & exit /b 0
             )
           )
           echo ::notice::No dynamic report available for hash %HASH%.
           >>"%GITHUB_OUTPUT%" echo dynamic_exists=false
-
-          :done
-          rem fin
+          endlocal
+          exit /b 0
 
       - name: Upload MobSF dynamic results (if present)
         if: ${{ steps.mobsf_dynamic.outputs.dynamic_exists == 'true' }}
