@@ -39,11 +39,17 @@ jobs:
     uses: ./.github/workflows/mobsf.yml
     secrets: inherit
 
-  # ai_correlation:
-  #   needs: [compliance]
-  #   if: ${{ github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
-  #   uses: ./.github/workflows/ai-correlation.yml
-  #   secrets: inherit
+   ai_correlation:
+  # 4)  Ejecuta aunque falle mobsf/security_scans y omite Dependabot
+    if: ${{ always() && github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
+    needs: [security_scans, mobsf, codeql_analysis]   # también puedes añadir codeql_analysis si lo quieres
+    uses: ./.github/workflows/ai-workflow.yml
+    with:
+      # Descarga TODOS los artefactos del run y los fusiona en reports/
+      # (tu reusable ya usa pattern y merge-multiple)
+      artifact_pattern: "*"
+      checklist_path: "requirements/requisitos.json"
+    secrets: inherit
 
   # Job "noop" para Dependabot
   noop:

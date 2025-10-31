@@ -1,3 +1,4 @@
+# .github/workflows/ai-workflow.yml
 name: AI Correlation
 
 on:
@@ -14,14 +15,10 @@ on:
         type: string
         default: "requirements/requisitos.json"
     secrets:
-      APP_ID:
-        required: true
-      APP_INSTALLATION_ID:
-        required: true
-      APP_PRIVATE_KEY:
-        required: true
-      OPENAI_API_KEY:
-        required: true
+      APP_ID: { required: true }
+      APP_INSTALLATION_ID: { required: true }
+      APP_PRIVATE_KEY: { required: true }
+      OPENAI_API_KEY: { required: true }
 
 permissions:
   actions: write
@@ -49,9 +46,14 @@ jobs:
       - name: Download artifacts from this run
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ inputs.artifact_pattern }}
+          pattern: ${{ inputs.artifact_pattern }}   # p.ej. "*" o "mobsf-*"
           merge-multiple: true
           path: reports
+
+      - name: List downloaded files (debug)
+        run: |
+          echo "=== reports ==="
+          ls -lahR reports || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -72,8 +74,10 @@ jobs:
           OPENAI_MAX_OUTPUT_TOKENS: "1500"
         run: |
           mkdir -p report
+          # Pasa la carpeta con todos los artefactos descomprimidos
           python scripts/ai_correlate.py --checklist "${{ inputs.checklist_path }}" --reports reports --output report/audit-summary.md
-          cp report/audit-summary.md report/audit-findings.json || true
+          # Exporta opcional JSON si tu script lo genera
+          [ -f report/audit-findings.json ] || cp report/audit-summary.md report/audit-findings.json || true
 
       - name: Upload AI reports
         uses: actions/upload-artifact@v4
