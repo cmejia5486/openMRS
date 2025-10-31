@@ -29,14 +29,14 @@ jobs:
 
       # --- CodeQL (Java) sin build, solo seguridad ---
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: java
           build-mode: none
           config-file: .github/codeql/codeql-security.yml
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           output: report/codeql      # guarda SARIF local
           upload: always             # y lo sube a Code Scanning
@@ -92,7 +92,7 @@ jobs:
 
       # Subir a Code Scanning solo los SARIF de seguridad
       - name: Upload Semgrep (security-only) to Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: report/semgrep.sarif
         continue-on-error: true
