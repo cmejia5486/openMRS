@@ -40,7 +40,7 @@ jobs:
     secrets: inherit
 
    ai_correlation:
-  # 4)  Ejecuta aunque falle mobsf/security_scans y omite Dependabot
+  # 4)  Ejecuta aunque falle mobsf/security_scans y omite Dependabot exacto
     if: ${{ always() && github.actor != 'dependabot[bot]' && !startsWith(github.ref_name, 'dependabot/') }}
     needs: [security_scans, mobsf, codeql_analysis]   # también puedes añadir codeql_analysis si lo quieres
     uses: ./.github/workflows/ai-workflow.yml
