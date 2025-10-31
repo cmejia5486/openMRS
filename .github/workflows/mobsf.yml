@@ -97,7 +97,7 @@ jobs:
               -Body @{ hash = $hash } | Out-Null
           } catch { Write-Host "stop_analysis not needed/available: $($_.Exception.Message)" }
 
-          # Intentar obtener el reporte dinámico con timeout 
+          # Intentar obtener el reporte dinámico con timeout
           try {
             $dyn = Invoke-RestMethod -Uri "http://localhost:8000/api/v1/dynamic/report_json" `
               -Method Post -TimeoutSec 30 `
