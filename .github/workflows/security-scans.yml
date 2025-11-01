@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # (OPCIONAL, pero recomendado para Gradle)
       # Genera gradle.lockfile sin compilar; mejora la resolución de dependencias para el escaneo
