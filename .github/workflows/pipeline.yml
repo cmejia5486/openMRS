@@ -46,7 +46,7 @@ jobs:
     uses: ./.github/workflows/ai-workflow.yml
     with:
       # Descarga TODOS los artefactos del run y los fusiona en reports/
-      # (tu reusable ya usa pattern y merge-multiple)
+      # (tu reusable ya usa pattern y merge-multiple) 
       artifact_pattern: "*"
       checklist_path: "requirements/requisitos.json"
     secrets: inherit
