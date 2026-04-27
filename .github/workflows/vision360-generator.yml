@@ -35,7 +35,7 @@ jobs:
           sudo chmod 777 /mnt/data
 
       - name: Download all artifacts from this workflow run
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           path: _artifacts
           merge-multiple: true

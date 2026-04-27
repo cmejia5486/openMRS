@@ -403,7 +403,7 @@ jobs:
           rm -f "$AUDIT_ANALYSIS_JSON_PATH" "$AUDIT_SUMMARY_DOCX_PATH" "$AUDIT_SUMMARY_TRANSFER_DIR/Audit Summary.docx"
 
       - name: Download security-audit-excel artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: security-audit-excel
           path: ${{ runner.temp }}/vision360-data
@@ -560,7 +560,7 @@ jobs:
           mkdir -p "$VISION360_DATA_DIR" "$AUDIT_SUMMARY_TRANSFER_DIR"
 
       - name: Download temporary DOCX transfer artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: _audit-summary-docx-transfer-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/audit-summary-docx-transfer
