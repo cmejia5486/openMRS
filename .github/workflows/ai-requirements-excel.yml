@@ -669,7 +669,7 @@ jobs:
           test -f "$SECURITY_AUDIT_XLSX_PATH"
 
       - name: Upload Excel output
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-audit-excel
           if-no-files-found: error

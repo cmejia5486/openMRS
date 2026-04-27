@@ -512,7 +512,7 @@ jobs:
           test -f "$AUDIT_SUMMARY_TRANSFER_DIR/Audit Summary.docx"
 
       - name: Upload temporary DOCX transfer artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: _audit-summary-docx-transfer-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: error
@@ -604,7 +604,7 @@ jobs:
           test -f "$AUDIT_SUMMARY_ZIP_PATH"
 
       - name: Upload Audit Summary outputs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: audit-summary-zip
           if-no-files-found: error

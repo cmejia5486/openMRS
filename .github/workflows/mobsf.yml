@@ -295,7 +295,7 @@ jobs:
           $metadata | ConvertTo-Json -Depth 20 | Set-Content mobsf_scan_metadata.json
 
       - name: Upload MobSF static results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobsf-report
           path: |
@@ -357,7 +357,7 @@ jobs:
           }
 
       - name: Upload MobSF dynamic results if present
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobsf-dynamic-report
           path: mobsf_dynamic_results.json

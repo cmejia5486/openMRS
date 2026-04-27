@@ -27,7 +27,7 @@ jobs:
           zip -r openMRS.zip . -x ".git/*" ".git/**"
 
       - name: Upload openMRS.zip artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: openMRS-zip
           path: openMRS.zip
