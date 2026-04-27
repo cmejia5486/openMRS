@@ -150,7 +150,7 @@ jobs:
 
       - name: Set up Android SDK
         if: ${{ steps.cfg.outputs.language == 'java' && steps.cfg.outputs.build_mode == 'manual' }}
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Set up JDK for JVM tools
         if: ${{ steps.cfg.outputs.language == 'java' }}
