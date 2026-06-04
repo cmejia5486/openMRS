@@ -222,6 +222,25 @@
     ]
   },
   {
+    "id": "SCA",
+    "title": "Software Composition Analysis",
+    "description": "Vulnerabilidades conocidas, inventario de dependencias, disponibilidad de correcciones y exposición de licencias detectadas mediante Trivy.",
+    "flags": [
+      "has_sca_dependency_inventory",
+      "has_sca_known_vulnerable_dependencies",
+      "has_sca_critical_vulnerabilities",
+      "has_sca_high_vulnerabilities",
+      "has_sca_medium_vulnerabilities",
+      "has_sca_low_vulnerabilities",
+      "has_sca_fixable_vulnerabilities",
+      "has_sca_unfixed_vulnerabilities",
+      "has_sca_security_sensitive_outdated_libraries",
+      "has_sca_license_inventory",
+      "has_sca_restrictive_licenses",
+      "has_sca_unknown_licenses"
+    ]
+  },
+  {
     "id": "ROBUSTNESS",
     "title": "Robustness & Memory Safety",
     "description": "Robustez, condiciones de carrera y seguridad de memoria.",
