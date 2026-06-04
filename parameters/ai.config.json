@@ -4,8 +4,8 @@
    "profiles": {
    "lm_studio_local": {
   "provider": "openai_compatible",
-  "model": "gpt-oss-20b",
-  "litellm_model": "openai/gpt-oss-20b",
+  "model": "mistralai/ministral-3-14b-reasoning",
+  "litellm_model": "mistralai/ministral-3-14b-reasoning",
   "api_key_env_var": "OPENAI_API_KEY",
   "api_base": "http://localhost:1234/v1",
   "api_base_env_var": "",
