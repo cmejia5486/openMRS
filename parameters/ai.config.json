@@ -4,8 +4,8 @@
    "profiles": {
    "lm_studio_local": {
   "provider": "openai_compatible",
-  "model": "google_gemma-4-e4b-it",
-  "litellm_model": "openai/google_gemma-4-e4b-it",
+  "model": "gpt-oss-20b",
+  "litellm_model": "openai/gpt-oss-20b",
   "api_key_env_var": "OPENAI_API_KEY",
   "api_base": "http://localhost:1234/v1",
   "api_base_env_var": "",
