@@ -1215,6 +1215,484 @@ def find_org_evidence_for_flag(flag_id: str, org_index: Dict[str, str], cfg: Dic
     return bool(sources), sorted(set(sources)), evidence[:4]
 
 
+
+# ------------------------------------------------------------
+# Software Composition Analysis (Trivy / agent_payload)
+# ------------------------------------------------------------
+
+SCA_SECURITY_SENSITIVE_PACKAGE_TOKENS = [
+    "retrofit",
+    "okhttp",
+    "gson",
+    "guava",
+    "kotlin",
+    "jackson",
+    "bouncycastle",
+    "bcprov",
+    "conscrypt",
+    "grpc",
+    "netty",
+    "protobuf",
+    "commons-codec",
+    "commons-io",
+    "xml",
+    "kxml",
+    "jwt",
+    "oauth",
+    "security",
+    "crypto",
+]
+
+SCA_RESTRICTIVE_LICENSE_TOKENS = [
+    "agpl",
+    "gpl",
+    "lgpl",
+    "sspl",
+    "cpal",
+    "epl",
+    "mpl",
+    "cecill",
+]
+
+SCA_UNKNOWN_LICENSE_TOKENS = [
+    "unknown",
+    "noassertion",
+    "none",
+    "unclassified",
+    "not detected",
+    "not_found",
+    "not found",
+]
+
+
+def _sca_safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except Exception:
+        return default
+
+
+def _sca_severity_counter() -> Dict[str, int]:
+    return {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
+
+
+def _sca_normalize_severity(value: Any) -> str:
+    sev = str(value or "UNKNOWN").strip().upper()
+    return sev if sev in {"CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"} else "UNKNOWN"
+
+
+def _sca_finding_from_trivy_vuln(result: Dict[str, Any], vuln: Dict[str, Any]) -> Dict[str, Any]:
+    fixed = vuln.get("FixedVersion")
+    cvss_raw = vuln.get("CVSS") or {}
+    best = {"source": None, "v3": 0, "v3_vector": None}
+
+    if isinstance(cvss_raw, dict):
+        for source, value in cvss_raw.items():
+            if not isinstance(value, dict):
+                continue
+            score = value.get("V3Score") or 0
+            try:
+                score_num = float(score)
+            except Exception:
+                score_num = 0
+            if score_num > float(best.get("v3") or 0):
+                best = {
+                    "source": str(source),
+                    "v3": score_num,
+                    "v3_vector": value.get("V3Vector"),
+                }
+
+    return {
+        "target": result.get("Target"),
+        "class": result.get("Class"),
+        "type": result.get("Type"),
+        "id": vuln.get("VulnerabilityID"),
+        "pkg": vuln.get("PkgName"),
+        "pkg_id": vuln.get("PkgID"),
+        "installed": vuln.get("InstalledVersion"),
+        "fixed": fixed,
+        "status": vuln.get("Status"),
+        "fix_available": bool(fixed),
+        "severity": _sca_normalize_severity(vuln.get("Severity")),
+        "severity_source": vuln.get("SeveritySource"),
+        "vendor_ids": vuln.get("VendorIDs") or [],
+        "vendor_severity": vuln.get("VendorSeverity") or {},
+        "best_cvss": best,
+        "cwe": vuln.get("CweIDs") or vuln.get("CWEIDs") or [],
+        "title": vuln.get("Title"),
+        "description": vuln.get("Description"),
+        "references": vuln.get("References") or [],
+        "primary_url": vuln.get("PrimaryURL"),
+        "published": vuln.get("PublishedDate"),
+        "modified": vuln.get("LastModifiedDate"),
+        "data_source": vuln.get("DataSource") or {},
+    }
+
+
+def _sca_license_name(item: Dict[str, Any]) -> str:
+    for key in ("name", "Name", "license", "License", "Category"):
+        val = item.get(key)
+        if val:
+            return str(val)
+    return ""
+
+
+def _sca_license_pkg(item: Dict[str, Any]) -> str:
+    for key in ("pkg", "PkgName", "PackageName", "PkgID"):
+        val = item.get(key)
+        if val:
+            return str(val)
+    return ""
+
+
+def _sca_finding_evidence(finding: Dict[str, Any], path_prefix: str = "agent_payload.json:findings") -> Dict[str, str]:
+    severity = _sca_normalize_severity(finding.get("severity"))
+    vuln_id = str(finding.get("id") or "UNKNOWN-CVE")
+    pkg = str(finding.get("pkg") or "unknown-package")
+    installed = str(finding.get("installed") or "unknown-version")
+    fixed = str(finding.get("fixed") or "no fixed version")
+    cvss = ((finding.get("best_cvss") or {}).get("v3") if isinstance(finding.get("best_cvss"), dict) else None)
+    cvss_txt = f"; CVSSv3={cvss}" if cvss else ""
+    excerpt = f"{severity} {vuln_id}: {pkg} {installed}; fixed={fixed}{cvss_txt}"
+    return ev("TRIVY", path_prefix, vuln_id, excerpt)
+
+
+def detect_sca_trivy(data: Dict[str, Any]) -> Dict[str, Any]:
+    agent_payload = data.get("agent_payload") or {}
+    trivy = data.get("trivy") or {}
+
+    findings: List[Dict[str, Any]] = []
+    packages: List[Dict[str, Any]] = []
+    licenses: List[Dict[str, Any]] = []
+    targets: List[Dict[str, Any]] = []
+
+    if isinstance(agent_payload, dict):
+        raw_findings = agent_payload.get("findings") or []
+        if isinstance(raw_findings, list):
+            findings = [x for x in raw_findings if isinstance(x, dict)]
+
+        raw_licenses = agent_payload.get("licenses") or []
+        if isinstance(raw_licenses, list):
+            licenses = [x for x in raw_licenses if isinstance(x, dict)]
+
+        coverage = agent_payload.get("coverage") or {}
+        if isinstance(coverage, dict):
+            raw_targets = coverage.get("targets") or []
+            if isinstance(raw_targets, list):
+                targets = [x for x in raw_targets if isinstance(x, dict)]
+
+    raw_results = []
+    if isinstance(trivy, dict):
+        raw_results = trivy.get("Results") or []
+    if isinstance(raw_results, list):
+        for result in raw_results:
+            if not isinstance(result, dict):
+                continue
+            raw_packages = result.get("Packages") or []
+            if isinstance(raw_packages, list):
+                packages.extend([x for x in raw_packages if isinstance(x, dict)])
+
+            raw_vulns = result.get("Vulnerabilities") or []
+            if not findings and isinstance(raw_vulns, list):
+                findings.extend([
+                    _sca_finding_from_trivy_vuln(result, vuln)
+                    for vuln in raw_vulns
+                    if isinstance(vuln, dict)
+                ])
+
+            raw_licenses = result.get("Licenses") or []
+            if not licenses and isinstance(raw_licenses, list):
+                licenses.extend([x for x in raw_licenses if isinstance(x, dict)])
+
+    coverage = agent_payload.get("coverage") if isinstance(agent_payload, dict) else {}
+    if not isinstance(coverage, dict):
+        coverage = {}
+
+    packages_detected = _sca_safe_int(coverage.get("packages_detected"), len(packages))
+    license_entries_detected = _sca_safe_int(coverage.get("license_entries_detected"), len(licenses))
+
+    if packages_detected == 0 and packages:
+        packages_detected = len(packages)
+    if license_entries_detected == 0 and licenses:
+        license_entries_detected = len(licenses)
+
+    by_severity = _sca_severity_counter()
+    fixable_by_severity = _sca_severity_counter()
+    fixable_total = 0
+    unfixed_total = 0
+
+    for finding in findings:
+        sev = _sca_normalize_severity(finding.get("severity"))
+        by_severity[sev] += 1
+        if bool(finding.get("fix_available")) or bool(finding.get("fixed")):
+            fixable_total += 1
+            fixable_by_severity[sev] += 1
+        else:
+            unfixed_total += 1
+
+    total_vulnerabilities = len(findings)
+
+    summary = agent_payload.get("summary") if isinstance(agent_payload, dict) else {}
+    if isinstance(summary, dict):
+        total_vulnerabilities = _sca_safe_int(summary.get("total"), total_vulnerabilities)
+        by_severity = {
+            **_sca_severity_counter(),
+            **{
+                _sca_normalize_severity(k): _sca_safe_int(v)
+                for k, v in (summary.get("by_severity") or {}).items()
+            },
+        }
+        fixable = summary.get("fixable") or {}
+        if isinstance(fixable, dict):
+            fixable_total = _sca_safe_int(fixable.get("total"), fixable_total)
+            fixable_by_severity = {
+                **_sca_severity_counter(),
+                **{
+                    _sca_normalize_severity(k): _sca_safe_int(v)
+                    for k, v in (fixable.get("by_severity") or {}).items()
+                },
+            }
+            unfixed_total = max(0, total_vulnerabilities - fixable_total)
+
+    sensitive_findings = []
+    for finding in findings:
+        pkg = str(finding.get("pkg") or finding.get("PkgName") or "").lower()
+        title = str(finding.get("title") or finding.get("Title") or "").lower()
+        blob = f"{pkg} {title}"
+        if any(token in blob for token in SCA_SECURITY_SENSITIVE_PACKAGE_TOKENS):
+            sensitive_findings.append(finding)
+
+    restrictive_licenses = []
+    unknown_licenses = []
+    for item in licenses:
+        name = _sca_license_name(item).strip()
+        low = name.lower()
+        if not low or any(token in low for token in SCA_UNKNOWN_LICENSE_TOKENS):
+            unknown_licenses.append(item)
+        elif any(token in low for token in SCA_RESTRICTIVE_LICENSE_TOKENS):
+            restrictive_licenses.append(item)
+
+    evidence_all = [_sca_finding_evidence(finding) for finding in findings[:12]]
+    coverage_evidence = [
+        ev(
+            "AGENT_PAYLOAD",
+            "agent_payload.json:coverage",
+            "sca_dependency_inventory",
+            f"packages_detected={packages_detected}; license_entries_detected={license_entries_detected}; targets={len(targets)}",
+        )
+    ]
+    if not targets and packages_detected:
+        coverage_evidence.append(
+            ev(
+                "TRIVY",
+                "trivy.json:Results[].Packages",
+                "sca_dependency_inventory_raw",
+                f"packages_detected={packages_detected}",
+            )
+        )
+
+    license_evidence = []
+    for item in licenses[:8]:
+        name = _sca_license_name(item) or "unknown"
+        pkg = _sca_license_pkg(item) or "unknown-package"
+        license_evidence.append(
+            ev(
+                "TRIVY",
+                "agent_payload.json:licenses",
+                "sca_license",
+                f"{pkg}: {name}",
+            )
+        )
+
+    return {
+        "available": bool(agent_payload or trivy),
+        "packages_detected": packages_detected,
+        "license_entries_detected": license_entries_detected,
+        "targets": targets,
+        "packages": packages[:100],
+        "findings": findings,
+        "licenses": licenses,
+        "total_vulnerabilities": total_vulnerabilities,
+        "by_severity": by_severity,
+        "fixable_total": fixable_total,
+        "fixable_by_severity": fixable_by_severity,
+        "unfixed_total": unfixed_total,
+        "sensitive_findings": sensitive_findings,
+        "restrictive_licenses": restrictive_licenses,
+        "unknown_licenses": unknown_licenses,
+        "coverage_evidence": coverage_evidence[:4],
+        "finding_evidence": evidence_all[:12],
+        "license_evidence": license_evidence[:8],
+    }
+
+
+def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
+    if not sca.get("available"):
+        return {
+            "state": "unknown",
+            "summary": f"{flag_id} = UNKNOWN",
+            "notes": "Trivy artifacts were not found or could not be parsed; SCA cannot be determined.",
+            "evidence": [],
+        }
+
+    def bool_verdict(has_feature: bool, negative: bool, notes_yes: str, notes_no: str, evidence: List[Dict[str, str]], evidence_count: int | None = None) -> Dict[str, Any]:
+        state = ("fail" if has_feature else "pass") if negative else ("pass" if has_feature else "fail")
+        out: Dict[str, Any] = {
+            "state": state,
+            "summary": f"{flag_id} = {'YES' if has_feature else 'NO'}",
+            "notes": notes_yes if has_feature else notes_no,
+            "evidence": evidence,
+        }
+        if evidence_count is not None:
+            out["evidence_count_override"] = evidence_count
+        return out
+
+    total = int(sca.get("total_vulnerabilities") or 0)
+    by_severity = sca.get("by_severity") or {}
+    fixable_total = int(sca.get("fixable_total") or 0)
+    unfixed_total = int(sca.get("unfixed_total") or 0)
+    packages_detected = int(sca.get("packages_detected") or 0)
+    license_entries = int(sca.get("license_entries_detected") or 0)
+
+    if flag_id == "has_sca_dependency_inventory":
+        has_feature = packages_detected > 0
+        evidence = sca.get("coverage_evidence", []) or []
+        return bool_verdict(
+            has_feature,
+            negative=False,
+            notes_yes=f"Trivy detected a dependency inventory with {packages_detected} package(s).",
+            notes_no="Trivy did not detect a dependency inventory.",
+            evidence=evidence,
+            evidence_count=packages_detected,
+        )
+
+    if flag_id == "has_sca_known_vulnerable_dependencies":
+        has_feature = total > 0
+        evidence = sca.get("finding_evidence", []) or sca.get("coverage_evidence", []) or []
+        return bool_verdict(
+            has_feature,
+            negative=True,
+            notes_yes=f"Trivy detected {total} known vulnerable dependency finding(s).",
+            notes_no="Trivy did not report known vulnerable dependencies.",
+            evidence=evidence,
+            evidence_count=total,
+        )
+
+    severity_flag_map = {
+        "has_sca_critical_vulnerabilities": "CRITICAL",
+        "has_sca_high_vulnerabilities": "HIGH",
+        "has_sca_medium_vulnerabilities": "MEDIUM",
+        "has_sca_low_vulnerabilities": "LOW",
+    }
+    if flag_id in severity_flag_map:
+        sev = severity_flag_map[flag_id]
+        count = int(by_severity.get(sev, 0) or 0)
+        evidence = [
+            _sca_finding_evidence(finding)
+            for finding in (sca.get("findings") or [])
+            if _sca_normalize_severity(finding.get("severity")) == sev
+        ][:12]
+        return bool_verdict(
+            count > 0,
+            negative=True,
+            notes_yes=f"Trivy detected {count} {sev.lower()} dependency vulnerability/vulnerabilities.",
+            notes_no=f"Trivy did not report {sev.lower()} dependency vulnerabilities.",
+            evidence=evidence or sca.get("coverage_evidence", []) or [],
+            evidence_count=count,
+        )
+
+    if flag_id == "has_sca_fixable_vulnerabilities":
+        evidence = [
+            _sca_finding_evidence(finding)
+            for finding in (sca.get("findings") or [])
+            if bool(finding.get("fix_available")) or bool(finding.get("fixed"))
+        ][:12]
+        return bool_verdict(
+            fixable_total > 0,
+            negative=True,
+            notes_yes=f"Trivy detected {fixable_total} dependency vulnerability/vulnerabilities with a fixed version available.",
+            notes_no="Trivy did not report fixable dependency vulnerabilities.",
+            evidence=evidence or sca.get("coverage_evidence", []) or [],
+            evidence_count=fixable_total,
+        )
+
+    if flag_id == "has_sca_unfixed_vulnerabilities":
+        evidence = [
+            _sca_finding_evidence(finding)
+            for finding in (sca.get("findings") or [])
+            if not bool(finding.get("fix_available")) and not bool(finding.get("fixed"))
+        ][:12]
+        return bool_verdict(
+            unfixed_total > 0,
+            negative=True,
+            notes_yes=f"Trivy detected {unfixed_total} dependency vulnerability/vulnerabilities without a fixed version.",
+            notes_no="Trivy did not report unfixed dependency vulnerabilities.",
+            evidence=evidence or sca.get("coverage_evidence", []) or [],
+            evidence_count=unfixed_total,
+        )
+
+    if flag_id == "has_sca_security_sensitive_outdated_libraries":
+        sensitive = sca.get("sensitive_findings") or []
+        evidence = [_sca_finding_evidence(finding) for finding in sensitive[:12]]
+        packages = sorted({str(finding.get("pkg") or "unknown") for finding in sensitive})
+        return bool_verdict(
+            bool(sensitive),
+            negative=True,
+            notes_yes=f"Trivy detected vulnerable security-sensitive libraries: {', '.join(packages[:12])}.",
+            notes_no="Trivy did not report vulnerable security-sensitive libraries from the configured package list.",
+            evidence=evidence or sca.get("coverage_evidence", []) or [],
+            evidence_count=len(sensitive),
+        )
+
+    if flag_id == "has_sca_license_inventory":
+        evidence = sca.get("license_evidence", []) or sca.get("coverage_evidence", []) or []
+        return bool_verdict(
+            license_entries > 0,
+            negative=False,
+            notes_yes=f"Trivy detected {license_entries} license entr(y/ies).",
+            notes_no="Trivy did not detect dependency license inventory entries.",
+            evidence=evidence,
+            evidence_count=license_entries,
+        )
+
+    if flag_id == "has_sca_restrictive_licenses":
+        restrictive = sca.get("restrictive_licenses") or []
+        evidence = []
+        for item in restrictive[:8]:
+            evidence.append(ev("TRIVY", "agent_payload.json:licenses", "sca_restrictive_license", f"{_sca_license_pkg(item) or 'unknown-package'}: {_sca_license_name(item) or 'unknown'}"))
+        return bool_verdict(
+            bool(restrictive),
+            negative=True,
+            notes_yes=f"Trivy detected {len(restrictive)} potentially restrictive license entr(y/ies).",
+            notes_no="Trivy did not detect licenses matching the restrictive-license token list.",
+            evidence=evidence or sca.get("license_evidence", []) or [],
+            evidence_count=len(restrictive),
+        )
+
+    if flag_id == "has_sca_unknown_licenses":
+        unknown = sca.get("unknown_licenses") or []
+        evidence = []
+        for item in unknown[:8]:
+            evidence.append(ev("TRIVY", "agent_payload.json:licenses", "sca_unknown_license", f"{_sca_license_pkg(item) or 'unknown-package'}: {_sca_license_name(item) or 'unknown'}"))
+        return bool_verdict(
+            bool(unknown),
+            negative=True,
+            notes_yes=f"Trivy detected {len(unknown)} unknown or unclassified license entr(y/ies).",
+            notes_no="Trivy did not detect unknown or unclassified license entries.",
+            evidence=evidence or sca.get("license_evidence", []) or [],
+            evidence_count=len(unknown),
+        )
+
+    return {
+        "state": "unknown",
+        "summary": f"{flag_id} = UNKNOWN",
+        "notes": "No SCA rule is implemented for this flag.",
+        "evidence": sca.get("coverage_evidence", []) or [],
+    }
+
+
 # ------------------------------------------------------------
 # Verdict engine
 # ------------------------------------------------------------
@@ -1234,6 +1712,12 @@ def id_to_title(flag_id: str) -> str:
 
 def infer_severity(flag_id: str) -> str:
     low = flag_id.lower()
+    if low.startswith("has_sca_"):
+        if any(tok in low for tok in ["critical", "high", "known_vulnerable", "fixable", "unfixed", "security_sensitive", "restrictive", "unknown_license"]):
+            return "high"
+        if any(tok in low for tok in ["medium", "license", "inventory"]):
+            return "medium"
+        return "low"
     if "exported_broadcast_receivers_without_permission" in low:
         return "high"
     if any(tok in low for tok in ["hardcoded", "malware", "debuggable", "vulnerab", "auth_tokens_in_plaintext", "keys_in_plaintext"]):
@@ -1343,6 +1827,9 @@ def compute_flag_verdict(flag_id: str, data: Dict[str, Any], features: Dict[str,
     override_verdict = get_flag_override_verdict(flag_id, cfg)
     if override_verdict is not None:
         return override_verdict
+
+    if flag_id.startswith("has_sca_"):
+        return build_sca_flag_verdict(flag_id, features.get("sca", {}) or {})
 
     if flag_id in set((cfg.get("classification") or {}).get("org_like_prefix_flags", []) or []):
         pass
@@ -1723,7 +2210,10 @@ def build_outputs(cfg: Dict[str, Any], app_metadata: Dict[str, Any], data: Dict[
                     flag_id,
                     "Verdict based on deterministic rules, externalized configuration, and structured evidence from source code and scan artifacts.",
                 ),
-                "primary_sources": primary_source_overrides.get(flag_id, ["MobSF_STATIC", data["source_label"]]),
+                "primary_sources": primary_source_overrides.get(
+                    flag_id,
+                    ["TRIVY", "AGENT_PAYLOAD"] if flag_id.startswith("has_sca_") else ["MobSF_STATIC", data["source_label"]],
+                ),
                 "app_verdict": {
                     "state": verdict["state"],
                     "summary": verdict["summary"],
@@ -1766,6 +2256,7 @@ def build_outputs(cfg: Dict[str, Any], app_metadata: Dict[str, Any], data: Dict[
             "tls_pinning": features["tls_pinning"],
             "certificate_analysis": features["certificate_analysis"],
             "manifest_debuggable_signal": features["manifest_debuggable_signal"],
+            "sca": features["sca"],
         },
         "code_inventory": {
             path: {
@@ -1858,6 +2349,7 @@ def main() -> None:
         "manifest_services_explicit_accessibility": detect_manifest_services_explicit_accessibility(data["source_manifest_text"], data["source_manifest_path"] or "AndroidManifest.xml", data["source_zip_name"], data["source_label"]),
         "exported_receivers_without_permission": detect_exported_receivers_without_permission(data["source_manifest_text"], data["source_manifest_path"] or "AndroidManifest.xml", data["source_zip_name"], data["source_label"]),
         "org_index": build_org_text_index(data["source_texts"]),
+        "sca": detect_sca_trivy(data),
     }
 
     fingerprint, output, trace = build_outputs(effective_cfg, app_metadata, data, features, groups)
