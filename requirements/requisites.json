@@ -321,7 +321,13 @@
         "has_org_runs_pentest_before_production",
         "has_org_requires_secure_code_review_for_critical_releases",
         "has_org_runs_static_analysis_in_cicd",
-        "has_org_has_formal_security_testing_program"
+        "has_org_has_formal_security_testing_program",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_medium_vulnerabilities",
+        "has_sca_low_vulnerabilities",
+        "has_sca_fixable_vulnerabilities"
       ]
     },
     {
@@ -660,7 +666,12 @@
         "has_org_has_formal_patch_management_policy",
         "has_org_documents_security_updates",
         "has_org_app_deprecation_policy",
-        "has_org_app_deprecation_user_notification_process"
+        "has_org_app_deprecation_user_notification_process",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_fixable_vulnerabilities",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -783,7 +794,14 @@
         "has_org_tracks_component_vulnerabilities",
         "has_org_documents_security_updates",
         "has_org_has_formal_patch_management_policy",
-        "has_org_runs_periodic_security_assessments"
+        "has_org_runs_periodic_security_assessments",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_medium_vulnerabilities",
+        "has_sca_low_vulnerabilities",
+        "has_sca_fixable_vulnerabilities",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -810,7 +828,11 @@
         "has_org_app_deprecation_policy",
         "has_org_app_deprecation_user_notification_process",
         "has_org_app_deprecation_communication_plan",
-        "has_uses_os_level_update_mechanisms"
+        "has_uses_os_level_update_mechanisms",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_fixable_vulnerabilities"
       ]
     },
     {
@@ -835,7 +857,14 @@
         "has_org_tracks_component_vulnerabilities",
         "has_backend_policy_dependencies",
         "has_org_has_formal_patch_management_policy",
-        "has_org_documents_security_updates"
+        "has_org_documents_security_updates",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_medium_vulnerabilities",
+        "has_sca_low_vulnerabilities",
+        "has_sca_fixable_vulnerabilities",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -859,7 +888,9 @@
       "Flags": [
         "has_soap_uses_mutual_tls",
         "has_defined_certificate_management_policy",
-        "has_defined_identity_lifecycle_policy"
+        "has_defined_identity_lifecycle_policy",
+        "has_sca_dependency_inventory",
+        "has_sca_unfixed_vulnerabilities"
       ]
     },
     {
@@ -906,7 +937,12 @@
       "Flags": [
         "has_org_app_deprecation_policy",
         "has_org_app_deprecation_user_notification_process",
-        "has_org_app_deprecation_communication_plan"
+        "has_org_app_deprecation_communication_plan",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_fixable_vulnerabilities",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -3995,7 +4031,14 @@
       "controles": "The backend platform must operate with a hardened configuration and apply the latest security patches to the operating system, web server, and other application components to ensure flaw remediation and maintain a secure environment.",
       "Flags": [
         "has_org_has_formal_patch_management_policy",
-        "has_org_tracks_component_vulnerabilities"
+        "has_org_tracks_component_vulnerabilities",
+        "has_sca_known_vulnerable_dependencies",
+        "has_sca_critical_vulnerabilities",
+        "has_sca_high_vulnerabilities",
+        "has_sca_medium_vulnerabilities",
+        "has_sca_low_vulnerabilities",
+        "has_sca_fixable_vulnerabilities",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
