@@ -4,8 +4,8 @@
    "profiles": {
    "lm_studio_local": {
   "provider": "openai_compatible",
-  "model": "mistralai/ministral-3-14b-reasoning",
-  "litellm_model": "mistralai/ministral-3-14b-reasoning",
+  "model": "google_gemma-4-e4b-it",
+  "litellm_model": "google_gemma-4-e4b-it",
   "api_key_env_var": "OPENAI_API_KEY",
   "api_base": "http://localhost:1234/v1",
   "api_base_env_var": "",
