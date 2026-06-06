@@ -888,9 +888,7 @@
       "Flags": [
         "has_soap_uses_mutual_tls",
         "has_defined_certificate_management_policy",
-        "has_defined_identity_lifecycle_policy",
-        "has_sca_dependency_inventory",
-        "has_sca_unfixed_vulnerabilities"
+        "has_defined_identity_lifecycle_policy"
       ]
     },
     {

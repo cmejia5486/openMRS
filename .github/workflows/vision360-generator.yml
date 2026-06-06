@@ -53,6 +53,27 @@ jobs:
           set -euo pipefail
           python scripts/vision360_generator.py
 
+      - name: Validate VISION360 outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in \
+            /mnt/data/vision360_fingerprint.json \
+            /mnt/data/vision360_output.json \
+            /mnt/data/vision360_trace.json \
+            /mnt/data/vision360_effective_config.json
+          do
+            test -f "$file"
+          done
+
+          echo "[OK] VISION360 direct JSON outputs were generated:"
+          ls -lah \
+            /mnt/data/vision360_fingerprint.json \
+            /mnt/data/vision360_output.json \
+            /mnt/data/vision360_trace.json \
+            /mnt/data/vision360_effective_config.json
+
       - name: Upload VISION360 outputs
         uses: actions/upload-artifact@v6
         with:
@@ -61,3 +82,5 @@ jobs:
           path: |
             /mnt/data/vision360_fingerprint.json
             /mnt/data/vision360_output.json
+            /mnt/data/vision360_trace.json
+            /mnt/data/vision360_effective_config.json
