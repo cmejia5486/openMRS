@@ -115,11 +115,11 @@ def _set_doc_defaults(doc: Document) -> None:
     section.right_margin = Inches(0.85)
 
 
-def _add_header_footer(section, audit_date_str: str) -> None:
+def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile Application") -> None:
     header = section.header
     header.is_linked_to_previous = False
     p = header.paragraphs[0]
-    p.text = HEADER_TEXT
+    p.text = f"mSEC-AM Audit Summary - {report_title}"
     if p.runs:
         p.runs[0].font.size = Pt(9)
 
@@ -136,13 +136,13 @@ def _add_header_footer(section, audit_date_str: str) -> None:
     fp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
 
-def _add_cover(doc: Document, audit_date_str: str, auditor: str) -> None:
+def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: str = "Mobile Application") -> None:
     doc.add_paragraph()
     t = doc.add_paragraph("mSEC-AM Audit Summary")
     t.alignment = WD_ALIGN_PARAGRAPH.CENTER
     t.runs[0].font.size = Pt(28)
     t.runs[0].bold = True
-    s = doc.add_paragraph("OpenMRS Android Client - v3.1.1")
+    s = doc.add_paragraph(report_title)
     s.alignment = WD_ALIGN_PARAGRAPH.CENTER
     s.runs[0].font.size = Pt(16)
     s.runs[0].bold = True
@@ -387,6 +387,383 @@ def _target_date_str(audit_dt: date, sev: str) -> str:
     return date.fromordinal(due).strftime("%d %b %Y")
 
 
+
+def _as_dict(value: Any) -> Dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: Any) -> List[Any]:
+    if isinstance(value, list):
+        return value
+    if value is None:
+        return []
+    return [value]
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return int(value)
+        return int(float(str(value).strip()))
+    except Exception:
+        return default
+
+
+def _safe_str(value: Any, default: str = "") -> str:
+    if value is None:
+        return default
+    return str(value)
+
+
+def _short(value: Any, limit: int = 170) -> str:
+    text = re.sub(r"\s+", " ", _safe_str(value)).strip()
+    if len(text) > limit:
+        return text[:limit] + "..."
+    return text
+
+
+def _first_present(obj: Dict[str, Any], keys: List[str], default: Any = None) -> Any:
+    for key in keys:
+        if isinstance(obj, dict) and key in obj and obj[key] not in (None, ""):
+            return obj[key]
+    return default
+
+
+def _deep_find_first(obj: Any, keys: List[str]) -> Any:
+    if isinstance(obj, dict):
+        for key in keys:
+            if key in obj and obj[key] not in (None, ""):
+                return obj[key]
+        for value in obj.values():
+            found = _deep_find_first(value, keys)
+            if found not in (None, ""):
+                return found
+    elif isinstance(obj, list):
+        for item in obj:
+            found = _deep_find_first(item, keys)
+            if found not in (None, ""):
+                return found
+    return None
+
+
+def _deep_int(obj: Any, keys: List[str], default: int = 0) -> int:
+    value = _deep_find_first(obj, keys)
+    return _safe_int(value, default)
+
+
+def _deep_dict(obj: Any, keys: List[str]) -> Dict[str, Any]:
+    value = _deep_find_first(obj, keys)
+    return value if isinstance(value, dict) else {}
+
+
+def _deep_list(obj: Any, keys: List[str]) -> List[Any]:
+    value = _deep_find_first(obj, keys)
+    if isinstance(value, list):
+        return value
+    return []
+
+
+def _block_available(block: Any) -> bool:
+    if not isinstance(block, dict) or not block:
+        return False
+    if block.get("available") is True:
+        return True
+    for key, value in block.items():
+        if key in {"available", "paths", "input_paths"}:
+            continue
+        if isinstance(value, (list, dict)) and len(value) > 0:
+            return True
+        if isinstance(value, (int, float)) and value > 0:
+            return True
+        if isinstance(value, str) and value.strip():
+            return True
+    return False
+
+
+def _format_bool(value: Any) -> str:
+    if value is True:
+        return "Yes"
+    if value is False:
+        return "No"
+    if value in (None, ""):
+        return "Not reported"
+    return _safe_str(value)
+
+
+def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None) -> None:
+    tbl = doc.add_table(rows=1, cols=len(headers))
+    tbl.style = "Table Grid"
+    h = tbl.rows[0].cells
+    for idx, txt in enumerate(headers):
+        h[idx].text = str(txt)
+        _set_cell_shading(h[idx], "D9E1F2")
+        for run in h[idx].paragraphs[0].runs:
+            run.bold = True
+    actual_rows = rows[:max_rows] if max_rows is not None else rows
+    if not actual_rows:
+        actual_rows = [["No data available"] + [""] * (len(headers) - 1)]
+    for row_values in actual_rows:
+        r = tbl.add_row().cells
+        for idx in range(len(headers)):
+            r[idx].text = _short(row_values[idx] if idx < len(row_values) else "", 260)
+    doc.add_paragraph()
+
+
+def _app_report_title(app: Dict[str, Any]) -> str:
+    app = _as_dict(app)
+    name = _first_present(app, ["app_name", "application_name", "name", "title", "app", "project", "project_name"])
+    version = _first_present(app, ["version", "app_version", "version_name", "release", "app_release"])
+
+    if not name:
+        for key, value in app.items():
+            if "name" in str(key).lower() and value:
+                name = value
+                break
+    if not version:
+        for key, value in app.items():
+            if "version" in str(key).lower() and value:
+                version = value
+                break
+
+    name_s = _safe_str(name, "Mobile Application").strip() or "Mobile Application"
+    version_s = _safe_str(version).strip()
+    return f"{name_s} - {version_s}" if version_s and version_s not in name_s else name_s
+
+
+def _technical_evidence(pack: Dict[str, Any]) -> Dict[str, Any]:
+    return _as_dict(pack.get("technical_evidence"))
+
+
+def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
+    labels = [
+        ("Vision360 trace", "vision360"),
+        ("Trivy SCA", "trivy_sca"),
+        ("MobSF static", "mobsf_static"),
+        ("MobSF dynamic", "mobsf_dynamic"),
+        ("SAST app-code", "sast_app_code"),
+    ]
+    rows = []
+    for label, key in labels:
+        block = _as_dict(technical.get(key))
+        available = _block_available(block)
+        summary = "Available" if available else "Not available in analysis pack"
+        if key == "trivy_sca" and available:
+            summary = f"{_deep_int(block, ['total_vulnerabilities', 'vulnerabilities_total', 'total'])} vulnerability finding(s); {_deep_int(block, ['packages_detected', 'package_count', 'packages_total'])} package(s) detected."
+        elif key == "sast_app_code" and available:
+            summary = f"{_deep_int(block, ['total_findings', 'total', 'results_count'])} app-code finding(s) retained after scope filtering."
+        elif key == "mobsf_static" and available:
+            summary = "Static APK evidence parsed for manifest, certificate, permissions, signing, trackers, and hardening indicators."
+        elif key == "mobsf_dynamic" and available:
+            summary = "Runtime evidence parsed for local storage, databases, shared preferences, trackers, and observed artifacts."
+        rows.append([label, "Yes" if available else "No", summary])
+    return rows
+
+
+def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
+    takeaways: List[str] = []
+    trivy = _as_dict(technical.get("trivy_sca"))
+    if _block_available(trivy):
+        total = _deep_int(trivy, ["total_vulnerabilities", "vulnerabilities_total", "total"])
+        by_sev = _deep_dict(trivy, ["by_severity", "severity_counts"])
+        critical = _safe_int(by_sev.get("CRITICAL") or by_sev.get("critical"))
+        high = _safe_int(by_sev.get("HIGH") or by_sev.get("high"))
+        if total > 0:
+            takeaways.append(f"Trivy SCA evidence identified {total} known dependency vulnerability finding(s), including {critical} Critical and {high} High finding(s) where reported.")
+    mobsf = _as_dict(technical.get("mobsf_static"))
+    if _block_available(mobsf):
+        indicators = []
+        for label, keys in [
+            ("debuggable build", ["debuggable", "has_debuggable", "debuggable_true", "android_debuggable"]),
+            ("debug certificate", ["debug_certificate", "has_debug_cert", "signed_with_debug_certificate"]),
+            ("backup enabled", ["allow_backup", "backup_enabled", "android_allow_backup"]),
+            ("exported components", ["exported_components_count", "exported_component_count"]),
+        ]:
+            value = _deep_find_first(mobsf, keys)
+            if value is True or _safe_int(value) > 0:
+                indicators.append(label)
+        if indicators:
+            takeaways.append("MobSF static evidence reported Android hardening indicators requiring review, including " + ", ".join(indicators[:4]) + ".")
+    sast = _as_dict(technical.get("sast_app_code"))
+    if _block_available(sast):
+        total = _deep_int(sast, ["total_findings", "total", "results_count"])
+        if total > 0:
+            takeaways.append(f"SAST evidence retained {total} application-code finding(s) after excluding CI/CD workflows and audit-generation scripts from scope.")
+    return takeaways
+
+
+def _trivy_findings(trivy: Dict[str, Any]) -> List[Dict[str, Any]]:
+    for keys in (["cve_table"], ["findings"], ["vulnerabilities"], ["top_findings"]):
+        items = _deep_list(trivy, keys)
+        if items:
+            return [x for x in items if isinstance(x, dict)]
+    return []
+
+
+def _add_trivy_section(doc: Document, technical: Dict[str, Any]) -> None:
+    trivy = _as_dict(technical.get("trivy_sca"))
+    if not _block_available(trivy):
+        doc.add_paragraph("Trivy SCA evidence was not available in the analysis pack.")
+        return
+    total = _deep_int(trivy, ["total_vulnerabilities", "vulnerabilities_total", "total"])
+    packages = _deep_int(trivy, ["packages_detected", "package_count", "packages_total"])
+    fixable = _deep_int(trivy, ["fixable_total", "fixable_vulnerabilities", "fixable"])
+    licenses = _deep_int(trivy, ["license_entries_detected", "licenses_detected", "license_count"])
+    by_sev = _deep_dict(trivy, ["by_severity", "severity_counts"])
+    severity_text = ", ".join(f"{k}: {_safe_int(v)}" for k, v in by_sev.items()) if by_sev else "not reported"
+
+    doc.add_paragraph(
+        f"Trivy Software Composition Analysis reported {packages} detected package(s), {total} known dependency vulnerability finding(s), "
+        f"{fixable} finding(s) with a fixed version available, and {licenses} license entr(y/ies). Severity distribution: {severity_text}."
+    )
+
+    rows = []
+    for finding in _trivy_findings(trivy)[:12]:
+        rows.append([
+            _first_present(finding, ["severity", "Severity"], ""),
+            _first_present(finding, ["id", "VulnerabilityID", "cve", "rule_id"], ""),
+            _first_present(finding, ["pkg", "PkgName", "package", "package_name"], ""),
+            _first_present(finding, ["installed", "InstalledVersion", "installed_version"], ""),
+            _first_present(finding, ["fixed", "FixedVersion", "fixed_version"], ""),
+            _first_present(finding, ["title", "Title", "description", "Description"], ""),
+        ])
+    _add_table(doc, ["Severity", "CVE / ID", "Package", "Installed", "Fixed", "Title / description"], rows, max_rows=12)
+
+
+def _mobsf_signal_rows(mobsf: Dict[str, Any]) -> List[List[Any]]:
+    checks = [
+        ("Debuggable", ["debuggable", "has_debuggable", "debuggable_true", "android_debuggable"]),
+        ("Debug certificate", ["debug_certificate", "has_debug_cert", "signed_with_debug_certificate"]),
+        ("v1 signature / Janus exposure", ["v1_signature", "janus", "has_janus", "v1_signature_present"]),
+        ("SHA1 certificate/signature evidence", ["sha1", "uses_sha1", "has_sha1"]),
+        ("Backup enabled", ["allow_backup", "backup_enabled", "android_allow_backup"]),
+        ("Minimum SDK", ["min_sdk", "minsdk", "minSdk"]),
+        ("Dangerous permissions", ["dangerous_permissions_count", "dangerous_permission_count"]),
+        ("Exported components", ["exported_components_count", "exported_component_count"]),
+        ("Trackers detected", ["trackers_detected", "tracker_count", "detected_trackers"]),
+    ]
+    rows = []
+    for label, keys in checks:
+        value = _deep_find_first(mobsf, keys)
+        rows.append([label, _format_bool(value)])
+    return rows
+
+
+def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
+    mobsf = _as_dict(technical.get("mobsf_static"))
+    if not _block_available(mobsf):
+        doc.add_paragraph("MobSF static evidence was not available in the analysis pack.")
+        return
+    doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Findings are treated as technical evidence supporting the workbook-level conclusions, not as a replacement for requirement-level adjudication.")
+    _add_table(doc, ["Indicator", "Reported value"], _mobsf_signal_rows(mobsf), max_rows=20)
+
+    finding_lists = []
+    for key in ["manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
+        items = _deep_list(mobsf, [key])
+        if items:
+            finding_lists.extend(items)
+    rows = []
+    for item in finding_lists[:10]:
+        if isinstance(item, dict):
+            rows.append([
+                _first_present(item, ["severity", "level", "risk"], ""),
+                _first_present(item, ["title", "name", "rule", "id"], ""),
+                _first_present(item, ["description", "message", "summary"], ""),
+            ])
+        else:
+            rows.append(["", "", item])
+    if rows:
+        _add_table(doc, ["Severity", "Finding", "Description"], rows, max_rows=10)
+
+
+def _add_mobsf_dynamic_section(doc: Document, technical: Dict[str, Any]) -> None:
+    dynamic = _as_dict(technical.get("mobsf_dynamic"))
+    if not _block_available(dynamic):
+        doc.add_paragraph("MobSF dynamic evidence was not available in the analysis pack. If dynamic analysis is not executed for a given application, runtime storage and behavioral observations should be treated as not assessed rather than clean.")
+        return
+    doc.add_paragraph("MobSF dynamic evidence was used to summarize runtime storage and behavioral observations, including local files, SharedPreferences, SQLite databases, cache artifacts, and trackers where reported.")
+    rows = []
+    for label, keys in [
+        ("SharedPreferences artifacts", ["shared_preferences", "shared_preferences_files", "preferences"]),
+        ("SQLite/database artifacts", ["sqlite_databases", "databases", "db_files"]),
+        ("Local storage artifacts", ["local_storage_artifacts", "files", "storage_artifacts"]),
+        ("Trackers", ["trackers", "detected_trackers"]),
+    ]:
+        items = _deep_list(dynamic, keys)
+        count = len(items) if items else _deep_int(dynamic, [keys[0] + "_count"], 0)
+        sample = ", ".join(_short(x, 80) for x in items[:4]) if items else ""
+        rows.append([label, count, sample])
+    _add_table(doc, ["Runtime evidence type", "Count", "Examples"], rows, max_rows=20)
+
+
+def _sast_findings(sast: Dict[str, Any]) -> List[Dict[str, Any]]:
+    for key in ["findings", "results", "app_code_findings", "top_findings"]:
+        items = _deep_list(sast, [key])
+        if items:
+            return [x for x in items if isinstance(x, dict)]
+    return []
+
+
+def _add_sast_section(doc: Document, technical: Dict[str, Any]) -> None:
+    sast = _as_dict(technical.get("sast_app_code"))
+    if not _block_available(sast):
+        doc.add_paragraph("SAST app-code evidence was not available in the analysis pack.")
+        return
+    total = _deep_int(sast, ["total_findings", "total", "results_count"])
+    tool_counts = _deep_dict(sast, ["tool_counts", "by_tool"])
+    scope_note = _first_present(sast, ["scope_note", "filter_note"], "CI/CD workflows and audit-generation scripts are excluded; retained findings are limited to application code and Android app artifacts according to the generic app-code scope filter.")
+    doc.add_paragraph(f"SAST retained {total} application-code finding(s) after scope filtering. {scope_note}")
+    if tool_counts:
+        _add_table(doc, ["Tool", "Findings"], [[k, v] for k, v in tool_counts.items()], max_rows=10)
+    rows = []
+    for item in _sast_findings(sast)[:12]:
+        rows.append([
+            _first_present(item, ["tool", "driver", "source"], ""),
+            _first_present(item, ["rule_id", "ruleId", "rule", "id"], ""),
+            _first_present(item, ["severity", "level", "kind"], ""),
+            _first_present(item, ["file", "path", "uri"], ""),
+            _first_present(item, ["line", "start_line", "startLine"], ""),
+            _first_present(item, ["message", "title", "description"], ""),
+        ])
+    _add_table(doc, ["Tool", "Rule", "Severity", "File", "Line", "Message"], rows, max_rows=12)
+
+
+def _add_coverage_limitations(doc: Document, technical: Dict[str, Any]) -> None:
+    limitations = _as_dict(technical.get("coverage_limitations"))
+    rows = []
+    if isinstance(limitations, dict):
+        for key, value in limitations.items():
+            if isinstance(value, list):
+                rows.append([key, "; ".join(_short(x, 120) for x in value[:6])])
+            elif isinstance(value, dict):
+                rows.append([key, json.dumps(value, ensure_ascii=False)[:500]])
+            elif value not in (None, ""):
+                rows.append([key, value])
+    if rows:
+        _add_table(doc, ["Limitation", "Details"], rows, max_rows=12)
+    else:
+        doc.add_paragraph("No additional technical coverage limitations were reported in the analysis pack beyond the workbook-defined scope and tool-specific execution constraints.")
+
+
+def _technical_kpi_for_pattern(pattern: str, technical: Dict[str, Any]) -> str:
+    pat = pattern.lower()
+    if "supply chain" in pat or "outdated" in pat or "dependency" in pat:
+        return "No Critical or High dependency vulnerabilities remain in Trivy; all fixable CVEs have an upgrade, mitigation, or formally accepted-risk decision; dependency inventory/SBOM evidence is retained for the assessed release."
+    if "storage" in pat or "key management" in pat:
+        return "Local SharedPreferences, SQLite databases, caches, and files are reviewed for PHI, credentials, tokens, and keys; sensitive local data is encrypted or eliminated; backup exposure is explicitly controlled."
+    if "tamper" in pat or "reverse" in pat or "binary" in pat:
+        return "Release APK is not debuggable, is not signed with a debug certificate, debug-only tooling is absent, and release hardening controls are verified by MobSF or equivalent evidence."
+    if "transport" in pat or "certificate" in pat or "tls" in pat:
+        return "TLS configuration, certificate validation, and pinning decisions are documented and verified; weak signing or certificate indicators are remediated or formally justified."
+    if "input" in pat or "injection" in pat:
+        return "Application-code SAST findings for input handling and injection are triaged; exploitable issues are remediated and covered by regression tests."
+    if "privacy" in pat or "permission" in pat:
+        return "Dangerous permissions and privacy-sensitive data flows are justified, minimized, and covered by user-facing notices and runtime access controls."
+    if "misconfiguration" in pat or "default" in pat:
+        return "Manifest and runtime configuration findings are triaged; insecure defaults are removed or documented with compensating controls."
+    return "Evidence recorded in workbook and technical artifacts; mapped controls can be re-tested and re-scored as compliant after remediation."
+
 def _extract_json_object(text: str) -> str:
     text = (text or "").strip()
     if not text:
@@ -539,6 +916,8 @@ def main() -> None:
     patterns = pack["weakness_patterns"]
     pos_controls = pack.get("positive_controls_candidates", [])[:7]
     likelihood_rubric = pack.get("likelihood_rubric", {})
+    technical = _technical_evidence(pack)
+    report_title = _app_report_title(app)
 
     audit_dt = datetime.utcnow().date()
     audit_date_str = audit_dt.strftime("%d %b %Y")
@@ -572,11 +951,14 @@ def main() -> None:
     writeups = {w["pattern"]: w for w in prose.get("pattern_writeups", []) if isinstance(w, dict) and "pattern" in w}
     if not key_takeaways:
         key_takeaways = [f"{p['pattern']} - {p['severity']} severity; {int(p['mapped_noncompliant_count'])} related non-compliant control(s) in the workbook." for p in patterns[:7]]
+    technical_takeaways = _technical_takeaways(technical)
+    if technical_takeaways:
+        key_takeaways = (technical_takeaways + key_takeaways)[:7]
 
     doc = Document()
     _set_doc_defaults(doc)
-    _add_header_footer(doc.sections[0], audit_date_str)
-    _add_cover(doc, audit_date_str, actors["Auditor"])
+    _add_header_footer(doc.sections[0], audit_date_str, report_title)
+    _add_cover(doc, audit_date_str, actors["Auditor"], report_title)
     used_bookmarks: set[str] = set()
     toc_entries: List[tuple[int, str, str]] = []
     bookmark_id = 1000
@@ -600,15 +982,17 @@ def main() -> None:
     _add_two_col_table(doc, [["Auditor", actors["Auditor"]], ["Requirement Engineering team", "\n".join(actors["Requirement Engineering team"])], ["Engineering Group (EN)", "\n".join(actors["Engineering Group (EN)"])]])
 
     add_nav_heading("3. Scope and limitations", 1)
-    doc.add_paragraph("This Audit Summary consolidates the compliance determinations recorded in the audit workbook. The results reflect the assessed application version and the workbook-defined scope. Controls not evidenced as implemented in the workbook are reported as non-compliant for summary purposes.")
+    doc.add_paragraph("This Audit Summary consolidates the compliance determinations recorded in the audit workbook. The results reflect the assessed application version and the workbook-defined scope. Controls not evidenced as implemented in the workbook are reported as non-compliant for summary purposes. Where available, technical evidence from Vision360, Trivy, MobSF, and app-code SAST is used to support and qualify the workbook-derived findings. CI/CD workflows and audit-generation scripts are outside the application audit scope unless explicitly included by project configuration.")
 
     add_nav_heading("4. Evidence criteria", 1)
-    doc.add_paragraph("- Compliant: the workbook provides sufficient evidence that the control is implemented and effective for the assessed scope.\n- Non-compliant: the workbook indicates the control is missing, insufficient, or not evidenced.\n- Not applicable: the control is recorded as out of scope or not relevant for the assessed context.")
+    doc.add_paragraph("- Compliant: the workbook provides sufficient evidence that the control is implemented and effective for the assessed scope.\n- Non-compliant: the workbook indicates the control is missing, insufficient, or not evidenced.\n- Not applicable: the control is recorded as out of scope or not relevant for the assessed context.\n- Technical evidence: automated scan artifacts are used as supporting evidence for application code, Android manifest, binary, dependency, runtime, and storage observations. They do not replace requirement-level judgment and are interpreted within the declared audit scope.")
 
     add_nav_heading("5. Audit summary", 1)
     doc.add_paragraph("The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).")
     doc.add_paragraph(f"Overall, {int(metrics['total_assessed'])} requirements were assessed. {applicable} were applicable controls and {not_applicable} were recorded as not applicable. Of the applicable controls, {compliant} were compliant and {non_compliant} were non-compliant, resulting in an overall compliance rate of {overall_pct:.2f}% (applicable controls only).")
     doc.add_paragraph("This report summarizes the dominant weakness patterns evidenced by non-compliant requirements and proposes actionable remediations suitable for mHealth/EMR environments handling sensitive health information.")
+    if technical:
+        doc.add_paragraph("The report also incorporates technical scan evidence where available, including dependency vulnerability evidence from Trivy, Android APK and manifest evidence from MobSF, runtime observations from MobSF dynamic analysis, and SAST findings filtered to application code.")
 
     add_nav_heading("5.1 Key takeaways (Top findings)", 2)
     _add_callout(doc, "Key takeaways (Top findings)", key_takeaways[:7])
@@ -649,8 +1033,25 @@ def main() -> None:
         row[6].text = _target_timeline(sev)
     doc.add_paragraph()
 
-    add_nav_heading("6. Main deficiencies", 1)
-    doc.add_paragraph("The following deficiencies are synthesized as common weakness patterns based on non-compliant requirements. They are not grouped by category; instead they represent cross-cutting gaps evidenced in the audit workbook.")
+    add_nav_heading("5.5 Technical scan coverage", 2)
+    doc.add_paragraph("The following table summarizes which automated technical evidence sources were available to support the audit summary. Absence of a technical source means that the source was not available to the report generator, not necessarily that the corresponding risk is absent.")
+    _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
+
+    add_nav_heading("6. Technical evidence from automated analysis", 1)
+    doc.add_paragraph("This section summarizes technical scan evidence relevant to the assessed application and its code. The evidence is used to reinforce and qualify workbook findings while preserving the workbook as the authoritative requirement-level adjudication source.")
+    add_nav_heading("6.1 Software Composition Analysis from Trivy", 2)
+    _add_trivy_section(doc, technical)
+    add_nav_heading("6.2 Android static evidence from MobSF", 2)
+    _add_mobsf_static_section(doc, technical)
+    add_nav_heading("6.3 Runtime evidence from MobSF dynamic analysis", 2)
+    _add_mobsf_dynamic_section(doc, technical)
+    add_nav_heading("6.4 Static Application Security Testing evidence", 2)
+    _add_sast_section(doc, technical)
+    add_nav_heading("6.5 Technical coverage limitations", 2)
+    _add_coverage_limitations(doc, technical)
+
+    add_nav_heading("7. Main deficiencies", 1)
+    doc.add_paragraph("The following deficiencies are synthesized as common weakness patterns based on non-compliant requirements and supported, where available, by technical scan evidence. They are not grouped by category; instead they represent cross-cutting gaps evidenced in the audit workbook and related artifacts.")
     for p in patterns[:10]:
         pat = p["pattern"]
         cnt = int(p["mapped_noncompliant_count"])
@@ -672,7 +1073,7 @@ def main() -> None:
             doc.add_paragraph(f"Evidence anchor (from workbook description): {a}", style="List Bullet")
 
     doc.add_page_break()
-    add_nav_heading("7. Recommendations", 1)
+    add_nav_heading("8. Recommendations", 1)
     doc.add_paragraph("Recommendations are organized by the same weakness patterns presented in the Main deficiencies section. They target remediation of workbook-evidenced gaps and may include strengthening controls to improve security posture.")
     for p in patterns[:10]:
         pat = p["pattern"]
@@ -689,7 +1090,7 @@ def main() -> None:
             doc.add_paragraph(str(r).strip(), style="List Bullet")
 
     doc.add_page_break()
-    add_nav_heading("8. Visual Analytics", 1)
+    add_nav_heading("9. Visual Analytics", 1)
     doc.add_paragraph("Figures below summarize workbook-derived outcomes and distributions. All figures: source: audit workbook.")
     _add_figure(doc, fig1, "Figure 1. Overall compliance distribution (donut chart; source: audit workbook).")
     _add_figure(doc, fig2, "Figure 2. Share of non-compliances by category (legible horizontal bars; source: audit workbook).")
@@ -697,7 +1098,7 @@ def main() -> None:
     _add_figure(doc, fig4, "Figure 4. Counts by category and status (horizontal stacked bars; source: audit workbook).")
 
     doc.add_page_break()
-    add_nav_heading("9. Management Action Plan (MAP)", 1)
+    add_nav_heading("10. Management Action Plan (MAP)", 1)
     doc.add_paragraph("Severity and likelihood nomenclature follow the rubric in Section 5.3. Likelihood is supported by workbook prevalence counts recorded in the Workbook basis column.")
     mp = doc.add_table(rows=1, cols=9)
     mp.style = "Table Grid"
@@ -727,7 +1128,7 @@ def main() -> None:
         row[5].text = action
         row[6].text = target_window
         row[7].text = target_date
-        row[8].text = "Evidence recorded (tests/configs/release refs); mapped controls can be re-tested and re-scored as compliant."
+        row[8].text = _technical_kpi_for_pattern(pat, technical)
 
     doc.add_page_break()
     add_nav_heading("Appendix A - Traceability index (non-exhaustive)", 1)
@@ -761,6 +1162,11 @@ def main() -> None:
         r[1].text = ""
         r[2].text = ""
         r[3].text = ""
+
+    doc.add_page_break()
+    add_nav_heading("Appendix C - Technical evidence summary", 1)
+    doc.add_paragraph("This appendix provides a compact index of the technical evidence parsed from scan artifacts. Detailed raw JSON, SARIF, and tool reports remain in their original pipeline artifacts and are not embedded in the report package.")
+    _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
 
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)
