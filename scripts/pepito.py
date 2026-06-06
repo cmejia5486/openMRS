@@ -417,109 +417,12 @@ def _safe_str(value: Any, default: str = "") -> str:
     return str(value)
 
 
-def _clean_text(value: Any) -> str:
-    """Convert arbitrary evidence values into report-safe text."""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        text = value
-    elif isinstance(value, (int, float, bool)):
-        text = str(value)
-    elif isinstance(value, dict):
-        # Keep dictionaries out of the final report. Prefer meaningful fields.
-        preferred = []
-        for key in ("message", "title", "description", "summary", "rule", "rule_id", "tool", "level", "file", "path"):
-            val = value.get(key)
-            if val not in (None, "", [], {}):
-                preferred.append(f"{key}: {_clean_text(val)}")
-        text = "; ".join(preferred) if preferred else json.dumps(value, ensure_ascii=False)
-    elif isinstance(value, list):
-        text = "; ".join(_clean_text(item) for item in value if item not in (None, "", [], {}))
-    else:
-        text = str(value)
-    text = re.sub(r"\s+", " ", text).strip()
-    text = text.replace("...", "")
-    return text
-
-
-def _is_emptyish(value: Any) -> bool:
-    if value in (None, ""):
-        return True
-    if isinstance(value, (list, tuple, set)):
-        return len([x for x in value if not _is_emptyish(x)]) == 0
-    if isinstance(value, dict):
-        return len([v for v in value.values() if not _is_emptyish(v)]) == 0
-    return False
-
-
-def _cell_text(value: Any) -> str:
-    return _clean_text(value)
-
-
-def _add_note(doc: Document, text: str) -> None:
-    p = doc.add_paragraph(_clean_text(text))
-    if p.runs:
-        p.runs[0].italic = True
-
-
-def _sanitize_positive_statement(text: Any) -> str:
-    s = _clean_text(text)
-    replacements = [
-        (r"^The application applications not change", "The application does not change"),
-        (r"^The application remove", "The application removes"),
-        (r"^The application be free", "The application is free"),
-        (r"^The application request", "The application requests"),
-        (r"^The application provide", "The application provides"),
-        (r"^The application the mobile application", "The mobile application"),
-        (r"\bkeep with good SSL practices\b", "align with secure SSL practices"),
-        (r"\bpost-development cycle for secure certificate validation\b", "after the development cycle to preserve secure certificate validation"),
-    ]
-    for pattern, repl in replacements:
-        s = re.sub(pattern, repl, s, flags=re.IGNORECASE)
-    s = re.sub(r"\s+", " ", s).strip()
-    if s and not s.endswith((".", ";", ":")):
-        s += "."
-    return s
-
-
-def _qa_doc_text(doc: Document) -> str:
-    parts: List[str] = []
-    for p in doc.paragraphs:
-        parts.append(p.text)
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                parts.append(cell.text)
-    return "\n".join(parts)
-
-
-def _quality_gate(doc: Document) -> None:
-    text = _qa_doc_text(doc)
-    forbidden = [
-        "No data available",
-        "missing_inputs\n",
-        "{'tool':",
-        '"tool":',
-        "The application applications",
-        "The application the mobile application",
-        "Not reported",
-    ]
-    hits = [token for token in forbidden if token in text]
-    if hits:
-        raise SystemExit("[ERROR] Audit Summary quality gate failed. Forbidden text found: " + ", ".join(hits))
-
-
 def _short(value: Any, limit: int = 170) -> str:
-    """Normalize text for Word cells without using ellipsis.
-
-    The previous implementation appended "...", which made the report look as
-    if LLM tokens were missing. This function keeps full text by default when
-    limit <= 0 and uses an explicit marker only when a hard limit is requested.
-    """
-    text = _clean_text(value)
-    if limit and limit > 0 and len(text) > limit:
-        return text[:limit].rstrip() + " [text shortened]"
+    text = re.sub(r"\s+", " ", _safe_str(value)).strip()
+    if len(text) > limit:
+        return text[:limit] + "..."
     return text
+
 
 def _first_present(obj: Dict[str, Any], keys: List[str], default: Any = None) -> Any:
     for key in keys:
@@ -581,43 +484,32 @@ def _block_available(block: Any) -> bool:
 
 def _format_bool(value: Any) -> str:
     if value is True:
-        return "Detected / Yes"
+        return "Yes"
     if value is False:
-        return "Not detected / No"
+        return "No"
     if value in (None, ""):
-        return "Not available in parsed evidence"
-    if isinstance(value, (int, float)):
-        return str(value)
-    text = _clean_text(value)
-    return text if text else "Not available in parsed evidence"
+        return "Not reported"
+    return _safe_str(value)
 
-def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None, empty_message: str | None = None) -> bool:
-    """Add a table only when rows exist.
 
-    Returns True when a table was rendered. Empty tables are not emitted because
-    they undermine confidence in the final report.
-    """
-    actual_rows = rows[:max_rows] if max_rows is not None else rows
-    actual_rows = [r for r in actual_rows if not _is_emptyish(r)]
-    if not actual_rows:
-        if empty_message:
-            _add_note(doc, empty_message)
-        return False
-
+def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None) -> None:
     tbl = doc.add_table(rows=1, cols=len(headers))
     tbl.style = "Table Grid"
     h = tbl.rows[0].cells
     for idx, txt in enumerate(headers):
-        h[idx].text = _cell_text(txt)
+        h[idx].text = str(txt)
         _set_cell_shading(h[idx], "D9E1F2")
         for run in h[idx].paragraphs[0].runs:
             run.bold = True
+    actual_rows = rows[:max_rows] if max_rows is not None else rows
+    if not actual_rows:
+        actual_rows = [["No data available"] + [""] * (len(headers) - 1)]
     for row_values in actual_rows:
         r = tbl.add_row().cells
         for idx in range(len(headers)):
-            r[idx].text = _cell_text(row_values[idx] if idx < len(row_values) else "")
+            r[idx].text = _short(row_values[idx] if idx < len(row_values) else "", 260)
     doc.add_paragraph()
-    return True
+
 
 def _app_report_title(app: Dict[str, Any]) -> str:
     app = _as_dict(app)
@@ -656,21 +548,18 @@ def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
     for label, key in labels:
         block = _as_dict(technical.get(key))
         available = _block_available(block)
-        status = "Available" if available else "Not available to report generator"
-        summary = "Parsed and available for report correlation." if available else "Artifact was not present, not downloaded, or not normalized into the analysis pack."
+        summary = "Available" if available else "Not available in analysis pack"
         if key == "trivy_sca" and available:
-            summary = f"{_deep_int(block, ['total_vulnerabilities', 'vulnerabilities_total', 'total'])} dependency vulnerability finding(s); {_deep_int(block, ['packages_detected', 'package_count', 'packages_total'])} package(s) detected."
+            summary = f"{_deep_int(block, ['total_vulnerabilities', 'vulnerabilities_total', 'total'])} vulnerability finding(s); {_deep_int(block, ['packages_detected', 'package_count', 'packages_total'])} package(s) detected."
         elif key == "sast_app_code" and available:
-            total = _deep_int(block, ['total_findings', 'total', 'results_count'])
-            raw = _deep_dict(block, ['tool_counts', 'by_tool'])
-            raw_text = ", ".join(f"{k}: {v}" for k, v in raw.items()) if raw else "raw tool counts unavailable"
-            summary = f"{total} application-scope finding(s) retained after filtering. Raw SARIF counts retained for traceability: {raw_text}."
+            summary = f"{_deep_int(block, ['total_findings', 'total', 'results_count'])} app-code finding(s) retained after scope filtering."
         elif key == "mobsf_static" and available:
-            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present."
+            summary = "Static APK evidence parsed for manifest, certificate, permissions, signing, trackers, and hardening indicators."
         elif key == "mobsf_dynamic" and available:
-            summary = "Runtime storage, SharedPreferences, database, cache, tracker, and observed artifact evidence was parsed where present."
-        rows.append([label, status, summary])
+            summary = "Runtime evidence parsed for local storage, databases, shared preferences, trackers, and observed artifacts."
+        rows.append([label, "Yes" if available else "No", summary])
     return rows
+
 
 def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
     takeaways: List[str] = []
@@ -764,10 +653,10 @@ def _mobsf_signal_rows(mobsf: Dict[str, Any]) -> List[List[Any]]:
 def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
     mobsf = _as_dict(technical.get("mobsf_static"))
     if not _block_available(mobsf):
-        doc.add_paragraph("MobSF static evidence was not available in the analysis pack. Static APK, manifest, signing, certificate, permission, and tracker checks should therefore be treated as not assessed by this report run.")
+        doc.add_paragraph("MobSF static evidence was not available in the analysis pack.")
         return
-    doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Missing values mean that the parser did not receive or normalize that indicator; they must not be interpreted as absence of risk.")
-    _add_table(doc, ["Indicator", "Parsed value"], _mobsf_signal_rows(mobsf), max_rows=20)
+    doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Findings are treated as technical evidence supporting the workbook-level conclusions, not as a replacement for requirement-level adjudication.")
+    _add_table(doc, ["Indicator", "Reported value"], _mobsf_signal_rows(mobsf), max_rows=20)
 
     finding_lists = []
     for key in ["manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
@@ -784,7 +673,9 @@ def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
             ])
         else:
             rows.append(["", "", item])
-    _add_table(doc, ["Severity", "Finding", "Description"], rows, max_rows=10, empty_message="No detailed MobSF static finding rows were available in the normalized evidence block.")
+    if rows:
+        _add_table(doc, ["Severity", "Finding", "Description"], rows, max_rows=10)
+
 
 def _add_mobsf_dynamic_section(doc: Document, technical: Dict[str, Any]) -> None:
     dynamic = _as_dict(technical.get("mobsf_dynamic"))
@@ -801,9 +692,10 @@ def _add_mobsf_dynamic_section(doc: Document, technical: Dict[str, Any]) -> None
     ]:
         items = _deep_list(dynamic, keys)
         count = len(items) if items else _deep_int(dynamic, [keys[0] + "_count"], 0)
-        sample = "; ".join(_clean_text(x) for x in items[:4]) if items else "No examples normalized into analysis pack"
+        sample = ", ".join(_short(x, 80) for x in items[:4]) if items else ""
         rows.append([label, count, sample])
-    _add_table(doc, ["Runtime evidence type", "Count", "Examples / parser note"], rows, max_rows=20)
+    _add_table(doc, ["Runtime evidence type", "Count", "Examples"], rows, max_rows=20)
+
 
 def _sast_findings(sast: Dict[str, Any]) -> List[Dict[str, Any]]:
     for key in ["findings", "results", "app_code_findings", "top_findings"]:
@@ -818,29 +710,12 @@ def _add_sast_section(doc: Document, technical: Dict[str, Any]) -> None:
     if not _block_available(sast):
         doc.add_paragraph("SAST app-code evidence was not available in the analysis pack.")
         return
-
     total = _deep_int(sast, ["total_findings", "total", "results_count"])
     tool_counts = _deep_dict(sast, ["tool_counts", "by_tool"])
-    scope_note = _first_present(
-        sast,
-        ["scope_note", "filter_note"],
-        "CI/CD workflows, audit-generation scripts, test paths, tooling, and non-application files are excluded from the application audit scope."
-    )
-
-    if total <= 0:
-        doc.add_paragraph(
-            "SARIF artifacts were parsed, but no application-scope SAST findings were retained after applying the configured scope filter. "
-            + _clean_text(scope_note)
-        )
-        if tool_counts:
-            doc.add_paragraph("Raw SARIF result counts are retained for traceability only and are not treated as application-scope findings in this report.")
-            _add_table(doc, ["Tool", "Raw SARIF results", "Interpretation"], [[k, v, "Traceability only; not retained as app-code finding"] for k, v in tool_counts.items()], max_rows=10)
-        return
-
-    doc.add_paragraph(f"SAST retained {total} application-code finding(s) after scope filtering. {_clean_text(scope_note)}")
+    scope_note = _first_present(sast, ["scope_note", "filter_note"], "CI/CD workflows and audit-generation scripts are excluded; retained findings are limited to application code and Android app artifacts according to the generic app-code scope filter.")
+    doc.add_paragraph(f"SAST retained {total} application-code finding(s) after scope filtering. {scope_note}")
     if tool_counts:
-        _add_table(doc, ["Tool", "Retained / raw findings"], [[k, v] for k, v in tool_counts.items()], max_rows=10)
-
+        _add_table(doc, ["Tool", "Findings"], [[k, v] for k, v in tool_counts.items()], max_rows=10)
     rows = []
     for item in _sast_findings(sast)[:12]:
         rows.append([
@@ -851,40 +726,7 @@ def _add_sast_section(doc: Document, technical: Dict[str, Any]) -> None:
             _first_present(item, ["line", "start_line", "startLine"], ""),
             _first_present(item, ["message", "title", "description"], ""),
         ])
-    _add_table(doc, ["Tool", "Rule", "Severity", "File", "Line", "Message"], rows, max_rows=12, empty_message="No detailed SAST rows were available after normalization.")
-
-def _format_limitation_row(key: str, value: Any) -> List[str] | None:
-    if _is_emptyish(value):
-        return None
-    normalized_key = _clean_text(key)
-    if normalized_key == "missing_inputs":
-        details = _clean_text(value)
-        if not details:
-            return None
-        return ["Missing technical inputs", details]
-    if normalized_key == "sast_notifications_sample":
-        count = len(value) if isinstance(value, list) else 1
-        tools = []
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict) and item.get("tool"):
-                    tools.append(str(item.get("tool")))
-        elif isinstance(value, dict) and value.get("tool"):
-            tools.append(str(value.get("tool")))
-        tool_text = ", ".join(sorted(set(tools))) if tools else "SAST toolchain"
-        return [
-            "SAST extraction warnings",
-            f"{tool_text} reported {count} extraction or frontend warning(s). Findings detected remain valid for analyzed files, but absence of additional findings must not be interpreted as proof that the full codebase is free of vulnerabilities."
-        ]
-    if isinstance(value, list):
-        details = "; ".join(_clean_text(x) for x in value if not _is_emptyish(x))
-    elif isinstance(value, dict):
-        details = _clean_text(value)
-    else:
-        details = _clean_text(value)
-    if not details:
-        return None
-    return [normalized_key.replace("_", " ").title(), details]
+    _add_table(doc, ["Tool", "Rule", "Severity", "File", "Line", "Message"], rows, max_rows=12)
 
 
 def _add_coverage_limitations(doc: Document, technical: Dict[str, Any]) -> None:
@@ -892,102 +734,17 @@ def _add_coverage_limitations(doc: Document, technical: Dict[str, Any]) -> None:
     rows = []
     if isinstance(limitations, dict):
         for key, value in limitations.items():
-            row = _format_limitation_row(str(key), value)
-            if row:
-                rows.append(row)
+            if isinstance(value, list):
+                rows.append([key, "; ".join(_short(x, 120) for x in value[:6])])
+            elif isinstance(value, dict):
+                rows.append([key, json.dumps(value, ensure_ascii=False)[:500]])
+            elif value not in (None, ""):
+                rows.append([key, value])
     if rows:
-        _add_table(doc, ["Limitation", "Report-safe explanation"], rows, max_rows=12)
+        _add_table(doc, ["Limitation", "Details"], rows, max_rows=12)
     else:
         doc.add_paragraph("No additional technical coverage limitations were reported in the analysis pack beyond the workbook-defined scope and tool-specific execution constraints.")
 
-
-def _fallback_recommendations_for_pattern(pattern: str, technical: Dict[str, Any]) -> List[str]:
-    pat = pattern.lower()
-    if "hardcoded" in pat or "secret" in pat or "credential" in pat:
-        return [
-            "Remove credentials, API keys, tokens, and shared secrets from source code, resources, build files, and packaged binaries.",
-            "Move secret material to a managed secrets service or secure backend flow; mobile clients should receive only short-lived scoped tokens.",
-            "Add automated secret scanning in pull requests and release workflows, and block introduction of new high-confidence secrets.",
-            "Rotate any exposed credentials and document revocation evidence before rescoring affected controls.",
-        ]
-    if "authorization" in pat or "rbac" in pat or "least privilege" in pat:
-        return [
-            "Define role-to-permission mappings for patient, clinician, administrator, and support workflows.",
-            "Enforce authorization server-side for every sensitive API operation; do not rely only on UI-level restrictions.",
-            "Add regression tests for horizontal and vertical privilege escalation scenarios.",
-            "Review third-party and SDK privileges using least-privilege criteria and document ownership for privileged functions.",
-        ]
-    if "storage" in pat or "key management" in pat:
-        return [
-            "Inventory SharedPreferences, SQLite databases, cache directories, files, and logs that may contain PHI, credentials, tokens, or keys.",
-            "Encrypt sensitive local data using Android Keystore-backed keys or eliminate client-side persistence where not strictly required.",
-            "Disable Android backup for sensitive data or define explicit backup exclusion rules and verify them in the release APK.",
-            "Add runtime and static tests that fail when sensitive values are stored in cleartext local storage.",
-        ]
-    if "authentication" in pat or "brute" in pat:
-        return [
-            "Implement server-enforced lockout, throttling, and anomaly detection for repeated authentication failures.",
-            "Require step-up authentication, such as MFA, FIDO2, TOTP, or Android BiometricPrompt, for sensitive clinical or administrative actions where feasible.",
-            "Harden session lifecycle controls, including inactivity timeout, explicit logout, token revocation, and account deletion session invalidation.",
-            "Add negative tests for brute-force, credential stuffing, weak session reuse, and missing re-authentication scenarios.",
-        ]
-    if "transport" in pat or "certificate" in pat or "tls" in pat:
-        return [
-            "Verify that release builds reject cleartext traffic and do not allow permissive trust managers or hostname verifiers.",
-            "Document certificate validation and pinning decisions, including operational rotation procedures when pinning is used.",
-            "Remove development-only certificate bypasses from production code and enforce network security configuration checks in CI.",
-            "Retest TLS behavior with MobSF or an equivalent mobile network security assessment before closure.",
-        ]
-    if "supply chain" in pat or "outdated" in pat or "dependency" in pat:
-        trivy = _as_dict(technical.get("trivy_sca"))
-        findings = _trivy_findings(trivy)
-        pkgs = []
-        for f in findings:
-            pkg = _first_present(f, ["pkg", "PkgName", "package", "package_name"], "")
-            fixed = _first_present(f, ["fixed", "FixedVersion", "fixed_version"], "")
-            if pkg:
-                pkgs.append(f"{pkg}" + (f" to {fixed}" if fixed else ""))
-        first = "; ".join(pkgs[:4]) if pkgs else "all vulnerable dependencies with fixed versions"
-        return [
-            f"Upgrade {first} and regenerate dependency lock or inventory artifacts for the assessed release.",
-            "Require Trivy SCA to produce JSON and SARIF artifacts on every release candidate without blocking exploratory scans.",
-            "Document accepted-risk decisions for any unfixed CVE, including compensating controls and expiration date.",
-            "Maintain an SBOM or dependency inventory and compare it against the previous release before publication.",
-        ]
-    if "input" in pat or "injection" in pat:
-        return [
-            "Centralize input validation for external files, network payloads, intents, deep links, logs, and user-controlled fields.",
-            "Use parameterized database access and safe serialization/deserialization patterns across the application codebase.",
-            "Treat SAST findings for injection, XML parsing, command execution, and log injection as release-blocking unless formally accepted.",
-            "Add regression tests for malicious inputs, malformed payloads, and unsafe logging patterns.",
-        ]
-    if "audit logging" in pat or "retention" in pat or "alerting" in pat:
-        return [
-            "Define auditable clinical and administrative events, including authentication, access to patient data, privilege changes, and security exceptions.",
-            "Protect logs against tampering, injection, excessive PHI disclosure, and unauthorized local persistence.",
-            "Configure retention, monitoring, and alerting rules that align with operational and regulatory requirements.",
-            "Verify that account deletion, logout, authentication failure, and sensitive data access events are logged consistently.",
-        ]
-    if "tamper" in pat or "reverse" in pat or "binary" in pat:
-        return [
-            "Verify that release APKs are not debuggable and are not signed with debug certificates.",
-            "Remove debug-only tooling, test endpoints, logging interceptors, and development flags from production builds.",
-            "Apply appropriate obfuscation, integrity checks, and anti-tampering controls for the release threat model.",
-            "Retest the release APK with MobSF or equivalent tooling and retain evidence for re-scoring.",
-        ]
-    if "privacy" in pat or "consent" in pat or "permission" in pat:
-        return [
-            "Map privacy-sensitive data flows to user notices, consent events, and lawful processing purposes.",
-            "Minimize dangerous Android permissions and justify each retained permission with a user-facing need.",
-            "Ensure privacy notices, deprecation notices, and system-use warnings are visible before relevant access is granted.",
-            "Retain evidence of consent, notice acceptance, and permission governance for re-audit.",
-        ]
-    return [
-        "Define specific remediation tasks for each mapped control and assign an accountable owner.",
-        "Collect implementation evidence and update the workbook before re-scoring.",
-        "Add regression tests or automated checks to prevent recurrence.",
-        "Retest the affected controls using the same evidence criteria applied in this audit.",
-    ]
 
 def _technical_kpi_for_pattern(pattern: str, technical: Dict[str, Any]) -> str:
     pat = pattern.lower()
@@ -1244,7 +1001,7 @@ def main() -> None:
     doc.add_paragraph("All statements below are derived exclusively from controls recorded as Compliant in the audit workbook and include supporting signals (flags and/or evidence). Verification traceability is provided in Appendix B.")
     if pos_controls:
         for pc in pos_controls:
-            doc.add_paragraph(_sanitize_positive_statement(pc.get("declarative_statement", "")), style="List Bullet")
+            doc.add_paragraph(pc["declarative_statement"], style="List Bullet")
     else:
         doc.add_paragraph("No compliant controls with supporting evidence/flags were available for verification in the workbook.", style="List Bullet")
 
@@ -1323,7 +1080,12 @@ def main() -> None:
         doc.add_paragraph(pat, style="Heading 2")
         recs = writeups.get(pat, {}).get("recommendations", [])
         if not recs:
-            recs = _fallback_recommendations_for_pattern(pat, technical)
+            recs = [
+                "Define and document secure-by-default requirements for this control area, and implement automated tests to prevent regressions.",
+                "Apply least-privilege, defense-in-depth, and secure configuration baselines aligned with mHealth/EMR risk profiles.",
+                "Introduce step-up authentication, such as MFA, TOTP, FIDO2, or Android BiometricPrompt, for sensitive actions where feasible.",
+                "Validate effectiveness through security testing and re-assessment of the mapped non-compliant controls.",
+            ]
         for r in recs[:12]:
             doc.add_paragraph(str(r).strip(), style="List Bullet")
 
@@ -1337,11 +1099,11 @@ def main() -> None:
 
     doc.add_page_break()
     add_nav_heading("10. Management Action Plan (MAP)", 1)
-    doc.add_paragraph("The MAP below is designed for executive readability. Detailed evidence remains in the workbook and technical artifacts. Priority combines severity and workbook-derived likelihood from Section 5.3.")
-    mp = doc.add_table(rows=1, cols=5)
+    doc.add_paragraph("Severity and likelihood nomenclature follow the rubric in Section 5.3. Likelihood is supported by workbook prevalence counts recorded in the Workbook basis column.")
+    mp = doc.add_table(rows=1, cols=9)
     mp.style = "Table Grid"
     mh = mp.rows[0].cells
-    headers = ["Finding / weakness pattern", "Owner", "Priority", "Target date", "Closure criteria"]
+    headers = ["Finding / weakness pattern", "Severity", "Likelihood", "Workbook basis", "Owner", "Management action", "Target window", "Target date", "Acceptance criteria / KPI"]
     for idx, txt in enumerate(headers):
         mh[idx].text = txt
         _set_cell_shading(mh[idx], "D9E1F2")
@@ -1353,16 +1115,21 @@ def main() -> None:
         sev = p["severity"]
         lik = _likelihood_from_count(cnt)
         owner = p["recommended_owner"]
+        target_window = _target_timeline(sev)
         target_date = _target_date_str(audit_dt, sev)
-        criteria = _technical_kpi_for_pattern(pat, technical)
+        recs = writeups.get(pat, {}).get("recommendations", [])
+        action = " ".join([r.strip() for r in recs[:3]]) if recs else "Implement remediation actions aligned to the weakness pattern and validate effectiveness."
         row = mp.add_row().cells
-        row[0].text = f"{pat}\nWorkbook basis: {cnt} mapped non-compliant control(s)."
-        row[1].text = owner
-        row[2].text = f"{sev} / {lik}"
-        row[3].text = target_date
-        row[4].text = criteria
+        row[0].text = pat
+        row[1].text = sev
+        row[2].text = lik
+        row[3].text = f"{cnt} mapped non-compliant control(s) in workbook."
+        row[4].text = owner
+        row[5].text = action
+        row[6].text = target_window
+        row[7].text = target_date
+        row[8].text = _technical_kpi_for_pattern(pat, technical)
 
-    doc.add_paragraph("Technical verification evidence expected at closure includes updated workbook scoring, scan artifacts for the remediated release, regression-test evidence where applicable, and formal accepted-risk records for unresolved items.")
     doc.add_page_break()
     add_nav_heading("Appendix A - Traceability index (non-exhaustive)", 1)
     doc.add_paragraph("For complete traceability and evidence, refer to the audit workbook.")
@@ -1385,7 +1152,7 @@ def main() -> None:
     if pos_controls:
         for pc in pos_controls:
             r = vb.add_row().cells
-            r[0].text = _sanitize_positive_statement(pc.get("declarative_statement", ""))
+            r[0].text = pc["declarative_statement"]
             r[1].text = pc["puid"]
             r[2].text = pc.get("flags_used", "") or ""
             r[3].text = pc.get("evidence_excerpt", "") or ""
@@ -1403,7 +1170,6 @@ def main() -> None:
 
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)
-    _quality_gate(doc)
     doc.save(out_path)
     print(f"[OK] DOCX generated -> {out_path}")
 

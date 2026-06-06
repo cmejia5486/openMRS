@@ -9,6 +9,10 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_INPUT: "1"
+  PIP_DEFAULT_TIMEOUT: "120"
+  PIP_RETRIES: "10"
 
 permissions:
   contents: read
@@ -245,8 +249,13 @@ jobs:
             throw ("pip install failed after {0} attempts: {1}" -f $MaxAttempts, ($PipArgs -join ' '))
           }
 
-          Invoke-PipInstall -PipArgs @("install", "--upgrade", "pip", "--retries", "10", "--timeout", "120")
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "--force-reinstall", "-r", "requirements/ai-runtime.txt")
+          & $env:PYTHON_EXE -m pip --version
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          Write-Host "[PIP] Installing dependencies without --force-reinstall to reduce cancellation and file-lock risk on self-hosted runners."
+          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
           Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib")
 
           & $env:PYTHON_EXE -m pip check
@@ -279,8 +288,10 @@ jobs:
             return 1
           }
 
-          pip_install install --upgrade pip --retries 10 --timeout 120
-          pip_install install --retries 10 --timeout 120 --prefer-binary --force-reinstall -r requirements/ai-runtime.txt
+          "$PYTHON_EXE" -m pip --version
+
+          echo "[PIP] Installing dependencies without --force-reinstall to reduce cancellation and file-lock risk on self-hosted runners."
+          pip_install install --retries 10 --timeout 120 --prefer-binary -r requirements/ai-runtime.txt
           pip_install install --retries 10 --timeout 120 --prefer-binary pandas openpyxl python-docx matplotlib
 
           "$PYTHON_EXE" -m pip check
