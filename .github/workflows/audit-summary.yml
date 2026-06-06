@@ -29,6 +29,23 @@ jobs:
       AI_PROFILE: ${{ vars.AI_PROFILE }}
       AI_PYTHON_VERSION: ${{ vars.AI_PYTHON_VERSION }}
       AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
+      AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+      AI_MODEL: ${{ vars.AI_MODEL }}
+      AI_LITELLM_MODEL: ${{ vars.AI_LITELLM_MODEL }}
+      AI_API_BASE: ${{ vars.AI_API_BASE }}
+      AI_API_VERSION: ${{ vars.AI_API_VERSION }}
+      AI_API_KEY_ENV_VAR: OPENAI_API_KEY
+      AI_REASONING_EFFORT: ${{ vars.AI_REASONING_EFFORT }}
+      AI_MAX_OUTPUT_TOKENS: ${{ vars.AI_MAX_OUTPUT_TOKENS }}
+      AI_BATCH_SIZE: ${{ vars.AI_BATCH_SIZE }}
+      AI_TIMEOUT_S: ${{ vars.AI_TIMEOUT_S }}
+      OPENAI_MODEL: ${{ vars.AI_MODEL }}
+      OPENAI_API_BASE: ${{ vars.AI_API_BASE }}
+      OPENAI_REASONING_EFFORT: ${{ vars.AI_REASONING_EFFORT }}
+      OPENAI_MAX_OUTPUT_TOKENS: ${{ vars.AI_MAX_OUTPUT_TOKENS }}
+      OPENAI_TIMEOUT_S: ${{ vars.AI_TIMEOUT_S }}
+      AUDIT_SUMMARY_USE_AI: "1"
+      AUDIT_SUMMARY_AI_SECTION_MODE: "1"
       PYTHONUNBUFFERED: "1"
       PYTHONNOUSERSITE: "1"
 
@@ -167,25 +184,44 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          if (Test-Path ".venv") {
-            Remove-Item -Recurse -Force ".venv"
+          $venvDir = Join-Path $env:RUNNER_TEMP "audit-summary-venv"
+          Write-Host "[VENV] Target: $venvDir"
+
+          if (Test-Path $venvDir) {
+            Write-Host "[VENV] Removing previous temporary venv."
+            for ($i = 1; $i -le 3; $i++) {
+              try {
+                Remove-Item -Recurse -Force $venvDir -ErrorAction Stop
+                break
+              } catch {
+                if ($i -eq 3) { throw }
+                Write-Host "[VENV] Remove failed. Retrying in $($i * 5) seconds."
+                Start-Sleep -Seconds ($i * 5)
+              }
+            }
           }
 
           $pythonVersion = ($env:AI_PYTHON_VERSION + "").Trim()
 
           if (-not [string]::IsNullOrWhiteSpace($pythonVersion) -and (Get-Command py -ErrorAction SilentlyContinue)) {
-            Write-Host "Creating venv with Python $pythonVersion via Python launcher."
-            py -$pythonVersion -m venv .venv
+            Write-Host "[VENV] Creating venv with Python $pythonVersion via Python launcher."
+            py -$pythonVersion -c "import sys; print(sys.version); print(sys.executable)"
+            if ($LASTEXITCODE -ne 0) { throw "Python launcher failed for version $pythonVersion." }
+            py -$pythonVersion -m venv $venvDir
           } else {
-            Write-Host "Creating venv with default python from PATH."
-            python -m venv .venv
+            Write-Host "[VENV] Creating venv with default python from PATH."
+            python -c "import sys; print(sys.version); print(sys.executable)"
+            if ($LASTEXITCODE -ne 0) { throw "Default python check failed." }
+            python -m venv $venvDir
           }
 
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $pythonExe = Join-Path $venvDir "Scripts\python.exe"
+          if (-not (Test-Path $pythonExe)) {
+            throw "Virtual environment Python executable was not created: $pythonExe"
           }
 
-          $pythonExe = (Resolve-Path ".\.venv\Scripts\python.exe").Path
           "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
           & $pythonExe --version
@@ -197,27 +233,33 @@ jobs:
         run: |
           set -euo pipefail
 
-          rm -rf .venv
+          venv_dir="$RUNNER_TEMP/audit-summary-venv"
+          echo "[VENV] Target: $venv_dir"
+          rm -rf "$venv_dir"
 
           python_version="${AI_PYTHON_VERSION:-}"
           if [ -n "$python_version" ] && command -v "python$python_version" >/dev/null 2>&1; then
-            echo "Creating venv with python$python_version."
-            "python$python_version" -m venv .venv
+            echo "[VENV] Creating venv with python$python_version."
+            "python$python_version" -c "import sys; print(sys.version); print(sys.executable)"
+            "python$python_version" -m venv "$venv_dir"
           elif command -v python3 >/dev/null 2>&1; then
-            echo "Creating venv with python3."
-            python3 -m venv .venv
+            echo "[VENV] Creating venv with python3."
+            python3 -c "import sys; print(sys.version); print(sys.executable)"
+            python3 -m venv "$venv_dir"
           else
-            echo "Creating venv with python."
-            python -m venv .venv
+            echo "[VENV] Creating venv with python."
+            python -c "import sys; print(sys.version); print(sys.executable)"
+            python -m venv "$venv_dir"
           fi
 
-          python_exe="$PWD/.venv/bin/python"
+          python_exe="$venv_dir/bin/python"
+          test -f "$python_exe"
           echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
 
           "$python_exe" --version
           "$python_exe" -c "import sys; print(sys.executable)"
 
-      - name: Install dependencies on Windows
+      - name: Install lightweight report dependencies on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
@@ -232,12 +274,9 @@ jobs:
 
             for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
               Write-Host ("[PIP] Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
-
               & $env:PYTHON_EXE -m pip @PipArgs
 
-              if ($LASTEXITCODE -eq 0) {
-                return
-              }
+              if ($LASTEXITCODE -eq 0) { return }
 
               if ($attempt -lt $MaxAttempts) {
                 $sleepSeconds = 10 * $attempt
@@ -250,20 +289,15 @@ jobs:
           }
 
           & $env:PYTHON_EXE -m pip --version
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          Write-Host "[PIP] Installing dependencies without --force-reinstall to reduce cancellation and file-lock risk on self-hosted runners."
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib")
+          Write-Host "[PIP] Installing lightweight dependencies only. The DOCX AI step uses direct HTTP requests; it does not install litellm, tokenizers, or huggingface-hub."
+          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib", "requests")
 
           & $env:PYTHON_EXE -m pip check
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Install dependencies on Unix
+      - name: Install lightweight report dependencies on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -276,146 +310,203 @@ jobs:
               if "$PYTHON_EXE" -m pip "$@"; then
                 return 0
               fi
-
               if [ "$attempt" -lt 3 ]; then
                 sleep_seconds=$((10 * attempt))
                 echo "[PIP] Install failed. Retrying in $sleep_seconds seconds."
                 sleep "$sleep_seconds"
               fi
             done
-
             echo "[PIP] pip install failed after 3 attempts: $*" >&2
             return 1
           }
 
           "$PYTHON_EXE" -m pip --version
 
-          echo "[PIP] Installing dependencies without --force-reinstall to reduce cancellation and file-lock risk on self-hosted runners."
-          pip_install install --retries 10 --timeout 120 --prefer-binary -r requirements/ai-runtime.txt
-          pip_install install --retries 10 --timeout 120 --prefer-binary pandas openpyxl python-docx matplotlib
+          echo "[PIP] Installing lightweight dependencies only. The DOCX AI step uses direct HTTP requests; it does not install litellm, tokenizers, or huggingface-hub."
+          pip_install install --retries 10 --timeout 120 --prefer-binary pandas openpyxl python-docx matplotlib requests
 
           "$PYTHON_EXE" -m pip check
 
-      - name: Resolve AI config on Windows
+      - name: Configure direct AI route on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
-          Write-Host "[AI] Resolving AI configuration for task: $env:AI_TASK"
+          $apiBase = ($env:AI_API_BASE + "").Trim()
+          $model = ($env:AI_MODEL + "").Trim()
+          $timeout = ($env:AI_TIMEOUT_S + "").Trim()
+          $maxTokens = ($env:AI_MAX_OUTPUT_TOKENS + "").Trim()
+          $effort = ($env:AI_REASONING_EFFORT + "").Trim()
 
-          & $env:PYTHON_EXE scripts/resolve_ai_config.py --task "$env:AI_TASK" --github-env "$env:GITHUB_ENV"
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+          if ([string]::IsNullOrWhiteSpace($apiBase)) {
+            $apiBase = "http://localhost:1234/v1"
+            "AI_API_BASE=$apiBase" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "OPENAI_API_BASE=$apiBase" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
 
-      - name: Resolve AI config on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
+          if ([string]::IsNullOrWhiteSpace($model)) {
+            $model = ($env:OPENAI_MODEL + "").Trim()
+          }
 
-          echo "[AI] Resolving AI configuration for task: $AI_TASK"
-          "$PYTHON_EXE" scripts/resolve_ai_config.py --task "$AI_TASK" --github-env "$GITHUB_ENV"
+          if ([string]::IsNullOrWhiteSpace($timeout)) {
+            $timeout = "300"
+            "AI_TIMEOUT_S=$timeout" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "OPENAI_TIMEOUT_S=$timeout" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          }
 
-      - name: Show resolved AI route on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
+          if ([string]::IsNullOrWhiteSpace($maxTokens)) {
+            $maxTokens = "3000"
+            "AI_MAX_OUTPUT_TOKENS=$maxTokens" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "OPENAI_MAX_OUTPUT_TOKENS=$maxTokens" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          }
 
-          Write-Host "[AI] This job uses AI in the DOCX generation step."
-          Write-Host "[AI] AI_TASK=$env:AI_TASK"
-          Write-Host "[AI] AI_PROFILE=$env:AI_PROFILE"
-          Write-Host "[AI] AI_PROVIDER=$env:AI_PROVIDER"
-          Write-Host "[AI] AI_MODEL=$env:AI_MODEL"
-          Write-Host "[AI] AI_LITELLM_MODEL=$env:AI_LITELLM_MODEL"
-          Write-Host "[AI] AI_API_BASE=$env:AI_API_BASE"
-          Write-Host "[AI] AI_MAX_OUTPUT_TOKENS=$env:AI_MAX_OUTPUT_TOKENS"
-          Write-Host "[AI] AI_BATCH_SIZE=$env:AI_BATCH_SIZE"
-          Write-Host "[AI] AI_TIMEOUT_S=$env:AI_TIMEOUT_S"
-          Write-Host "[AI] AI_KEY_PRESENT=$env:AI_KEY_PRESENT"
+          if ([string]::IsNullOrWhiteSpace($effort)) {
+            $effort = "low"
+            "AI_REASONING_EFFORT=$effort" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "OPENAI_REASONING_EFFORT=$effort" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          }
+
+          if ([string]::IsNullOrWhiteSpace($model)) {
+            throw "AI_MODEL or OPENAI_MODEL must be configured for AI-assisted Audit Summary generation."
+          }
+
+          "AI_MODEL=$model" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "OPENAI_MODEL=$model" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_SUMMARY_USE_AI=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_SUMMARY_AI_SECTION_MODE=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
           if ([string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
-            throw "OPENAI_API_KEY is empty."
+            throw "OPENAI_API_KEY is empty. For LM Studio with authentication enabled, use the LM Studio token as OPENAI_API_KEY."
           }
 
-      - name: Show resolved AI route on Unix
+          Write-Host "[AI] Direct AI route configured."
+          Write-Host "[AI] AI_API_BASE=$apiBase"
+          Write-Host "[AI] AI_MODEL=$model"
+          Write-Host "[AI] AI_TIMEOUT_S=$timeout"
+          Write-Host "[AI] AI_MAX_OUTPUT_TOKENS=$maxTokens"
+          Write-Host "[AI] AI_REASONING_EFFORT=$effort"
+          Write-Host "[AI] Runtime dependencies: requests only. No litellm/openai SDK installation in this job."
+
+      - name: Configure direct AI route on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
 
-          echo "[AI] This job uses AI in the DOCX generation step."
-          echo "[AI] AI_TASK=${AI_TASK:-}"
-          echo "[AI] AI_PROFILE=${AI_PROFILE:-}"
-          echo "[AI] AI_PROVIDER=${AI_PROVIDER:-}"
-          echo "[AI] AI_MODEL=${AI_MODEL:-}"
-          echo "[AI] AI_LITELLM_MODEL=${AI_LITELLM_MODEL:-}"
-          echo "[AI] AI_API_BASE=${AI_API_BASE:-}"
-          echo "[AI] AI_MAX_OUTPUT_TOKENS=${AI_MAX_OUTPUT_TOKENS:-}"
-          echo "[AI] AI_BATCH_SIZE=${AI_BATCH_SIZE:-}"
-          echo "[AI] AI_TIMEOUT_S=${AI_TIMEOUT_S:-}"
-          echo "[AI] AI_KEY_PRESENT=${AI_KEY_PRESENT:-}"
+          api_base="${AI_API_BASE:-}"
+          model="${AI_MODEL:-${OPENAI_MODEL:-}}"
+          timeout="${AI_TIMEOUT_S:-}"
+          max_tokens="${AI_MAX_OUTPUT_TOKENS:-}"
+          effort="${AI_REASONING_EFFORT:-}"
 
-          if [ -z "${OPENAI_API_KEY:-}" ]; then
-            echo "[ERROR] OPENAI_API_KEY is empty." >&2
+          if [ -z "$api_base" ]; then
+            api_base="http://localhost:1234/v1"
+            {
+              echo "AI_API_BASE=$api_base"
+              echo "OPENAI_API_BASE=$api_base"
+            } >> "$GITHUB_ENV"
+          fi
+
+          if [ -z "$timeout" ]; then
+            timeout="300"
+            {
+              echo "AI_TIMEOUT_S=$timeout"
+              echo "OPENAI_TIMEOUT_S=$timeout"
+            } >> "$GITHUB_ENV"
+          fi
+
+          if [ -z "$max_tokens" ]; then
+            max_tokens="3000"
+            {
+              echo "AI_MAX_OUTPUT_TOKENS=$max_tokens"
+              echo "OPENAI_MAX_OUTPUT_TOKENS=$max_tokens"
+            } >> "$GITHUB_ENV"
+          fi
+
+          if [ -z "$effort" ]; then
+            effort="low"
+            {
+              echo "AI_REASONING_EFFORT=$effort"
+              echo "OPENAI_REASONING_EFFORT=$effort"
+            } >> "$GITHUB_ENV"
+          fi
+
+          if [ -z "$model" ]; then
+            echo "[ERROR] AI_MODEL or OPENAI_MODEL must be configured for AI-assisted Audit Summary generation." >&2
             exit 1
           fi
 
-      - name: Verify AI runtime route on Windows
+          {
+            echo "AI_MODEL=$model"
+            echo "OPENAI_MODEL=$model"
+            echo "AUDIT_SUMMARY_USE_AI=1"
+            echo "AUDIT_SUMMARY_AI_SECTION_MODE=1"
+          } >> "$GITHUB_ENV"
+
+          if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "[ERROR] OPENAI_API_KEY is empty. For LM Studio with authentication enabled, use the LM Studio token as OPENAI_API_KEY." >&2
+            exit 1
+          fi
+
+          echo "[AI] Direct AI route configured."
+          echo "[AI] AI_API_BASE=$api_base"
+          echo "[AI] AI_MODEL=$model"
+          echo "[AI] AI_TIMEOUT_S=$timeout"
+          echo "[AI] AI_MAX_OUTPUT_TOKENS=$max_tokens"
+          echo "[AI] AI_REASONING_EFFORT=$effort"
+          echo "[AI] Runtime dependencies: requests only. No litellm/openai SDK installation in this job."
+
+      - name: Smoke test direct AI endpoint on Windows
         if: runner.os == 'Windows'
+        continue-on-error: true
         shell: powershell
         run: |
-          $ErrorActionPreference = "Stop"
-
-          $env:PYTHONPATH = Join-Path $PWD "scripts"
+          $ErrorActionPreference = "Continue"
 
           $py = @'
-          from lib.ai_runtime import AIRuntime, OpenAI, completion
+          import os
+          import requests
 
-          rt = AIRuntime(task="audit_summary_docx")
+          base = (os.getenv("AI_API_BASE") or os.getenv("OPENAI_API_BASE") or "http://localhost:1234/v1").rstrip("/")
+          token = os.getenv("OPENAI_API_KEY", "")
+          headers = {"Authorization": f"Bearer {token}"} if token else {}
+          url = base + "/models"
 
-          print("[AI_RUNTIME] provider:", rt.provider)
-          print("[AI_RUNTIME] model:", rt.model)
-          print("[AI_RUNTIME] litellm_model:", getattr(rt, "litellm_model", "n/a"))
-          print("[AI_RUNTIME] api_base:", rt.api_base)
-          print("[AI_RUNTIME] OpenAI SDK available:", OpenAI is not None)
-          print("[AI_RUNTIME] LiteLLM available:", completion is not None)
-          print("[AI_RUNTIME] uses direct OpenAI route:", rt._use_direct_openai())
-
-          if rt.provider == "openai_compatible" and not rt._use_direct_openai():
-              raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
+          print(f"[AI] Smoke testing endpoint: {url}")
+          try:
+              r = requests.get(url, headers=headers, timeout=15)
+              print(f"[AI] Endpoint status: {r.status_code}")
+              print(r.text[:800])
+          except Exception as exc:
+              print(f"[WARN] AI endpoint smoke test failed: {exc}")
           '@
 
           $py | & $env:PYTHON_EXE -
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
 
-      - name: Verify AI runtime route on Unix
+      - name: Smoke test direct AI endpoint on Unix
         if: runner.os != 'Windows'
+        continue-on-error: true
         shell: bash
-        env:
-          PYTHONPATH: ${{ github.workspace }}/scripts
         run: |
-          set -euo pipefail
+          set +e
 
           "$PYTHON_EXE" - <<'PY'
-          from lib.ai_runtime import AIRuntime, OpenAI, completion
+          import os
+          import requests
 
-          rt = AIRuntime(task="audit_summary_docx")
+          base = (os.getenv("AI_API_BASE") or os.getenv("OPENAI_API_BASE") or "http://localhost:1234/v1").rstrip("/")
+          token = os.getenv("OPENAI_API_KEY", "")
+          headers = {"Authorization": f"Bearer {token}"} if token else {}
+          url = base + "/models"
 
-          print("[AI_RUNTIME] provider:", rt.provider)
-          print("[AI_RUNTIME] model:", rt.model)
-          print("[AI_RUNTIME] litellm_model:", getattr(rt, "litellm_model", "n/a"))
-          print("[AI_RUNTIME] api_base:", rt.api_base)
-          print("[AI_RUNTIME] OpenAI SDK available:", OpenAI is not None)
-          print("[AI_RUNTIME] LiteLLM available:", completion is not None)
-          print("[AI_RUNTIME] uses direct OpenAI route:", rt._use_direct_openai())
-
-          if rt.provider == "openai_compatible" and not rt._use_direct_openai():
-              raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
+          print(f"[AI] Smoke testing endpoint: {url}")
+          try:
+              r = requests.get(url, headers=headers, timeout=15)
+              print(f"[AI] Endpoint status: {r.status_code}")
+              print(r.text[:800])
+          except Exception as exc:
+              print(f"[WARN] AI endpoint smoke test failed: {exc}")
           PY
 
       - name: Prepare portable data dir on Windows
@@ -532,7 +623,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          Write-Host "[NO-AI] Building analysis pack JSON from Excel and downloaded technical inputs."
+          Write-Host "[STAGE1] Building analysis pack JSON from Excel and downloaded technical inputs."
           Write-Host "[PATH] AUDIT_EXCEL_PATH=$env:AUDIT_EXCEL_PATH"
           Write-Host "[PATH] AUDIT_ANALYSIS_JSON_PATH=$env:AUDIT_ANALYSIS_JSON_PATH"
           Write-Host "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$env:AUDIT_TECHNICAL_INPUTS_DIR"
@@ -557,7 +648,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "[NO-AI] Building analysis pack JSON from Excel and downloaded technical inputs."
+          echo "[STAGE1] Building analysis pack JSON from Excel and downloaded technical inputs."
           echo "[PATH] AUDIT_EXCEL_PATH=$AUDIT_EXCEL_PATH"
           echo "[PATH] AUDIT_ANALYSIS_JSON_PATH=$AUDIT_ANALYSIS_JSON_PATH"
           echo "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$AUDIT_TECHNICAL_INPUTS_DIR"

@@ -17,9 +17,9 @@ from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 
 try:
-    from lib.ai_runtime import AIRuntime
+    import requests
 except Exception:
-    AIRuntime = None  # type: ignore
+    requests = None  # type: ignore
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -1081,62 +1081,300 @@ def _extract_json_object(text: str) -> str:
     raise ValueError(f"No complete JSON object found in model output. Preview: {preview}")
 
 
-def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[str, str], max_takeaways: int = 7) -> Dict[str, Any]:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not api_key or AIRuntime is None:
+def _ai_env(name: str, default: str = "") -> str:
+    return os.getenv(name, default).strip()
+
+
+def _ai_api_key() -> str:
+    for name in ("OPENAI_API_KEY", "LM_API_TOKEN", "AI_API_KEY"):
+        value = _ai_env(name)
+        if value:
+            return value
+    return ""
+
+
+def _ai_enabled() -> bool:
+    raw = _ai_env("AUDIT_SUMMARY_AI_ENABLED", "1").lower()
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    if requests is None:
+        print("[AI] requests is not available; deterministic fallback will be used.")
+        return False
+    if not _ai_api_key():
+        print("[AI] No API key/token found; deterministic fallback will be used.")
+        return False
+    return True
+
+
+def _ai_api_base() -> str:
+    return (
+        _ai_env("AI_API_BASE")
+        or _ai_env("OPENAI_API_BASE")
+        or _ai_env("LM_STUDIO_API_BASE")
+        or "http://localhost:1234/v1"
+    ).rstrip("/")
+
+
+def _ai_model() -> str:
+    return _ai_env("AI_MODEL") or _ai_env("OPENAI_MODEL") or "gpt-oss-20b"
+
+
+def _ai_timeout_s() -> int:
+    return _safe_int(_ai_env("AI_TIMEOUT_S", "300"), 300)
+
+
+def _ai_max_tokens(default: int = 1600) -> int:
+    return _safe_int(_ai_env("AI_MAX_OUTPUT_TOKENS", str(default)), default)
+
+
+def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str, Any], max_tokens: int = 1600) -> Dict[str, Any]:
+    """Call an OpenAI-compatible chat endpoint directly through requests.
+
+    This avoids installing OpenAI SDK, LiteLLM, tokenizers, or HuggingFace packages
+    in the audit-summary job. Each call is section-scoped to keep prompts small.
+    Failures are non-fatal because deterministic report content remains the fallback.
+    """
+    if not _ai_enabled():
         return {}
 
-    model = os.getenv("OPENAI_MODEL", "gpt-5.4").strip() or "gpt-5.4"
-    max_tokens = int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "6000"))
-    effort = os.getenv("OPENAI_REASONING_EFFORT", "medium").strip() or "medium"
-    runtime = AIRuntime(task=os.getenv("AI_TASK", "").strip() or "audit_summary_docx", api_key=api_key)
-
-    inp = []
-    for p in patterns[:10]:
-        cnt = int(p.get("mapped_noncompliant_count", 0))
-        inp.append({
-            "pattern": p.get("pattern", ""),
-            "count": cnt,
-            "severity": p.get("severity", "Low"),
-            "likelihood": _likelihood_from_count(cnt),
-            "owner": p.get("recommended_owner", "Engineering"),
-            "anchors": (p.get("description_anchors", []) or [])[:2],
-        })
-
-    system = (
-        "You are a senior security audit reporting specialist for peer-review publications. "
-        "You will improve wording and generate actionable recommendations ONLY at the weakness-pattern level. "
-        "You must NOT invent specific implemented controls. You must NOT invent metrics. "
-        "You must NOT claim facts beyond the provided anchors and counts. "
-        "Return exactly one raw JSON object and nothing else. "
-        "Do not use Markdown, code fences, prose outside JSON, comments, or tool calls."
-    )
-    user_payload = {
-        "task": "Generate paper-quality prose components grounded in workbook-derived prevalence counts.",
-        "constraints": {
-            "no_invented_metrics": True,
-            "no_category_level_bullet_dumps": True,
-            "no_long_id_lists": True,
-            "recommendations_no_time_headings": True,
-            "max_key_takeaways": max_takeaways,
-            "likelihood_rubric": likelihood_rubric,
-        },
-        "input_patterns": inp,
-        "required_output_schema": {
-            "key_takeaways": ["<5-7 bullets; each references prevalence count and pattern name>"],
-            "pattern_writeups": [{"pattern": "<exact pattern name from input>", "expected": "<1-2 sentences>", "impact": "<1-2 sentences; CIA + regulatory for health data>", "recommendations": ["<6-10 bullets; practical; may include MFA/biometric step-up if appropriate>"]}]
-        }
+    url = _ai_api_base() + "/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {_ai_api_key()}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": _ai_model(),
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+        ],
+        "temperature": 0.15,
+        "max_tokens": max_tokens,
     }
 
-    resp = runtime.create(
-        model=model,
-        input=[{"role": "system", "content": system}, {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)}],
-        max_output_tokens=max_tokens,
-        reasoning={"effort": effort},
-    )
-    obj = json.loads(_extract_json_object((getattr(resp, "output_text", "") or "").strip()))
-    return obj if isinstance(obj, dict) else {}
+    try:
+        print(f"[AI] Calling section={section_name} model={_ai_model()} base={_ai_api_base()}")
+        resp = requests.post(url, headers=headers, json=payload, timeout=_ai_timeout_s())  # type: ignore[union-attr]
+        if resp.status_code >= 400:
+            print(f"[AI][WARN] Section {section_name} failed with HTTP {resp.status_code}: {resp.text[:500]}")
+            return {}
+        data = resp.json()
+        choices = data.get("choices") or []
+        if not choices:
+            print(f"[AI][WARN] Section {section_name} returned no choices.")
+            return {}
+        content = (((choices[0] or {}).get("message") or {}).get("content") or "").strip()
+        if not content:
+            print(f"[AI][WARN] Section {section_name} returned empty content.")
+            return {}
+        obj = json.loads(_extract_json_object(content))
+        if isinstance(obj, dict):
+            print(f"[AI] Section {section_name} completed.")
+            return obj
+    except Exception as exc:
+        print(f"[AI][WARN] Section {section_name} failed: {exc}")
+    return {}
 
+
+def _compact_patterns_for_ai(patterns: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for p in patterns[:limit]:
+        count = int(p.get("mapped_noncompliant_count", 0))
+        out.append({
+            "pattern": p.get("pattern"),
+            "mapped_noncompliant_count": count,
+            "severity": p.get("severity"),
+            "likelihood": _likelihood_from_count(count),
+            "recommended_owner": p.get("recommended_owner"),
+            "example_puids": (p.get("example_puids") or [])[:5],
+            "description_anchors": [_clean_text(x) for x in (p.get("description_anchors") or [])[:2]],
+        })
+    return out
+
+
+def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
+    trivy = _as_dict(technical.get("trivy_sca"))
+    mobsf_static = _as_dict(technical.get("mobsf_static"))
+    mobsf_dynamic = _as_dict(technical.get("mobsf_dynamic"))
+    sast = _as_dict(technical.get("sast_app_code"))
+    vision = _as_dict(technical.get("vision360"))
+    limitations = _as_dict(technical.get("coverage_limitations"))
+
+    return {
+        "vision360": {
+            "available": _block_available(vision),
+            "flags_count": _deep_int(vision, ["flags_count"]),
+            "state_counts": _deep_dict(vision, ["state_counts"]),
+            "group_counts": _deep_dict(vision, ["group_counts"]),
+            "feature_keys": _deep_list(vision, ["feature_keys"]),
+        },
+        "trivy_sca": {
+            "available": _block_available(trivy),
+            "packages_detected": _deep_int(trivy, ["packages_detected", "package_count", "packages_total"]),
+            "total_vulnerabilities": _deep_int(trivy, ["total_vulnerabilities", "vulnerabilities_total", "total"]),
+            "fixable_total": _deep_int(trivy, ["fixable_total", "fixable_vulnerabilities", "fixable"]),
+            "by_severity": _deep_dict(trivy, ["by_severity", "severity_counts"]),
+            "top_findings": [
+                {
+                    "id": _first_present(f, ["id", "VulnerabilityID", "cve", "rule_id"], ""),
+                    "severity": _first_present(f, ["severity", "Severity"], ""),
+                    "package": _first_present(f, ["pkg", "PkgName", "package", "package_name"], ""),
+                    "installed": _first_present(f, ["installed", "InstalledVersion", "installed_version"], ""),
+                    "fixed": _first_present(f, ["fixed", "FixedVersion", "fixed_version"], ""),
+                    "title": _clean_text(_first_present(f, ["title", "Title", "description", "Description"], "")),
+                }
+                for f in _trivy_findings(trivy)[:12]
+            ],
+        },
+        "mobsf_static": {
+            "available": _block_available(mobsf_static),
+            "signals": _mobsf_signal_rows(mobsf_static) if _block_available(mobsf_static) else [],
+            "manifest_findings_count": _deep_int(mobsf_static, ["manifest_findings_count"]),
+            "certificate_findings_count": _deep_int(mobsf_static, ["certificate_findings_count"]),
+            "dangerous_permissions": _deep_list(mobsf_static, ["dangerous_permissions"])[:20],
+            "permissions_count": _deep_int(mobsf_static, ["permissions_count"]),
+        },
+        "mobsf_dynamic": {
+            "available": _block_available(mobsf_dynamic),
+            "local_storage_artifacts_count": _deep_int(mobsf_dynamic, ["local_storage_artifacts_count", "local_storage_artifacts_count_count"]),
+            "local_storage_artifacts_sample": _deep_list(mobsf_dynamic, ["local_storage_artifacts_sample", "local_storage_artifacts"])[:12],
+            "shared_preferences_artifacts": _deep_list(mobsf_dynamic, ["shared_preferences_artifacts", "shared_preferences"])[:12],
+            "sqlite_database_artifacts": _deep_list(mobsf_dynamic, ["sqlite_database_artifacts", "sqlite_databases"])[:12],
+            "detected_trackers": _deep_int(mobsf_dynamic, ["detected_trackers", "trackers_detected"]),
+        },
+        "sast_app_code": {
+            "available": _block_available(sast),
+            "summary": _deep_dict(sast, ["summary"]),
+            "tool_counts": _deep_dict(sast, ["tool_counts", "by_tool"]),
+            "security_findings_sample": _deep_list(sast, ["security_findings_sample", "findings"])[:12],
+            "hardening_signals_sample": _deep_list(sast, ["hardening_signals_sample"])[:8],
+        },
+        "coverage_limitations": {
+            "missing_inputs": _deep_list(limitations, ["missing_inputs"]),
+            "sast_warning_count": len(_deep_list(limitations, ["sast_notifications_sample", "sast_extraction_warnings"])),
+        },
+    }
+
+
+def _call_llm_for_audit_sections(
+    metrics: Dict[str, Any],
+    app: Dict[str, Any],
+    patterns: List[Dict[str, Any]],
+    technical: Dict[str, Any],
+    likelihood_rubric: Dict[str, str],
+) -> Dict[str, Any]:
+    if not _ai_enabled():
+        return {}
+
+    common_system = (
+        "You are a senior mobile health security audit reporting specialist. "
+        "Write in precise technical English for an executive and engineering audience. "
+        "Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. "
+        "If evidence is absent, state the limitation explicitly. "
+        "Return exactly one valid JSON object and nothing else."
+    )
+
+    compact_patterns = _compact_patterns_for_ai(patterns)
+    compact_technical = _compact_technical_for_ai(technical)
+
+    base_context = {
+        "application": app,
+        "metrics": metrics,
+        "likelihood_rubric": likelihood_rubric,
+        "top_weakness_patterns": compact_patterns,
+        "technical_evidence": compact_technical,
+    }
+
+    out: Dict[str, Any] = {}
+
+    executive = _ai_json_chat(
+        "executive_summary",
+        common_system,
+        {
+            "task": "Generate executive summary components for an mSEC-AM mobile application audit report.",
+            "constraints": {
+                "key_takeaways_count": "5 to 7",
+                "must_reference": ["overall compliance rate", "applicable controls", "non-compliant controls", "top weakness patterns", "technical scanner evidence where available"],
+                "do_not_claim": ["full codebase is clean", "MobSF absence equals no risk", "SAST raw findings are app findings"],
+            },
+            "context": base_context,
+            "required_output_schema": {
+                "audit_summary_paragraph": "<one concise paragraph>",
+                "key_takeaways": ["<bullet text>"],
+            },
+        },
+        max_tokens=min(_ai_max_tokens(1800), 2200),
+    )
+    out.update({k: v for k, v in executive.items() if k in {"audit_summary_paragraph", "key_takeaways"}})
+
+    technical_narratives = _ai_json_chat(
+        "technical_narratives",
+        common_system,
+        {
+            "task": "Generate report-ready technical narrative paragraphs from scanner evidence.",
+            "constraints": {
+                "one_paragraph_each": True,
+                "mention_limitations": True,
+                "do_not_overstate_sast": True,
+                "do_not_treat_missing_mobsf_fields_as_clean": True,
+            },
+            "context": base_context,
+            "required_output_schema": {
+                "technical_coverage_paragraph": "<paragraph>",
+                "technical_evidence_intro": "<paragraph>",
+                "trivy_paragraph": "<paragraph>",
+                "mobsf_static_paragraph": "<paragraph>",
+                "mobsf_dynamic_paragraph": "<paragraph>",
+                "sast_paragraph": "<paragraph>",
+                "coverage_limitations_paragraph": "<paragraph>",
+            },
+        },
+        max_tokens=min(_ai_max_tokens(2200), 2600),
+    )
+    if technical_narratives:
+        out["technical_narratives"] = technical_narratives
+
+    pattern_writeups = _ai_json_chat(
+        "pattern_writeups",
+        common_system,
+        {
+            "task": "Generate concise weakness-pattern writeups and recommendations grounded in workbook prevalence and technical evidence.",
+            "constraints": {
+                "patterns": "Use exact pattern names from input.",
+                "expected": "1 sentence.",
+                "impact": "1 sentence mentioning confidentiality, integrity, availability, or health-data regulatory exposure only when supported.",
+                "recommendations": "4 to 6 actionable bullets per pattern, specific and non-repetitive.",
+                "no_time_window_headings": True,
+                "no_unprovided_metrics": True,
+            },
+            "context": {
+                "application": app,
+                "likelihood_rubric": likelihood_rubric,
+                "top_weakness_patterns": compact_patterns,
+                "technical_evidence": compact_technical,
+            },
+            "required_output_schema": {
+                "pattern_writeups": [
+                    {
+                        "pattern": "<exact pattern name>",
+                        "expected": "<sentence>",
+                        "impact": "<sentence>",
+                        "recommendations": ["<action>"],
+                    }
+                ]
+            },
+        },
+        max_tokens=min(_ai_max_tokens(3600), 4200),
+    )
+    if isinstance(pattern_writeups.get("pattern_writeups"), list):
+        out["pattern_writeups"] = pattern_writeups["pattern_writeups"]
+
+    return out
+
+
+def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[str, str], max_takeaways: int = 7) -> Dict[str, Any]:
+    # Backward-compatible wrapper retained for older callers.
+    return {}
 
 def main() -> None:
     in_path = os.getenv("AUDIT_ANALYSIS_JSON_PATH", DEFAULT_IN)
@@ -1184,12 +1422,21 @@ def main() -> None:
     _stacked_counts(cat_stats, fig4)
 
     prose: Dict[str, Any] = {}
-    if AIRuntime is not None and os.getenv("OPENAI_API_KEY", "").strip():
-        try:
-            prose = _call_llm_for_style(patterns, likelihood_rubric, max_takeaways=7)
-        except Exception:
-            prose = {}
+    try:
+        prose = _call_llm_for_audit_sections(metrics, app, patterns, technical, likelihood_rubric)
+        if prose:
+            ai_sections_path = os.getenv("AUDIT_SUMMARY_AI_SECTIONS_PATH", "").strip()
+            if not ai_sections_path:
+                ai_sections_path = str(_runtime_data_dir() / "audit_summary_ai_sections.json")
+            Path(ai_sections_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(ai_sections_path, "w", encoding="utf-8") as f:
+                json.dump(prose, f, ensure_ascii=False, indent=2)
+            print(f"[AI] Section outputs saved -> {ai_sections_path}")
+    except Exception as exc:
+        print(f"[AI][WARN] Sectioned AI generation failed; deterministic fallback will be used: {exc}")
+        prose = {}
 
+    tech_ai = _as_dict(prose.get("technical_narratives"))
     key_takeaways = prose.get("key_takeaways", [])
     writeups = {w["pattern"]: w for w in prose.get("pattern_writeups", []) if isinstance(w, dict) and "pattern" in w}
     if not key_takeaways:
@@ -1233,7 +1480,11 @@ def main() -> None:
     add_nav_heading("5. Audit summary", 1)
     doc.add_paragraph("The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).")
     doc.add_paragraph(f"Overall, {int(metrics['total_assessed'])} requirements were assessed. {applicable} were applicable controls and {not_applicable} were recorded as not applicable. Of the applicable controls, {compliant} were compliant and {non_compliant} were non-compliant, resulting in an overall compliance rate of {overall_pct:.2f}% (applicable controls only).")
-    doc.add_paragraph("This report summarizes the dominant weakness patterns evidenced by non-compliant requirements and proposes actionable remediations suitable for mHealth/EMR environments handling sensitive health information.")
+    ai_audit_summary = _clean_text(prose.get("audit_summary_paragraph", ""))
+    if ai_audit_summary:
+        doc.add_paragraph(ai_audit_summary)
+    else:
+        doc.add_paragraph("This report summarizes the dominant weakness patterns evidenced by non-compliant requirements and proposes actionable remediations suitable for mHealth/EMR environments handling sensitive health information.")
     if technical:
         doc.add_paragraph("The report also incorporates technical scan evidence where available, including dependency vulnerability evidence from Trivy, Android APK and manifest evidence from MobSF, runtime observations from MobSF dynamic analysis, and SAST findings filtered to application code.")
 
@@ -1277,20 +1528,38 @@ def main() -> None:
     doc.add_paragraph()
 
     add_nav_heading("5.5 Technical scan coverage", 2)
-    doc.add_paragraph("The following table summarizes which automated technical evidence sources were available to support the audit summary. Absence of a technical source means that the source was not available to the report generator, not necessarily that the corresponding risk is absent.")
+    ai_technical_coverage = _clean_text(tech_ai.get("technical_coverage_paragraph", ""))
+    if ai_technical_coverage:
+        doc.add_paragraph(ai_technical_coverage)
+    else:
+        doc.add_paragraph("The following table summarizes which automated technical evidence sources were available to support the audit summary. Absence of a technical source means that the source was not available to the report generator, not necessarily that the corresponding risk is absent.")
     _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
 
     add_nav_heading("6. Technical evidence from automated analysis", 1)
-    doc.add_paragraph("This section summarizes technical scan evidence relevant to the assessed application and its code. The evidence is used to reinforce and qualify workbook findings while preserving the workbook as the authoritative requirement-level adjudication source.")
+    ai_tech_intro = _clean_text(tech_ai.get("technical_evidence_intro", ""))
+    if ai_tech_intro:
+        doc.add_paragraph(ai_tech_intro)
+    else:
+        doc.add_paragraph("This section summarizes technical scan evidence relevant to the assessed application and its code. The evidence is used to reinforce and qualify workbook findings while preserving the workbook as the authoritative requirement-level adjudication source.")
     add_nav_heading("6.1 Software Composition Analysis from Trivy", 2)
+    if _clean_text(tech_ai.get("trivy_paragraph", "")):
+        doc.add_paragraph(_clean_text(tech_ai.get("trivy_paragraph", "")))
     _add_trivy_section(doc, technical)
     add_nav_heading("6.2 Android static evidence from MobSF", 2)
+    if _clean_text(tech_ai.get("mobsf_static_paragraph", "")):
+        doc.add_paragraph(_clean_text(tech_ai.get("mobsf_static_paragraph", "")))
     _add_mobsf_static_section(doc, technical)
     add_nav_heading("6.3 Runtime evidence from MobSF dynamic analysis", 2)
+    if _clean_text(tech_ai.get("mobsf_dynamic_paragraph", "")):
+        doc.add_paragraph(_clean_text(tech_ai.get("mobsf_dynamic_paragraph", "")))
     _add_mobsf_dynamic_section(doc, technical)
     add_nav_heading("6.4 Static Application Security Testing evidence", 2)
+    if _clean_text(tech_ai.get("sast_paragraph", "")):
+        doc.add_paragraph(_clean_text(tech_ai.get("sast_paragraph", "")))
     _add_sast_section(doc, technical)
     add_nav_heading("6.5 Technical coverage limitations", 2)
+    if _clean_text(tech_ai.get("coverage_limitations_paragraph", "")):
+        doc.add_paragraph(_clean_text(tech_ai.get("coverage_limitations_paragraph", "")))
     _add_coverage_limitations(doc, technical)
 
     add_nav_heading("7. Main deficiencies", 1)
