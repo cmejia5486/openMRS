@@ -9,6 +9,10 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_INPUT: "1"
+  PIP_DEFAULT_TIMEOUT: "120"
+  PIP_RETRIES: "10"
 
 permissions:
   contents: read
@@ -116,29 +120,77 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          if (Test-Path ".venv") {
-            Remove-Item -Recurse -Force ".venv"
+          function Remove-PathWithRetry {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string] $PathToRemove,
+              [int] $MaxAttempts = 5
+            )
+
+            if (-not (Test-Path $PathToRemove)) {
+              return
+            }
+
+            for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+              try {
+                Write-Host "[VENV] Removing previous virtual environment: $PathToRemove (attempt $attempt/$MaxAttempts)"
+                Remove-Item -Recurse -Force $PathToRemove -ErrorAction Stop
+                return
+              } catch {
+                if ($attempt -eq $MaxAttempts) {
+                  throw "Unable to remove previous virtual environment at $PathToRemove. Last error: $($_.Exception.Message)"
+                }
+
+                $sleepSeconds = 3 * $attempt
+                Write-Host "[VENV] Remove failed. Retrying in $sleepSeconds seconds. Error: $($_.Exception.Message)"
+                Start-Sleep -Seconds $sleepSeconds
+              }
+            }
           }
+
+          $venvDir = Join-Path $env:RUNNER_TEMP "ai-requirements-venv"
+          Remove-PathWithRetry -PathToRemove $venvDir
+          New-Item -ItemType Directory -Force -Path $env:RUNNER_TEMP | Out-Null
 
           $pythonVersion = ($env:AI_PYTHON_VERSION + "").Trim()
 
           if (-not [string]::IsNullOrWhiteSpace($pythonVersion) -and (Get-Command py -ErrorAction SilentlyContinue)) {
-            Write-Host "Creating venv with Python $pythonVersion via Python launcher."
-            py -$pythonVersion -m venv .venv
+            Write-Host "[VENV] Checking Python $pythonVersion via Python launcher."
+            py -$pythonVersion -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Python launcher check failed for version $pythonVersion."
+            }
+
+            Write-Host "[VENV] Creating virtual environment with Python $pythonVersion at $venvDir"
+            py -$pythonVersion -m venv $venvDir
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to create virtual environment using py -$pythonVersion -m venv $venvDir"
+            }
           } else {
-            Write-Host "Creating venv with default python from PATH."
-            python -m venv .venv
+            Write-Host "[VENV] Checking default python from PATH."
+            python -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Default python check failed."
+            }
+
+            Write-Host "[VENV] Creating virtual environment with default python at $venvDir"
+            python -m venv $venvDir
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to create virtual environment using default python at $venvDir"
+            }
           }
 
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+          $pythonExe = Join-Path $venvDir "Scripts\python.exe"
+
+          if (-not (Test-Path $pythonExe)) {
+            throw "Virtual environment Python executable was not created: $pythonExe"
           }
 
-          $pythonExe = Join-Path $PWD ".venv\Scripts\python.exe"
           & $pythonExe --version
           & $pythonExe -c "import sys; print(sys.executable)"
 
           "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AI_VENV_DIR=$venvDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Create clean venv on Unix
         if: runner.os != 'Windows'
@@ -146,26 +198,40 @@ jobs:
         run: |
           set -euo pipefail
 
-          rm -rf .venv
+          venv_dir="$RUNNER_TEMP/ai-requirements-venv"
+          rm -rf "$venv_dir"
 
           python_version="${AI_PYTHON_VERSION:-}"
 
           if [ -n "$python_version" ] && command -v "python$python_version" >/dev/null 2>&1; then
-            echo "Creating venv with python$python_version."
-            "python$python_version" -m venv .venv
+            echo "[VENV] Checking python$python_version."
+            "python$python_version" -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
+            echo "[VENV] Creating virtual environment with python$python_version at $venv_dir."
+            "python$python_version" -m venv "$venv_dir"
           elif command -v python3 >/dev/null 2>&1; then
-            echo "Creating venv with python3."
-            python3 -m venv .venv
+            echo "[VENV] Checking python3."
+            python3 -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
+            echo "[VENV] Creating virtual environment with python3 at $venv_dir."
+            python3 -m venv "$venv_dir"
           else
-            echo "Creating venv with python."
-            python -m venv .venv
+            echo "[VENV] Checking python."
+            python -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
+            echo "[VENV] Creating virtual environment with python at $venv_dir."
+            python -m venv "$venv_dir"
           fi
 
-          python_exe="$PWD/.venv/bin/python"
+          python_exe="$venv_dir/bin/python"
+
+          if [ ! -f "$python_exe" ]; then
+            echo "Virtual environment Python executable was not created: $python_exe"
+            exit 1
+          fi
+
           "$python_exe" --version
           "$python_exe" -c "import sys; print(sys.executable)"
 
           echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
+          echo "AI_VENV_DIR=$venv_dir" >> "$GITHUB_ENV"
 
       - name: Install dependencies on Windows
         if: runner.os == 'Windows'
@@ -201,7 +267,7 @@ jobs:
           }
 
           Invoke-Pip -ArgsToPass @("--retries", "10", "--timeout", "120", "install", "--upgrade", "pip")
-          Invoke-Pip -ArgsToPass @("--retries", "10", "--timeout", "120", "install", "--prefer-binary", "--force-reinstall", "-r", "requirements/ai-runtime.txt")
+          Invoke-Pip -ArgsToPass @("--retries", "10", "--timeout", "120", "install", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
 
           & $env:PYTHON_EXE -m pip check
           if ($LASTEXITCODE -ne 0) {
@@ -234,7 +300,7 @@ jobs:
           }
 
           pip_retry --retries 10 --timeout 120 install --upgrade pip
-          pip_retry --retries 10 --timeout 120 install --prefer-binary --force-reinstall -r requirements/ai-runtime.txt
+          pip_retry --retries 10 --timeout 120 install --prefer-binary -r requirements/ai-runtime.txt
 
           "$PYTHON_EXE" -m pip check
 
