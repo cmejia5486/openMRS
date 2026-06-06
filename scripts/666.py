@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import fnmatch
 import json
 import os
 import re
@@ -253,97 +252,35 @@ def _cat_from_puid(puid: str) -> Dict[str, str]:
     return {"code": code, "name": CAT_MAP.get(code, "Other")}
 
 
-def _clean_text(value: Any) -> str:
-    text = re.sub(r"\s+", " ", str(value or "")).strip()
-    if not text or text.lower() == "nan":
+def _excerpt(s: Any, limit: int = 180) -> str:
+    t = re.sub(r"\s+", " ", str(s or "")).strip()
+    if not t or t.lower() == "nan":
         return ""
-    return text
-
-
-def _excerpt(s: Any, limit: int = 260) -> str:
-    """Return a report-safe excerpt without dangling ellipses.
-
-    The Stage 2 report should not render truncated text with three dots or
-    Python/JSON debugging fragments. This helper prefers complete sentences and
-    otherwise cuts at a word boundary without adding ellipsis marks.
-    """
-    t = _clean_text(s)
-    if not t:
-        return ""
-    if limit <= 0 or len(t) <= limit:
-        return t
-
-    candidate = t[:limit].rstrip()
-    sentence_cut = max(candidate.rfind(". "), candidate.rfind("; "), candidate.rfind(": "))
-    if sentence_cut >= max(80, int(limit * 0.45)):
-        return candidate[: sentence_cut + 1].strip()
-
-    word_cut = candidate.rfind(" ")
-    if word_cut >= max(60, int(limit * 0.35)):
-        candidate = candidate[:word_cut]
-    return candidate.rstrip(" ,;:-")
-
-
-def _present_tense_after_subject(text: str) -> str:
-    replacements = [
-        (r"^(The (?:mobile )?application) not ([a-zA-Z]+)", r"\1 does not \2"),
-        (r"^(The (?:mobile )?application) ensure\b", r"\1 ensures"),
-        (r"^(The (?:mobile )?application) configure\b", r"\1 configures"),
-        (r"^(The (?:mobile )?application) request\b", r"\1 requests"),
-        (r"^(The (?:mobile )?application) minimize\b", r"\1 minimizes"),
-        (r"^(The (?:mobile )?application) securely handle\b", r"\1 securely handles"),
-        (r"^(The (?:mobile )?application) provide\b", r"\1 provides"),
-        (r"^(The (?:mobile )?application) implement\b", r"\1 implements"),
-        (r"^(The (?:mobile )?application) maintain\b", r"\1 maintains"),
-        (r"^(The (?:mobile )?application) remove\b", r"\1 removes"),
-        (r"^(The (?:mobile )?application) use\b", r"\1 uses"),
-        (r"^(The (?:mobile )?application) validate\b", r"\1 validates"),
-        (r"^(The (?:mobile )?application) prevent\b", r"\1 prevents"),
-        (r"^(The (?:mobile )?application) disallow\b", r"\1 disallows"),
-        (r"^(The (?:mobile )?application) retain\b", r"\1 retains"),
-        (r"^(The (?:mobile )?application) store\b", r"\1 stores"),
-    ]
-    out = text
-    for pattern, repl in replacements:
-        out = re.sub(pattern, repl, out, flags=re.IGNORECASE)
-    return out
+    return (t[:limit] + "…") if len(t) > limit else t
 
 
 def _to_declarative(desc: str) -> str:
-    """Convert a requirement sentence into a concise positive-control statement.
-
-    This is intentionally deterministic. It avoids translation-like fragments such
-    as "The mobile application ensure" and keeps statements grounded in the
-    workbook description, leaving detailed evidence in Appendix B.
-    """
-    t = _clean_text(desc)
-    if not t:
-        return "The application implements the control described in the workbook."
-
+    t = re.sub(r"\s+", " ", str(desc or "")).strip()
+    # Remove leading numbering
     t = re.sub(r"^\d+[\.\)]\s*", "", t)
+    # Remove example parentheses if any
     t = re.sub(r"\(e\.g\.,.*?\)", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\b(is|are) required to\b", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\b(needs? to|must|shall|should)\b", "", t, flags=re.IGNORECASE)
+    # Remove must/shall/should wording
+    t = re.sub(r"\b(must|shall|should)\b", "", t, flags=re.IGNORECASE)
     t = re.sub(r"\s+", " ", t).strip()
 
-    if not re.match(r"^the\s+(mobile\s+)?application\b", t, flags=re.IGNORECASE):
-        t = "The application " + (t[0].lower() + t[1:] if t else "implements security controls")
-    else:
-        # Normalize subject capitalization only.
-        t = re.sub(r"^the mobile application\b", "The mobile application", t, flags=re.IGNORECASE)
-        t = re.sub(r"^the application\b", "The application", t, flags=re.IGNORECASE)
+    if not t.lower().startswith("the application"):
+        if t:
+            t = "The application " + t[0].lower() + t[1:]
+        else:
+            t = "The application implements security controls."
 
-    t = _present_tense_after_subject(t)
-    t = re.sub(r"\b(minimize its usage)\b", "minimizes its usage", t, flags=re.IGNORECASE)
-    t = re.sub(r"\bsecurely handle\b", "securely handles", t, flags=re.IGNORECASE)
-    t = re.sub(r"\band prevent\b", "and prevents", t, flags=re.IGNORECASE)
-    t = re.sub(r"\bas well as disallow the\b", "as well as disallowing the", t, flags=re.IGNORECASE)
-    t = re.sub(r"\s+", " ", t).strip()
-
-    # Prefer a complete concise sentence and avoid generating report text that
-    # ends with dangling punctuation.
-    t = _excerpt(t, 340).strip().rstrip(".;:") + "."
+    # Basic grammar smoothing
+    t = t.replace(" and prevent ", " and prevents ")
+    t = t.replace(" as well as disallow the ", " as well as disallowing the ")
+    t = t.strip().rstrip(".") + "."
     return t
+
 
 def _match_pattern(desc: str, flags: str) -> str:
     text = f"{desc or ''} {flags or ''}".lower()
@@ -407,9 +344,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
     try:
         if value is None:
             return default
-        if isinstance(value, bool):
-            return int(value)
-        return int(float(str(value).strip()))
+        return int(value)
     except Exception:
         return default
 
@@ -509,7 +444,9 @@ def _dir_debug(dirs: List[Path]) -> List[str]:
 def _compact_finding_text(parts: List[Any], limit: int = 220) -> str:
     text = " | ".join(str(x).strip() for x in parts if str(x or "").strip())
     text = re.sub(r"\s+", " ", text).strip()
-    return _excerpt(text, limit)
+    if len(text) > limit:
+        return text[:limit] + "..."
+    return text
 
 
 def _flatten_text(obj: Any, limit: int = 1200000) -> str:
@@ -538,83 +475,20 @@ def _collect_strings_matching(obj: Any, patterns: List[str], limit: int = 200) -
     out: List[str] = []
     seen = set()
     for path, value in _walk_values(obj):
-        candidates = []
-        if isinstance(value, str):
-            candidates.append(value)
-        # Some tools place useful path-like evidence in keys rather than values.
-        if isinstance(path, str):
-            candidates.append(path)
-        for raw in candidates:
-            text = str(raw or "").strip()
-            if not text:
-                continue
-            if any(rx.search(text) for rx in regexes):
-                item = _extract_storage_artifact(text) or _excerpt(text, 260)
-                if item and item not in seen:
-                    seen.add(item)
-                    out.append(item)
-                if len(out) >= limit:
-                    return out
-    return out
-
-
-def _extract_storage_artifact(text: str) -> str:
-    text = _clean_text(text)
-    if not text:
-        return ""
-    path_rx = re.compile(
-        r"(/data/data/[^\s\"'<>;,]+|[^\s\"'<>;,]+\.(?:db|sqlite|sqlite3|xml|properties))",
-        re.IGNORECASE,
-    )
-    match = path_rx.search(text)
-    if match:
-        return match.group(1).rstrip(".,;:)")
-    return _excerpt(text, 220)
-
-
-def _deep_find_values(obj: Any, key_patterns: List[str], limit: int = 40) -> List[Any]:
-    regexes = [re.compile(p, re.IGNORECASE) for p in key_patterns]
-    out: List[Any] = []
-    for path, value in _walk_values(obj):
-        last_key = re.split(r"[.\[]", str(path or ""))[-1].rstrip("]")
-        if any(rx.search(last_key) or rx.search(str(path)) for rx in regexes):
-            out.append(value)
+        if not isinstance(value, str):
+            continue
+        text = value.strip()
+        if not text:
+            continue
+        if any(rx.search(text) for rx in regexes):
+            item = text
+            if item not in seen:
+                seen.add(item)
+                out.append(item)
             if len(out) >= limit:
                 break
     return out
 
-
-def _first_deep_value(obj: Any, key_patterns: List[str]) -> Any:
-    values = _deep_find_values(obj, key_patterns, limit=1)
-    return values[0] if values else None
-
-
-def _bool_from_any(value: Any) -> Optional[bool]:
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return None
-    text = str(value).strip().lower()
-    if text in {"true", "yes", "y", "1", "enabled", "detected", "present", "found"}:
-        return True
-    if text in {"false", "no", "n", "0", "disabled", "not detected", "absent", "none"}:
-        return False
-    if re.search(r"\btrue\b|enabled|detected|present|found", text):
-        return True
-    if re.search(r"\bfalse\b|disabled|not detected|absent", text):
-        return False
-    return None
-
-
-def _indicator_value(value: Any, detected: Optional[bool] = None) -> str:
-    parsed = _bool_from_any(value)
-    if parsed is True or detected is True:
-        return "Detected"
-    if parsed is False or detected is False:
-        return "Not detected"
-    if value not in (None, ""):
-        return _excerpt(value, 120)
-    return "Not available in parsed evidence"
 
 def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
     fingerprint = _safe_read_json(files.get("vision360_fingerprint") or Path(), {})
@@ -628,39 +502,18 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
 
     state_counts: Dict[str, int] = {}
     group_counts: Dict[str, int] = {}
-    evidence_source_counts: Dict[str, int] = {}
-    active_flags: List[str] = []
-    negative_flags: List[str] = []
-
     for flag in flags:
         if not isinstance(flag, dict):
             continue
-        flag_id = str(flag.get("id") or flag.get("flag") or flag.get("name") or "").strip()
-        verdict = flag.get("app_verdict") or flag.get("verdict") or {}
-        if not isinstance(verdict, dict):
-            verdict = {}
-        state = str(verdict.get("state") or flag.get("state") or "unknown").lower()
-        group = str(flag.get("group") or flag.get("category") or "UNKNOWN")
+        verdict = flag.get("app_verdict") or {}
+        state = str(verdict.get("state") or "unknown").lower()
+        group = str(flag.get("group") or "UNKNOWN")
         state_counts[state] = state_counts.get(state, 0) + 1
         group_counts[group] = group_counts.get(group, 0) + 1
-        if state in {"true", "present", "detected", "yes", "positive"} and flag_id:
-            active_flags.append(flag_id)
-        if state in {"false", "absent", "not_detected", "no", "negative"} and flag_id:
-            negative_flags.append(flag_id)
-
-        for source_key in ("source", "source_tool", "evidence_source", "origin"):
-            src = flag.get(source_key)
-            if src:
-                src_s = str(src)
-                evidence_source_counts[src_s] = evidence_source_counts.get(src_s, 0) + 1
 
     effective_features = trace.get("effective_features") if isinstance(trace, dict) else {}
     if not isinstance(effective_features, dict):
         effective_features = {}
-
-    loaded_files = trace.get("loaded_files") if isinstance(trace, dict) else {}
-    if not isinstance(loaded_files, dict):
-        loaded_files = {}
 
     return {
         "available": bool(fingerprint or output or trace or effective),
@@ -670,25 +523,11 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
         "flags_count": len(flags),
         "state_counts": state_counts,
         "group_counts": group_counts,
-        "top_groups": [
-            {"group": group, "count": count}
-            for group, count in sorted(group_counts.items(), key=lambda x: x[1], reverse=True)[:12]
-        ],
-        "active_flags_sample": _unique_keep_order(active_flags, limit=40),
-        "negative_flags_sample": _unique_keep_order(negative_flags, limit=40),
-        "evidence_source_counts": evidence_source_counts,
         "feature_keys": sorted(effective_features.keys()),
         "has_sca_trace": bool(effective_features.get("sca")),
-        "has_mobsf_trace": bool(effective_features.get("mobsf") or effective_features.get("mobsf_static") or effective_features.get("mobsf_dynamic")),
-        "has_sast_trace": bool(effective_features.get("sast") or effective_features.get("codeql") or effective_features.get("semgrep")),
-        "loaded_files": loaded_files,
-        "coverage_summary": {
-            "flags_total": len(flags),
-            "groups_total": len(group_counts),
-            "loaded_files_total": len(loaded_files),
-            "features_total": len(effective_features),
-        },
+        "loaded_files": trace.get("loaded_files") if isinstance(trace, dict) else {},
     }
+
 
 def _trivy_findings_from_raw(trivy: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     findings: List[Dict[str, Any]] = []
@@ -988,7 +827,7 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         detected_trackers = _safe_int(trackers.get("detected_trackers"), 0)
     elif isinstance(trackers, list):
         detected_trackers = len(trackers)
-    elif isinstance(mobsf, dict) and "detected_trackers" in mobsf:
+    elif "detected_trackers" in mobsf if isinstance(mobsf, dict) else False:
         detected_trackers = _safe_int(mobsf.get("detected_trackers"), 0)
 
     app_info = {}
@@ -997,67 +836,16 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
             if key in mobsf:
                 app_info[key] = mobsf.get(key)
 
-    debug_value = _first_deep_value(mobsf, [r"^debuggable$", r"android_debuggable", r"is_debuggable"])
-    backup_value = _first_deep_value(mobsf, [r"allow_?backup", r"android_allow_backup", r"backup_enabled"])
-    min_sdk = _first_deep_value(mobsf, [r"^min_?sdk$", r"minsdk", r"minSdk"])
-    target_sdk = _first_deep_value(mobsf, [r"^target_?sdk$", r"targetSdk"])
-    exported_value = _first_deep_value(mobsf, [r"exported_components?_count", r"exported_count", r"exported_components?"])
-
-    debug_cert_detected = ("debug certificate" in flat or "cn=android debug" in flat)
-    v1_or_janus_detected = ("janus" in flat or "v1 signature" in flat or "v1 signature scheme" in flat)
-    sha1_detected = ("sha1withrsa" in flat or " sha1 " in flat or "hash algorithm: sha1" in flat)
-    cleartext_detected = ("cleartext" in flat and ("true" in flat or "enabled" in flat or "traffic" in flat))
-
-    if isinstance(exported_value, list):
-        exported_count: Any = len(exported_value)
-    elif isinstance(exported_value, dict):
-        exported_count = len(exported_value)
-    elif exported_value not in (None, ""):
-        exported_count = _safe_int(exported_value, 0)
-    else:
-        exported_count = "Not available in parsed evidence"
-
-    min_sdk_value = _safe_int(min_sdk, 0) if min_sdk not in (None, "") else None
-    vulnerable_min_sdk = bool(min_sdk_value and min_sdk_value < 23)
-
-    indicators = {
-        "debuggable": _indicator_value(debug_value, None),
-        "debug_certificate": _indicator_value(None, debug_cert_detected if debug_cert_detected else None),
-        "v1_signature": _indicator_value(None, v1_or_janus_detected if v1_or_janus_detected else None),
-        "sha1": _indicator_value(None, sha1_detected if sha1_detected else None),
-        "allow_backup": _indicator_value(backup_value, None),
-        "min_sdk": min_sdk_value if min_sdk_value is not None else "Not available in parsed evidence",
-        "target_sdk": _safe_int(target_sdk, 0) if target_sdk not in (None, "") else "Not available in parsed evidence",
-        "dangerous_permissions_count": len(dangerous_permissions),
-        "exported_components_count": exported_count,
-        "trackers_detected": detected_trackers,
-        "cleartext_traffic_signal": "Detected" if cleartext_detected else "Not available in parsed evidence",
-        "vulnerable_min_sdk_signal": "Detected" if vulnerable_min_sdk else "Not detected" if min_sdk_value is not None else "Not available in parsed evidence",
-    }
-
     flags = {
-        "debuggable_detected": indicators["debuggable"] == "Detected",
-        "allow_backup_detected": indicators["allow_backup"] == "Detected",
-        "debug_certificate_detected": debug_cert_detected,
-        "v1_signature_or_janus_detected": v1_or_janus_detected,
-        "sha1_certificate_detected": sha1_detected,
-        "cleartext_detected": cleartext_detected,
-        "exported_components_detected": isinstance(exported_count, int) and exported_count > 0,
-        "vulnerable_min_sdk_signal": vulnerable_min_sdk,
+        "debuggable_detected": bool(re.search(r"debuggable.{0,80}(true|high|app is debuggable)", flat, re.IGNORECASE)),
+        "allow_backup_detected": bool(re.search(r"allowbackup.{0,80}(true|enabled|backup)", flat, re.IGNORECASE)),
+        "debug_certificate_detected": ("debug certificate" in flat or "cn=android debug" in flat),
+        "v1_signature_or_janus_detected": ("janus" in flat or "v1 signature" in flat or "v1 signature scheme" in flat),
+        "sha1_certificate_detected": ("sha1withrsa" in flat or " sha1 " in flat or "hash algorithm: sha1" in flat),
+        "cleartext_detected": ("cleartext" in flat and ("true" in flat or "enabled" in flat or "traffic" in flat)),
+        "exported_components_detected": ("exported" in flat and ("activity" in flat or "service" in flat or "receiver" in flat)),
+        "vulnerable_min_sdk_signal": bool(re.search(r"min[^a-z0-9_]?sdk.{0,40}(19|android 4\.4|vulnerable)", flat, re.IGNORECASE)),
     }
-
-    normalized_indicators = [
-        {"indicator": "Debuggable", "value": indicators["debuggable"]},
-        {"indicator": "Debug certificate", "value": indicators["debug_certificate"]},
-        {"indicator": "v1 signature / Janus exposure", "value": indicators["v1_signature"]},
-        {"indicator": "SHA1 certificate/signature evidence", "value": indicators["sha1"]},
-        {"indicator": "Backup enabled", "value": indicators["allow_backup"]},
-        {"indicator": "Minimum SDK", "value": indicators["min_sdk"]},
-        {"indicator": "Target SDK", "value": indicators["target_sdk"]},
-        {"indicator": "Dangerous permissions", "value": indicators["dangerous_permissions_count"]},
-        {"indicator": "Exported components", "value": indicators["exported_components_count"]},
-        {"indicator": "Trackers detected", "value": indicators["trackers_detected"]},
-    ]
 
     return {
         "available": bool(mobsf),
@@ -1065,8 +853,6 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         "files": {k: str(v) for k, v in files.items() if v},
         "app_info": app_info,
         "flags": flags,
-        **indicators,
-        "normalized_indicators": normalized_indicators,
         "dangerous_permissions": dangerous_permissions,
         "permissions_count": len(permissions),
         "permissions_sample": permissions[:25],
@@ -1074,9 +860,10 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         "manifest_findings_sample": manifest_findings[:20],
         "certificate_findings_count": len(cert_findings),
         "certificate_findings_sample": cert_findings[:15],
-        "certificate_info_excerpt": _excerpt(cert_info, 500),
+        "certificate_info_excerpt": _excerpt(cert_info, 400),
         "detected_trackers": detected_trackers,
     }
+
 
 def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
     dyn = _safe_read_json(files.get("mobsf_dynamic_results") or Path(), {})
@@ -1084,18 +871,15 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         r"/data/data/",
         r"shared[_-]?prefs",
         r"sharedpreferences",
-        r"preferences.*\.xml",
         r"\.db(\b|$|-)",
         r"\.sqlite(\b|$)",
-        r"\.sqlite3(\b|$)",
-        r"/cache/",
-        r"/files/",
+        r"\.xml(\b|$)",
+        r"openmrs",
+        r"chucker",
     ]
-    artifacts = _collect_strings_matching(dyn, storage_patterns, limit=250)
+    artifacts = _collect_strings_matching(dyn, storage_patterns, limit=200)
     shared_prefs = [x for x in artifacts if re.search(r"shared[_-]?prefs|sharedpreferences|pref.*\.xml|preferences.*\.xml", x, re.IGNORECASE)]
-    sqlite = [x for x in artifacts if re.search(r"\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)]
-    cache_files = [x for x in artifacts if re.search(r"/cache/", x, re.IGNORECASE)]
-    local_files = [x for x in artifacts if re.search(r"/files/", x, re.IGNORECASE)]
+    sqlite = [x for x in artifacts if re.search(r"\.db(\b|$|-)|\.sqlite(\b|$)", x, re.IGNORECASE)]
 
     flat = _flatten_text(dyn, limit=500000)
     trackers = 0
@@ -1111,11 +895,9 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         "local_storage_artifacts_sample": _unique_keep_order(artifacts, limit=40),
         "shared_preferences_artifacts": _unique_keep_order(shared_prefs, limit=30),
         "sqlite_database_artifacts": _unique_keep_order(sqlite, limit=30),
-        "cache_artifacts": _unique_keep_order(cache_files, limit=30),
-        "local_files_artifacts": _unique_keep_order(local_files, limit=30),
         "detected_trackers": trackers,
-        "parser_note": "Examples are normalized from runtime strings and path-like values when present in the MobSF dynamic artifact.",
     }
+
 
 def _sarif_runs(sarif: Dict[str, Any]) -> List[Dict[str, Any]]:
     runs = sarif.get("runs") if isinstance(sarif, dict) else []
@@ -1156,84 +938,52 @@ def _sarif_location(result: Dict[str, Any]) -> Tuple[str, int]:
     return _norm_path_text(uri), line
 
 
-DEFAULT_SAST_INCLUDE_PATTERNS = [
-    "**/src/main/**",
-    "**/AndroidManifest.xml",
-    "AndroidManifest.xml",
-    "**/*.java",
-    "**/*.kt",
-    "**/build.gradle",
-    "**/build.gradle.kts",
-]
-
-DEFAULT_SAST_EXCLUDE_PATTERNS = [
-    ".github/**",
-    "**/.github/**",
-    "scripts/**",
-    "**/scripts/**",
-    "requirements/**",
-    "**/requirements/**",
-    "parameters/**",
-    "**/parameters/**",
-    "tools/**",
-    "**/tools/**",
-    "report/**",
-    "reports/**",
-    "**/report/**",
-    "**/reports/**",
-    "build/**",
-    "**/build/**",
-    ".gradle/**",
-    "**/.gradle/**",
-    "gradle/wrapper/**",
-    "**/gradle/wrapper/**",
-    "docs/**",
-    "**/docs/**",
-    "**/src/test/**",
-    "**/src/androidTest/**",
-    "**/test/**",
-    "**/tests/**",
-    "**/generated/**",
-]
-
-
-def _split_patterns(value: str) -> List[str]:
-    if not value:
-        return []
-    parts = re.split(r"[;,]", value)
-    return [p.strip().replace("\\", "/") for p in parts if p.strip()]
-
-
-def _sast_include_patterns() -> List[str]:
-    custom = _split_patterns(os.getenv("AUDIT_SAST_INCLUDE_PATTERNS", ""))
-    return custom or DEFAULT_SAST_INCLUDE_PATTERNS
-
-
-def _sast_exclude_patterns() -> List[str]:
-    custom = _split_patterns(os.getenv("AUDIT_SAST_EXCLUDE_PATTERNS", ""))
-    return DEFAULT_SAST_EXCLUDE_PATTERNS + custom
-
-
-def _path_matches_any(path: str, patterns: List[str]) -> bool:
-    low = _lower_path(path)
-    for pattern in patterns:
-        pat = pattern.lower().replace("\\", "/")
-        if fnmatch.fnmatch(low, pat):
-            return True
-        if pat.startswith("**/") and fnmatch.fnmatch(low, pat[3:]):
-            return True
-    return False
-
-
 def _is_excluded_sast_path(path: str) -> bool:
-    return _path_matches_any(path, _sast_exclude_patterns())
+    low = _lower_path(path)
+    excluded_prefixes = (
+        ".github/",
+        "scripts/",
+        "requirements/",
+        "parameters/",
+        "tools/",
+        "report/",
+        "build/",
+        ".gradle/",
+        "gradle/",
+    )
+    if low.startswith(excluded_prefixes):
+        return True
+    excluded_tokens = (
+        "/.github/",
+        "/scripts/",
+        "/requirements/",
+        "/parameters/",
+        "/tools/",
+        "/report/",
+        "/build/",
+        "/.gradle/",
+    )
+    return any(tok in low for tok in excluded_tokens)
 
 
 def _is_app_code_sast_path(path: str) -> bool:
     low = _lower_path(path)
-    if not low or _is_excluded_sast_path(low):
+    if _is_excluded_sast_path(low):
         return False
-    return _path_matches_any(low, _sast_include_patterns())
+
+    if low.startswith("openmrs-client/") or low.startswith("openmrs-android-sdk/"):
+        if "/src/test/" in low or "/src/androidtest/" in low:
+            return False
+        return low.endswith((".java", ".kt", ".xml", ".gradle", ".gradle.kts")) or "androidmanifest.xml" in low
+
+    if "/src/main/" in low and low.endswith((".java", ".kt", ".xml")):
+        return True
+
+    if low.endswith("androidmanifest.xml") and not _is_excluded_sast_path(low):
+        return True
+
+    return False
+
 
 def _sarif_notifications(run: Dict[str, Any], tool_name: str, limit: int = 20) -> List[Dict[str, Any]]:
     notifications: List[Dict[str, Any]] = []
@@ -1361,9 +1111,9 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
         "files": {k: str(v) for k, v in files.items() if v},
         "selected_sarif_files": [str(p) for _, p in selected],
         "scope_filter": {
-            "included": _sast_include_patterns(),
-            "excluded": _sast_exclude_patterns(),
-            "note": "SAST evidence is filtered by generic Android application-code patterns. Workflow files, audit tooling, tests, generated files, reports, build output, and wrapper tooling are excluded unless project configuration overrides the defaults.",
+            "included": ["openmrs-client/**", "openmrs-android-sdk/**", "**/src/main/**", "**/AndroidManifest.xml", "**/*.java", "**/*.kt"],
+            "excluded": [".github/**", "scripts/**", "requirements/**", "parameters/**", "tools/**", "report/**"],
+            "note": "SAST evidence is filtered to application and application SDK code. Workflow and audit tooling findings are excluded from the application audit scope.",
         },
         "summary": {
             "raw_results_in_selected_sarif": raw_results,
@@ -1426,40 +1176,19 @@ def build_technical_evidence() -> Dict[str, Any]:
         "sast_app_code": _summarize_sast(sast_dirs[0] if sast_dirs else Path(), sast_files),
     }
 
-    sast_notifications = technical["sast_app_code"].get("coverage_notifications_sample", [])
-    notif_by_tool: Dict[str, int] = {}
-    notif_by_level: Dict[str, int] = {}
-    notif_messages: List[str] = []
-    if isinstance(sast_notifications, list):
-        for item in sast_notifications:
-            if not isinstance(item, dict):
-                continue
-            tool = str(item.get("tool") or "unknown")
-            level = str(item.get("level") or "note")
-            notif_by_tool[tool] = notif_by_tool.get(tool, 0) + 1
-            notif_by_level[level] = notif_by_level.get(level, 0) + 1
-            msg = _excerpt(item.get("message"), 220)
-            if msg:
-                notif_messages.append(f"{tool}: {msg}")
-
-    missing_inputs = [
-        key
-        for key, section in [
-            ("vision360", technical["vision360"]),
-            ("trivy_sca", technical["trivy_sca"]),
-            ("mobsf_static", technical["mobsf_static"]),
-            ("mobsf_dynamic", technical["mobsf_dynamic"]),
-            ("sast_app_code", technical["sast_app_code"]),
-        ]
-        if not section.get("available")
-    ]
-
     technical["coverage_limitations"] = {
-        "missing_inputs": missing_inputs,
-        "sast_notifications_count": len(sast_notifications) if isinstance(sast_notifications, list) else 0,
-        "sast_notifications_by_tool": notif_by_tool,
-        "sast_notifications_by_level": notif_by_level,
-        "sast_notifications_summary": _unique_keep_order(notif_messages, limit=8),
+        "missing_inputs": [
+            key
+            for key, section in [
+                ("vision360", technical["vision360"]),
+                ("trivy_sca", technical["trivy_sca"]),
+                ("mobsf_static", technical["mobsf_static"]),
+                ("mobsf_dynamic", technical["mobsf_dynamic"]),
+                ("sast_app_code", technical["sast_app_code"]),
+            ]
+            if not section.get("available")
+        ],
+        "sast_notifications_sample": technical["sast_app_code"].get("coverage_notifications_sample", []),
     }
 
     return technical
