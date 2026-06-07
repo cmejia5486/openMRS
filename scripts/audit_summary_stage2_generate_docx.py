@@ -627,6 +627,26 @@ def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
             flags=re.IGNORECASE,
         )
 
+    # Clean common duplicated tail left by LLM phrasing or regex replacement.
+    text = re.sub(
+        r"hardening, quality, or maintainability signal\(s\)\s+or\s+maintainability\b",
+        "hardening, quality, or maintainability signal(s)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"hardening, quality, or maintainability signal\(s\)\s*,?\s+or\s+maintainability\b",
+        "hardening, quality, or maintainability signal(s)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"\bsignal\(s\)\s+or\s+maintainability\b",
+        "signal(s)",
+        text,
+        flags=re.IGNORECASE,
+    )
+
     return re.sub(r"\s+", " ", text).strip()
 
 
@@ -657,6 +677,18 @@ def _sanitize_recommendation_text(value: Any) -> str:
     replacements = [
         (
             r"^Implement strict TLS pinning\b.*",
+            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
+        ),
+        (
+            r"^Implement robust TLS/SSL certificate pinning\b.*",
+            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
+        ),
+        (
+            r"^Implement TLS/SSL certificate pinning\b.*",
+            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
+        ),
+        (
+            r"^Enforce strict TLS pinning\b.*",
             "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
         ),
         (
@@ -737,8 +769,23 @@ def _sanitize_closure_criteria(value: Any) -> str:
         text,
         flags=re.IGNORECASE,
     )
+    text = re.sub(
+        r"evidence of TLS pinning implementation and secure signing practices",
+        "evidence that cleartext remains disabled, production signing is enforced, and certificate validation or pinning decisions are documented according to the threat model",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"based on evidence of TLS pinning implementation",
+        "based on evidence that certificate validation or pinning decisions are documented according to the threat model",
+        text,
+        flags=re.IGNORECASE,
+    )
     text = text.replace("`tls_pinning`", "certificate-pinning")
     text = text.replace("`trivy-fallback-gradle.lockfile`", "updated dependency lockfile or SBOM evidence")
+    text = re.sub(r"\s+", " ", text).strip()
+    if text:
+        text = text[0].upper() + text[1:]
     return text
 
 
@@ -771,8 +818,40 @@ def _sanitize_positive_control_final(value: Any) -> str:
             "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
         ),
         (
+            r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning\.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
+        ),
+        (
+            r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+        ),
+        (
+            r"The application prevents acceptance of all SSL/TLS certificates, supported by the absence of clear text traffic allowance in the manifest\.",
+            "The available evidence supports that cleartext traffic is disallowed; certificate-validation behavior, including whether code accepts all SSL/TLS certificates, should remain subject to source-code or runtime verification.",
+        ),
+        (
+            r"The application prevents acceptance of all SSL/TLS certificates, supported by the absence of clear text traffic allowance in the manifest",
+            "The available evidence supports that cleartext traffic is disallowed; certificate-validation behavior, including whether code accepts all SSL/TLS certificates, should remain subject to source-code or runtime verification",
+        ),
+        (
             r"Server cookie assignment for session IDs was detected, supporting the requirement that all session cookies include the HTTPOnly flag to prevent client-side script access\.",
             "Server-side cookie assignment for session IDs was detected; HTTPOnly enforcement should be verified in runtime or backend evidence.",
+        ),
+        (
+            r"Cookie-based session indicators were detected in the application, supporting the requirement for session cookie configuration\.",
+            "Cookie-based session indicators were detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence.",
+        ),
+        (
+            r"Cookie-based session indicators were detected in the application, supporting the requirement for session cookie configuration",
+            "Cookie-based session indicators were detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence",
+        ),
+        (
+            r"The application supports manual logout functionality as determined by auditor determination\.",
+            "The application supports manual logout functionality based on auditor review.",
+        ),
+        (
+            r"The application supports manual logout functionality as determined by auditor determination",
+            "The application supports manual logout functionality based on auditor review",
         ),
         (
             r"supporting the requirement that all session cookies include the HTTPOnly flag to prevent client-side script access",
@@ -1837,7 +1916,9 @@ def _call_llm_for_audit_sections(
                 "prudence_rules": [
                     "Do not convert cleartext traffic disabled into full TLS enforcement or SSL pinning evidence.",
                     "Do not convert session-cookie assignment into proof that HTTPOnly is enforced unless HTTPOnly evidence is present.",
-                    "Do not say the application is malware-free; say that available malware evidence did not report adware or known malware."
+                    "Do not say the application is malware-free; say that available malware evidence did not report adware or known malware.",
+                    "Do not claim that the app prevents accepting all SSL/TLS certificates when only manifest cleartext evidence is available; state the residual verification need.",
+                    "Do not claim that data exchange is secured via TLS because SSL pinning was not detected; treat no pinning as a limitation or threat-model decision."
                 ],
             },
             "context": {
@@ -1898,7 +1979,7 @@ def _call_llm_for_audit_sections(
                 "patterns": "Use exact pattern names from input.",
                 "expected": "1 sentence.",
                 "impact": "1 sentence mentioning confidentiality, integrity, availability, or health-data regulatory exposure only when supported.",
-                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and limitations. Do not use generic boilerplate or static templates. Do not convert raw SARIF counts or Detekt quality findings into vulnerabilities. Treat TLS pinning as threat-model dependent, not a universal absolute.",
+                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and limitations. Do not use generic boilerplate or static templates. Do not convert raw SARIF counts or Detekt quality findings into vulnerabilities. Treat TLS pinning as threat-model dependent, not a universal absolute. Prefer documenting certificate validation and pinning decisions over mandating pinning across all communications.",
                 "closure_criteria": "1 measurable sentence suitable for the MAP, generated from the supplied evidence and scanner context. Prefer evidence-based closure such as updated workbook scoring, updated Trivy/MobSF/SAST artifacts, regression evidence, or formal risk acceptance. Avoid broad zero noncompliant findings language for governance or multi-control patterns. Use zero only for narrowly scoped Critical/High fixable vulnerabilities when supported by Trivy evidence.",
                 "no_time_window_headings": True,
                 "no_unprovided_metrics": True,
