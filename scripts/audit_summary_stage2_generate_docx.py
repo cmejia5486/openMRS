@@ -427,6 +427,99 @@ def _stacked_counts(cat_stats: Dict[str, Any], out_path: str) -> None:
     plt.close(fig)
 
 
+
+def _hbar_treatment_pattern_volume(treatment_plan: Dict[str, Any], out_path: str) -> None:
+    data = _deep_list(treatment_plan, ["weakness_pattern_volume"])
+    if not data:
+        data = _deep_list(_as_dict(treatment_plan.get("chart_data")), ["weakness_pattern_volume"])
+    rows = []
+    for item in data[:12]:
+        if isinstance(item, dict):
+            rows.append((str(item.get("pattern") or "Unmapped"), _safe_int(item.get("count"), 0)))
+    rows = sorted([r for r in rows if r[1] > 0], key=lambda x: x[1])
+    fig, ax = plt.subplots(figsize=(9.2, 5.6))
+    if not rows:
+        ax.text(0.5, 0.5, "No treatment pattern data available", ha="center", va="center")
+        ax.axis("off")
+    else:
+        names = [r[0] for r in rows]
+        counts = [r[1] for r in rows]
+        y = list(range(len(rows)))
+        bars = ax.barh(y, counts)
+        ax.set_yticks(y)
+        ax.set_yticklabels([_wrap_label(n, 32) for n in names])
+        ax.set_xlabel("Mapped non-compliant controls")
+        ax.set_title("Treatment volume by weakness pattern")
+        ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.6)
+        for b, c in zip(bars, counts):
+            ax.text(b.get_width() + 0.6, b.get_y() + b.get_height() / 2, str(c), va="center", fontsize=9)
+        fig.text(0.01, 0.01, "Source: audit workbook and Stage 1 treatment-plan model.", fontsize=9)
+    fig.tight_layout(rect=[0, 0.03, 1, 1])
+    fig.savefig(out_path, dpi=300)
+    plt.close(fig)
+
+
+def _hbar_treatment_owner_workload(treatment_plan: Dict[str, Any], out_path: str) -> None:
+    data = _deep_list(treatment_plan, ["owner_workload"])
+    if not data:
+        data = _deep_list(_as_dict(treatment_plan.get("chart_data")), ["owner_workload"])
+    if not data:
+        data = _as_list(treatment_plan.get("owner_summary"))
+    rows = []
+    for item in data:
+        if isinstance(item, dict):
+            rows.append((str(item.get("owner") or "Unassigned"), _safe_int(item.get("control_items") or item.get("count"), 0), _safe_int(item.get("high_severity_items"), 0)))
+    rows = sorted([r for r in rows if r[1] > 0], key=lambda x: x[1])
+    fig, ax = plt.subplots(figsize=(9.2, 5.2))
+    if not rows:
+        ax.text(0.5, 0.5, "No owner workload data available", ha="center", va="center")
+        ax.axis("off")
+    else:
+        names = [r[0] for r in rows]
+        counts = [r[1] for r in rows]
+        y = list(range(len(rows)))
+        bars = ax.barh(y, counts)
+        ax.set_yticks(y)
+        ax.set_yticklabels([_wrap_label(n, 32) for n in names])
+        ax.set_xlabel("Control treatment items")
+        ax.set_title("Treatment workload by recommended owner")
+        ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.6)
+        for b, total, high in zip(bars, counts, [r[2] for r in rows]):
+            suffix = f"  (High: {high})" if high else ""
+            ax.text(b.get_width() + 0.6, b.get_y() + b.get_height() / 2, f"{total}{suffix}", va="center", fontsize=9)
+        fig.text(0.01, 0.01, "Source: Stage 1 treatment-plan model. Owner is recommended, not assigned approval.", fontsize=9)
+    fig.tight_layout(rect=[0, 0.03, 1, 1])
+    fig.savefig(out_path, dpi=300)
+    plt.close(fig)
+
+
+def _scatter_treatment_priority_matrix(treatment_plan: Dict[str, Any], out_path: str) -> None:
+    data = _deep_list(treatment_plan, ["priority_matrix"])
+    if not data:
+        data = _deep_list(_as_dict(treatment_plan.get("chart_data")), ["priority_matrix"])
+    rows = [x for x in data if isinstance(x, dict)][:12]
+    fig, ax = plt.subplots(figsize=(8.8, 5.4))
+    if not rows:
+        ax.text(0.5, 0.5, "No priority matrix data available", ha="center", va="center")
+        ax.axis("off")
+    else:
+        x = [_safe_int(r.get("mapped_noncompliant_count"), 0) for r in rows]
+        y = [_safe_int(r.get("severity_score"), 1) for r in rows]
+        ax.scatter(x, y, s=[max(80, min(520, c * 8)) for c in x], alpha=0.7)
+        ax.set_xlabel("Mapped non-compliant controls")
+        ax.set_ylabel("Severity score")
+        ax.set_yticks([1, 2, 3])
+        ax.set_yticklabels(["Low", "Medium", "High"])
+        ax.set_title("Treatment priority matrix")
+        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
+        for r, xi, yi in zip(rows, x, y):
+            label = _wrap_label(str(r.get("pattern") or "Pattern"), 18).split("\n")[0]
+            ax.annotate(label, (xi, yi), textcoords="offset points", xytext=(5, 5), fontsize=8)
+        fig.text(0.01, 0.01, "Source: workbook prevalence and deterministic severity mapping. Bubble size follows treatment volume.", fontsize=9)
+    fig.tight_layout(rect=[0, 0.03, 1, 1])
+    fig.savefig(out_path, dpi=300)
+    plt.close(fig)
+
 def _likelihood_from_count(cnt: int) -> str:
     if cnt >= 50:
         return "High"
@@ -2153,6 +2246,320 @@ def _call_llm_for_audit_sections(
     return out
 
 
+
+def _treatment_plan(pack: Dict[str, Any]) -> Dict[str, Any]:
+    return _as_dict(pack.get("treatment_plan"))
+
+
+def _treatment_ai_required() -> bool:
+    return _env_bool("AUDIT_SUMMARY_AI_TREATMENT_REQUIRED", True)
+
+
+def _treatment_batch_size() -> int:
+    return max(4, min(25, _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_BATCH_SIZE", "12"), 12)))
+
+
+def _max_control_treatment_rows() -> int:
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", "250"), 250))
+
+
+def _max_technical_treatment_rows() -> int:
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", "160"), 160))
+
+
+def _max_correlation_rows() -> int:
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", "300"), 300))
+
+
+def _chunks(items: List[Any], size: int) -> List[List[Any]]:
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def _compact_treatment_item(item: Dict[str, Any], item_kind: str) -> Dict[str, Any]:
+    if item_kind == "control":
+        return {
+            "item_id": item.get("item_id"),
+            "puid": item.get("puid"),
+            "category": item.get("category_name"),
+            "current_status": item.get("current_status"),
+            "weakness_pattern": item.get("weakness_pattern"),
+            "severity": item.get("severity"),
+            "likelihood": item.get("likelihood"),
+            "recommended_owner": item.get("recommended_owner"),
+            "description": _clean_text(item.get("description")),
+            "evidence_excerpt": _clean_text(item.get("evidence_excerpt")),
+            "flags": _as_list(item.get("flags"))[:20],
+            "flags_by_family": _as_dict(item.get("flags_by_family")),
+        }
+    return {
+        "item_id": item.get("item_id"),
+        "item_type": item.get("item_type"),
+        "source": item.get("source"),
+        "severity": item.get("severity"),
+        "finding_id": item.get("finding_id"),
+        "affected_component": item.get("affected_component"),
+        "file": item.get("file"),
+        "line": item.get("line"),
+        "location": item.get("location"),
+        "installed_version": item.get("installed_version"),
+        "fixed_version": item.get("fixed_version"),
+        "fix_available": item.get("fix_available"),
+        "observed_issue": _clean_text(item.get("observed_issue")),
+        "linked_patterns": _as_list(item.get("linked_patterns"))[:8],
+        "linked_puids": _as_list(item.get("linked_puids"))[:12],
+    }
+
+
+def _sanitize_treatment_text(value: Any) -> str:
+    text = _sanitize_recommendation_text(value)
+    text = re.sub(r"\bmust reduce to zero\b", "should be remediated or formally risk-accepted", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bmust be reduced to zero\b", "should be remediated or formally risk-accepted", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bzero findings\b", "no unresolved Critical or High findings without documented risk acceptance", text, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _merge_treatment_results(results: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    out: Dict[str, Dict[str, Any]] = {}
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        item_id = _clean_text(item.get("item_id"))
+        if not item_id:
+            continue
+        out[item_id] = {
+            "treatment_action": _sanitize_treatment_text(item.get("treatment_action")),
+            "verification_method": _sanitize_treatment_text(item.get("verification_method")),
+            "closure_evidence": _sanitize_treatment_text(item.get("closure_evidence")),
+            "residual_risk": _sanitize_treatment_text(item.get("residual_risk")),
+        }
+    return out
+
+
+def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, Any], technical: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate treatment actions with the configured AI model.
+
+    Stage 1 supplies only facts. This function asks the AI model to generate
+    treatment actions, verification methods, closure evidence, and residual-risk
+    notes for each item. No static remediation content is authored here.
+    """
+    if not treatment_plan or not _ai_enabled():
+        return {}
+
+    system_prompt = (
+        "You are a senior mobile application security remediation planner for mHealth/EMR systems. "
+        "Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. "
+        "For each item, write concrete but audit-defensible actions. If evidence is partial, state what must be verified. "
+        "Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. "
+        "Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. "
+        "Return exactly one valid JSON object and nothing else."
+    )
+
+    technical_compact = _compact_technical_for_ai(technical)
+    control_items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
+    technical_items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
+    batch_size = _treatment_batch_size()
+
+    control_results: List[Dict[str, Any]] = []
+    technical_results: List[Dict[str, Any]] = []
+
+    max_control_items = _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_CONTROL_ITEM_LIMIT", "0"), 0)
+    max_technical_items = _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_TECHNICAL_ITEM_LIMIT", "0"), 0)
+    control_source = control_items[:max_control_items] if max_control_items > 0 else control_items
+    technical_source = technical_items[:max_technical_items] if max_technical_items > 0 else technical_items
+
+    for idx, batch in enumerate(_chunks(control_source, batch_size), start=1):
+        obj = _ai_json_chat(
+            f"control_treatment_{idx}",
+            system_prompt,
+            {
+                "task": "Generate treatment-plan actions for non-compliant SECM-CAT controls.",
+                "constraints": {
+                    "one_result_per_input_item": True,
+                    "do_not_invent_evidence": True,
+                    "use_exact_item_id_and_puid": True,
+                    "output_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
+                },
+                "application": app,
+                "technical_evidence_summary": technical_compact,
+                "items": [_compact_treatment_item(x, "control") for x in batch],
+                "required_output_schema": {
+                    "control_treatments": [
+                        {
+                            "item_id": "<input item_id>",
+                            "treatment_action": "<AI-generated action grounded in this control>",
+                            "verification_method": "<how to verify closure>",
+                            "closure_evidence": "<evidence expected at closure>",
+                            "residual_risk": "<risk acceptance or residual risk note>",
+                        }
+                    ]
+                },
+            },
+            max_tokens=min(_ai_max_tokens(2600), 3200),
+        )
+        values = obj.get("control_treatments") if isinstance(obj.get("control_treatments"), list) else []
+        control_results.extend([x for x in values if isinstance(x, dict)])
+
+    for idx, batch in enumerate(_chunks(technical_source, batch_size), start=1):
+        obj = _ai_json_chat(
+            f"technical_treatment_{idx}",
+            system_prompt,
+            {
+                "task": "Generate treatment-plan actions for technical scanner findings.",
+                "constraints": {
+                    "one_result_per_input_item": True,
+                    "do_not_invent_evidence": True,
+                    "use_exact_item_id_and_finding_id": True,
+                    "dependency_rule": "For Trivy items, use fixed_version when present; if no fixed version exists, propose risk acceptance, compensating controls, or monitoring rather than inventing a version.",
+                    "sast_rule": "For SAST items, use only supplied rule, message, file, and line. Do not invent code paths.",
+                    "mobsf_rule": "For MobSF items, recommend configuration, signing, manifest, runtime-storage, or verification actions based only on supplied evidence.",
+                },
+                "application": app,
+                "technical_evidence_summary": technical_compact,
+                "items": [_compact_treatment_item(x, "technical") for x in batch],
+                "required_output_schema": {
+                    "technical_treatments": [
+                        {
+                            "item_id": "<input item_id>",
+                            "treatment_action": "<AI-generated action grounded in this finding>",
+                            "verification_method": "<how to verify closure>",
+                            "closure_evidence": "<evidence expected at closure>",
+                            "residual_risk": "<risk acceptance or residual risk note>",
+                        }
+                    ]
+                },
+            },
+            max_tokens=min(_ai_max_tokens(2600), 3200),
+        )
+        values = obj.get("technical_treatments") if isinstance(obj.get("technical_treatments"), list) else []
+        technical_results.extend([x for x in values if isinstance(x, dict)])
+
+    return {
+        "control_treatments": _merge_treatment_results(control_results),
+        "technical_treatments": _merge_treatment_results(technical_results),
+        "metadata": {
+            "control_items_requested": len(control_source),
+            "technical_items_requested": len(technical_source),
+            "batch_size": batch_size,
+            "ai_authored": True,
+        },
+    }
+
+
+def _validate_ai_treatment_writeups(treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
+    if not treatment_plan or not _treatment_ai_required():
+        return
+    control_items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
+    technical_items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
+    control_map = _as_dict(treatment_ai.get("control_treatments"))
+    technical_map = _as_dict(treatment_ai.get("technical_treatments"))
+
+    missing: List[str] = []
+    for item in control_items[:_max_control_treatment_rows()]:
+        item_id = _clean_text(item.get("item_id"))
+        writeup = _as_dict(control_map.get(item_id))
+        if not all(_clean_text(writeup.get(k)) for k in ("treatment_action", "verification_method", "closure_evidence")):
+            missing.append(item_id)
+    for item in technical_items[:_max_technical_treatment_rows()]:
+        item_id = _clean_text(item.get("item_id"))
+        writeup = _as_dict(technical_map.get(item_id))
+        if not all(_clean_text(writeup.get(k)) for k in ("treatment_action", "verification_method", "closure_evidence")):
+            missing.append(item_id)
+    if missing:
+        raise SystemExit(
+            "[ERROR] AI-generated treatment plan is incomplete. "
+            "Treatment actions, verification methods, and closure evidence are required for rendered treatment items. "
+            "Missing item IDs: " + ", ".join(missing[:40])
+        )
+
+
+def _treatment_writeup(treatment_ai: Dict[str, Any], item_id: str, technical: bool = False) -> Dict[str, Any]:
+    key = "technical_treatments" if technical else "control_treatments"
+    return _as_dict(_as_dict(treatment_ai.get(key)).get(item_id))
+
+
+def _render_treatment_overview(doc: Document, treatment_plan: Dict[str, Any], fig5: str, fig6: str, fig7: str) -> None:
+    summary = _as_dict(treatment_plan.get("summary"))
+    _add_body_paragraph(
+        doc,
+        "This section bridges the executive MAP and the technical annexes. Treatment content is generated from the current run's non-compliant SECM-CAT controls and scanner findings; the evidence model is deterministic, while treatment actions and verification wording are generated by the configured AI model."
+    )
+    rows = [
+        ["SECM-CAT control treatment items", summary.get("control_items_total", 0)],
+        ["Technical scanner treatment items", summary.get("technical_items_total", 0)],
+        ["Evidence correlation links", summary.get("correlation_items_total", 0)],
+        ["Recommended owner groups", summary.get("owner_groups_total", 0)],
+    ]
+    _add_two_col_table(doc, rows)
+    _add_figure(doc, fig5, "Figure 5. Treatment volume by weakness pattern (source: Stage 1 treatment-plan model).")
+    _add_figure(doc, fig6, "Figure 6. Treatment workload by recommended owner (source: Stage 1 treatment-plan model).")
+    _add_figure(doc, fig7, "Figure 7. Treatment priority matrix: severity versus workbook prevalence (source: Stage 1 treatment-plan model).")
+
+
+def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
+    items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
+    max_rows = _max_control_treatment_rows()
+    rows: List[List[Any]] = []
+    for item in items[:max_rows]:
+        item_id = _clean_text(item.get("item_id"))
+        writeup = _treatment_writeup(treatment_ai, item_id, technical=False)
+        flags = ", ".join(_as_list(item.get("flags"))[:6])
+        evidence = _short(item.get("evidence_excerpt") or item.get("description"), 240)
+        rows.append([
+            f"{item.get('puid')}\n{item_id}",
+            f"{item.get('weakness_pattern')}\n{item.get('severity')} / {item.get('likelihood')}\nOwner: {item.get('recommended_owner')}",
+            f"Flags: {flags if flags else 'No flags listed'}\nEvidence: {evidence}",
+            _short(writeup.get("treatment_action"), 360),
+            _short(f"Verification: {writeup.get('verification_method')} Closure evidence: {writeup.get('closure_evidence')} Residual risk: {writeup.get('residual_risk')}", 520),
+        ])
+    if len(items) > max_rows:
+        _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
+    _add_table(doc, ["PUID / item", "Pattern / priority", "Evidence basis", "AI treatment action", "Verification / closure"], rows, max_rows=max_rows, empty_message="No SECM-CAT treatment items were available in the analysis pack.")
+
+
+def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
+    items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
+    max_rows = _max_technical_treatment_rows()
+    rows: List[List[Any]] = []
+    for item in items[:max_rows]:
+        item_id = _clean_text(item.get("item_id"))
+        writeup = _treatment_writeup(treatment_ai, item_id, technical=True)
+        location_parts = []
+        for k in ("affected_component", "file", "line", "location", "installed_version", "fixed_version"):
+            val = _clean_text(item.get(k))
+            if val:
+                location_parts.append(f"{k}: {val}")
+        linked = ", ".join(_as_list(item.get("linked_puids"))[:8])
+        rows.append([
+            f"{item_id}\n{item.get('source')}\n{item.get('item_type')}",
+            f"{item.get('severity')}\n{item.get('finding_id')}\n{_short(item.get('observed_issue'), 220)}",
+            _short(" | ".join(location_parts), 260),
+            _short(writeup.get("treatment_action"), 360),
+            _short(f"Verification: {writeup.get('verification_method')} Closure evidence: {writeup.get('closure_evidence')} Residual risk: {writeup.get('residual_risk')}", 520),
+            linked,
+        ])
+    if len(items) > max_rows:
+        _add_note(doc, f"Rendered {max_rows} of {len(items)} technical treatment items. Increase AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS to include more rows.")
+    _add_table(doc, ["Item / source", "Finding", "Affected component", "AI recommended fix", "Verification / closure", "Linked PUIDs"], rows, max_rows=max_rows, empty_message="No technical treatment items were available in the analysis pack.")
+
+
+def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) -> None:
+    items = [x for x in _as_list(treatment_plan.get("correlation_items")) if isinstance(x, dict)]
+    max_rows = _max_correlation_rows()
+    rows: List[List[Any]] = []
+    for item in items[:max_rows]:
+        rows.append([
+            item.get("weakness_pattern"),
+            item.get("puid"),
+            ", ".join(_as_list(item.get("flags_sample"))[:6]),
+            item.get("technical_source"),
+            item.get("technical_finding_id"),
+            item.get("technical_item_id"),
+            _short(item.get("evidence_summary"), 260),
+        ])
+    if len(items) > max_rows:
+        _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
+    _add_table(doc, ["Weakness pattern", "PUID", "Flags", "Scanner source", "Technical finding", "Treatment item", "Evidence summary"], rows, max_rows=max_rows, empty_message="No evidence correlation items were available in the analysis pack.")
+
 def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[str, str], max_takeaways: int = 7) -> Dict[str, Any]:
     # Backward-compatible wrapper retained for older callers.
     return {}
@@ -2229,6 +2636,7 @@ def main() -> None:
     pos_controls = pack.get("positive_controls_candidates", [])[:7]
     likelihood_rubric = pack.get("likelihood_rubric", {})
     technical = _technical_evidence(pack)
+    treatment_plan = _treatment_plan(pack)
     report_title = _app_report_title(app)
 
     audit_dt = datetime.utcnow().date()
@@ -2240,6 +2648,9 @@ def main() -> None:
     fig2 = os.path.join(chart_dir, "figure2_noncompliance_share_hbar.png")
     fig3 = os.path.join(chart_dir, "figure3_compliance_rate_hbar.png")
     fig4 = os.path.join(chart_dir, "figure4_counts_stacked_hbar.png")
+    fig5 = os.path.join(chart_dir, "figure5_treatment_pattern_volume.png")
+    fig6 = os.path.join(chart_dir, "figure6_treatment_owner_workload.png")
+    fig7 = os.path.join(chart_dir, "figure7_treatment_priority_matrix.png")
 
     applicable = int(metrics["applicable"])
     compliant = int(metrics["compliant"])
@@ -2251,6 +2662,9 @@ def main() -> None:
     _hbar_share_noncompliances(cat_stats, fig2)
     _hbar_compliance_rate(cat_stats, fig3)
     _stacked_counts(cat_stats, fig4)
+    _hbar_treatment_pattern_volume(treatment_plan, fig5)
+    _hbar_treatment_owner_workload(treatment_plan, fig6)
+    _scatter_treatment_priority_matrix(treatment_plan, fig7)
 
     prose: Dict[str, Any] = {}
     try:
@@ -2266,6 +2680,26 @@ def main() -> None:
     except Exception as exc:
         print(f"[AI][WARN] Sectioned AI generation failed; deterministic fallback will be used: {exc}")
         prose = {}
+
+    treatment_ai: Dict[str, Any] = {}
+    try:
+        treatment_ai = _call_llm_for_treatment_plan(app, treatment_plan, technical)
+        if treatment_ai:
+            prose["treatment_plan_writeups"] = treatment_ai
+            ai_sections_path = os.getenv("AUDIT_SUMMARY_AI_SECTIONS_PATH", "").strip()
+            if not ai_sections_path:
+                ai_sections_path = str(_runtime_data_dir() / "audit_summary_ai_sections.json")
+            Path(ai_sections_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(ai_sections_path, "w", encoding="utf-8") as f:
+                json.dump(prose, f, ensure_ascii=False, indent=2)
+            print(f"[AI] Treatment-plan section outputs saved -> {ai_sections_path}")
+    except Exception as exc:
+        if _treatment_ai_required() and treatment_plan:
+            raise
+        print(f"[AI][WARN] Treatment-plan AI generation failed; treatment appendices will show missing AI fields: {exc}")
+        treatment_ai = {}
+
+    _validate_ai_treatment_writeups(treatment_plan, treatment_ai)
 
     tech_ai = _sanitize_ai_technical_narratives(_as_dict(prose.get("technical_narratives")), technical)
     key_takeaways = prose.get("key_takeaways", [])
@@ -2441,6 +2875,9 @@ def main() -> None:
     _add_figure(doc, fig2, "Figure 2. Share of non-compliances by category (legible horizontal bars; source: audit workbook).")
     _add_figure(doc, fig3, "Figure 3. Compliance rate by category (applicable controls only; source: audit workbook).")
     _add_figure(doc, fig4, "Figure 4. Counts by category and status (horizontal stacked bars; source: audit workbook).")
+    _add_figure(doc, fig5, "Figure 5. Treatment volume by weakness pattern (source: Stage 1 treatment-plan model).")
+    _add_figure(doc, fig6, "Figure 6. Treatment workload by recommended owner (source: Stage 1 treatment-plan model).")
+    _add_figure(doc, fig7, "Figure 7. Treatment priority matrix (source: Stage 1 treatment-plan model).")
 
     add_nav_heading("10. Management Action Plan (MAP)", 1)
     _add_body_paragraph(doc, "The MAP is designed for executive readability. Detailed evidence remains in the workbook and technical artifacts. Priority combines severity and workbook-derived likelihood from Section 5.3.")
@@ -2470,15 +2907,29 @@ def main() -> None:
     _add_body_paragraph(doc, "Technical verification evidence expected at closure includes updated workbook scoring, scan artifacts for the remediated release, regression-test evidence where applicable, and formal accepted-risk records for unresolved items.")
 
     doc.add_page_break()
-    add_nav_heading("Appendix A - Traceability index (non-exhaustive)", 1)
-    doc.add_paragraph("For complete traceability and evidence, refer to the audit workbook.")
-    for p in patterns[:10]:
-        ex = p.get("example_puids", [])[:5]
-        if ex:
-            doc.add_paragraph(f"{p['pattern']}: {', '.join(ex)}", style="List Bullet")
+    add_nav_heading("11. Treatment plan overview", 1)
+    if treatment_plan:
+        _render_treatment_overview(doc, treatment_plan, fig5, fig6, fig7)
+    else:
+        _add_body_paragraph(doc, "The analysis pack did not include a treatment_plan block. Re-run Stage 1 with the treatment-plan model enabled to populate this section.")
 
     doc.add_page_break()
-    add_nav_heading("Appendix B - Positive controls verification (workbook traceability)", 1)
+    add_nav_heading("Appendix A - SECM-CAT treatment plan", 1)
+    _add_body_paragraph(doc, "This appendix lists non-compliant SECM-CAT controls as treatment items. Requirement facts, PUIDs, flags, and evidence are deterministic; treatment actions and verification language are generated by the configured AI model from the current run's evidence.")
+    _render_control_treatment_appendix(doc, treatment_plan, treatment_ai)
+
+    doc.add_page_break()
+    add_nav_heading("Appendix B - Technical vulnerability treatment plan", 1)
+    _add_body_paragraph(doc, "This appendix lists technical treatment items derived from Trivy, SAST, MobSF static, and MobSF dynamic evidence. The AI-generated remediation text is constrained to the finding ID, source tool, package or file/line, observed issue, and linked PUIDs supplied by Stage 1.")
+    _render_technical_treatment_appendix(doc, treatment_plan, treatment_ai)
+
+    doc.add_page_break()
+    add_nav_heading("Appendix C - Evidence correlation matrix", 1)
+    _add_body_paragraph(doc, "This matrix links SECM-CAT requirements, flags, scanner evidence, and treatment item IDs. It is intended to help technical teams trace each remediation action back to requirement-level audit evidence.")
+    _render_correlation_appendix(doc, treatment_plan)
+
+    doc.add_page_break()
+    add_nav_heading("Appendix D - Positive controls verification (workbook traceability)", 1)
     doc.add_paragraph("This appendix verifies each Positive controls observed statement by providing the originating PUID, flags used, and an evidence excerpt when available.")
     vb = doc.add_table(rows=1, cols=4)
     vb.style = "Table Grid"
@@ -2504,7 +2955,7 @@ def main() -> None:
         r[3].text = ""
 
     doc.add_page_break()
-    add_nav_heading("Appendix C - Technical evidence summary", 1)
+    add_nav_heading("Appendix E - Technical evidence summary", 1)
     doc.add_paragraph("This appendix provides a compact index of the technical evidence parsed from scan artifacts. Detailed raw JSON, SARIF, and tool reports remain in their original pipeline artifacts and are not embedded in the report package.")
     _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
 

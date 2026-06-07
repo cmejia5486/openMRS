@@ -671,6 +671,357 @@ def _build_ai_reporting_context(metrics: Dict[str, Any], patterns: List[Dict[str
 
 
 # ------------------------------------------------------------
+# Treatment plan evidence model
+# ------------------------------------------------------------
+
+def _owner_for_pattern(pattern: str, patterns: List[Dict[str, Any]]) -> str:
+    for item in patterns:
+        if str(item.get("pattern") or "") == str(pattern or ""):
+            return str(item.get("recommended_owner") or "Engineering")
+    meta = next((p for p in PATTERNS if p["name"] == pattern), None)
+    return meta["owner"] if meta else "Engineering"
+
+
+def _severity_for_pattern(pattern: str, patterns: List[Dict[str, Any]]) -> str:
+    for item in patterns:
+        if str(item.get("pattern") or "") == str(pattern or ""):
+            return str(item.get("severity") or "Medium")
+    meta = next((p for p in PATTERNS if p["name"] == pattern), None)
+    return meta["severity"] if meta else "Medium"
+
+
+def _pattern_puids(non_df: Any, pattern: str, limit: int = 12) -> List[str]:
+    if not hasattr(non_df, "columns") or "Pattern" not in getattr(non_df, "columns", []):
+        return []
+    try:
+        rows = non_df[non_df["Pattern"] == pattern]
+        return _unique_keep_order(rows["PUID"].astype(str).tolist(), limit=limit)
+    except Exception:
+        return []
+
+
+def _make_control_treatment_items(non_df: Any, patterns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Create requirement-level treatment items from non-compliant controls.
+
+    This function deliberately does not prescribe remediation text. It exposes
+    normalized evidence so Stage 2 can ask the configured AI model to write the
+    treatment action, verification method, and closure evidence dynamically for
+    the actual application under assessment.
+    """
+    if not hasattr(non_df, "iterrows"):
+        return []
+
+    items: List[Dict[str, Any]] = []
+    for idx, (_, row) in enumerate(non_df.iterrows(), start=1):
+        pattern = str(row.get("Pattern") or _match_pattern(row.get("Description", ""), row.get("Flags", "")))
+        flags = _split_flags_cell(row.get("Flags", ""))
+        item_id = f"CTRL-{idx:04d}"
+        severity = _severity_for_pattern(pattern, patterns)
+        likelihood = _likelihood_from_count(_safe_int(len(non_df[non_df["Pattern"] == pattern]) if "Pattern" in non_df.columns else 0, 0))
+        items.append({
+            "item_id": item_id,
+            "item_type": "SECM-CAT control",
+            "puid": str(row.get("PUID") or ""),
+            "category_code": str(row.get("CategoryCode") or ""),
+            "category_name": str(row.get("CategoryName") or ""),
+            "current_status": "Non-compliant",
+            "weakness_pattern": pattern,
+            "severity": severity,
+            "likelihood": likelihood,
+            "recommended_owner": _owner_for_pattern(pattern, patterns),
+            "description": _excerpt(row.get("Description", ""), 360),
+            "evidence_excerpt": _excerpt(row.get("Evidence", ""), 260),
+            "flags": flags[:40],
+            "flags_by_family": _flags_by_family(flags),
+            "ai_instruction": (
+                "Generate treatment_action, verification_method, closure_evidence, and residual_risk from this control, "
+                "its flags, evidence excerpt, weakness pattern, and any correlated scanner evidence. Do not invent PUIDs, flags, files, CVEs, or scanner findings."
+            ),
+        })
+    return items
+
+
+def _technical_patterns_for_finding(source: str, finding_id: str, message: str, component: str = "") -> List[str]:
+    haystack = f"{source} {finding_id} {message} {component}".lower()
+    patterns: List[str] = []
+    if any(t in haystack for t in ["trivy", "cve", "dependency", "package", "library", "sca"]):
+        patterns.append("Supply chain governance & outdated components")
+    if any(t in haystack for t in ["sharedpreferences", "shared_prefs", "database", ".db", "sqlite", "storage", "keystore", "cache"]):
+        patterns.append("Insecure local storage / key management gaps")
+    if any(t in haystack for t in ["cleartext", "tls", "ssl", "certificate", "pinning", "trustmanager", "hostnameverifier", "sha1"]):
+        patterns.append("Transport security / certificate validation weaknesses")
+    if any(t in haystack for t in ["debug", "debuggable", "v1 signature", "janus", "reverse", "tamper", "root"]):
+        patterns.append("Tampering / reverse engineering protections missing")
+    if any(t in haystack for t in ["exported", "intent", "permission", "backup", "allowbackup", "manifest"]):
+        patterns.append("Security misconfiguration / insecure defaults")
+    if any(t in haystack for t in ["injection", "xss", "sql", "command", "validation", "webview"]):
+        patterns.append("Input validation & injection weaknesses (XSS/SQLi/command/log injection)")
+    if any(t in haystack for t in ["authorization", "auth", "rbac", "privilege", "role"]):
+        patterns.append("Authorization / RBAC / least privilege gaps")
+    return _unique_keep_order(patterns, limit=6) or ["Other control gaps"]
+
+
+def _linked_puids_for_patterns(non_df: Any, patterns: List[str], limit: int = 12) -> List[str]:
+    out: List[str] = []
+    for pat in patterns:
+        out.extend(_pattern_puids(non_df, pat, limit=limit))
+    return _unique_keep_order(out, limit=limit)
+
+
+def _make_trivy_treatment_items(technical: Dict[str, Any], non_df: Any, start_idx: int = 1) -> List[Dict[str, Any]]:
+    trivy = technical.get("trivy_sca") if isinstance(technical.get("trivy_sca"), dict) else {}
+    findings = trivy.get("top_findings") if isinstance(trivy.get("top_findings"), list) else []
+    items: List[Dict[str, Any]] = []
+    for offset, finding in enumerate(findings, start=start_idx):
+        if not isinstance(finding, dict):
+            continue
+        fid = str(finding.get("id") or "")
+        pkg = str(finding.get("package") or finding.get("pkg") or "")
+        title = _excerpt(finding.get("title") or finding.get("description") or "", 260)
+        patterns = _technical_patterns_for_finding("Trivy SCA", fid, title, pkg)
+        items.append({
+            "item_id": f"TECH-TRIVY-{offset:03d}",
+            "item_type": "Dependency vulnerability",
+            "source": "Trivy SCA",
+            "severity": _severity_norm(finding.get("severity")),
+            "finding_id": fid,
+            "affected_component": pkg,
+            "location": str(finding.get("target") or ""),
+            "installed_version": str(finding.get("installed") or ""),
+            "fixed_version": str(finding.get("fixed") or ""),
+            "fix_available": bool(finding.get("fix_available") or finding.get("fixed")),
+            "observed_issue": title,
+            "linked_patterns": patterns,
+            "linked_puids": _linked_puids_for_patterns(non_df, patterns, limit=12),
+            "ai_instruction": "Generate a finding-specific dependency remediation action, validation method, and closure evidence from the CVE, package, installed version, fixed version, and severity. Do not invent package versions.",
+        })
+    return items
+
+
+def _make_sast_treatment_items(technical: Dict[str, Any], non_df: Any, start_idx: int = 1) -> List[Dict[str, Any]]:
+    sast = technical.get("sast_app_code") if isinstance(technical.get("sast_app_code"), dict) else {}
+    findings = sast.get("security_findings_sample") if isinstance(sast.get("security_findings_sample"), list) else []
+    items: List[Dict[str, Any]] = []
+    for offset, finding in enumerate(findings, start=start_idx):
+        if not isinstance(finding, dict):
+            continue
+        rule = str(finding.get("rule_id") or finding.get("ruleId") or finding.get("id") or "")
+        msg = _excerpt(finding.get("message") or finding.get("title") or finding.get("description") or "", 260)
+        component = str(finding.get("file") or finding.get("path") or finding.get("uri") or "")
+        patterns = _technical_patterns_for_finding(str(finding.get("tool") or "SAST"), rule, msg, component)
+        items.append({
+            "item_id": f"TECH-SAST-{offset:03d}",
+            "item_type": "Application-code SAST finding",
+            "source": str(finding.get("tool") or "SAST app-code"),
+            "severity": str(finding.get("level") or finding.get("severity") or "warning"),
+            "finding_id": rule,
+            "affected_component": component,
+            "file": component,
+            "line": finding.get("line") or finding.get("start_line") or finding.get("startLine") or "",
+            "observed_issue": msg,
+            "linked_patterns": patterns,
+            "linked_puids": _linked_puids_for_patterns(non_df, patterns, limit=12),
+            "ai_instruction": "Generate a code-level remediation action and verification method from the SAST rule, message, file, and line. Do not invent additional files or line numbers.",
+        })
+    return items
+
+
+def _make_mobsf_treatment_items(technical: Dict[str, Any], non_df: Any, start_idx: int = 1) -> List[Dict[str, Any]]:
+    mobsf_static = technical.get("mobsf_static") if isinstance(technical.get("mobsf_static"), dict) else {}
+    mobsf_dynamic = technical.get("mobsf_dynamic") if isinstance(technical.get("mobsf_dynamic"), dict) else {}
+    items: List[Dict[str, Any]] = []
+    idx = start_idx
+
+    def add_item(kind: str, severity: str, finding_id: str, component: str, issue: str, source: str = "MobSF") -> None:
+        nonlocal idx
+        if not _clean_text(issue) and not _clean_text(finding_id):
+            return
+        patterns = _technical_patterns_for_finding(source, finding_id, issue, component)
+        items.append({
+            "item_id": f"TECH-MOBSF-{idx:03d}",
+            "item_type": kind,
+            "source": source,
+            "severity": severity or "Medium",
+            "finding_id": finding_id,
+            "affected_component": component,
+            "location": component,
+            "observed_issue": _excerpt(issue, 300),
+            "linked_patterns": patterns,
+            "linked_puids": _linked_puids_for_patterns(non_df, patterns, limit=12),
+            "ai_instruction": "Generate a MobSF-grounded remediation action and verification method. Do not claim absence of risk from missing fields.",
+        })
+        idx += 1
+
+    flags = mobsf_static.get("flags") if isinstance(mobsf_static.get("flags"), dict) else {}
+    indicator_map = [
+        ("debug_certificate_detected", "Release signing / debug certificate", "High", "debug-certificate", "Debug certificate evidence was detected in the assessed APK signing material."),
+        ("v1_signature_or_janus_detected", "APK signing scheme / Janus exposure", "High", "v1-signature-or-janus", "APK v1 signature or Janus-related exposure evidence was detected."),
+        ("sha1_certificate_detected", "Certificate / weak signature algorithm", "Medium", "sha1-certificate", "SHA1 certificate or signature evidence was detected."),
+        ("allow_backup_detected", "Android backup configuration", "Medium", "allow-backup", "Android backup appears enabled or requires review in parsed MobSF evidence."),
+        ("exported_components_detected", "Android exported component exposure", "High", "exported-components", "Exported Android components were detected and require authorization and intent-safety review."),
+        ("vulnerable_min_sdk_signal", "Android platform baseline", "Medium", "vulnerable-min-sdk", "Minimum SDK is below a hardened Android baseline and requires compatibility/risk review."),
+    ]
+    for key, kind, sev, finding_id, issue in indicator_map:
+        if flags.get(key) is True:
+            add_item(kind, sev, finding_id, "Android manifest / APK signing evidence", issue, "MobSF static")
+
+    for finding in (mobsf_static.get("manifest_findings_sample") or [])[:12]:
+        if isinstance(finding, dict):
+            add_item(
+                "MobSF static manifest finding",
+                str(finding.get("severity") or finding.get("level") or "Medium"),
+                str(finding.get("title") or finding.get("id") or finding.get("rule") or "manifest-finding"),
+                str(finding.get("component") or "AndroidManifest.xml"),
+                str(finding.get("description") or finding.get("message") or finding.get("title") or ""),
+                "MobSF static",
+            )
+    for finding in (mobsf_static.get("certificate_findings_sample") or [])[:8]:
+        if isinstance(finding, dict):
+            add_item(
+                "MobSF certificate finding",
+                str(finding.get("severity") or finding.get("level") or "Medium"),
+                str(finding.get("title") or finding.get("id") or finding.get("rule") or "certificate-finding"),
+                str(finding.get("component") or "APK certificate"),
+                str(finding.get("description") or finding.get("message") or finding.get("title") or ""),
+                "MobSF static",
+            )
+
+    dyn_sources = [
+        ("SharedPreferences runtime artifact", "shared-preferences-artifacts", mobsf_dynamic.get("shared_preferences_artifacts") or []),
+        ("SQLite/database runtime artifact", "sqlite-database-artifacts", mobsf_dynamic.get("sqlite_database_artifacts") or []),
+        ("Local storage runtime artifact", "local-storage-artifacts", mobsf_dynamic.get("local_storage_artifacts_sample") or mobsf_dynamic.get("local_storage_artifacts") or []),
+    ]
+    for kind, finding_id, values in dyn_sources:
+        values = values if isinstance(values, list) else []
+        for artifact in _unique_keep_order(values, limit=8):
+            add_item(
+                kind,
+                "Medium",
+                finding_id,
+                _normalize_android_storage_artifact(artifact),
+                f"Runtime storage artifact observed: {_normalize_android_storage_artifact(artifact)}",
+                "MobSF dynamic",
+            )
+
+    return items
+
+
+def _owner_summary_from_controls(control_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    counts: Dict[str, int] = {}
+    high_counts: Dict[str, int] = {}
+    for item in control_items:
+        owner = str(item.get("recommended_owner") or "Engineering")
+        counts[owner] = counts.get(owner, 0) + 1
+        if str(item.get("severity") or "").lower() == "high":
+            high_counts[owner] = high_counts.get(owner, 0) + 1
+    return [
+        {"owner": owner, "control_items": count, "high_severity_items": high_counts.get(owner, 0)}
+        for owner, count in sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+
+def _priority_summary_from_patterns(patterns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for pattern in patterns[:15]:
+        count = _safe_int(pattern.get("mapped_noncompliant_count"), 0)
+        severity = str(pattern.get("severity") or "Medium")
+        likelihood = str(pattern.get("likelihood") or _likelihood_from_count(count))
+        severity_score = {"High": 3, "Medium": 2, "Low": 1}.get(severity, 1)
+        likelihood_score = {"High": 4, "Medium–High": 3, "Medium-High": 3, "Medium": 2, "Low–Medium": 1, "Low-Medium": 1}.get(likelihood, 1)
+        rows.append({
+            "pattern": pattern.get("pattern"),
+            "severity": severity,
+            "likelihood": likelihood,
+            "mapped_noncompliant_count": count,
+            "recommended_owner": pattern.get("recommended_owner"),
+            "severity_score": severity_score,
+            "likelihood_score": likelihood_score,
+            "priority_score": severity_score * likelihood_score,
+        })
+    return rows
+
+
+def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items: List[Dict[str, Any]], limit: int = 500) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    control_by_puid = {str(c.get("puid")): c for c in control_items}
+    for tech in technical_items:
+        linked_puids = tech.get("linked_puids") if isinstance(tech.get("linked_puids"), list) else []
+        for puid in linked_puids[:12]:
+            ctrl = control_by_puid.get(str(puid), {})
+            rows.append({
+                "weakness_pattern": ctrl.get("weakness_pattern") or (tech.get("linked_patterns") or [""])[0],
+                "puid": puid,
+                "flags_sample": (ctrl.get("flags") or [])[:8],
+                "technical_source": tech.get("source"),
+                "technical_finding_id": tech.get("finding_id"),
+                "technical_item_id": tech.get("item_id"),
+                "evidence_summary": _excerpt(tech.get("observed_issue") or tech.get("affected_component"), 220),
+            })
+            if len(rows) >= limit:
+                return rows
+    return rows
+
+
+def _build_treatment_plan(non_df: Any, patterns: List[Dict[str, Any]], technical: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a dynamic, evidence-only treatment-plan model for Stage 2.
+
+    Stage 1 must not write static remediation recommendations. It only builds
+    normalized treatment items from the workbook and scanner findings. Stage 2
+    then asks the configured AI model to generate treatment actions, verification
+    methods, closure evidence, and residual-risk wording for each item.
+    """
+    control_items = _make_control_treatment_items(non_df, patterns)
+    technical_items: List[Dict[str, Any]] = []
+    technical_items.extend(_make_trivy_treatment_items(technical, non_df, start_idx=1))
+    technical_items.extend(_make_sast_treatment_items(technical, non_df, start_idx=1))
+    technical_items.extend(_make_mobsf_treatment_items(technical, non_df, start_idx=1))
+
+    # Deterministic ordering keeps report diffs stable across runs.
+    severity_rank = {"CRITICAL": 5, "HIGH": 4, "MEDIUM": 3, "LOW": 2, "UNKNOWN": 1, "ERROR": 3, "WARNING": 2, "NOTE": 1}
+    technical_items.sort(key=lambda x: (severity_rank.get(str(x.get("severity") or "").upper(), 1), str(x.get("source") or ""), str(x.get("item_id") or "")), reverse=True)
+
+    correlation_items = _make_correlation_items(control_items, technical_items)
+    owner_summary = _owner_summary_from_controls(control_items)
+    priority_summary = _priority_summary_from_patterns(patterns)
+
+    return {
+        "purpose": "Evidence-only treatment-plan input for AI-authored remediation actions inside the Audit Summary DOCX.",
+        "generation_rule": "Stage 1 normalizes facts only. Stage 2 must use the configured AI model to write treatment actions, verification methods, closure evidence, and residual-risk notes from these items.",
+        "summary": {
+            "control_items_total": len(control_items),
+            "technical_items_total": len(technical_items),
+            "correlation_items_total": len(correlation_items),
+            "owner_groups_total": len(owner_summary),
+            "priority_patterns_total": len(priority_summary),
+        },
+        "control_items": control_items,
+        "technical_items": technical_items,
+        "correlation_items": correlation_items,
+        "owner_summary": owner_summary,
+        "priority_summary": priority_summary,
+        "chart_data": {
+            "weakness_pattern_volume": [
+                {
+                    "pattern": p.get("pattern"),
+                    "count": _safe_int(p.get("mapped_noncompliant_count"), 0),
+                    "severity": p.get("severity"),
+                    "owner": p.get("recommended_owner"),
+                }
+                for p in patterns[:15]
+            ],
+            "owner_workload": owner_summary,
+            "priority_matrix": priority_summary,
+        },
+        "ai_guardrails": [
+            "Use only treatment_plan.control_items, treatment_plan.technical_items, treatment_plan.correlation_items, and scanner evidence present in this analysis pack.",
+            "Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, or scanner findings.",
+            "If evidence is insufficient for a direct fix, write a verification action instead of asserting a fix.",
+            "Do not use static boilerplate recommendations; generate actions from the actual findings in this run.",
+        ],
+    }
+
+
+# ------------------------------------------------------------
 # Technical evidence ingestion
 # ------------------------------------------------------------
 
@@ -2238,6 +2589,8 @@ def main() -> None:
         technical_evidence,
     )
 
+    treatment_plan = _build_treatment_plan(non, pattern_summary, technical_evidence)
+
     out: Dict[str, Any] = {
         "generated_at_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         "inputs": {
@@ -2275,6 +2628,7 @@ def main() -> None:
         "weakness_patterns": pattern_summary,
         "technical_evidence": technical_evidence,
         "ai_reporting_context": ai_reporting_context,
+        "treatment_plan": treatment_plan,
         "notes": {
             "global_replacement": {"SEC-AM": "mSEC-AM"},
             "method_sentence": "The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).",
