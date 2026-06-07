@@ -12,6 +12,7 @@ workflows, or tools.
 
 from __future__ import annotations
 
+import py_compile
 import sys
 from pathlib import Path
 
@@ -22,6 +23,20 @@ def _should_patch() -> bool:
         "audit_summary_stage1_build_analysis_pack.py" in argv
         or "audit_summary_stage2_generate_docx.py" in argv
     )
+
+
+def _post_patch_cleanup(scripts_dir: Path) -> None:
+    """Repair escaped word-boundary regexes if a runtime patch inserted them as backspace chars."""
+    stage2 = scripts_dir / "audit_summary_stage2_generate_docx.py"
+    if not stage2.is_file():
+        return
+
+    text = stage2.read_text(encoding="utf-8")
+    if "\x08" in text:
+        text = text.replace("\x08", r"\b")
+        stage2.write_text(text, encoding="utf-8")
+        py_compile.compile(str(stage2), doraise=True)
+        print("[OK] Audit Summary runtime patch cleanup normalized regex word-boundaries in Stage 2.")
 
 
 def _run_patch() -> None:
@@ -39,6 +54,7 @@ def _run_patch() -> None:
     main = namespace.get("main")
     if callable(main):
         main()
+    _post_patch_cleanup(scripts_dir)
 
 
 try:
