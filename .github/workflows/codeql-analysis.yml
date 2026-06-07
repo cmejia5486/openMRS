@@ -357,7 +357,25 @@ jobs:
             jq -s '{ "version":"2.1.0", "runs": (map(.runs) | add) }' "${files[@]}" > report/merged.sarif
           else
             echo '{ "version":"2.1.0", "runs": [] }' > report/merged.sarif
-          fi
+          fi      
+          
+      - name: Prepare strict SAST findings artifact
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish_dir="artifact_publish/sast-findings"
+          mkdir -p "$publish_dir"
+
+          test -f report/merged.sarif
+          test -f report/semgrep.sarif
+
+          cp report/merged.sarif "$publish_dir/merged.sarif"
+          cp report/semgrep.sarif "$publish_dir/semgrep.sarif"
+
+          echo "[ARTIFACT] sast-findings will publish only:"
+          ls -lah "$publish_dir"
 
       - name: Upload findings artifact
         if: always()
@@ -365,6 +383,6 @@ jobs:
         with:
           name: sast-findings
           path: |
-            report/*.sarif
-            report/codeql/*.sarif
-          if-no-files-found: warn
+            artifact_publish/sast-findings/merged.sarif
+            artifact_publish/sast-findings/semgrep.sarif
+          if-no-files-found: error
