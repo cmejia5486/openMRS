@@ -11,7 +11,7 @@ env:
   PYTHONUNBUFFERED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_NO_INPUT: "1"
-  PIP_DEFAULT_TIMEOUT: "120"
+  PIP_DEFAULT_TIMEOUT: "720"
   PIP_RETRIES: "10"
 
 permissions:
@@ -259,7 +259,7 @@ jobs:
           "$python_exe" --version
           "$python_exe" -c "import sys; print(sys.executable)"
 
-      - name: Install lightweight report dependencies on Windows
+      - name: Install AI and report dependencies on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
@@ -276,10 +276,12 @@ jobs:
               Write-Host ("[PIP] Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
               & $env:PYTHON_EXE -m pip @PipArgs
 
-              if ($LASTEXITCODE -eq 0) { return }
+              if ($LASTEXITCODE -eq 0) {
+                return
+              }
 
               if ($attempt -lt $MaxAttempts) {
-                $sleepSeconds = 10 * $attempt
+                $sleepSeconds = 15 * $attempt
                 Write-Host "[PIP] Install failed. Retrying in $sleepSeconds seconds."
                 Start-Sleep -Seconds $sleepSeconds
               }
@@ -289,15 +291,21 @@ jobs:
           }
 
           & $env:PYTHON_EXE -m pip --version
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
-          Write-Host "[PIP] Installing lightweight dependencies only. The DOCX AI step uses direct HTTP requests; it does not install litellm, tokenizers, or huggingface-hub."
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "120", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib", "requests")
+          Write-Host "[PIP] Installing AI runtime dependencies for LiteLLM/OpenAI SDK compatibility."
+          Invoke-PipInstall -PipArgs @("install", "--upgrade", "pip", "setuptools", "wheel", "--retries", "10", "--timeout", "720", "--prefer-binary")
+          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
+          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib", "requests")
 
           & $env:PYTHON_EXE -m pip check
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
-      - name: Install lightweight report dependencies on Unix
+      - name: Install AI and report dependencies on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -311,7 +319,7 @@ jobs:
                 return 0
               fi
               if [ "$attempt" -lt 3 ]; then
-                sleep_seconds=$((10 * attempt))
+                sleep_seconds=$((15 * attempt))
                 echo "[PIP] Install failed. Retrying in $sleep_seconds seconds."
                 sleep "$sleep_seconds"
               fi
@@ -322,191 +330,229 @@ jobs:
 
           "$PYTHON_EXE" -m pip --version
 
-          echo "[PIP] Installing lightweight dependencies only. The DOCX AI step uses direct HTTP requests; it does not install litellm, tokenizers, or huggingface-hub."
-          pip_install install --retries 10 --timeout 120 --prefer-binary pandas openpyxl python-docx matplotlib requests
+          echo "[PIP] Installing AI runtime dependencies for LiteLLM/OpenAI SDK compatibility."
+          pip_install install --upgrade pip setuptools wheel --retries 10 --timeout 720 --prefer-binary
+          pip_install install --retries 10 --timeout 720 --prefer-binary -r requirements/ai-runtime.txt
+          pip_install install --retries 10 --timeout 720 --prefer-binary pandas openpyxl python-docx matplotlib requests
 
           "$PYTHON_EXE" -m pip check
 
-      - name: Configure direct AI route on Windows
+      - name: Resolve AI config from parameters/ai.config.json on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
-          $apiBase = ($env:AI_API_BASE + "").Trim()
-          $model = ($env:AI_MODEL + "").Trim()
-          $timeout = ($env:AI_TIMEOUT_S + "").Trim()
-          $maxTokens = ($env:AI_MAX_OUTPUT_TOKENS + "").Trim()
-          $effort = ($env:AI_REASONING_EFFORT + "").Trim()
+          $py = @'
+          import json
+          import os
+          import sys
+          from pathlib import Path
 
-          if ([string]::IsNullOrWhiteSpace($apiBase)) {
-            $apiBase = "http://localhost:1234/v1"
-            "AI_API_BASE=$apiBase" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "OPENAI_API_BASE=$apiBase" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          repo = Path.cwd()
+          sys.path.insert(0, str(repo / "scripts"))
+
+          from lib.ai_config import (
+              resolve_config,
+              resolved_api_base,
+              resolved_api_key,
+              resolved_api_version,
+              resolved_litellm_model,
+          )
+          from lib.ai_runtime import AIRuntime
+
+          task = (os.getenv("AI_TASK") or "audit_summary_docx").strip() or "audit_summary_docx"
+          cfg = resolve_config(task_name=task)
+
+          provider = str(cfg.get("provider") or "openai").strip()
+          model = str(cfg.get("model") or "").strip()
+          litellm_model = resolved_litellm_model(cfg)
+          api_base = resolved_api_base(cfg)
+          api_version = resolved_api_version(cfg)
+          key_env = str(cfg.get("api_key_env_var") or "OPENAI_API_KEY").strip() or "OPENAI_API_KEY"
+          api_key = resolved_api_key(cfg)
+
+          if not api_key and key_env != "OPENAI_API_KEY":
+              fallback_key = os.getenv("OPENAI_API_KEY", "").strip()
+              if fallback_key:
+                  key_env = "OPENAI_API_KEY"
+                  api_key = fallback_key
+
+          if not model:
+              raise SystemExit("[AI_CONFIG][ERROR] Resolved AI model is empty.")
+          if provider == "openai_compatible" and not api_base:
+              raise SystemExit("[AI_CONFIG][ERROR] openai_compatible profile requires api_base.")
+          if not api_key:
+              raise SystemExit(f"[AI_CONFIG][ERROR] API key is empty. Expected environment variable: {key_env}")
+
+          resolved_profile = str(cfg.get("resolved_profile") or "").strip()
+          reasoning_effort = str(cfg.get("reasoning_effort") or "").strip()
+          max_tokens = str(int(cfg.get("max_output_tokens") or 0) or "")
+          batch_size = str(int(cfg.get("batch_size") or 0) or "")
+          timeout_s = str(int(cfg.get("timeout_s") or 0) or "")
+
+          env_updates = {
+              "AI_TASK": task,
+              "AI_PROFILE": resolved_profile,
+              "AI_PROVIDER": provider,
+              "AI_MODEL": model,
+              "AI_LITELLM_MODEL": litellm_model,
+              "AI_API_KEY_ENV_VAR": key_env,
+              "AI_REASONING_EFFORT": reasoning_effort,
+              "AI_MAX_OUTPUT_TOKENS": max_tokens,
+              "AI_BATCH_SIZE": batch_size,
+              "AI_TIMEOUT_S": timeout_s,
+              "OPENAI_MODEL": model,
+              "OPENAI_REASONING_EFFORT": reasoning_effort,
+              "OPENAI_MAX_OUTPUT_TOKENS": max_tokens,
+              "OPENAI_TIMEOUT_S": timeout_s,
+              "AUDIT_SUMMARY_USE_AI": "1",
+              "AUDIT_SUMMARY_AI_SECTION_MODE": "1",
           }
+          if api_base:
+              env_updates["AI_API_BASE"] = api_base
+              env_updates["OPENAI_API_BASE"] = api_base
+          if api_version:
+              env_updates["AI_API_VERSION"] = api_version
+              env_updates["OPENAI_API_VERSION"] = api_version
 
-          if ([string]::IsNullOrWhiteSpace($model)) {
-            $model = ($env:OPENAI_MODEL + "").Trim()
-          }
+          github_env = os.environ["GITHUB_ENV"]
+          with open(github_env, "a", encoding="utf-8") as fh:
+              for key, value in env_updates.items():
+                  if value is not None and str(value) != "":
+                      fh.write(f"{key}={value}\n")
 
-          if ([string]::IsNullOrWhiteSpace($timeout)) {
-            $timeout = "300"
-            "AI_TIMEOUT_S=$timeout" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "OPENAI_TIMEOUT_S=$timeout" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          }
+          runtime = AIRuntime(task=task)
+          if not runtime.available():
+              raise SystemExit("[AI_RUNTIME][ERROR] AI runtime is not available after dependency installation and config resolution.")
 
-          if ([string]::IsNullOrWhiteSpace($maxTokens)) {
-            $maxTokens = "3000"
-            "AI_MAX_OUTPUT_TOKENS=$maxTokens" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "OPENAI_MAX_OUTPUT_TOKENS=$maxTokens" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          }
+          print("[AI_CONFIG] Resolved audit summary AI configuration:")
+          print(json.dumps({
+              "task": task,
+              "profile": resolved_profile,
+              "provider": provider,
+              "model": model,
+              "litellm_model": litellm_model,
+              "api_base": api_base,
+              "api_version": api_version,
+              "api_key_env_var": key_env,
+              "max_output_tokens": max_tokens,
+              "batch_size": batch_size,
+              "timeout_s": timeout_s,
+              "reasoning_effort": reasoning_effort,
+              "api_key_present": bool(api_key),
+              "runtime_available": runtime.available(),
+          }, ensure_ascii=False, indent=2))
+          '@
 
-          if ([string]::IsNullOrWhiteSpace($effort)) {
-            $effort = "low"
-            "AI_REASONING_EFFORT=$effort" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "OPENAI_REASONING_EFFORT=$effort" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          }
+          $py | & $env:PYTHON_EXE -
 
-          if ([string]::IsNullOrWhiteSpace($model)) {
-            throw "AI_MODEL or OPENAI_MODEL must be configured for AI-assisted Audit Summary generation."
-          }
-
-          "AI_MODEL=$model" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "OPENAI_MODEL=$model" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_USE_AI=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_AI_SECTION_MODE=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-
-          if ([string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
-            throw "OPENAI_API_KEY is empty. For LM Studio with authentication enabled, use the LM Studio token as OPENAI_API_KEY."
-          }
-
-          Write-Host "[AI] Direct AI route configured."
-          Write-Host "[AI] AI_API_BASE=$apiBase"
-          Write-Host "[AI] AI_MODEL=$model"
-          Write-Host "[AI] AI_TIMEOUT_S=$timeout"
-          Write-Host "[AI] AI_MAX_OUTPUT_TOKENS=$maxTokens"
-          Write-Host "[AI] AI_REASONING_EFFORT=$effort"
-          Write-Host "[AI] Runtime dependencies: requests only. No litellm/openai SDK installation in this job."
-
-      - name: Configure direct AI route on Unix
+      - name: Resolve AI config from parameters/ai.config.json on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
 
-          api_base="${AI_API_BASE:-}"
-          model="${AI_MODEL:-${OPENAI_MODEL:-}}"
-          timeout="${AI_TIMEOUT_S:-}"
-          max_tokens="${AI_MAX_OUTPUT_TOKENS:-}"
-          effort="${AI_REASONING_EFFORT:-}"
-
-          if [ -z "$api_base" ]; then
-            api_base="http://localhost:1234/v1"
-            {
-              echo "AI_API_BASE=$api_base"
-              echo "OPENAI_API_BASE=$api_base"
-            } >> "$GITHUB_ENV"
-          fi
-
-          if [ -z "$timeout" ]; then
-            timeout="300"
-            {
-              echo "AI_TIMEOUT_S=$timeout"
-              echo "OPENAI_TIMEOUT_S=$timeout"
-            } >> "$GITHUB_ENV"
-          fi
-
-          if [ -z "$max_tokens" ]; then
-            max_tokens="3000"
-            {
-              echo "AI_MAX_OUTPUT_TOKENS=$max_tokens"
-              echo "OPENAI_MAX_OUTPUT_TOKENS=$max_tokens"
-            } >> "$GITHUB_ENV"
-          fi
-
-          if [ -z "$effort" ]; then
-            effort="low"
-            {
-              echo "AI_REASONING_EFFORT=$effort"
-              echo "OPENAI_REASONING_EFFORT=$effort"
-            } >> "$GITHUB_ENV"
-          fi
-
-          if [ -z "$model" ]; then
-            echo "[ERROR] AI_MODEL or OPENAI_MODEL must be configured for AI-assisted Audit Summary generation." >&2
-            exit 1
-          fi
-
-          {
-            echo "AI_MODEL=$model"
-            echo "OPENAI_MODEL=$model"
-            echo "AUDIT_SUMMARY_USE_AI=1"
-            echo "AUDIT_SUMMARY_AI_SECTION_MODE=1"
-          } >> "$GITHUB_ENV"
-
-          if [ -z "${OPENAI_API_KEY:-}" ]; then
-            echo "[ERROR] OPENAI_API_KEY is empty. For LM Studio with authentication enabled, use the LM Studio token as OPENAI_API_KEY." >&2
-            exit 1
-          fi
-
-          echo "[AI] Direct AI route configured."
-          echo "[AI] AI_API_BASE=$api_base"
-          echo "[AI] AI_MODEL=$model"
-          echo "[AI] AI_TIMEOUT_S=$timeout"
-          echo "[AI] AI_MAX_OUTPUT_TOKENS=$max_tokens"
-          echo "[AI] AI_REASONING_EFFORT=$effort"
-          echo "[AI] Runtime dependencies: requests only. No litellm/openai SDK installation in this job."
-
-      - name: Smoke test direct AI endpoint on Windows
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Continue"
-
-          $py = @'
-          import os
-          import requests
-
-          base = (os.getenv("AI_API_BASE") or os.getenv("OPENAI_API_BASE") or "http://localhost:1234/v1").rstrip("/")
-          token = os.getenv("OPENAI_API_KEY", "")
-          headers = {"Authorization": f"Bearer {token}"} if token else {}
-          url = base + "/models"
-
-          print(f"[AI] Smoke testing endpoint: {url}")
-          try:
-              r = requests.get(url, headers=headers, timeout=15)
-              print(f"[AI] Endpoint status: {r.status_code}")
-              print(r.text[:800])
-          except Exception as exc:
-              print(f"[WARN] AI endpoint smoke test failed: {exc}")
-          '@
-
-          $py | & $env:PYTHON_EXE -
-
-      - name: Smoke test direct AI endpoint on Unix
-        if: runner.os != 'Windows'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-
           "$PYTHON_EXE" - <<'PY'
+          import json
           import os
-          import requests
+          import sys
+          from pathlib import Path
 
-          base = (os.getenv("AI_API_BASE") or os.getenv("OPENAI_API_BASE") or "http://localhost:1234/v1").rstrip("/")
-          token = os.getenv("OPENAI_API_KEY", "")
-          headers = {"Authorization": f"Bearer {token}"} if token else {}
-          url = base + "/models"
+          repo = Path.cwd()
+          sys.path.insert(0, str(repo / "scripts"))
 
-          print(f"[AI] Smoke testing endpoint: {url}")
-          try:
-              r = requests.get(url, headers=headers, timeout=15)
-              print(f"[AI] Endpoint status: {r.status_code}")
-              print(r.text[:800])
-          except Exception as exc:
-              print(f"[WARN] AI endpoint smoke test failed: {exc}")
+          from lib.ai_config import (
+              resolve_config,
+              resolved_api_base,
+              resolved_api_key,
+              resolved_api_version,
+              resolved_litellm_model,
+          )
+          from lib.ai_runtime import AIRuntime
+
+          task = (os.getenv("AI_TASK") or "audit_summary_docx").strip() or "audit_summary_docx"
+          cfg = resolve_config(task_name=task)
+
+          provider = str(cfg.get("provider") or "openai").strip()
+          model = str(cfg.get("model") or "").strip()
+          litellm_model = resolved_litellm_model(cfg)
+          api_base = resolved_api_base(cfg)
+          api_version = resolved_api_version(cfg)
+          key_env = str(cfg.get("api_key_env_var") or "OPENAI_API_KEY").strip() or "OPENAI_API_KEY"
+          api_key = resolved_api_key(cfg)
+
+          if not api_key and key_env != "OPENAI_API_KEY":
+              fallback_key = os.getenv("OPENAI_API_KEY", "").strip()
+              if fallback_key:
+                  key_env = "OPENAI_API_KEY"
+                  api_key = fallback_key
+
+          if not model:
+              raise SystemExit("[AI_CONFIG][ERROR] Resolved AI model is empty.")
+          if provider == "openai_compatible" and not api_base:
+              raise SystemExit("[AI_CONFIG][ERROR] openai_compatible profile requires api_base.")
+          if not api_key:
+              raise SystemExit(f"[AI_CONFIG][ERROR] API key is empty. Expected environment variable: {key_env}")
+
+          resolved_profile = str(cfg.get("resolved_profile") or "").strip()
+          reasoning_effort = str(cfg.get("reasoning_effort") or "").strip()
+          max_tokens = str(int(cfg.get("max_output_tokens") or 0) or "")
+          batch_size = str(int(cfg.get("batch_size") or 0) or "")
+          timeout_s = str(int(cfg.get("timeout_s") or 0) or "")
+
+          env_updates = {
+              "AI_TASK": task,
+              "AI_PROFILE": resolved_profile,
+              "AI_PROVIDER": provider,
+              "AI_MODEL": model,
+              "AI_LITELLM_MODEL": litellm_model,
+              "AI_API_KEY_ENV_VAR": key_env,
+              "AI_REASONING_EFFORT": reasoning_effort,
+              "AI_MAX_OUTPUT_TOKENS": max_tokens,
+              "AI_BATCH_SIZE": batch_size,
+              "AI_TIMEOUT_S": timeout_s,
+              "OPENAI_MODEL": model,
+              "OPENAI_REASONING_EFFORT": reasoning_effort,
+              "OPENAI_MAX_OUTPUT_TOKENS": max_tokens,
+              "OPENAI_TIMEOUT_S": timeout_s,
+              "AUDIT_SUMMARY_USE_AI": "1",
+              "AUDIT_SUMMARY_AI_SECTION_MODE": "1",
+          }
+          if api_base:
+              env_updates["AI_API_BASE"] = api_base
+              env_updates["OPENAI_API_BASE"] = api_base
+          if api_version:
+              env_updates["AI_API_VERSION"] = api_version
+              env_updates["OPENAI_API_VERSION"] = api_version
+
+          github_env = os.environ["GITHUB_ENV"]
+          with open(github_env, "a", encoding="utf-8") as fh:
+              for key, value in env_updates.items():
+                  if value is not None and str(value) != "":
+                      fh.write(f"{key}={value}\n")
+
+          runtime = AIRuntime(task=task)
+          if not runtime.available():
+              raise SystemExit("[AI_RUNTIME][ERROR] AI runtime is not available after dependency installation and config resolution.")
+
+          print("[AI_CONFIG] Resolved audit summary AI configuration:")
+          print(json.dumps({
+              "task": task,
+              "profile": resolved_profile,
+              "provider": provider,
+              "model": model,
+              "litellm_model": litellm_model,
+              "api_base": api_base,
+              "api_version": api_version,
+              "api_key_env_var": key_env,
+              "max_output_tokens": max_tokens,
+              "batch_size": batch_size,
+              "timeout_s": timeout_s,
+              "reasoning_effort": reasoning_effort,
+              "api_key_present": bool(api_key),
+              "runtime_available": runtime.available(),
+          }, ensure_ascii=False, indent=2))
           PY
 
       - name: Prepare portable data dir on Windows
@@ -744,7 +790,7 @@ jobs:
     name: Audit Summary Stage 3 -> PDF ZIP
     needs: [audit_summary_docx]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Configure portable runtime paths

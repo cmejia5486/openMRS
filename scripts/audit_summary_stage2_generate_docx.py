@@ -17,9 +17,12 @@ from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 
 try:
-    import requests
-except Exception:
-    requests = None  # type: ignore
+    from lib.ai_runtime import AIRuntime  # type: ignore
+except Exception as exc:
+    AIRuntime = None  # type: ignore
+    AI_RUNTIME_IMPORT_ERROR = exc
+else:
+    AI_RUNTIME_IMPORT_ERROR = None
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -58,7 +61,7 @@ DEFAULT_IN = str(_env_path("AUDIT_ANALYSIS_JSON_PATH", "audit_summary_analysis_p
 DEFAULT_OUT = str(_env_path("AUDIT_SUMMARY_DOCX_PATH", "Audit Summary.docx"))
 CHART_DIR = str(_env_path("AUDIT_SUMMARY_CHART_DIR", "_audit_summary_charts"))
 
-HEADER_TEXT = "mSEC-AM Audit Summary - OpenMRS Android Client v3.1.1"
+HEADER_TEXT_TEMPLATE = "mSEC-AM Audit Summary - {report_title}"
 
 
 def _wrap_label(s: str, width: int = 30) -> str:
@@ -119,7 +122,7 @@ def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile
     header = section.header
     header.is_linked_to_previous = False
     p = header.paragraphs[0]
-    p.text = f"mSEC-AM Audit Summary - {report_title}"
+    p.text = HEADER_TEXT_TEMPLATE.format(report_title=report_title)
     if p.runs:
         p.runs[0].font.size = Pt(9)
 
@@ -637,7 +640,10 @@ def _app_report_title(app: Dict[str, Any]) -> str:
 
     name_s = _safe_str(name, "Mobile Application").strip() or "Mobile Application"
     version_s = _safe_str(version).strip()
-    return f"{name_s} - {version_s}" if version_s and version_s not in name_s else name_s
+    if version_s and version_s not in name_s:
+        version_label = version_s if version_s.lower().startswith("v") else f"v{version_s}"
+        return f"{name_s} {version_label}"
+    return name_s
 
 
 def _technical_evidence(pack: Dict[str, Any]) -> Dict[str, Any]:
@@ -901,111 +907,75 @@ def _add_coverage_limitations(doc: Document, technical: Dict[str, Any]) -> None:
         doc.add_paragraph("No additional technical coverage limitations were reported in the analysis pack beyond the workbook-defined scope and tool-specific execution constraints.")
 
 
-def _fallback_recommendations_for_pattern(pattern: str, technical: Dict[str, Any]) -> List[str]:
-    pat = pattern.lower()
-    if "hardcoded" in pat or "secret" in pat or "credential" in pat:
-        return [
-            "Remove credentials, API keys, tokens, and shared secrets from source code, resources, build files, and packaged binaries.",
-            "Move secret material to a managed secrets service or secure backend flow; mobile clients should receive only short-lived scoped tokens.",
-            "Add automated secret scanning in pull requests and release workflows, and block introduction of new high-confidence secrets.",
-            "Rotate any exposed credentials and document revocation evidence before rescoring affected controls.",
-        ]
-    if "authorization" in pat or "rbac" in pat or "least privilege" in pat:
-        return [
-            "Define role-to-permission mappings for patient, clinician, administrator, and support workflows.",
-            "Enforce authorization server-side for every sensitive API operation; do not rely only on UI-level restrictions.",
-            "Add regression tests for horizontal and vertical privilege escalation scenarios.",
-            "Review third-party and SDK privileges using least-privilege criteria and document ownership for privileged functions.",
-        ]
-    if "storage" in pat or "key management" in pat:
-        return [
-            "Inventory SharedPreferences, SQLite databases, cache directories, files, and logs that may contain PHI, credentials, tokens, or keys.",
-            "Encrypt sensitive local data using Android Keystore-backed keys or eliminate client-side persistence where not strictly required.",
-            "Disable Android backup for sensitive data or define explicit backup exclusion rules and verify them in the release APK.",
-            "Add runtime and static tests that fail when sensitive values are stored in cleartext local storage.",
-        ]
-    if "authentication" in pat or "brute" in pat:
-        return [
-            "Implement server-enforced lockout, throttling, and anomaly detection for repeated authentication failures.",
-            "Require step-up authentication, such as MFA, FIDO2, TOTP, or Android BiometricPrompt, for sensitive clinical or administrative actions where feasible.",
-            "Harden session lifecycle controls, including inactivity timeout, explicit logout, token revocation, and account deletion session invalidation.",
-            "Add negative tests for brute-force, credential stuffing, weak session reuse, and missing re-authentication scenarios.",
-        ]
-    if "transport" in pat or "certificate" in pat or "tls" in pat:
-        return [
-            "Verify that release builds reject cleartext traffic and do not allow permissive trust managers or hostname verifiers.",
-            "Document certificate validation and pinning decisions, including operational rotation procedures when pinning is used.",
-            "Remove development-only certificate bypasses from production code and enforce network security configuration checks in CI.",
-            "Retest TLS behavior with MobSF or an equivalent mobile network security assessment before closure.",
-        ]
-    if "supply chain" in pat or "outdated" in pat or "dependency" in pat:
-        trivy = _as_dict(technical.get("trivy_sca"))
-        findings = _trivy_findings(trivy)
-        pkgs = []
-        for f in findings:
-            pkg = _first_present(f, ["pkg", "PkgName", "package", "package_name"], "")
-            fixed = _first_present(f, ["fixed", "FixedVersion", "fixed_version"], "")
-            if pkg:
-                pkgs.append(f"{pkg}" + (f" to {fixed}" if fixed else ""))
-        first = "; ".join(pkgs[:4]) if pkgs else "all vulnerable dependencies with fixed versions"
-        return [
-            f"Upgrade {first} and regenerate dependency lock or inventory artifacts for the assessed release.",
-            "Require Trivy SCA to produce JSON and SARIF artifacts on every release candidate without blocking exploratory scans.",
-            "Document accepted-risk decisions for any unfixed CVE, including compensating controls and expiration date.",
-            "Maintain an SBOM or dependency inventory and compare it against the previous release before publication.",
-        ]
-    if "input" in pat or "injection" in pat:
-        return [
-            "Centralize input validation for external files, network payloads, intents, deep links, logs, and user-controlled fields.",
-            "Use parameterized database access and safe serialization/deserialization patterns across the application codebase.",
-            "Treat SAST findings for injection, XML parsing, command execution, and log injection as release-blocking unless formally accepted.",
-            "Add regression tests for malicious inputs, malformed payloads, and unsafe logging patterns.",
-        ]
-    if "audit logging" in pat or "retention" in pat or "alerting" in pat:
-        return [
-            "Define auditable clinical and administrative events, including authentication, access to patient data, privilege changes, and security exceptions.",
-            "Protect logs against tampering, injection, excessive PHI disclosure, and unauthorized local persistence.",
-            "Configure retention, monitoring, and alerting rules that align with operational and regulatory requirements.",
-            "Verify that account deletion, logout, authentication failure, and sensitive data access events are logged consistently.",
-        ]
-    if "tamper" in pat or "reverse" in pat or "binary" in pat:
-        return [
-            "Verify that release APKs are not debuggable and are not signed with debug certificates.",
-            "Remove debug-only tooling, test endpoints, logging interceptors, and development flags from production builds.",
-            "Apply appropriate obfuscation, integrity checks, and anti-tampering controls for the release threat model.",
-            "Retest the release APK with MobSF or equivalent tooling and retain evidence for re-scoring.",
-        ]
-    if "privacy" in pat or "consent" in pat or "permission" in pat:
-        return [
-            "Map privacy-sensitive data flows to user notices, consent events, and lawful processing purposes.",
-            "Minimize dangerous Android permissions and justify each retained permission with a user-facing need.",
-            "Ensure privacy notices, deprecation notices, and system-use warnings are visible before relevant access is granted.",
-            "Retain evidence of consent, notice acceptance, and permission governance for re-audit.",
-        ]
-    return [
-        "Define specific remediation tasks for each mapped control and assign an accountable owner.",
-        "Collect implementation evidence and update the workbook before re-scoring.",
-        "Add regression tests or automated checks to prevent recurrence.",
-        "Retest the affected controls using the same evidence criteria applied in this audit.",
-    ]
 
-def _technical_kpi_for_pattern(pattern: str, technical: Dict[str, Any]) -> str:
-    pat = pattern.lower()
-    if "supply chain" in pat or "outdated" in pat or "dependency" in pat:
-        return "No Critical or High dependency vulnerabilities remain in Trivy; all fixable CVEs have an upgrade, mitigation, or formally accepted-risk decision; dependency inventory/SBOM evidence is retained for the assessed release."
-    if "storage" in pat or "key management" in pat:
-        return "Local SharedPreferences, SQLite databases, caches, and files are reviewed for PHI, credentials, tokens, and keys; sensitive local data is encrypted or eliminated; backup exposure is explicitly controlled."
-    if "tamper" in pat or "reverse" in pat or "binary" in pat:
-        return "Release APK is not debuggable, is not signed with a debug certificate, debug-only tooling is absent, and release hardening controls are verified by MobSF or equivalent evidence."
-    if "transport" in pat or "certificate" in pat or "tls" in pat:
-        return "TLS configuration, certificate validation, and pinning decisions are documented and verified; weak signing or certificate indicators are remediated or formally justified."
-    if "input" in pat or "injection" in pat:
-        return "Application-code SAST findings for input handling and injection are triaged; exploitable issues are remediated and covered by regression tests."
-    if "privacy" in pat or "permission" in pat:
-        return "Dangerous permissions and privacy-sensitive data flows are justified, minimized, and covered by user-facing notices and runtime access controls."
-    if "misconfiguration" in pat or "default" in pat:
-        return "Manifest and runtime configuration findings are triaged; insecure defaults are removed or documented with compensating controls."
-    return "Evidence recorded in workbook and technical artifacts; mapped controls can be re-tested and re-scored as compliant after remediation."
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _ai_pattern_writeups_required() -> bool:
+    """Require AI-generated pattern narratives by default.
+
+    Recommendations and MAP closure criteria are not authored from static
+    fallback text. They must be returned by the configured AI task using the
+    workbook metrics and scanner context. Set
+    AUDIT_SUMMARY_AI_PATTERN_WRITEUPS_REQUIRED=0 only for local debugging.
+    """
+    if _env_bool("AUDIT_SUMMARY_AI_REQUIRED", False):
+        return True
+    return _env_bool("AUDIT_SUMMARY_AI_PATTERN_WRITEUPS_REQUIRED", True)
+
+
+def _ai_recommendations_for_pattern(pattern: str, writeups: Dict[str, Dict[str, Any]]) -> List[str]:
+    item = _as_dict(writeups.get(pattern))
+    recs = item.get("recommendations")
+    if not isinstance(recs, list):
+        return []
+    return [_clean_text(x) for x in recs if _clean_text(x)]
+
+
+def _ai_field_for_pattern(pattern: str, writeups: Dict[str, Dict[str, Any]], field: str) -> str:
+    return _clean_text(_as_dict(writeups.get(pattern)).get(field, ""))
+
+
+def _validate_ai_pattern_writeups(patterns: List[Dict[str, Any]], writeups: Dict[str, Dict[str, Any]]) -> None:
+    """Validate that AI supplied the report-authored pattern content.
+
+    This prevents static, pre-authored recommendations from silently entering
+    the report. The configured model must produce expected state, impact,
+    recommendations, and MAP closure criteria for each reported pattern.
+    """
+    missing: List[str] = []
+    for p in patterns[:10]:
+        pat = str(p.get("pattern") or "").strip()
+        if not pat:
+            continue
+        item = _as_dict(writeups.get(pat))
+        missing_fields = []
+        if not _clean_text(item.get("expected")):
+            missing_fields.append("expected")
+        if not _clean_text(item.get("impact")):
+            missing_fields.append("impact")
+        if not _ai_recommendations_for_pattern(pat, writeups):
+            missing_fields.append("recommendations")
+        if not _clean_text(item.get("closure_criteria")):
+            missing_fields.append("closure_criteria")
+        if missing_fields:
+            missing.append(f"{pat}: {', '.join(missing_fields)}")
+
+    if missing and _ai_pattern_writeups_required():
+        details = " | ".join(missing[:12])
+        raise SystemExit(
+            "[ERROR] AI-generated pattern writeups are incomplete. "
+            "The report is configured to require AI-authored recommendations, "
+            "impact statements, expected-state narratives, and MAP closure "
+            f"criteria. Missing: {details}"
+        )
+    if missing:
+        print("[AI][WARN] AI-generated pattern writeups are incomplete: " + " | ".join(missing[:12]))
+
 
 def _extract_json_object(text: str) -> str:
     text = (text or "").strip()
@@ -1085,88 +1055,130 @@ def _ai_env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
 
-def _ai_api_key() -> str:
-    for name in ("OPENAI_API_KEY", "LM_API_TOKEN", "AI_API_KEY"):
-        value = _ai_env(name)
-        if value:
-            return value
-    return ""
+_AI_RUNTIME_CACHE = None
+
+
+def _audit_ai_task() -> str:
+    return _ai_env("AI_TASK", "audit_summary_docx") or "audit_summary_docx"
+
+
+def _get_ai_runtime():
+    """Resolve the configured AI runtime from parameters/ai.config.json.
+
+    The audit-summary workflow exports AI_TASK=audit_summary_docx and may set
+    AI_PROFILE or provider/model overrides. AIRuntime delegates resolution to
+    scripts/lib/ai_config.py, so the effective model is controlled by
+    parameters/ai.config.json first and GitHub Actions variables second.
+    """
+    global _AI_RUNTIME_CACHE
+    if _AI_RUNTIME_CACHE is not None:
+        return _AI_RUNTIME_CACHE
+
+    if AIRuntime is None:
+        print(f"[AI] AIRuntime is not available; deterministic fallback will be used. Import error: {AI_RUNTIME_IMPORT_ERROR}")
+        return None
+
+    try:
+        profile = _ai_env("AI_PROFILE") or None
+        runtime = AIRuntime(task=_audit_ai_task(), profile=profile)
+        _AI_RUNTIME_CACHE = runtime
+        cfg = getattr(runtime, "config", {}) or {}
+        print(
+            "[AI_CONFIG] "
+            f"task={cfg.get('resolved_task') or _audit_ai_task()} "
+            f"profile={cfg.get('resolved_profile') or profile or ''} "
+            f"provider={getattr(runtime, 'provider', '')} "
+            f"model={getattr(runtime, 'model', '')} "
+            f"litellm_model={getattr(runtime, 'litellm_model', '')} "
+            f"api_base={getattr(runtime, 'api_base', '')}"
+        )
+        return runtime
+    except Exception as exc:
+        print(f"[AI][WARN] Could not resolve AIRuntime from parameters/ai.config.json: {exc}")
+        return None
 
 
 def _ai_enabled() -> bool:
     raw = _ai_env("AUDIT_SUMMARY_AI_ENABLED", "1").lower()
     if raw in {"0", "false", "no", "off"}:
         return False
-    if requests is None:
-        print("[AI] requests is not available; deterministic fallback will be used.")
+
+    runtime = _get_ai_runtime()
+    if runtime is None:
         return False
-    if not _ai_api_key():
-        print("[AI] No API key/token found; deterministic fallback will be used.")
+
+    try:
+        if not runtime.available():
+            cfg = getattr(runtime, "config", {}) or {}
+            print(
+                "[AI] Runtime is not available. AI-authored recommendations will fail if required. "
+                f"provider={getattr(runtime, 'provider', '')} "
+                f"model={getattr(runtime, 'model', '')} "
+                f"api_key_env_var={cfg.get('api_key_env_var', 'OPENAI_API_KEY')}"
+            )
+            return False
+    except Exception as exc:
+        print(f"[AI][WARN] Runtime availability check failed: {exc}")
         return False
+
     return True
 
 
-def _ai_api_base() -> str:
-    return (
-        _ai_env("AI_API_BASE")
-        or _ai_env("OPENAI_API_BASE")
-        or _ai_env("LM_STUDIO_API_BASE")
-        or "http://localhost:1234/v1"
-    ).rstrip("/")
-
-
-def _ai_model() -> str:
-    return _ai_env("AI_MODEL") or _ai_env("OPENAI_MODEL") or "gpt-oss-20b"
-
-
-def _ai_timeout_s() -> int:
-    return _safe_int(_ai_env("AI_TIMEOUT_S", "300"), 300)
-
-
 def _ai_max_tokens(default: int = 1600) -> int:
-    return _safe_int(_ai_env("AI_MAX_OUTPUT_TOKENS", str(default)), default)
+    env_value = _ai_env("AI_MAX_OUTPUT_TOKENS")
+    if env_value:
+        return _safe_int(env_value, default)
+
+    runtime = _get_ai_runtime()
+    if runtime is not None:
+        cfg = getattr(runtime, "config", {}) or {}
+        configured = cfg.get("max_output_tokens")
+        if configured not in (None, ""):
+            return _safe_int(configured, default)
+
+    return default
 
 
 def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str, Any], max_tokens: int = 1600) -> Dict[str, Any]:
-    """Call an OpenAI-compatible chat endpoint directly through requests.
+    """Call the configured AI runtime through OpenAI SDK or LiteLLM.
 
-    This avoids installing OpenAI SDK, LiteLLM, tokenizers, or HuggingFace packages
-    in the audit-summary job. Each call is section-scoped to keep prompts small.
-    Failures are non-fatal because deterministic report content remains the fallback.
+    The model, provider, API base, timeout, temperature, and API-key env var are
+    resolved by scripts/lib/ai_runtime.py from parameters/ai.config.json for the
+    audit_summary_docx task. Each call is section-scoped to keep prompts small.
+    Most narrative failures can fall back to non-recommendation report text,
+    but weakness-pattern recommendations and MAP closure criteria are required
+    from AI by default.
     """
     if not _ai_enabled():
         return {}
 
-    url = _ai_api_base() + "/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {_ai_api_key()}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": _ai_model(),
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-        ],
-        "temperature": 0.15,
-        "max_tokens": max_tokens,
-    }
+    runtime = _get_ai_runtime()
+    if runtime is None:
+        return {}
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+    ]
 
     try:
-        print(f"[AI] Calling section={section_name} model={_ai_model()} base={_ai_api_base()}")
-        resp = requests.post(url, headers=headers, json=payload, timeout=_ai_timeout_s())  # type: ignore[union-attr]
-        if resp.status_code >= 400:
-            print(f"[AI][WARN] Section {section_name} failed with HTTP {resp.status_code}: {resp.text[:500]}")
-            return {}
-        data = resp.json()
-        choices = data.get("choices") or []
-        if not choices:
-            print(f"[AI][WARN] Section {section_name} returned no choices.")
-            return {}
-        content = (((choices[0] or {}).get("message") or {}).get("content") or "").strip()
+        print(
+            "[AI] Calling "
+            f"section={section_name} "
+            f"task={_audit_ai_task()} "
+            f"provider={getattr(runtime, 'provider', '')} "
+            f"model={getattr(runtime, 'model', '')}"
+        )
+        response = runtime.create(
+            input=messages,
+            max_output_tokens=max_tokens,
+            reasoning={"effort": _ai_env("AI_REASONING_EFFORT")},
+        )
+        content = (getattr(response, "output_text", "") or "").strip()
         if not content:
             print(f"[AI][WARN] Section {section_name} returned empty content.")
             return {}
+
         obj = json.loads(_extract_json_object(content))
         if isinstance(obj, dict):
             print(f"[AI] Section {section_name} completed.")
@@ -1343,9 +1355,11 @@ def _call_llm_for_audit_sections(
                 "patterns": "Use exact pattern names from input.",
                 "expected": "1 sentence.",
                 "impact": "1 sentence mentioning confidentiality, integrity, availability, or health-data regulatory exposure only when supported.",
-                "recommendations": "4 to 6 actionable bullets per pattern, specific and non-repetitive.",
+                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and limitations. Do not use generic boilerplate or static templates.",
+                "closure_criteria": "1 measurable sentence suitable for the MAP, generated from the supplied evidence and scanner context.",
                 "no_time_window_headings": True,
                 "no_unprovided_metrics": True,
+                "no_static_recommendations": True,
             },
             "context": {
                 "application": app,
@@ -1359,7 +1373,8 @@ def _call_llm_for_audit_sections(
                         "pattern": "<exact pattern name>",
                         "expected": "<sentence>",
                         "impact": "<sentence>",
-                        "recommendations": ["<action>"],
+                        "recommendations": ["<AI-generated action grounded in evidence>"],
+                        "closure_criteria": "<AI-generated measurable closure criterion grounded in evidence>",
                     }
                 ]
             },
@@ -1439,6 +1454,7 @@ def main() -> None:
     tech_ai = _as_dict(prose.get("technical_narratives"))
     key_takeaways = prose.get("key_takeaways", [])
     writeups = {w["pattern"]: w for w in prose.get("pattern_writeups", []) if isinstance(w, dict) and "pattern" in w}
+    _validate_ai_pattern_writeups(patterns, writeups)
     if not key_takeaways:
         key_takeaways = [f"{p['pattern']} - {p['severity']} severity; {int(p['mapped_noncompliant_count'])} related non-compliant control(s) in the workbook." for p in patterns[:7]]
     technical_takeaways = _technical_takeaways(technical)
@@ -1516,7 +1532,7 @@ def main() -> None:
         lik = _likelihood_from_count(cnt)
         sev = p["severity"]
         owner = p["recommended_owner"]
-        impact = writeups.get(p["pattern"], {}).get("impact", "The weakness pattern can compromise confidentiality/integrity/availability of health information and increase regulatory exposure.")
+        impact = _ai_field_for_pattern(p["pattern"], writeups, "impact") or "AI-generated impact narrative was not returned for this pattern."
         row = rt.add_row().cells
         row[0].text = p["pattern"]
         row[1].text = sev
@@ -1573,8 +1589,8 @@ def main() -> None:
         anchors = p.get("description_anchors", [])[:2]
         doc.add_paragraph(f"{pat} ({sev})", style="Heading 2")
         doc.add_paragraph(f"Workbook basis: {cnt} related non-compliant control(s) mapped to this pattern.")
-        expected = writeups.get(pat, {}).get("expected", "Controls in this area should provide robust, consistently enforced safeguards appropriate to health data processing.")
-        impact = writeups.get(pat, {}).get("impact", "Deficiencies can increase the likelihood and impact of security incidents affecting confidentiality, integrity, or availability.")
+        expected = _ai_field_for_pattern(pat, writeups, "expected") or "AI-generated expected-state narrative was not returned for this pattern."
+        impact = _ai_field_for_pattern(pat, writeups, "impact") or "AI-generated impact narrative was not returned for this pattern."
         doc.add_paragraph(f"Expected: {expected}")
         doc.add_paragraph("Observed: The audit workbook indicates the related controls are missing, insufficient, or not evidenced for the assessed scope.")
         doc.add_paragraph(f"Impact: {impact}")
@@ -1586,15 +1602,16 @@ def main() -> None:
 
     doc.add_page_break()
     add_nav_heading("8. Recommendations", 1)
-    doc.add_paragraph("Recommendations are organized by the same weakness patterns presented in the Main deficiencies section. They target remediation of workbook-evidenced gaps and may include strengthening controls to improve security posture.")
+    doc.add_paragraph("Recommendations are generated by the configured AI model using the audit workbook, weakness-pattern prevalence, PUID examples, Vision360, Trivy, MobSF, SAST, and coverage limitations. Static fallback recommendations are intentionally not used.")
     for p in patterns[:10]:
         pat = p["pattern"]
         doc.add_paragraph(pat, style="Heading 2")
-        recs = writeups.get(pat, {}).get("recommendations", [])
+        recs = _ai_recommendations_for_pattern(pat, writeups)
         if not recs:
-            recs = _fallback_recommendations_for_pattern(pat, technical)
+            doc.add_paragraph("AI-generated recommendations were not returned for this pattern; rerun the pipeline with a valid AI configuration or review the AI section artifact.", style="List Bullet")
+            continue
         for r in recs[:12]:
-            doc.add_paragraph(str(r).strip(), style="List Bullet")
+            doc.add_paragraph(_clean_text(r), style="List Bullet")
 
     doc.add_page_break()
     add_nav_heading("9. Visual Analytics", 1)
@@ -1623,7 +1640,7 @@ def main() -> None:
         lik = _likelihood_from_count(cnt)
         owner = p["recommended_owner"]
         target_date = _target_date_str(audit_dt, sev)
-        criteria = _technical_kpi_for_pattern(pat, technical)
+        criteria = _ai_field_for_pattern(pat, writeups, "closure_criteria") or "AI-generated closure criteria were not returned for this pattern."
         row = mp.add_row().cells
         row[0].text = f"{pat}\nWorkbook basis: {cnt} mapped non-compliant control(s)."
         row[1].text = owner
