@@ -2374,20 +2374,20 @@ def build_technical_evidence() -> Dict[str, Any]:
 
     vision_files = {
         "vision360_fingerprint": _find_file(vision_dirs, ["vision360_fingerprint.json"]),
-        "vision360_output": _find_file(vision_dirs, ["vision360_output.json"]),
+        "vision360_output": _find_file(vision_dirs, ["vision360_output.json", "vision_360_output.json"]),
         "vision360_trace": _find_file(vision_dirs, ["vision360_trace.json"]),
         "vision360_effective_config": _find_file(vision_dirs, ["vision360_effective_config.json"]),
-    }
+    }       
     trivy_files = {
         "agent_payload": _find_file(trivy_dirs, ["agent_payload.json"]),
         "trivy_json": _find_file(trivy_dirs, ["trivy.json"]),
         "trivy_sarif": _find_file(trivy_dirs, ["trivy.sarif"]),
     }
     mobsf_files = {
-        "mobsf_results": _find_file(mobsf_dirs, ["mobsf_results.json"]),
+        "mobsf_results": _find_file(mobsf_dirs, ["mobsf_results.json", "mobsf-report.json"]),
     }
     dyn_files = {
-        "mobsf_dynamic_results": _find_file(dyn_dirs, ["mobsf_dynamic_results.json"]),
+        "mobsf_dynamic_results": _find_file(dyn_dirs, ["mobsf_dynamic_results.json", "mobsf-dynamic-report.json"]),
     }
     sast_files = {
         "merged_sarif": _find_file(sast_dirs, ["merged.sarif"]),
