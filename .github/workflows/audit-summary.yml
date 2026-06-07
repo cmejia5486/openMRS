@@ -14,7 +14,7 @@ on:
       AI_PROFILE:
         required: false
         type: string
-        default: "openai_default"
+        default: "lm_studio_local"
       AI_PYTHON_VERSION:
         required: false
         type: string
