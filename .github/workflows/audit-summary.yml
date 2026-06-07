@@ -4,91 +4,91 @@ on:
   workflow_call:
     secrets:
       OPENAI_API_KEY:
-        required: false
+        required: true
 
     inputs:
       AI_TASK:
-        required: false
+        required: true
         type: string
         default: "audit_summary_docx"
       AI_PROFILE:
-        required: false
+        required: true
         type: string
         default: "openai_default"
       AI_PYTHON_VERSION:
-        required: false
+        required: true
         type: string
         default: "3.12"
       AI_RUNTIME_DEBUG:
-        required: false
+        required: true
         type: string
         default: "0"
       AI_PROVIDER:
-        required: false
+        required: true
         type: string
         default: ""
       AI_MODEL:
-        required: false
+        required: true
         type: string
         default: ""
       AI_LITELLM_MODEL:
-        required: false
+        required: true
         type: string
         default: ""
       AI_API_BASE:
-        required: false
+        required: true
         type: string
         default: ""
       AI_API_VERSION:
-        required: false
+        required: true
         type: string
         default: ""
       AI_API_KEY_ENV_VAR:
-        required: false
+        required: true
         type: string
         default: "OPENAI_API_KEY"
       AI_REASONING_EFFORT:
-        required: false
+        required: true
         type: string
         default: ""
       AI_MAX_OUTPUT_TOKENS:
-        required: false
+        required: true
         type: string
         default: ""
       AI_BATCH_SIZE:
-        required: false
+        required: true
         type: string
         default: ""
       AI_TIMEOUT_S:
-        required: false
+        required: true
         type: string
         default: ""
       OPENAI_MODEL:
-        required: false
+        required: true
         type: string
         default: ""
       OPENAI_API_BASE:
-        required: false
+        required: true
         type: string
         default: ""
       OPENAI_REASONING_EFFORT:
-        required: false
+        required: true
         type: string
         default: ""
       OPENAI_MAX_OUTPUT_TOKENS:
-        required: false
+        required: true
         type: string
         default: ""
       OPENAI_TIMEOUT_S:
-        required: false
+        required: true
         type: string
         default: ""
       AUDIT_SUMMARY_USE_AI:
-        required: false
+        required: true
         type: string
         default: "1"
       AUDIT_SUMMARY_AI_SECTION_MODE:
-        required: false
+        required: true
         type: string
         default: "1"
 
