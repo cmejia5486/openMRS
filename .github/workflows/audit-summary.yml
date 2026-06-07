@@ -350,6 +350,22 @@ jobs:
               for item in missing:
                   print("[PIP] - " + item)
               sys.exit(1)
+
+          from pathlib import Path
+          repo = Path.cwd()
+          sys.path.insert(0, str(repo / "scripts"))
+          from lib import ai_runtime
+          runtime_missing = []
+          if getattr(ai_runtime, "OpenAI", None) is None:
+              runtime_missing.append("lib.ai_runtime.OpenAI is None")
+          if getattr(ai_runtime, "completion", None) is None:
+              runtime_missing.append("lib.ai_runtime.completion is None")
+          if runtime_missing:
+              print("[PIP] AI runtime import contract is invalid:")
+              for item in runtime_missing:
+                  print("[PIP] - " + item)
+              sys.exit(1)
+
           print("[PIP] Cached dependency contracts are valid.")
           '@
             $py | & $env:PYTHON_EXE -
@@ -361,20 +377,28 @@ jobs:
             exit $LASTEXITCODE
           }
 
-          if (Test-AuditSummaryPythonDeps) {
-            Write-Host "[PIP] Dependency installation skipped because cached venv is usable."
+          $cacheHit = "${{ steps.audit_summary_python_cache.outputs.cache-hit }}"
+          Write-Host "[PIP] actions/cache hit: $cacheHit"
+
+          $packages = @(
+            "openai>=1.0.0",
+            "litellm>=1.40.0",
+            "pydantic>=2.7.0",
+            "pandas",
+            "openpyxl",
+            "python-docx",
+            "matplotlib",
+            "requests"
+          )
+
+          if ($cacheHit -eq "true" -and (Test-AuditSummaryPythonDeps)) {
+            Write-Host "[PIP] Dependency installation skipped because restored cached venv is usable."
           } else {
-            Write-Host "[PIP] Installing minimal AI/report dependencies for Audit Summary."
-            $packages = @(
-              "openai>=1.0.0",
-              "litellm>=1.40.0",
-              "pydantic>=2.7.0",
-              "pandas",
-              "openpyxl",
-              "python-docx",
-              "matplotlib",
-              "requests"
-            )
+            if ($cacheHit -eq "true") {
+              Write-Host "[PIP] Restored cache is not usable. Repairing dependencies."
+            } else {
+              Write-Host "[PIP] No dependency cache was restored. Installing dependencies into fresh venv."
+            }
             Invoke-PipInstall -PipArgs (@("install", "--upgrade", "--retries", "10", "--timeout", "720", "--prefer-binary") + $packages)
           }
 
@@ -435,16 +459,39 @@ jobs:
               for item in missing:
                   print("[PIP] - " + item)
               sys.exit(1)
+
+          from pathlib import Path
+          repo = Path.cwd()
+          sys.path.insert(0, str(repo / "scripts"))
+          from lib import ai_runtime
+          runtime_missing = []
+          if getattr(ai_runtime, "OpenAI", None) is None:
+              runtime_missing.append("lib.ai_runtime.OpenAI is None")
+          if getattr(ai_runtime, "completion", None) is None:
+              runtime_missing.append("lib.ai_runtime.completion is None")
+          if runtime_missing:
+              print("[PIP] AI runtime import contract is invalid:")
+              for item in runtime_missing:
+                  print("[PIP] - " + item)
+              sys.exit(1)
+
           print("[PIP] Cached dependency contracts are valid.")
           PY
           }
 
           "$PYTHON_EXE" -m pip --version
 
-          if test_deps; then
-            echo "[PIP] Dependency installation skipped because cached venv is usable."
+          cache_hit="${{ steps.audit_summary_python_cache.outputs.cache-hit }}"
+          echo "[PIP] actions/cache hit: $cache_hit"
+
+          if [ "$cache_hit" = "true" ] && test_deps; then
+            echo "[PIP] Dependency installation skipped because restored cached venv is usable."
           else
-            echo "[PIP] Installing minimal AI/report dependencies for Audit Summary."
+            if [ "$cache_hit" = "true" ]; then
+              echo "[PIP] Restored cache is not usable. Repairing dependencies."
+            else
+              echo "[PIP] No dependency cache was restored. Installing dependencies into fresh venv."
+            fi
             pip_install install --upgrade --retries 10 --timeout 720 --prefer-binary \
               'openai>=1.0.0' \
               'litellm>=1.40.0' \
