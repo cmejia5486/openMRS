@@ -33,4 +33,3 @@ steps:
       name: app-zip
       path: app-zip.zip
       if-no-files-found: error
-```
