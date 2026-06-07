@@ -63,9 +63,9 @@ def _candidate_config_paths() -> List[str]:
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.dirname(script_dir)
-    candidates.append(os.path.join(repo_root, "parameters", "config.json"))
-    candidates.append(os.path.join(os.getcwd(), "parameters", "config.json"))
-    candidates.append(str(_runtime_data_dir() / "config.json"))
+    candidates.append(os.path.join(repo_root, "parameters", "audit_summary_literals.json"))
+    candidates.append(os.path.join(os.getcwd(), "parameters", "audit_summary_literals.json"))
+    candidates.append(str(_runtime_data_dir() / "audit_summary_literals.json"))
 
     out: List[str] = []
     seen = set()
@@ -81,28 +81,28 @@ def _load_runtime_config() -> Dict[str, Any]:
     tried_paths = _candidate_config_paths()
     existing = next((p for p in tried_paths if os.path.isfile(p)), None)
     if not existing:
-        raise SystemExit("[ERROR] config.json not found. Tried: " + " | ".join(tried_paths))
+        raise SystemExit("[ERROR] audit_summary_literals.json not found. Tried: " + " | ".join(tried_paths))
 
     try:
         with open(existing, "r", encoding="utf-8") as f:
             cfg = json.load(f)
     except Exception as e:
-        raise SystemExit(f"[ERROR] Failed to read config.json at {existing}: {e}")
+        raise SystemExit(f"[ERROR] Failed to read audit_summary_literals.json at {existing}: {e}")
 
     if not isinstance(cfg, dict):
-        raise SystemExit(f"[ERROR] Invalid config.json at {existing}: top-level JSON must be an object.")
+        raise SystemExit(f"[ERROR] Invalid audit_summary_literals.json at {existing}: top-level JSON must be an object.")
 
     app_metadata = cfg.get("app_metadata")
     actors = cfg.get("actors")
 
     if not isinstance(app_metadata, dict):
-        raise SystemExit(f"[ERROR] Invalid config.json at {existing}: key 'app_metadata' must be an object.")
+        raise SystemExit(f"[ERROR] Invalid audit_summary_literals.json at {existing}: key 'app_metadata' must be an object.")
 
     if not isinstance(actors, dict):
-        raise SystemExit(f"[ERROR] Invalid config.json at {existing}: key 'actors' must be an object.")
+        raise SystemExit(f"[ERROR] Invalid audit_summary_literals.json at {existing}: key 'actors' must be an object.")
 
     if "Engineering Group (EN)" not in actors:
-        raise SystemExit(f"[ERROR] Invalid config.json at {existing}: missing actors['Engineering Group (EN)'].")
+        raise SystemExit(f"[ERROR] Invalid audit_summary_literals.json at {existing}: missing actors['Engineering Group (EN)'].")
 
     return {
         "config_path": existing,
