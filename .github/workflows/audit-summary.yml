@@ -1,301 +1,286 @@
-﻿name: Audit Summary
+name: Audit Summary
 
 on:
   workflow_call:
     secrets:
       OPENAI_API_KEY:
-        required: true
+        required: false
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  PYTHONUNBUFFERED: "1"
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PIP_NO_INPUT: "1"
-  PIP_DEFAULT_TIMEOUT: "720"
-  PIP_RETRIES: "10"
+    inputs:
+      AI_TASK:
+        required: false
+        type: string
+        default: "audit_summary_docx"
+      AI_PROFILE:
+        required: false
+        type: string
+        default: "openai_default"
+      AI_PYTHON_VERSION:
+        required: false
+        type: string
+        default: "3.12"
+      AI_RUNTIME_DEBUG:
+        required: false
+        type: string
+        default: "0"
+      AI_PROVIDER:
+        required: false
+        type: string
+        default: ""
+      AI_MODEL:
+        required: false
+        type: string
+        default: ""
+      AI_LITELLM_MODEL:
+        required: false
+        type: string
+        default: ""
+      AI_API_BASE:
+        required: false
+        type: string
+        default: ""
+      AI_API_VERSION:
+        required: false
+        type: string
+        default: ""
+      AI_API_KEY_ENV_VAR:
+        required: false
+        type: string
+        default: "OPENAI_API_KEY"
+      AI_REASONING_EFFORT:
+        required: false
+        type: string
+        default: ""
+      AI_MAX_OUTPUT_TOKENS:
+        required: false
+        type: string
+        default: ""
+      AI_BATCH_SIZE:
+        required: false
+        type: string
+        default: ""
+      AI_TIMEOUT_S:
+        required: false
+        type: string
+        default: ""
+      OPENAI_MODEL:
+        required: false
+        type: string
+        default: ""
+      OPENAI_API_BASE:
+        required: false
+        type: string
+        default: ""
+      OPENAI_REASONING_EFFORT:
+        required: false
+        type: string
+        default: ""
+      OPENAI_MAX_OUTPUT_TOKENS:
+        required: false
+        type: string
+        default: ""
+      OPENAI_TIMEOUT_S:
+        required: false
+        type: string
+        default: ""
+      AUDIT_SUMMARY_USE_AI:
+        required: false
+        type: string
+        default: "1"
+      AUDIT_SUMMARY_AI_SECTION_MODE:
+        required: false
+        type: string
+        default: "1"
 
 permissions:
   contents: read
   actions: write
 
 jobs:
-  audit_summary_docx:
+  audit_summary:
     name: Audit Summary Stage 1 and Stage 2 -> DOCX
     runs-on: self-hosted
-    timeout-minutes: 180
+    timeout-minutes: 480
+
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      AI_TASK: audit_summary_docx
-      AI_PROFILE: ${{ vars.AI_PROFILE }}
-      AI_PYTHON_VERSION: ${{ vars.AI_PYTHON_VERSION }}
-      AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
-      AI_PROVIDER: ${{ vars.AI_PROVIDER }}
-      AI_MODEL: ${{ vars.AI_MODEL }}
-      AI_LITELLM_MODEL: ${{ vars.AI_LITELLM_MODEL }}
-      AI_API_BASE: ${{ vars.AI_API_BASE }}
-      AI_API_VERSION: ${{ vars.AI_API_VERSION }}
-      AI_API_KEY_ENV_VAR: OPENAI_API_KEY
-      AI_REASONING_EFFORT: ${{ vars.AI_REASONING_EFFORT }}
-      AI_MAX_OUTPUT_TOKENS: ${{ vars.AI_MAX_OUTPUT_TOKENS }}
-      AI_BATCH_SIZE: ${{ vars.AI_BATCH_SIZE }}
-      AI_TIMEOUT_S: ${{ vars.AI_TIMEOUT_S }}
-      OPENAI_MODEL: ${{ vars.AI_MODEL }}
-      OPENAI_API_BASE: ${{ vars.AI_API_BASE }}
-      OPENAI_REASONING_EFFORT: ${{ vars.AI_REASONING_EFFORT }}
-      OPENAI_MAX_OUTPUT_TOKENS: ${{ vars.AI_MAX_OUTPUT_TOKENS }}
-      OPENAI_TIMEOUT_S: ${{ vars.AI_TIMEOUT_S }}
-      AUDIT_SUMMARY_USE_AI: "1"
-      AUDIT_SUMMARY_AI_SECTION_MODE: "1"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       PYTHONUNBUFFERED: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PIP_NO_INPUT: "1"
+      PIP_DEFAULT_TIMEOUT: "720"
+      PIP_RETRIES: "10"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AI_TASK: ${{ inputs.AI_TASK }}
+      AI_PROFILE: ${{ inputs.AI_PROFILE }}
+      AI_PYTHON_VERSION: ${{ inputs.AI_PYTHON_VERSION }}
+      AI_RUNTIME_DEBUG: ${{ inputs.AI_RUNTIME_DEBUG }}
+      AI_PROVIDER: ${{ inputs.AI_PROVIDER }}
+      AI_MODEL: ${{ inputs.AI_MODEL }}
+      AI_LITELLM_MODEL: ${{ inputs.AI_LITELLM_MODEL }}
+      AI_API_BASE: ${{ inputs.AI_API_BASE }}
+      AI_API_VERSION: ${{ inputs.AI_API_VERSION }}
+      AI_API_KEY_ENV_VAR: ${{ inputs.AI_API_KEY_ENV_VAR }}
+      AI_REASONING_EFFORT: ${{ inputs.AI_REASONING_EFFORT }}
+      AI_MAX_OUTPUT_TOKENS: ${{ inputs.AI_MAX_OUTPUT_TOKENS }}
+      AI_BATCH_SIZE: ${{ inputs.AI_BATCH_SIZE }}
+      AI_TIMEOUT_S: ${{ inputs.AI_TIMEOUT_S }}
+      OPENAI_MODEL: ${{ inputs.OPENAI_MODEL }}
+      OPENAI_API_BASE: ${{ inputs.OPENAI_API_BASE }}
+      OPENAI_REASONING_EFFORT: ${{ inputs.OPENAI_REASONING_EFFORT }}
+      OPENAI_MAX_OUTPUT_TOKENS: ${{ inputs.OPENAI_MAX_OUTPUT_TOKENS }}
+      OPENAI_TIMEOUT_S: ${{ inputs.OPENAI_TIMEOUT_S }}
+      AUDIT_SUMMARY_USE_AI: ${{ inputs.AUDIT_SUMMARY_USE_AI }}
+      AUDIT_SUMMARY_AI_SECTION_MODE: ${{ inputs.AUDIT_SUMMARY_AI_SECTION_MODE }}
+      AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS: "500"
+      AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS: "200"
+      AUDIT_SUMMARY_MAX_CORRELATION_ROWS: "500"
       PYTHONNOUSERSITE: "1"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
-      - name: Configure portable runtime paths on Windows
-        if: runner.os == 'Windows'
+      - name: Resolve runtime directories
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
           $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
           $transferDir = Join-Path $env:RUNNER_TEMP "audit-summary-docx-transfer"
-          $technicalInputsDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
-          $vision360BundleDir = Join-Path $technicalInputsDir "vision360"
-          $trivyPayloadDir = Join-Path $technicalInputsDir "trivy"
-          $mobsfReportDir = Join-Path $technicalInputsDir "mobsf"
-          $mobsfDynamicReportDir = Join-Path $technicalInputsDir "mobsf-dynamic"
-          $sastFindingsDir = Join-Path $technicalInputsDir "sast"
-          $auditExcelPath = Join-Path $dataDir "security_audit_requirements.xlsx"
-          $analysisJsonPath = Join-Path $dataDir "audit_summary_analysis_pack.json"
-          $docxPath = Join-Path $dataDir "Audit Summary.docx"
-          $chartDir = Join-Path $dataDir "_audit_summary_charts"
-          $mplConfigDir = Join-Path $dataDir "_matplotlib"
+          $technicalDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
+
+          New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $transferDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $technicalDir | Out-Null
 
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_SUMMARY_TRANSFER_DIR=$transferDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_TECHNICAL_INPUTS_DIR=$technicalInputsDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "VISION360_BUNDLE_DIR=$vision360BundleDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "TRIVY_PAYLOAD_DIR=$trivyPayloadDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MOBSF_REPORT_DIR=$mobsfReportDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MOBSF_DYNAMIC_REPORT_DIR=$mobsfDynamicReportDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "SAST_FINDINGS_DIR=$sastFindingsDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_EXCEL_PATH=$auditExcelPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_ANALYSIS_JSON_PATH=$analysisJsonPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_DOCX_PATH=$docxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_CHART_DIR=$chartDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MPLCONFIGDIR=$mplConfigDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VISION360_BUNDLE_DIR=$(Join-Path $technicalDir 'vision360')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "TRIVY_PAYLOAD_DIR=$(Join-Path $technicalDir 'trivy')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MOBSF_REPORT_DIR=$(Join-Path $technicalDir 'mobsf')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MOBSF_DYNAMIC_REPORT_DIR=$(Join-Path $technicalDir 'mobsf-dynamic')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SAST_FINDINGS_DIR=$(Join-Path $technicalDir 'sast')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_EXCEL_PATH=$(Join-Path $dataDir 'security_audit_requirements.xlsx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_ANALYSIS_JSON_PATH=$(Join-Path $dataDir 'audit_summary_analysis_pack.json')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_SUMMARY_DOCX_PATH=$(Join-Path $dataDir 'Audit Summary.docx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_SUMMARY_CHART_DIR=$(Join-Path $dataDir '_audit_summary_charts')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MPLCONFIGDIR=$(Join-Path $dataDir '_matplotlib')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-          Write-Host "[PATH] VISION360_DATA_DIR=$dataDir"
-          Write-Host "[PATH] AUDIT_SUMMARY_TRANSFER_DIR=$transferDir"
-          Write-Host "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$technicalInputsDir"
-          Write-Host "[PATH] VISION360_BUNDLE_DIR=$vision360BundleDir"
-          Write-Host "[PATH] TRIVY_PAYLOAD_DIR=$trivyPayloadDir"
-          Write-Host "[PATH] MOBSF_REPORT_DIR=$mobsfReportDir"
-          Write-Host "[PATH] MOBSF_DYNAMIC_REPORT_DIR=$mobsfDynamicReportDir"
-          Write-Host "[PATH] SAST_FINDINGS_DIR=$sastFindingsDir"
-          Write-Host "[PATH] AUDIT_EXCEL_PATH=$auditExcelPath"
-          Write-Host "[PATH] AUDIT_ANALYSIS_JSON_PATH=$analysisJsonPath"
-          Write-Host "[PATH] AUDIT_SUMMARY_DOCX_PATH=$docxPath"
-
-      - name: Configure portable runtime paths on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          data_dir="$RUNNER_TEMP/vision360-data"
-          transfer_dir="$RUNNER_TEMP/audit-summary-docx-transfer"
-          technical_inputs_dir="$RUNNER_TEMP/audit-technical-inputs"
-          vision360_bundle_dir="$technical_inputs_dir/vision360"
-          trivy_payload_dir="$technical_inputs_dir/trivy"
-          mobsf_report_dir="$technical_inputs_dir/mobsf"
-          mobsf_dynamic_report_dir="$technical_inputs_dir/mobsf-dynamic"
-          sast_findings_dir="$technical_inputs_dir/sast"
-          audit_excel_path="$data_dir/security_audit_requirements.xlsx"
-          analysis_json_path="$data_dir/audit_summary_analysis_pack.json"
-          docx_path="$data_dir/Audit Summary.docx"
-          chart_dir="$data_dir/_audit_summary_charts"
-          mpl_config_dir="$data_dir/_matplotlib"
-
-          {
-            echo "VISION360_DATA_DIR=$data_dir"
-            echo "AUDIT_SUMMARY_TRANSFER_DIR=$transfer_dir"
-            echo "AUDIT_TECHNICAL_INPUTS_DIR=$technical_inputs_dir"
-            echo "VISION360_BUNDLE_DIR=$vision360_bundle_dir"
-            echo "TRIVY_PAYLOAD_DIR=$trivy_payload_dir"
-            echo "MOBSF_REPORT_DIR=$mobsf_report_dir"
-            echo "MOBSF_DYNAMIC_REPORT_DIR=$mobsf_dynamic_report_dir"
-            echo "SAST_FINDINGS_DIR=$sast_findings_dir"
-            echo "AUDIT_EXCEL_PATH=$audit_excel_path"
-            echo "AUDIT_ANALYSIS_JSON_PATH=$analysis_json_path"
-            echo "AUDIT_SUMMARY_DOCX_PATH=$docx_path"
-            echo "AUDIT_SUMMARY_CHART_DIR=$chart_dir"
-            echo "MPLCONFIGDIR=$mpl_config_dir"
-          } >> "$GITHUB_ENV"
-
-          echo "[PATH] VISION360_DATA_DIR=$data_dir"
-          echo "[PATH] AUDIT_SUMMARY_TRANSFER_DIR=$transfer_dir"
-          echo "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$technical_inputs_dir"
-          echo "[PATH] VISION360_BUNDLE_DIR=$vision360_bundle_dir"
-          echo "[PATH] TRIVY_PAYLOAD_DIR=$trivy_payload_dir"
-          echo "[PATH] MOBSF_REPORT_DIR=$mobsf_report_dir"
-          echo "[PATH] MOBSF_DYNAMIC_REPORT_DIR=$mobsf_dynamic_report_dir"
-          echo "[PATH] SAST_FINDINGS_DIR=$sast_findings_dir"
-          echo "[PATH] AUDIT_EXCEL_PATH=$audit_excel_path"
-          echo "[PATH] AUDIT_ANALYSIS_JSON_PATH=$analysis_json_path"
-          echo "[PATH] AUDIT_SUMMARY_DOCX_PATH=$docx_path"
-
-      - name: Verify Python launcher on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          python --version
-          python -c "import sys; print(sys.executable)"
-
-          if (Get-Command py -ErrorAction SilentlyContinue) {
-            py --list
-          } else {
-            Write-Host "Python launcher 'py' not found. The workflow will use python from PATH."
-          }
-
-      - name: Verify Python on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if command -v python3 >/dev/null 2>&1; then
-            python3 --version
-            python3 -c "import sys; print(sys.executable)"
-          else
-            python --version
-            python -c "import sys; print(sys.executable)"
-          fi
-
-      - name: Cache Audit Summary Python runtime
-        id: audit_summary_python_cache
-        uses: actions/cache@v5
+      - name: Download security audit Excel
+        uses: actions/download-artifact@v6
         with:
-          path: |
-            ${{ runner.temp }}/audit-summary-venv
-            ~/.cache/pip
-            ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-audit-summary-ai-runtime-v2-${{ env.AI_PYTHON_VERSION }}-${{ hashFiles('requirements/ai-runtime.txt', '.github/workflows/audit-summary.yml', 'scripts/lib/ai_config.py', 'scripts/lib/ai_runtime.py') }}
-          restore-keys: |
-            ${{ runner.os }}-audit-summary-ai-runtime-v2-${{ env.AI_PYTHON_VERSION }}-
-            ${{ runner.os }}-audit-summary-ai-runtime-v2-
+          name: security-audit-excel
+          path: ${{ env.VISION360_DATA_DIR }}
 
-      - name: Create or reuse cached venv on Windows
-        if: runner.os == 'Windows'
+      - name: Validate security audit Excel
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Test-Path $env:AUDIT_EXCEL_PATH)) {
+            throw "security_audit_requirements.xlsx was not found at $env:AUDIT_EXCEL_PATH"
+          }
+          Write-Host "[OK] Found Excel: $env:AUDIT_EXCEL_PATH"
+
+      - name: Download Vision360 bundle
+        continue-on-error: true
+        uses: actions/download-artifact@v6
+        with:
+          name: vision360-bundle
+          path: ${{ env.VISION360_BUNDLE_DIR }}
+
+      - name: Download Trivy payload
+        continue-on-error: true
+        uses: actions/download-artifact@v6
+        with:
+          name: trivy-payload
+          path: ${{ env.TRIVY_PAYLOAD_DIR }}
+
+      - name: Download MobSF static report
+        continue-on-error: true
+        uses: actions/download-artifact@v6
+        with:
+          name: mobsf-report
+          path: ${{ env.MOBSF_REPORT_DIR }}
+
+      - name: Download MobSF dynamic report
+        continue-on-error: true
+        uses: actions/download-artifact@v6
+        with:
+          name: mobsf-dynamic-report
+          path: ${{ env.MOBSF_DYNAMIC_REPORT_DIR }}
+
+      - name: Download SAST findings
+        continue-on-error: true
+        uses: actions/download-artifact@v6
+        with:
+          name: sast-findings
+          path: ${{ env.SAST_FINDINGS_DIR }}
+
+      - name: Show downloaded technical artifacts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Host "[INFO] Technical input root: $env:AUDIT_TECHNICAL_INPUTS_DIR"
+          if (Test-Path $env:AUDIT_TECHNICAL_INPUTS_DIR) {
+            Get-ChildItem -Recurse -File $env:AUDIT_TECHNICAL_INPUTS_DIR | ForEach-Object {
+              Write-Host ("[TECHNICAL] {0}" -f $_.FullName)
+            }
+          }
+
+      - name: Set up Python
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
-          $venvDir = Join-Path $env:RUNNER_TEMP "audit-summary-venv"
-          $pythonExe = Join-Path $venvDir "Scripts\python.exe"
-          Write-Host "[VENV] Target: $venvDir"
+          $versions = @(
+            "${{ inputs.AI_PYTHON_VERSION }}",
+            "3.12",
+            "3.11",
+            "3.10"
+          ) | Where-Object { $_ -and $_.Trim() -ne "" } | Select-Object -Unique
 
-          if (Test-Path $pythonExe) {
-            Write-Host "[VENV] Reusing cached virtual environment."
-            & $pythonExe --version
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "[VENV] Cached virtual environment is invalid. Removing it."
-              Remove-Item -Recurse -Force $venvDir -ErrorAction SilentlyContinue
-            } else {
-              "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-              & $pythonExe -c "import sys; print(sys.executable)"
-              exit 0
+          $selected = $null
+          foreach ($version in $versions) {
+            Write-Host "[PY] Trying py -$version"
+            & py -$version -c "import sys; print(sys.executable); print(sys.version)"
+            if ($LASTEXITCODE -eq 0) {
+              $selected = (& py -$version -c "import sys; print(sys.executable)").Trim().Split("`n")[-1]
+              break
             }
           }
 
-          if (Test-Path $venvDir) {
-            Write-Host "[VENV] Removing incomplete temporary venv."
-            for ($i = 1; $i -le 3; $i++) {
-              try {
-                Remove-Item -Recurse -Force $venvDir -ErrorAction Stop
-                break
-              } catch {
-                if ($i -eq 3) { throw }
-                Write-Host "[VENV] Remove failed. Retrying in $($i * 5) seconds."
-                Start-Sleep -Seconds ($i * 5)
-              }
+          if (-not $selected) {
+            Write-Host "[PY] Trying python"
+            & python -c "import sys; print(sys.executable); print(sys.version)"
+            if ($LASTEXITCODE -eq 0) {
+              $selected = (& python -c "import sys; print(sys.executable)").Trim().Split("`n")[-1]
             }
           }
 
-          $pythonVersion = ($env:AI_PYTHON_VERSION + "").Trim()
-
-          if (-not [string]::IsNullOrWhiteSpace($pythonVersion) -and (Get-Command py -ErrorAction SilentlyContinue)) {
-            Write-Host "[VENV] Creating venv with Python $pythonVersion via Python launcher."
-            py -$pythonVersion -c "import sys; print(sys.version); print(sys.executable)"
-            if ($LASTEXITCODE -ne 0) { throw "Python launcher failed for version $pythonVersion." }
-            py -$pythonVersion -m venv $venvDir
-          } else {
-            Write-Host "[VENV] Creating venv with default python from PATH."
-            python -c "import sys; print(sys.version); print(sys.executable)"
-            if ($LASTEXITCODE -ne 0) { throw "Default python check failed." }
-            python -m venv $venvDir
+          if (-not $selected) {
+            throw "No usable Python interpreter was found."
           }
 
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host "[PY] Selected Python: $selected"
+          $venv = Join-Path $env:RUNNER_TEMP "audit-summary-venv"
+          if (Test-Path $venv) {
+            Remove-Item -Recurse -Force $venv
+          }
+          & $selected -m venv $venv
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
+          $pythonExe = Join-Path $venv "Scripts\python.exe"
           if (-not (Test-Path $pythonExe)) {
-            throw "Virtual environment Python executable was not created: $pythonExe"
+            throw "Virtualenv Python not found at $pythonExe"
           }
 
           "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "[PY] Virtualenv Python: $pythonExe"
 
-          & $pythonExe --version
-          & $pythonExe -c "import sys; print(sys.executable)"
-
-      - name: Create or reuse cached venv on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          venv_dir="$RUNNER_TEMP/audit-summary-venv"
-          python_exe="$venv_dir/bin/python"
-          echo "[VENV] Target: $venv_dir"
-
-          if [ -x "$python_exe" ]; then
-            echo "[VENV] Reusing cached virtual environment."
-            "$python_exe" --version
-            echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
-            "$python_exe" -c "import sys; print(sys.executable)"
-            exit 0
-          fi
-
-          rm -rf "$venv_dir"
-
-          python_version="${AI_PYTHON_VERSION:-}"
-          if [ -n "$python_version" ] && command -v "python$python_version" >/dev/null 2>&1; then
-            echo "[VENV] Creating venv with python$python_version."
-            "python$python_version" -c "import sys; print(sys.version); print(sys.executable)"
-            "python$python_version" -m venv "$venv_dir"
-          elif command -v python3 >/dev/null 2>&1; then
-            echo "[VENV] Creating venv with python3."
-            python3 -c "import sys; print(sys.version); print(sys.executable)"
-            python3 -m venv "$venv_dir"
-          else
-            echo "[VENV] Creating venv with python."
-            python -c "import sys; print(sys.version); print(sys.executable)"
-            python -m venv "$venv_dir"
-          fi
-
-          test -f "$python_exe"
-          echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
-
-          "$python_exe" --version
-          "$python_exe" -c "import sys; print(sys.executable)"
-
-      - name: Install or validate AI and report dependencies on Windows
-        if: runner.os == 'Windows'
+      - name: Install dependencies
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -308,7 +293,7 @@ jobs:
             )
 
             for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-              Write-Host ("[PIP] $(Get-Date -Format o) Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
+              Write-Host ("[PIP] Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
               & $env:PYTHON_EXE -m pip @PipArgs
 
               if ($LASTEXITCODE -eq 0) {
@@ -325,796 +310,124 @@ jobs:
             throw ("pip install failed after {0} attempts: {1}" -f $MaxAttempts, ($PipArgs -join ' '))
           }
 
-          function Test-AuditSummaryPythonDeps {
-            $py = @'
-          import sys
-
-          checks = [
-              ("openai.OpenAI", "from openai import OpenAI"),
-              ("litellm.completion", "from litellm import completion"),
-              ("pydantic", "import pydantic"),
-              ("pandas", "import pandas"),
-              ("openpyxl", "import openpyxl"),
-              ("python-docx", "import docx"),
-              ("matplotlib", "import matplotlib"),
-              ("requests", "import requests"),
-          ]
-          missing = []
-          for label, statement in checks:
-              try:
-                  exec(statement, {})
-              except Exception as exc:
-                  missing.append(f"{label}: {type(exc).__name__}: {exc}")
-          if missing:
-              print("[PIP] Missing or invalid dependency contracts:")
-              for item in missing:
-                  print("[PIP] - " + item)
-              sys.exit(1)
-
-          from pathlib import Path
-          repo = Path.cwd()
-          sys.path.insert(0, str(repo / "scripts"))
-          from lib import ai_runtime
-          runtime_missing = []
-          if getattr(ai_runtime, "OpenAI", None) is None:
-              runtime_missing.append("lib.ai_runtime.OpenAI is None")
-          if getattr(ai_runtime, "completion", None) is None:
-              runtime_missing.append("lib.ai_runtime.completion is None")
-          if runtime_missing:
-              print("[PIP] AI runtime import contract is invalid:")
-              for item in runtime_missing:
-                  print("[PIP] - " + item)
-              sys.exit(1)
-
-          print("[PIP] Cached dependency contracts are valid.")
-          '@
-            $py | & $env:PYTHON_EXE -
-            return $LASTEXITCODE -eq 0
-          }
-
           & $env:PYTHON_EXE -m pip --version
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
 
-          $cacheHit = "${{ steps.audit_summary_python_cache.outputs.cache-hit }}"
-          Write-Host "[PIP] actions/cache hit: $cacheHit"
-
-          $packages = @(
-            "openai>=1.0.0",
-            "litellm>=1.40.0",
-            "pydantic>=2.7.0",
-            "pandas",
-            "openpyxl",
-            "python-docx",
-            "matplotlib",
-            "requests"
-          )
-
-          if ($cacheHit -eq "true" -and (Test-AuditSummaryPythonDeps)) {
-            Write-Host "[PIP] Dependency installation skipped because restored cached venv is usable."
-          } else {
-            if ($cacheHit -eq "true") {
-              Write-Host "[PIP] Restored cache is not usable. Repairing dependencies."
-            } else {
-              Write-Host "[PIP] No dependency cache was restored. Installing dependencies into fresh venv."
-            }
-            Invoke-PipInstall -PipArgs (@("install", "--upgrade", "--retries", "10", "--timeout", "720", "--prefer-binary") + $packages)
-          }
-
-          if (-not (Test-AuditSummaryPythonDeps)) {
-            throw "Audit Summary Python dependencies are still invalid after installation."
-          }
+          Write-Host "[PIP] Installing AI runtime dependencies for LiteLLM/OpenAI SDK compatibility."
+          Invoke-PipInstall -PipArgs @("install", "--upgrade", "pip", "setuptools", "wheel", "--retries", "10", "--timeout", "720", "--prefer-binary")
+          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
+          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib", "requests")
 
           & $env:PYTHON_EXE -m pip check
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
 
-      - name: Install or validate AI and report dependencies on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          pip_install() {
-            local attempt
-            for attempt in 1 2 3; do
-              echo "[PIP] $(date -u +%Y-%m-%dT%H:%M:%SZ) Attempt $attempt/3: python -m pip $*"
-              if "$PYTHON_EXE" -m pip "$@"; then
-                return 0
-              fi
-              if [ "$attempt" -lt 3 ]; then
-                sleep_seconds=$((15 * attempt))
-                echo "[PIP] Install failed. Retrying in $sleep_seconds seconds."
-                sleep "$sleep_seconds"
-              fi
-            done
-            echo "[PIP] pip install failed after 3 attempts: $*" >&2
-            return 1
-          }
-
-          test_deps() {
-            "$PYTHON_EXE" - <<'PY'
-          import sys
-
-          checks = [
-              ("openai.OpenAI", "from openai import OpenAI"),
-              ("litellm.completion", "from litellm import completion"),
-              ("pydantic", "import pydantic"),
-              ("pandas", "import pandas"),
-              ("openpyxl", "import openpyxl"),
-              ("python-docx", "import docx"),
-              ("matplotlib", "import matplotlib"),
-              ("requests", "import requests"),
-          ]
-          missing = []
-          for label, statement in checks:
-              try:
-                  exec(statement, {})
-              except Exception as exc:
-                  missing.append(f"{label}: {type(exc).__name__}: {exc}")
-          if missing:
-              print("[PIP] Missing or invalid dependency contracts:")
-              for item in missing:
-                  print("[PIP] - " + item)
-              sys.exit(1)
-
-          from pathlib import Path
-          repo = Path.cwd()
-          sys.path.insert(0, str(repo / "scripts"))
-          from lib import ai_runtime
-          runtime_missing = []
-          if getattr(ai_runtime, "OpenAI", None) is None:
-              runtime_missing.append("lib.ai_runtime.OpenAI is None")
-          if getattr(ai_runtime, "completion", None) is None:
-              runtime_missing.append("lib.ai_runtime.completion is None")
-          if runtime_missing:
-              print("[PIP] AI runtime import contract is invalid:")
-              for item in runtime_missing:
-                  print("[PIP] - " + item)
-              sys.exit(1)
-
-          print("[PIP] Cached dependency contracts are valid.")
-          PY
-          }
-
-          "$PYTHON_EXE" -m pip --version
-
-          cache_hit="${{ steps.audit_summary_python_cache.outputs.cache-hit }}"
-          echo "[PIP] actions/cache hit: $cache_hit"
-
-          if [ "$cache_hit" = "true" ] && test_deps; then
-            echo "[PIP] Dependency installation skipped because restored cached venv is usable."
-          else
-            if [ "$cache_hit" = "true" ]; then
-              echo "[PIP] Restored cache is not usable. Repairing dependencies."
-            else
-              echo "[PIP] No dependency cache was restored. Installing dependencies into fresh venv."
-            fi
-            pip_install install --upgrade --retries 10 --timeout 720 --prefer-binary \
-              'openai>=1.0.0' \
-              'litellm>=1.40.0' \
-              'pydantic>=2.7.0' \
-              pandas \
-              openpyxl \
-              python-docx \
-              matplotlib \
-              requests
-          fi
-
-          test_deps
-          "$PYTHON_EXE" -m pip check
-
-      - name: Resolve AI config from parameters/ai.config.json on Windows
-        if: runner.os == 'Windows'
+      - name: Build Audit Summary analysis pack
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-
-          $py = @'
-          import json
-          import os
-          import sys
-          from pathlib import Path
-
-          repo = Path.cwd()
-          sys.path.insert(0, str(repo / "scripts"))
-
-          from lib.ai_config import (
-              resolve_config,
-              resolved_api_base,
-              resolved_api_key,
-              resolved_api_version,
-              resolved_litellm_model,
-          )
-          from lib.ai_runtime import AIRuntime
-
-          task = (os.getenv("AI_TASK") or "audit_summary_docx").strip() or "audit_summary_docx"
-          cfg = resolve_config(task_name=task)
-
-          provider = str(cfg.get("provider") or "openai").strip()
-          model = str(cfg.get("model") or "").strip()
-          litellm_model = resolved_litellm_model(cfg)
-          api_base = resolved_api_base(cfg)
-          api_version = resolved_api_version(cfg)
-          key_env = str(cfg.get("api_key_env_var") or "OPENAI_API_KEY").strip() or "OPENAI_API_KEY"
-          api_key = resolved_api_key(cfg)
-
-          if not api_key and key_env != "OPENAI_API_KEY":
-              fallback_key = os.getenv("OPENAI_API_KEY", "").strip()
-              if fallback_key:
-                  key_env = "OPENAI_API_KEY"
-                  api_key = fallback_key
-
-          if not model:
-              raise SystemExit("[AI_CONFIG][ERROR] Resolved AI model is empty.")
-          if provider == "openai_compatible" and not api_base:
-              raise SystemExit("[AI_CONFIG][ERROR] openai_compatible profile requires api_base.")
-          if not api_key:
-              raise SystemExit(f"[AI_CONFIG][ERROR] API key is empty. Expected environment variable: {key_env}")
-
-          resolved_profile = str(cfg.get("resolved_profile") or "").strip()
-          reasoning_effort = str(cfg.get("reasoning_effort") or "").strip()
-          max_tokens = str(int(cfg.get("max_output_tokens") or 0) or "")
-          batch_size = str(int(cfg.get("batch_size") or 0) or "")
-          timeout_s = str(int(cfg.get("timeout_s") or 0) or "")
-
-          env_updates = {
-              "AI_TASK": task,
-              "AI_PROFILE": resolved_profile,
-              "AI_PROVIDER": provider,
-              "AI_MODEL": model,
-              "AI_LITELLM_MODEL": litellm_model,
-              "AI_API_KEY_ENV_VAR": key_env,
-              "AI_REASONING_EFFORT": reasoning_effort,
-              "AI_MAX_OUTPUT_TOKENS": max_tokens,
-              "AI_BATCH_SIZE": batch_size,
-              "AI_TIMEOUT_S": timeout_s,
-              "OPENAI_MODEL": model,
-              "OPENAI_REASONING_EFFORT": reasoning_effort,
-              "OPENAI_MAX_OUTPUT_TOKENS": max_tokens,
-              "OPENAI_TIMEOUT_S": timeout_s,
-              "AUDIT_SUMMARY_USE_AI": "1",
-              "AUDIT_SUMMARY_AI_SECTION_MODE": "1",
-          }
-          if api_base:
-              env_updates["AI_API_BASE"] = api_base
-              env_updates["OPENAI_API_BASE"] = api_base
-          if api_version:
-              env_updates["AI_API_VERSION"] = api_version
-              env_updates["OPENAI_API_VERSION"] = api_version
-
-          github_env = os.environ["GITHUB_ENV"]
-          with open(github_env, "a", encoding="utf-8") as fh:
-              for key, value in env_updates.items():
-                  if value is not None and str(value) != "":
-                      fh.write(f"{key}={value}\n")
-
-          runtime = AIRuntime(task=task)
-          if not runtime.available():
-              raise SystemExit("[AI_RUNTIME][ERROR] AI runtime is not available after dependency installation and config resolution.")
-
-          print("[AI_CONFIG] Resolved audit summary AI configuration:")
-          print(json.dumps({
-              "task": task,
-              "profile": resolved_profile,
-              "provider": provider,
-              "model": model,
-              "litellm_model": litellm_model,
-              "api_base": api_base,
-              "api_version": api_version,
-              "api_key_env_var": key_env,
-              "max_output_tokens": max_tokens,
-              "batch_size": batch_size,
-              "timeout_s": timeout_s,
-              "reasoning_effort": reasoning_effort,
-              "api_key_present": bool(api_key),
-              "runtime_available": runtime.available(),
-          }, ensure_ascii=False, indent=2))
-          '@
-
-          $py | & $env:PYTHON_EXE -
-
-      - name: Resolve AI config from parameters/ai.config.json on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          "$PYTHON_EXE" - <<'PY'
-          import json
-          import os
-          import sys
-          from pathlib import Path
-
-          repo = Path.cwd()
-          sys.path.insert(0, str(repo / "scripts"))
-
-          from lib.ai_config import (
-              resolve_config,
-              resolved_api_base,
-              resolved_api_key,
-              resolved_api_version,
-              resolved_litellm_model,
-          )
-          from lib.ai_runtime import AIRuntime
-
-          task = (os.getenv("AI_TASK") or "audit_summary_docx").strip() or "audit_summary_docx"
-          cfg = resolve_config(task_name=task)
-
-          provider = str(cfg.get("provider") or "openai").strip()
-          model = str(cfg.get("model") or "").strip()
-          litellm_model = resolved_litellm_model(cfg)
-          api_base = resolved_api_base(cfg)
-          api_version = resolved_api_version(cfg)
-          key_env = str(cfg.get("api_key_env_var") or "OPENAI_API_KEY").strip() or "OPENAI_API_KEY"
-          api_key = resolved_api_key(cfg)
-
-          if not api_key and key_env != "OPENAI_API_KEY":
-              fallback_key = os.getenv("OPENAI_API_KEY", "").strip()
-              if fallback_key:
-                  key_env = "OPENAI_API_KEY"
-                  api_key = fallback_key
-
-          if not model:
-              raise SystemExit("[AI_CONFIG][ERROR] Resolved AI model is empty.")
-          if provider == "openai_compatible" and not api_base:
-              raise SystemExit("[AI_CONFIG][ERROR] openai_compatible profile requires api_base.")
-          if not api_key:
-              raise SystemExit(f"[AI_CONFIG][ERROR] API key is empty. Expected environment variable: {key_env}")
-
-          resolved_profile = str(cfg.get("resolved_profile") or "").strip()
-          reasoning_effort = str(cfg.get("reasoning_effort") or "").strip()
-          max_tokens = str(int(cfg.get("max_output_tokens") or 0) or "")
-          batch_size = str(int(cfg.get("batch_size") or 0) or "")
-          timeout_s = str(int(cfg.get("timeout_s") or 0) or "")
-
-          env_updates = {
-              "AI_TASK": task,
-              "AI_PROFILE": resolved_profile,
-              "AI_PROVIDER": provider,
-              "AI_MODEL": model,
-              "AI_LITELLM_MODEL": litellm_model,
-              "AI_API_KEY_ENV_VAR": key_env,
-              "AI_REASONING_EFFORT": reasoning_effort,
-              "AI_MAX_OUTPUT_TOKENS": max_tokens,
-              "AI_BATCH_SIZE": batch_size,
-              "AI_TIMEOUT_S": timeout_s,
-              "OPENAI_MODEL": model,
-              "OPENAI_REASONING_EFFORT": reasoning_effort,
-              "OPENAI_MAX_OUTPUT_TOKENS": max_tokens,
-              "OPENAI_TIMEOUT_S": timeout_s,
-              "AUDIT_SUMMARY_USE_AI": "1",
-              "AUDIT_SUMMARY_AI_SECTION_MODE": "1",
-          }
-          if api_base:
-              env_updates["AI_API_BASE"] = api_base
-              env_updates["OPENAI_API_BASE"] = api_base
-          if api_version:
-              env_updates["AI_API_VERSION"] = api_version
-              env_updates["OPENAI_API_VERSION"] = api_version
-
-          github_env = os.environ["GITHUB_ENV"]
-          with open(github_env, "a", encoding="utf-8") as fh:
-              for key, value in env_updates.items():
-                  if value is not None and str(value) != "":
-                      fh.write(f"{key}={value}\n")
-
-          runtime = AIRuntime(task=task)
-          if not runtime.available():
-              raise SystemExit("[AI_RUNTIME][ERROR] AI runtime is not available after dependency installation and config resolution.")
-
-          print("[AI_CONFIG] Resolved audit summary AI configuration:")
-          print(json.dumps({
-              "task": task,
-              "profile": resolved_profile,
-              "provider": provider,
-              "model": model,
-              "litellm_model": litellm_model,
-              "api_base": api_base,
-              "api_version": api_version,
-              "api_key_env_var": key_env,
-              "max_output_tokens": max_tokens,
-              "batch_size": batch_size,
-              "timeout_s": timeout_s,
-              "reasoning_effort": reasoning_effort,
-              "api_key_present": bool(api_key),
-              "runtime_available": runtime.available(),
-          }, ensure_ascii=False, indent=2))
-          PY
-
-      - name: Prepare portable data dir on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          New-Item -ItemType Directory -Force -Path $env:VISION360_DATA_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:AUDIT_SUMMARY_TRANSFER_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:AUDIT_SUMMARY_CHART_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:MPLCONFIGDIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:AUDIT_TECHNICAL_INPUTS_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:VISION360_BUNDLE_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:TRIVY_PAYLOAD_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:MOBSF_REPORT_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:MOBSF_DYNAMIC_REPORT_DIR | Out-Null
-          New-Item -ItemType Directory -Force -Path $env:SAST_FINDINGS_DIR | Out-Null
-
-          foreach ($filePath in @($env:AUDIT_ANALYSIS_JSON_PATH, $env:AUDIT_SUMMARY_DOCX_PATH)) {
-            if (Test-Path $filePath) {
-              Remove-Item -Force $filePath
-            }
-          }
-
-          $transferDocx = Join-Path $env:AUDIT_SUMMARY_TRANSFER_DIR "Audit Summary.docx"
-          if (Test-Path $transferDocx) {
-            Remove-Item -Force $transferDocx
-          }
-
-      - name: Prepare portable data dir on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          mkdir -p             "$VISION360_DATA_DIR"             "$AUDIT_SUMMARY_TRANSFER_DIR"             "$AUDIT_SUMMARY_CHART_DIR"             "$MPLCONFIGDIR"             "$AUDIT_TECHNICAL_INPUTS_DIR"             "$VISION360_BUNDLE_DIR"             "$TRIVY_PAYLOAD_DIR"             "$MOBSF_REPORT_DIR"             "$MOBSF_DYNAMIC_REPORT_DIR"             "$SAST_FINDINGS_DIR"
-
-          rm -f "$AUDIT_ANALYSIS_JSON_PATH" "$AUDIT_SUMMARY_DOCX_PATH" "$AUDIT_SUMMARY_TRANSFER_DIR/Audit Summary.docx"
-
-      - name: Download security-audit-excel artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: security-audit-excel
-          path: ${{ runner.temp }}/vision360-data
-
-      - name: Download VISION360 technical artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: vision360-bundle
-          path: ${{ runner.temp }}/audit-technical-inputs/vision360
-
-      - name: Download Trivy technical artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: trivy-payload
-          path: ${{ runner.temp }}/audit-technical-inputs/trivy
-
-      - name: Download MobSF static technical artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: mobsf-report
-          path: ${{ runner.temp }}/audit-technical-inputs/mobsf
-
-      - name: Download MobSF dynamic technical artifact
-        continue-on-error: true
-        uses: actions/download-artifact@v6
-        with:
-          name: mobsf-dynamic-report
-          path: ${{ runner.temp }}/audit-technical-inputs/mobsf-dynamic
-
-      - name: Download SAST technical artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: sast-findings
-          path: ${{ runner.temp }}/audit-technical-inputs/sast
-
-      - name: Show technical audit inputs on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$env:AUDIT_TECHNICAL_INPUTS_DIR"
-
-          if (-not (Test-Path $env:AUDIT_TECHNICAL_INPUTS_DIR)) {
-            throw "Technical inputs directory was not created: $env:AUDIT_TECHNICAL_INPUTS_DIR"
-          }
-
-          Get-ChildItem -Path $env:AUDIT_TECHNICAL_INPUTS_DIR -Recurse -File -ErrorAction SilentlyContinue |
-            ForEach-Object {
-              $relative = $_.FullName.Substring($env:AUDIT_TECHNICAL_INPUTS_DIR.Length).TrimStart('\', '/')
-              Write-Host "[TECHNICAL_INPUT] $relative"
-            }
-
-      - name: Show technical audit inputs on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$AUDIT_TECHNICAL_INPUTS_DIR"
-
-          if [ ! -d "$AUDIT_TECHNICAL_INPUTS_DIR" ]; then
-            echo "Technical inputs directory was not created: $AUDIT_TECHNICAL_INPUTS_DIR" >&2
-            exit 1
-          fi
-
-          find "$AUDIT_TECHNICAL_INPUTS_DIR" -type f -printf "[TECHNICAL_INPUT] %P\n" | sort
-
-      - name: Build analysis pack JSON on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host "[STAGE1] Building analysis pack JSON from Excel and downloaded technical inputs."
-          Write-Host "[PATH] AUDIT_EXCEL_PATH=$env:AUDIT_EXCEL_PATH"
-          Write-Host "[PATH] AUDIT_ANALYSIS_JSON_PATH=$env:AUDIT_ANALYSIS_JSON_PATH"
-          Write-Host "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$env:AUDIT_TECHNICAL_INPUTS_DIR"
-          Write-Host "[PATH] VISION360_BUNDLE_DIR=$env:VISION360_BUNDLE_DIR"
-          Write-Host "[PATH] TRIVY_PAYLOAD_DIR=$env:TRIVY_PAYLOAD_DIR"
-          Write-Host "[PATH] MOBSF_REPORT_DIR=$env:MOBSF_REPORT_DIR"
-          Write-Host "[PATH] MOBSF_DYNAMIC_REPORT_DIR=$env:MOBSF_DYNAMIC_REPORT_DIR"
-          Write-Host "[PATH] SAST_FINDINGS_DIR=$env:SAST_FINDINGS_DIR"
-
-          & $env:PYTHON_EXE scripts/audit_summary_stage1_build_analysis_pack.py
+          & $env:PYTHON_EXE scripts/audit_summary_stage1_build_analysis_pack.py --excel $env:AUDIT_EXCEL_PATH --out $env:AUDIT_ANALYSIS_JSON_PATH
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
 
-          if (-not (Test-Path $env:AUDIT_ANALYSIS_JSON_PATH)) {
-            throw "audit_summary_analysis_pack.json was not created"
-          }
-
-      - name: Build analysis pack JSON on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "[STAGE1] Building analysis pack JSON from Excel and downloaded technical inputs."
-          echo "[PATH] AUDIT_EXCEL_PATH=$AUDIT_EXCEL_PATH"
-          echo "[PATH] AUDIT_ANALYSIS_JSON_PATH=$AUDIT_ANALYSIS_JSON_PATH"
-          echo "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$AUDIT_TECHNICAL_INPUTS_DIR"
-          echo "[PATH] VISION360_BUNDLE_DIR=$VISION360_BUNDLE_DIR"
-          echo "[PATH] TRIVY_PAYLOAD_DIR=$TRIVY_PAYLOAD_DIR"
-          echo "[PATH] MOBSF_REPORT_DIR=$MOBSF_REPORT_DIR"
-          echo "[PATH] MOBSF_DYNAMIC_REPORT_DIR=$MOBSF_DYNAMIC_REPORT_DIR"
-          echo "[PATH] SAST_FINDINGS_DIR=$SAST_FINDINGS_DIR"
-
-          "$PYTHON_EXE" scripts/audit_summary_stage1_build_analysis_pack.py
-
-          test -f "$AUDIT_ANALYSIS_JSON_PATH"
-
-      - name: Generate Audit Summary DOCX using AI on Windows
-        if: runner.os == 'Windows'
+      - name: Generate Audit Summary DOCX
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-
-          Write-Host "[AI] Starting AI-assisted Audit Summary DOCX generation."
-          Write-Host "[AI] Script: scripts/audit_summary_stage2_generate_docx.py"
-          Write-Host "[AI] Task: $env:AI_TASK"
-          Write-Host "[AI] Provider: $env:AI_PROVIDER"
-          Write-Host "[AI] Model: $env:AI_MODEL"
-          Write-Host "[PATH] AUDIT_ANALYSIS_JSON_PATH=$env:AUDIT_ANALYSIS_JSON_PATH"
-          Write-Host "[PATH] AUDIT_SUMMARY_DOCX_PATH=$env:AUDIT_SUMMARY_DOCX_PATH"
-
-          & $env:PYTHON_EXE scripts/audit_summary_stage2_generate_docx.py
+          & $env:PYTHON_EXE scripts/audit_summary_stage2_generate_docx.py --in $env:AUDIT_ANALYSIS_JSON_PATH --out $env:AUDIT_SUMMARY_DOCX_PATH
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
 
-          if (-not (Test-Path $env:AUDIT_SUMMARY_DOCX_PATH)) {
-            throw "Audit Summary.docx was not created"
-          }
-
-          Write-Host "[AI] Audit Summary DOCX generated successfully."
-
-      - name: Generate Audit Summary DOCX using AI on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "[AI] Starting AI-assisted Audit Summary DOCX generation."
-          echo "[AI] Script: scripts/audit_summary_stage2_generate_docx.py"
-          echo "[AI] Task: ${AI_TASK:-}"
-          echo "[AI] Provider: ${AI_PROVIDER:-}"
-          echo "[AI] Model: ${AI_MODEL:-}"
-          echo "[PATH] AUDIT_ANALYSIS_JSON_PATH=$AUDIT_ANALYSIS_JSON_PATH"
-          echo "[PATH] AUDIT_SUMMARY_DOCX_PATH=$AUDIT_SUMMARY_DOCX_PATH"
-
-          "$PYTHON_EXE" scripts/audit_summary_stage2_generate_docx.py
-
-          test -f "$AUDIT_SUMMARY_DOCX_PATH"
-          echo "[AI] Audit Summary DOCX generated successfully."
-
-      - name: Prepare Audit Summary analysis pack artifact on Windows
-        if: runner.os == 'Windows'
+      - name: Convert DOCX to PDF
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
-          $publishDir = Join-Path $env:RUNNER_TEMP "audit-summary-analysis-pack"
-          $canonicalPath = Join-Path $publishDir "audit-summary-analysis-pack.json"
-
-          New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
-
-          if (-not (Test-Path $env:AUDIT_ANALYSIS_JSON_PATH)) {
-            throw "audit_summary_analysis_pack.json was not found at $env:AUDIT_ANALYSIS_JSON_PATH"
+          $docxPath = $env:AUDIT_SUMMARY_DOCX_PATH
+          if (-not (Test-Path $docxPath)) {
+            throw "DOCX not found: $docxPath"
           }
 
-          Copy-Item -LiteralPath $env:AUDIT_ANALYSIS_JSON_PATH -Destination $canonicalPath -Force
-
-          if (-not (Test-Path $canonicalPath)) {
-            throw "audit-summary-analysis-pack.json was not prepared"
+          $outDir = Split-Path -Parent $docxPath
+          $pdfPath = Join-Path $outDir "Audit Summary.pdf"
+          if (Test-Path $pdfPath) {
+            Remove-Item -Force $pdfPath
           }
 
-          Write-Host "[ARTIFACT] audit-summary-analysis-pack -> $canonicalPath"
+          $word = $null
+          $doc = $null
+          try {
+            $word = New-Object -ComObject Word.Application
+            $word.Visible = $false
+            $word.DisplayAlerts = 0
+            $doc = $word.Documents.Open($docxPath)
+            $doc.Fields.Update() | Out-Null
+            foreach ($toc in $doc.TablesOfContents) {
+              $toc.Update()
+            }
+            $doc.SaveAs([ref] $pdfPath, [ref] 17)
+          }
+          finally {
+            if ($doc -ne $null) {
+              $doc.Close([ref] $false)
+            }
+            if ($word -ne $null) {
+              $word.Quit()
+            }
+          }
 
-      - name: Prepare Audit Summary analysis pack artifact on Unix
-        if: runner.os != 'Windows'
-        shell: bash
+          if (-not (Test-Path $pdfPath)) {
+            throw "PDF was not generated: $pdfPath"
+          }
+          Write-Host "[OK] PDF generated: $pdfPath"
+
+      - name: Prepare strict Audit Summary artifacts
+        shell: powershell
         run: |
-          set -euo pipefail
+          $ErrorActionPreference = "Stop"
 
-          publish_dir="$RUNNER_TEMP/audit-summary-analysis-pack"
-          canonical_path="$publish_dir/audit-summary-analysis-pack.json"
+          $publishRoot = Join-Path $env:VISION360_DATA_DIR "artifact_publish"
+          $analysisDir = Join-Path $publishRoot "audit-summary-analysis-pack"
+          $reportDir = Join-Path $publishRoot "audit-summary-zip"
 
-          mkdir -p "$publish_dir"
+          New-Item -ItemType Directory -Force -Path $analysisDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 
-          test -f "$AUDIT_ANALYSIS_JSON_PATH"
-          cp "$AUDIT_ANALYSIS_JSON_PATH" "$canonical_path"
-          test -f "$canonical_path"
+          $analysisOut = Join-Path $analysisDir "audit-summary-analysis-pack.json"
+          Copy-Item -LiteralPath $env:AUDIT_ANALYSIS_JSON_PATH -Destination $analysisOut -Force
 
-          echo "[ARTIFACT] audit-summary-analysis-pack -> $canonical_path"
+          $docxOut = Join-Path $reportDir "Audit Summary.docx"
+          $pdfOut = Join-Path $reportDir "Audit Summary.pdf"
+          Copy-Item -LiteralPath $env:AUDIT_SUMMARY_DOCX_PATH -Destination $docxOut -Force
+          Copy-Item -LiteralPath (Join-Path $env:VISION360_DATA_DIR "Audit Summary.pdf") -Destination $pdfOut -Force
+
+          if (-not (Test-Path $analysisOut)) { throw "Missing $analysisOut" }
+          if (-not (Test-Path $docxOut)) { throw "Missing $docxOut" }
+          if (-not (Test-Path $pdfOut)) { throw "Missing $pdfOut" }
+
+          Write-Host "[ARTIFACT] audit-summary-analysis-pack will publish only:"
+          Get-ChildItem -File $analysisDir | ForEach-Object { Write-Host ("  - {0}" -f $_.Name) }
+
+          Write-Host "[ARTIFACT] audit-summary-zip will publish only:"
+          Get-ChildItem -File $reportDir | ForEach-Object { Write-Host ("  - {0}" -f $_.Name) }
 
       - name: Upload Audit Summary analysis pack
         uses: actions/upload-artifact@v6
         with:
           name: audit-summary-analysis-pack
           if-no-files-found: error
-          path: ${{ runner.temp }}/audit-summary-analysis-pack/audit-summary-analysis-pack.json
-      - name: Prepare DOCX transfer cache on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
+          path: ${{ env.VISION360_DATA_DIR }}\artifact_publish\audit-summary-analysis-pack\audit-summary-analysis-pack.json
 
-          New-Item -ItemType Directory -Force -Path $env:AUDIT_SUMMARY_TRANSFER_DIR | Out-Null
-
-          $transferDocx = Join-Path $env:AUDIT_SUMMARY_TRANSFER_DIR "Audit Summary.docx"
-
-          Copy-Item -LiteralPath $env:AUDIT_SUMMARY_DOCX_PATH -Destination $transferDocx -Force
-
-          if (-not (Test-Path $transferDocx)) {
-            throw "DOCX transfer file was not prepared"
-          }
-
-      - name: Prepare DOCX transfer cache on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          mkdir -p "$AUDIT_SUMMARY_TRANSFER_DIR"
-          cp "$AUDIT_SUMMARY_DOCX_PATH" "$AUDIT_SUMMARY_TRANSFER_DIR/Audit Summary.docx"
-          test -f "$AUDIT_SUMMARY_TRANSFER_DIR/Audit Summary.docx"
-
-      - name: Upload temporary DOCX transfer artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: _audit-summary-docx-transfer-${{ github.run_id }}-${{ github.run_attempt }}
-          if-no-files-found: error
-          retention-days: 1
-          path: ${{ runner.temp }}/audit-summary-docx-transfer/Audit Summary.docx
-
-  audit_summary_pdf_zip:
-    name: Audit Summary Stage 3 -> PDF ZIP
-    needs: [audit_summary_docx]
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Configure portable runtime paths
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          data_dir="$RUNNER_TEMP/vision360-data"
-          transfer_dir="$RUNNER_TEMP/audit-summary-docx-transfer"
-          transfer_docx_path="$transfer_dir/Audit Summary.docx"
-          docx_path="$data_dir/Audit Summary.docx"
-          pdf_path="$data_dir/Audit Summary.pdf"
-          zip_path="$data_dir/audit-summary-bundle.zip"
-
-          {
-            echo "VISION360_DATA_DIR=$data_dir"
-            echo "AUDIT_SUMMARY_TRANSFER_DIR=$transfer_dir"
-            echo "AUDIT_SUMMARY_TRANSFER_DOCX_PATH=$transfer_docx_path"
-            echo "AUDIT_SUMMARY_DOCX_PATH=$docx_path"
-            echo "AUDIT_SUMMARY_PDF_PATH=$pdf_path"
-            echo "AUDIT_SUMMARY_ZIP_PATH=$zip_path"
-          } >> "$GITHUB_ENV"
-
-          echo "[PATH] VISION360_DATA_DIR=$data_dir"
-          echo "[PATH] AUDIT_SUMMARY_TRANSFER_DIR=$transfer_dir"
-          echo "[PATH] AUDIT_SUMMARY_DOCX_PATH=$docx_path"
-          echo "[PATH] AUDIT_SUMMARY_PDF_PATH=$pdf_path"
-          echo "[PATH] AUDIT_SUMMARY_ZIP_PATH=$zip_path"
-
-      - name: Prepare portable data directory
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$VISION360_DATA_DIR" "$AUDIT_SUMMARY_TRANSFER_DIR"
-
-      - name: Download temporary DOCX transfer artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: _audit-summary-docx-transfer-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/audit-summary-docx-transfer
-
-      - name: Copy restored DOCX into output directory
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          test -f "$AUDIT_SUMMARY_TRANSFER_DOCX_PATH"
-
-          cp "$AUDIT_SUMMARY_TRANSFER_DOCX_PATH" "$AUDIT_SUMMARY_DOCX_PATH"
-
-          test -f "$AUDIT_SUMMARY_DOCX_PATH"
-
-      - name: Install LibreOffice and zip
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          sudo apt-get update
-          sudo apt-get install -y libreoffice zip
-
-      - name: Convert DOCX to PDF
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          libreoffice --headless --convert-to pdf --outdir "$VISION360_DATA_DIR" "$AUDIT_SUMMARY_DOCX_PATH"
-
-          test -f "$AUDIT_SUMMARY_PDF_PATH"
-
-      - name: Create ZIP bundle with DOCX and PDF
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          cd "$VISION360_DATA_DIR"
-          zip -j "audit-summary-bundle.zip" "Audit Summary.docx" "Audit Summary.pdf"
-
-          test -f "$AUDIT_SUMMARY_ZIP_PATH"
-
-      - name: Upload Audit Summary outputs
+      - name: Upload Audit Summary ZIP
         uses: actions/upload-artifact@v6
         with:
           name: audit-summary-zip
           if-no-files-found: error
           path: |
-            ${{ runner.temp }}/vision360-data/Audit Summary.docx
-            ${{ runner.temp }}/vision360-data/Audit Summary.pdf
-
-      - name: Delete temporary DOCX transfer artifact
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TRANSFER_ARTIFACT_NAME: _audit-summary-docx-transfer-${{ github.run_id }}-${{ github.run_attempt }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "[CLEANUP] Looking for temporary artifact: $TRANSFER_ARTIFACT_NAME"
-
-          artifact_id="$(
-            gh api               -H "Accept: application/vnd.github+json"               "/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts"               --jq ".artifacts[] | select(.name == env.TRANSFER_ARTIFACT_NAME) | .id"               | head -n 1
-          )"
-
-          if [ -z "$artifact_id" ]; then
-            echo "[CLEANUP] Temporary artifact was not found or was already deleted."
-            exit 0
-          fi
-
-          gh api             --method DELETE             -H "Accept: application/vnd.github+json"             "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
-
-          echo "[CLEANUP] Deleted temporary artifact id: $artifact_id"
-
+            ${{ env.VISION360_DATA_DIR }}\artifact_publish\audit-summary-zip\Audit Summary.docx
+            ${{ env.VISION360_DATA_DIR }}\artifact_publish\audit-summary-zip\Audit Summary.pdf
