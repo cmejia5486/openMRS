@@ -2318,12 +2318,46 @@ def _sanitize_treatment_text(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def _merge_treatment_results(results: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+
+def _normalize_treatment_item_id(item_id: Any, expected_ids: List[str] | None = None) -> str:
+    """Normalize common LLM item-id formatting mistakes without inventing IDs.
+
+    The model must use the exact item_id supplied by Stage 1. This helper only
+    maps harmless formatting variants such as TECH-MOBSF-25 -> TECH-MOBSF-025
+    when that mapping is unambiguous in the expected item-id set.
+    """
+    raw = _clean_text(item_id)
+    if not raw:
+        return ""
+
+    if not expected_ids:
+        return raw
+
+    expected = [_clean_text(x) for x in expected_ids if _clean_text(x)]
+    if raw in expected:
+        return raw
+
+    m = re.match(r"^(.*?)-0*(\d+)$", raw)
+    if not m:
+        return raw
+
+    prefix = m.group(1)
+    number = _safe_int(m.group(2), -1)
+    matches = []
+    for expected_id in expected:
+        em = re.match(r"^(.*?)-0*(\d+)$", expected_id)
+        if em and em.group(1) == prefix and _safe_int(em.group(2), -2) == number:
+            matches.append(expected_id)
+
+    return matches[0] if len(matches) == 1 else raw
+
+
+def _merge_treatment_results(results: List[Dict[str, Any]], expected_ids: List[str] | None = None) -> Dict[str, Dict[str, Any]]:
     out: Dict[str, Dict[str, Any]] = {}
     for item in results:
         if not isinstance(item, dict):
             continue
-        item_id = _clean_text(item.get("item_id"))
+        item_id = _normalize_treatment_item_id(item.get("item_id"), expected_ids)
         if not item_id:
             continue
         out[item_id] = {
@@ -2333,6 +2367,226 @@ def _merge_treatment_results(results: List[Dict[str, Any]]) -> Dict[str, Dict[st
             "residual_risk": _sanitize_treatment_text(item.get("residual_risk")),
         }
     return out
+
+
+def _merge_treatment_ai_maps(base: Dict[str, Any], patch: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge AI-authored treatment maps.
+
+    Non-empty repaired fields replace empty fields and may also overwrite prior
+    values from malformed batches. This remains AI-authored text, not static
+    fallback remediation.
+    """
+    out = dict(base or {})
+    for map_key in ("control_treatments", "technical_treatments"):
+        current = dict(_as_dict(out.get(map_key)))
+        incoming = _as_dict(patch.get(map_key))
+        for item_id, writeup_any in incoming.items():
+            writeup = _as_dict(writeup_any)
+            if not item_id or not writeup:
+                continue
+            existing = dict(_as_dict(current.get(item_id)))
+            for field in ("treatment_action", "verification_method", "closure_evidence", "residual_risk"):
+                value = _sanitize_treatment_text(writeup.get(field))
+                if value:
+                    existing[field] = value
+            current[item_id] = existing
+        out[map_key] = current
+
+    metadata = dict(_as_dict(out.get("metadata")))
+    patch_metadata = _as_dict(patch.get("metadata"))
+    for k, v in patch_metadata.items():
+        metadata[k] = v
+    out["metadata"] = metadata
+    return out
+
+
+def _treatment_missing_fields(writeup_any: Any) -> List[str]:
+    writeup = _as_dict(writeup_any)
+    required = ("treatment_action", "verification_method", "closure_evidence")
+    return [field for field in required if not _clean_text(writeup.get(field))]
+
+
+def _incomplete_treatment_items(treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    control_items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
+    technical_items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
+    control_map = _as_dict(treatment_ai.get("control_treatments"))
+    technical_map = _as_dict(treatment_ai.get("technical_treatments"))
+
+    missing_control: List[Dict[str, Any]] = []
+    for item in control_items[:_max_control_treatment_rows()]:
+        item_id = _clean_text(item.get("item_id"))
+        missing_fields = _treatment_missing_fields(control_map.get(item_id))
+        if missing_fields:
+            enriched = dict(item)
+            enriched["_missing_ai_fields"] = missing_fields
+            missing_control.append(enriched)
+
+    missing_technical: List[Dict[str, Any]] = []
+    for item in technical_items[:_max_technical_treatment_rows()]:
+        item_id = _clean_text(item.get("item_id"))
+        missing_fields = _treatment_missing_fields(technical_map.get(item_id))
+        if missing_fields:
+            enriched = dict(item)
+            enriched["_missing_ai_fields"] = missing_fields
+            missing_technical.append(enriched)
+
+    return {
+        "control_items": missing_control,
+        "technical_items": missing_technical,
+    }
+
+
+def _treatment_repair_attempts() -> int:
+    return max(0, min(5, _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_REPAIR_ATTEMPTS", "2"), 2)))
+
+
+def _treatment_missing_id_list(missing: Dict[str, List[Dict[str, Any]]], limit: int = 20) -> str:
+    ids: List[str] = []
+    for key in ("control_items", "technical_items"):
+        for item in missing.get(key, []):
+            item_id = _clean_text(item.get("item_id"))
+            if item_id:
+                fields = ", ".join(_as_list(item.get("_missing_ai_fields")))
+                ids.append(f"{item_id} ({fields})" if fields else item_id)
+            if len(ids) >= limit:
+                break
+        if len(ids) >= limit:
+            break
+    return ", ".join(ids)
+
+
+def _call_llm_for_treatment_repair(
+    app: Dict[str, Any],
+    technical_compact: Dict[str, Any],
+    missing_control_items: List[Dict[str, Any]],
+    missing_technical_items: List[Dict[str, Any]],
+    system_prompt: str,
+    attempt: int,
+    max_attempts: int,
+) -> Dict[str, Any]:
+    """Ask the configured AI model to complete only missing treatment fields."""
+    patch: Dict[str, Any] = {
+        "control_treatments": {},
+        "technical_treatments": {},
+        "metadata": {
+            "repair_attempt": attempt,
+            "repair_max_attempts": max_attempts,
+            "ai_authored": True,
+        },
+    }
+
+    batch_size = _treatment_batch_size()
+    control_batches = _chunks(missing_control_items, batch_size)
+    technical_batches = _chunks(missing_technical_items, batch_size)
+    repair_total_batches = len(control_batches) + len(technical_batches)
+
+    print(
+        f"[AI][TREATMENT][REPAIR] Attempt {attempt}/{max_attempts}: "
+        f"{len(missing_control_items)} control item(s), "
+        f"{len(missing_technical_items)} technical item(s), "
+        f"{repair_total_batches} repair batch(es)."
+    )
+
+    for idx, batch in enumerate(control_batches, start=1):
+        print(
+            f"[AI][TREATMENT][REPAIR] Progress {idx}/{repair_total_batches} | "
+            f"control repair batch {idx}/{len(control_batches)} | "
+            f"items={', '.join(_clean_text(x.get('item_id')) for x in batch)}"
+        )
+        obj = _ai_json_chat(
+            f"control_treatment_repair_{attempt}_{idx}_of_{len(control_batches)}",
+            system_prompt,
+            {
+                "task": "Repair missing or incomplete treatment-plan fields for non-compliant SECM-CAT controls.",
+                "constraints": {
+                    "one_result_per_input_item": True,
+                    "do_not_invent_evidence": True,
+                    "use_exact_item_id_and_puid": True,
+                    "complete_only_missing_or_empty_fields": True,
+                    "required_non_empty_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
+                    "missing_fields_are_listed_per_item": True,
+                },
+                "application": app,
+                "technical_evidence_summary": technical_compact,
+                "items": [_compact_treatment_item(x, "control") | {"missing_ai_fields": _as_list(x.get("_missing_ai_fields"))} for x in batch],
+                "required_output_schema": {
+                    "control_treatments": [
+                        {
+                            "item_id": "<exact input item_id>",
+                            "treatment_action": "<non-empty AI-generated action grounded in this control>",
+                            "verification_method": "<non-empty verification method>",
+                            "closure_evidence": "<non-empty closure evidence>",
+                            "residual_risk": "<residual risk or risk acceptance note>",
+                        }
+                    ]
+                },
+            },
+            max_tokens=min(_ai_max_tokens(2200), 2800),
+        )
+        values = obj.get("control_treatments") if isinstance(obj.get("control_treatments"), list) else []
+        expected_ids = [_clean_text(x.get("item_id")) for x in batch]
+        patch = _merge_treatment_ai_maps(
+            patch,
+            {"control_treatments": _merge_treatment_results([x for x in values if isinstance(x, dict)], expected_ids)}
+        )
+        print(
+            f"[AI][TREATMENT][REPAIR] Completed control repair batch {idx}/{len(control_batches)} "
+            f"on attempt {attempt}/{max_attempts}."
+        )
+
+    base_offset = len(control_batches)
+    for idx, batch in enumerate(technical_batches, start=1):
+        global_idx = base_offset + idx
+        print(
+            f"[AI][TREATMENT][REPAIR] Progress {global_idx}/{repair_total_batches} | "
+            f"technical repair batch {idx}/{len(technical_batches)} | "
+            f"items={', '.join(_clean_text(x.get('item_id')) for x in batch)}"
+        )
+        obj = _ai_json_chat(
+            f"technical_treatment_repair_{attempt}_{idx}_of_{len(technical_batches)}",
+            system_prompt,
+            {
+                "task": "Repair missing or incomplete treatment-plan fields for technical scanner findings.",
+                "constraints": {
+                    "one_result_per_input_item": True,
+                    "do_not_invent_evidence": True,
+                    "use_exact_item_id_and_finding_id": True,
+                    "complete_only_missing_or_empty_fields": True,
+                    "required_non_empty_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
+                    "dependency_rule": "For Trivy items, use fixed_version when present; if no fixed version exists, propose risk acceptance, compensating controls, or monitoring rather than inventing a version.",
+                    "sast_rule": "For SAST items, use only supplied rule, message, file, and line. Do not invent code paths.",
+                    "mobsf_rule": "For MobSF items, recommend configuration, signing, manifest, runtime-storage, or verification actions based only on supplied evidence.",
+                    "missing_fields_are_listed_per_item": True,
+                },
+                "application": app,
+                "technical_evidence_summary": technical_compact,
+                "items": [_compact_treatment_item(x, "technical") | {"missing_ai_fields": _as_list(x.get("_missing_ai_fields"))} for x in batch],
+                "required_output_schema": {
+                    "technical_treatments": [
+                        {
+                            "item_id": "<exact input item_id>",
+                            "treatment_action": "<non-empty AI-generated action grounded in this finding>",
+                            "verification_method": "<non-empty verification method>",
+                            "closure_evidence": "<non-empty closure evidence>",
+                            "residual_risk": "<residual risk or risk acceptance note>",
+                        }
+                    ]
+                },
+            },
+            max_tokens=min(_ai_max_tokens(2200), 2800),
+        )
+        values = obj.get("technical_treatments") if isinstance(obj.get("technical_treatments"), list) else []
+        expected_ids = [_clean_text(x.get("item_id")) for x in batch]
+        patch = _merge_treatment_ai_maps(
+            patch,
+            {"technical_treatments": _merge_treatment_results([x for x in values if isinstance(x, dict)], expected_ids)}
+        )
+        print(
+            f"[AI][TREATMENT][REPAIR] Completed technical repair batch {idx}/{len(technical_batches)} "
+            f"on attempt {attempt}/{max_attempts}."
+        )
+
+    return patch
 
 
 def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, Any], technical: Dict[str, Any]) -> Dict[str, Any]:
@@ -2348,6 +2602,8 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
     system_prompt = (
         "You are a senior mobile application security remediation planner for mHealth/EMR systems. "
         "Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. "
+        "For every input item, return exactly one result object using the exact input item_id. "
+        "Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. "
         "For each item, write concrete but audit-defensible actions. If evidence is partial, state what must be verified. "
         "Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. "
         "Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. "
@@ -2367,9 +2623,30 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
     control_source = control_items[:max_control_items] if max_control_items > 0 else control_items
     technical_source = technical_items[:max_technical_items] if max_technical_items > 0 else technical_items
 
-    for idx, batch in enumerate(_chunks(control_source, batch_size), start=1):
+    control_batches = _chunks(control_source, batch_size)
+    technical_batches = _chunks(technical_source, batch_size)
+    total_control_batches = len(control_batches)
+    total_technical_batches = len(technical_batches)
+    total_batches = total_control_batches + total_technical_batches
+
+    print(
+        f"[AI][TREATMENT] Starting treatment-plan generation: "
+        f"{len(control_source)} control item(s) in {total_control_batches} batch(es), "
+        f"{len(technical_source)} technical item(s) in {total_technical_batches} batch(es), "
+        f"batch_size={batch_size}, total_batches={total_batches}."
+    )
+
+    for idx, batch in enumerate(control_batches, start=1):
+        global_idx = idx
+        first_item = ((idx - 1) * batch_size) + 1
+        last_item = min(idx * batch_size, len(control_source))
+        print(
+            f"[AI][TREATMENT] Progress {global_idx}/{total_batches} | "
+            f"control batch {idx}/{total_control_batches} | "
+            f"items {first_item}-{last_item}/{len(control_source)}"
+        )
         obj = _ai_json_chat(
-            f"control_treatment_{idx}",
+            f"control_treatment_{idx}_of_{total_control_batches}",
             system_prompt,
             {
                 "task": "Generate treatment-plan actions for non-compliant SECM-CAT controls.",
@@ -2378,6 +2655,7 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
                     "do_not_invent_evidence": True,
                     "use_exact_item_id_and_puid": True,
                     "output_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
+                    "all_output_fields_must_be_non_empty": True,
                 },
                 "application": app,
                 "technical_evidence_summary": technical_compact,
@@ -2385,11 +2663,11 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
                 "required_output_schema": {
                     "control_treatments": [
                         {
-                            "item_id": "<input item_id>",
-                            "treatment_action": "<AI-generated action grounded in this control>",
-                            "verification_method": "<how to verify closure>",
-                            "closure_evidence": "<evidence expected at closure>",
-                            "residual_risk": "<risk acceptance or residual risk note>",
+                            "item_id": "<exact input item_id>",
+                            "treatment_action": "<non-empty AI-generated action grounded in this control>",
+                            "verification_method": "<non-empty verification method>",
+                            "closure_evidence": "<non-empty closure evidence>",
+                            "residual_risk": "<residual risk or risk acceptance note>",
                         }
                     ]
                 },
@@ -2398,10 +2676,22 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
         )
         values = obj.get("control_treatments") if isinstance(obj.get("control_treatments"), list) else []
         control_results.extend([x for x in values if isinstance(x, dict)])
+        print(
+            f"[AI][TREATMENT] Completed {global_idx}/{total_batches} | "
+            f"control batch {idx}/{total_control_batches}"
+        )
 
-    for idx, batch in enumerate(_chunks(technical_source, batch_size), start=1):
+    for idx, batch in enumerate(technical_batches, start=1):
+        global_idx = total_control_batches + idx
+        first_item = ((idx - 1) * batch_size) + 1
+        last_item = min(idx * batch_size, len(technical_source))
+        print(
+            f"[AI][TREATMENT] Progress {global_idx}/{total_batches} | "
+            f"technical batch {idx}/{total_technical_batches} | "
+            f"items {first_item}-{last_item}/{len(technical_source)}"
+        )
         obj = _ai_json_chat(
-            f"technical_treatment_{idx}",
+            f"technical_treatment_{idx}_of_{total_technical_batches}",
             system_prompt,
             {
                 "task": "Generate treatment-plan actions for technical scanner findings.",
@@ -2409,6 +2699,8 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
                     "one_result_per_input_item": True,
                     "do_not_invent_evidence": True,
                     "use_exact_item_id_and_finding_id": True,
+                    "output_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
+                    "all_output_fields_must_be_non_empty": True,
                     "dependency_rule": "For Trivy items, use fixed_version when present; if no fixed version exists, propose risk acceptance, compensating controls, or monitoring rather than inventing a version.",
                     "sast_rule": "For SAST items, use only supplied rule, message, file, and line. Do not invent code paths.",
                     "mobsf_rule": "For MobSF items, recommend configuration, signing, manifest, runtime-storage, or verification actions based only on supplied evidence.",
@@ -2419,11 +2711,11 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
                 "required_output_schema": {
                     "technical_treatments": [
                         {
-                            "item_id": "<input item_id>",
-                            "treatment_action": "<AI-generated action grounded in this finding>",
-                            "verification_method": "<how to verify closure>",
-                            "closure_evidence": "<evidence expected at closure>",
-                            "residual_risk": "<risk acceptance or residual risk note>",
+                            "item_id": "<exact input item_id>",
+                            "treatment_action": "<non-empty AI-generated action grounded in this finding>",
+                            "verification_method": "<non-empty verification method>",
+                            "closure_evidence": "<non-empty closure evidence>",
+                            "residual_risk": "<residual risk or risk acceptance note>",
                         }
                     ]
                 },
@@ -2432,41 +2724,91 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
         )
         values = obj.get("technical_treatments") if isinstance(obj.get("technical_treatments"), list) else []
         technical_results.extend([x for x in values if isinstance(x, dict)])
+        print(
+            f"[AI][TREATMENT] Completed {global_idx}/{total_batches} | "
+            f"technical batch {idx}/{total_technical_batches}"
+        )
 
-    return {
-        "control_treatments": _merge_treatment_results(control_results),
-        "technical_treatments": _merge_treatment_results(technical_results),
+    expected_control_ids = [_clean_text(x.get("item_id")) for x in control_source]
+    expected_technical_ids = [_clean_text(x.get("item_id")) for x in technical_source]
+    treatment_ai = {
+        "control_treatments": _merge_treatment_results(control_results, expected_control_ids),
+        "technical_treatments": _merge_treatment_results(technical_results, expected_technical_ids),
         "metadata": {
             "control_items_requested": len(control_source),
             "technical_items_requested": len(technical_source),
+            "control_batches": total_control_batches,
+            "technical_batches": total_technical_batches,
+            "total_batches": total_batches,
             "batch_size": batch_size,
             "ai_authored": True,
         },
     }
 
+    missing = _incomplete_treatment_items(treatment_plan, treatment_ai)
+    missing_count = len(missing["control_items"]) + len(missing["technical_items"])
+    max_repair_attempts = _treatment_repair_attempts()
+
+    if missing_count:
+        print(
+            f"[AI][TREATMENT][REPAIR] Initial treatment output is incomplete for {missing_count} rendered item(s): "
+            f"{_treatment_missing_id_list(missing, limit=30)}"
+        )
+
+    for attempt in range(1, max_repair_attempts + 1):
+        if not missing_count:
+            break
+
+        repair_patch = _call_llm_for_treatment_repair(
+            app=app,
+            technical_compact=technical_compact,
+            missing_control_items=missing["control_items"],
+            missing_technical_items=missing["technical_items"],
+            system_prompt=system_prompt,
+            attempt=attempt,
+            max_attempts=max_repair_attempts,
+        )
+        treatment_ai = _merge_treatment_ai_maps(treatment_ai, repair_patch)
+        missing = _incomplete_treatment_items(treatment_plan, treatment_ai)
+        missing_count = len(missing["control_items"]) + len(missing["technical_items"])
+        print(
+            f"[AI][TREATMENT][REPAIR] Completed repair attempt {attempt}/{max_repair_attempts}. "
+            f"Remaining missing item(s): {missing_count}"
+            + (f" ({_treatment_missing_id_list(missing, limit=30)})" if missing_count else "")
+        )
+
+    final_missing = _incomplete_treatment_items(treatment_plan, treatment_ai)
+    final_missing_count = len(final_missing["control_items"]) + len(final_missing["technical_items"])
+    metadata = dict(_as_dict(treatment_ai.get("metadata")))
+    metadata["repair_attempts_allowed"] = max_repair_attempts
+    metadata["repair_remaining_missing_items"] = final_missing_count
+    metadata["control_treatment_response_count"] = len(_as_dict(treatment_ai.get("control_treatments")))
+    metadata["technical_treatment_response_count"] = len(_as_dict(treatment_ai.get("technical_treatments")))
+    treatment_ai["metadata"] = metadata
+
+    print(
+        f"[AI][TREATMENT] Finished treatment-plan generation: "
+        f"{metadata['control_treatment_response_count']} control treatment response(s), "
+        f"{metadata['technical_treatment_response_count']} technical treatment response(s), "
+        f"remaining_missing={final_missing_count}."
+    )
+
+    return treatment_ai
+
 
 def _validate_ai_treatment_writeups(treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     if not treatment_plan or not _treatment_ai_required():
         return
-    control_items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
-    technical_items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
-    control_map = _as_dict(treatment_ai.get("control_treatments"))
-    technical_map = _as_dict(treatment_ai.get("technical_treatments"))
-
+    missing_by_kind = _incomplete_treatment_items(treatment_plan, treatment_ai)
     missing: List[str] = []
-    for item in control_items[:_max_control_treatment_rows()]:
-        item_id = _clean_text(item.get("item_id"))
-        writeup = _as_dict(control_map.get(item_id))
-        if not all(_clean_text(writeup.get(k)) for k in ("treatment_action", "verification_method", "closure_evidence")):
-            missing.append(item_id)
-    for item in technical_items[:_max_technical_treatment_rows()]:
-        item_id = _clean_text(item.get("item_id"))
-        writeup = _as_dict(technical_map.get(item_id))
-        if not all(_clean_text(writeup.get(k)) for k in ("treatment_action", "verification_method", "closure_evidence")):
-            missing.append(item_id)
+    for key in ("control_items", "technical_items"):
+        for item in missing_by_kind.get(key, []):
+            item_id = _clean_text(item.get("item_id"))
+            fields = ", ".join(_as_list(item.get("_missing_ai_fields")))
+            missing.append(f"{item_id} ({fields})" if fields else item_id)
     if missing:
         raise SystemExit(
-            "[ERROR] AI-generated treatment plan is incomplete. "
+            "[ERROR] AI-generated treatment plan is incomplete after repair attempts. "
             "Treatment actions, verification methods, and closure evidence are required for rendered treatment items. "
             "Missing item IDs: " + ", ".join(missing[:40])
         )
