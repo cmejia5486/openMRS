@@ -186,10 +186,10 @@ jobs:
             ${{ runner.temp }}/audit-summary-venv
             ~/.cache/pip
             ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-audit-summary-ai-runtime-${{ env.AI_PYTHON_VERSION }}-${{ hashFiles('requirements/ai-runtime.txt', '.github/workflows/audit-summary.yml', 'scripts/lib/ai_config.py', 'scripts/lib/ai_runtime.py') }}
+          key: ${{ runner.os }}-audit-summary-ai-runtime-v2-${{ env.AI_PYTHON_VERSION }}-${{ hashFiles('requirements/ai-runtime.txt', '.github/workflows/audit-summary.yml', 'scripts/lib/ai_config.py', 'scripts/lib/ai_runtime.py') }}
           restore-keys: |
-            ${{ runner.os }}-audit-summary-ai-runtime-${{ env.AI_PYTHON_VERSION }}-
-            ${{ runner.os }}-audit-summary-ai-runtime-
+            ${{ runner.os }}-audit-summary-ai-runtime-v2-${{ env.AI_PYTHON_VERSION }}-
+            ${{ runner.os }}-audit-summary-ai-runtime-v2-
 
       - name: Create or reuse cached venv on Windows
         if: runner.os == 'Windows'
@@ -327,31 +327,30 @@ jobs:
 
           function Test-AuditSummaryPythonDeps {
             $py = @'
-          import importlib
           import sys
 
-          modules = [
-              "openai",
-              "litellm",
-              "pydantic",
-              "pandas",
-              "openpyxl",
-              "docx",
-              "matplotlib",
-              "requests",
+          checks = [
+              ("openai.OpenAI", "from openai import OpenAI"),
+              ("litellm.completion", "from litellm import completion"),
+              ("pydantic", "import pydantic"),
+              ("pandas", "import pandas"),
+              ("openpyxl", "import openpyxl"),
+              ("python-docx", "import docx"),
+              ("matplotlib", "import matplotlib"),
+              ("requests", "import requests"),
           ]
           missing = []
-          for name in modules:
+          for label, statement in checks:
               try:
-                  importlib.import_module(name)
+                  exec(statement, {})
               except Exception as exc:
-                  missing.append(f"{name}: {exc}")
+                  missing.append(f"{label}: {type(exc).__name__}: {exc}")
           if missing:
-              print("[PIP] Missing or invalid dependencies:")
+              print("[PIP] Missing or invalid dependency contracts:")
               for item in missing:
                   print("[PIP] - " + item)
               sys.exit(1)
-          print("[PIP] Cached dependencies are valid.")
+          print("[PIP] Cached dependency contracts are valid.")
           '@
             $py | & $env:PYTHON_EXE -
             return $LASTEXITCODE -eq 0
@@ -367,8 +366,8 @@ jobs:
           } else {
             Write-Host "[PIP] Installing minimal AI/report dependencies for Audit Summary."
             $packages = @(
-              "openai",
-              "litellm",
+              "openai>=1.0.0",
+              "litellm>=1.40.0",
               "pydantic>=2.7.0",
               "pandas",
               "openpyxl",
@@ -376,7 +375,7 @@ jobs:
               "matplotlib",
               "requests"
             )
-            Invoke-PipInstall -PipArgs (@("install", "--retries", "10", "--timeout", "720", "--prefer-binary") + $packages)
+            Invoke-PipInstall -PipArgs (@("install", "--upgrade", "--retries", "10", "--timeout", "720", "--prefer-binary") + $packages)
           }
 
           if (-not (Test-AuditSummaryPythonDeps)) {
@@ -413,31 +412,30 @@ jobs:
 
           test_deps() {
             "$PYTHON_EXE" - <<'PY'
-          import importlib
           import sys
 
-          modules = [
-              "openai",
-              "litellm",
-              "pydantic",
-              "pandas",
-              "openpyxl",
-              "docx",
-              "matplotlib",
-              "requests",
+          checks = [
+              ("openai.OpenAI", "from openai import OpenAI"),
+              ("litellm.completion", "from litellm import completion"),
+              ("pydantic", "import pydantic"),
+              ("pandas", "import pandas"),
+              ("openpyxl", "import openpyxl"),
+              ("python-docx", "import docx"),
+              ("matplotlib", "import matplotlib"),
+              ("requests", "import requests"),
           ]
           missing = []
-          for name in modules:
+          for label, statement in checks:
               try:
-                  importlib.import_module(name)
+                  exec(statement, {})
               except Exception as exc:
-                  missing.append(f"{name}: {exc}")
+                  missing.append(f"{label}: {type(exc).__name__}: {exc}")
           if missing:
-              print("[PIP] Missing or invalid dependencies:")
+              print("[PIP] Missing or invalid dependency contracts:")
               for item in missing:
                   print("[PIP] - " + item)
               sys.exit(1)
-          print("[PIP] Cached dependencies are valid.")
+          print("[PIP] Cached dependency contracts are valid.")
           PY
           }
 
@@ -447,9 +445,9 @@ jobs:
             echo "[PIP] Dependency installation skipped because cached venv is usable."
           else
             echo "[PIP] Installing minimal AI/report dependencies for Audit Summary."
-            pip_install install --retries 10 --timeout 720 --prefer-binary \
-              openai \
-              litellm \
+            pip_install install --upgrade --retries 10 --timeout 720 --prefer-binary \
+              'openai>=1.0.0' \
+              'litellm>=1.40.0' \
               'pydantic>=2.7.0' \
               pandas \
               openpyxl \
