@@ -507,7 +507,5 @@ jobs:
           path: |
             agent_payload.json
             trivy.json
-            trivy.sarif
-            trivy-fallback-gradle.lockfile
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
