@@ -95,7 +95,7 @@ jobs:
           ls -lah "$publish_dir"
 
       - name: Upload VISION360 outputs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: vision360-bundle
           if-no-files-found: error
