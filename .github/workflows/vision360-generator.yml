@@ -74,13 +74,31 @@ jobs:
             /mnt/data/vision360_trace.json \
             /mnt/data/vision360_effective_config.json
 
+      - name: Prepare VISION360 publish artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish_dir="/mnt/data/artifact_publish/vision360-bundle"
+          mkdir -p "$publish_dir"
+
+          test -f /mnt/data/vision360_fingerprint.json
+          test -f /mnt/data/vision360_output.json
+
+          cp /mnt/data/vision360_fingerprint.json "$publish_dir/vision360_fingerprint.json"
+          cp /mnt/data/vision360_output.json "$publish_dir/vision_360_output.json"
+
+          test -f "$publish_dir/vision360_fingerprint.json"
+          test -f "$publish_dir/vision_360_output.json"
+
+          echo "[ARTIFACT] vision360-bundle will publish only:"
+          ls -lah "$publish_dir"
+
       - name: Upload VISION360 outputs
         uses: actions/upload-artifact@v6
         with:
           name: vision360-bundle
           if-no-files-found: error
           path: |
-            /mnt/data/vision360_fingerprint.json
-            /mnt/data/vision360_output.json
-            /mnt/data/vision360_trace.json
-            /mnt/data/vision360_effective_config.json
+            /mnt/data/artifact_publish/vision360-bundle/vision360_fingerprint.json
+            /mnt/data/artifact_publish/vision360-bundle/vision_360_output.json

@@ -1,4 +1,4 @@
-name: Mobile Security Scan
+﻿name: Mobile Security Scan
 
 on:
   workflow_call:
@@ -294,20 +294,33 @@ jobs:
           }
           $metadata | ConvertTo-Json -Depth 20 | Set-Content mobsf_scan_metadata.json
 
+      - name: Prepare MobSF static publish artifact
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (-not (Test-Path "mobsf_results.json")) {
+            throw "mobsf_results.json was not created."
+          }
+
+          $publishDir = Join-Path $PWD "artifact_publish\mobsf-report"
+          $canonicalPath = Join-Path $publishDir "mobsf-report.json"
+
+          New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+          Copy-Item -LiteralPath "mobsf_results.json" -Destination $canonicalPath -Force
+
+          if (-not (Test-Path $canonicalPath)) {
+            throw "mobsf-report.json was not prepared."
+          }
+
+          Write-Host "[ARTIFACT] mobsf-report -> $canonicalPath"
+
       - name: Upload MobSF static results
         uses: actions/upload-artifact@v4
         with:
           name: mobsf-report
-          path: |
-            mobsf_results.json
-            mobsf_scan_metadata.json
-            mobsf_upload_response.json
-            mobsf_scan_response.json
-            mobsf_report_last_response.json
-            mobsf_report_last_error.txt
-            mobsf_scan_last_error.txt
-          if-no-files-found: warn
-
+          path: artifact_publish/mobsf-report/mobsf-report.json
+          if-no-files-found: error
       - name: Try to download MobSF dynamic JSON report if available
         if: ${{ steps.static_scan.outputs.hash != '' }}
         continue-on-error: true
@@ -356,9 +369,26 @@ jobs:
             Write-Host "Dynamic report fetch failed: $($_.Exception.Message)"
           }
 
+      - name: Prepare MobSF dynamic publish artifact if present
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $publishDir = Join-Path $PWD "artifact_publish\mobsf-dynamic-report"
+          $canonicalPath = Join-Path $publishDir "mobsf-dynamic-report.json"
+
+          New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+
+          if (Test-Path "mobsf_dynamic_results.json") {
+            Copy-Item -LiteralPath "mobsf_dynamic_results.json" -Destination $canonicalPath -Force
+            Write-Host "[ARTIFACT] mobsf-dynamic-report -> $canonicalPath"
+          } else {
+            Write-Host "[ARTIFACT] mobsf_dynamic_results.json was not present. Dynamic artifact upload will be skipped."
+          }
+
       - name: Upload MobSF dynamic results if present
         uses: actions/upload-artifact@v4
         with:
           name: mobsf-dynamic-report
-          path: mobsf_dynamic_results.json
+          path: artifact_publish/mobsf-dynamic-report/mobsf-dynamic-report.json
           if-no-files-found: ignore

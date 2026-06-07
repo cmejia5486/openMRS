@@ -1,4 +1,4 @@
-name: Audit Summary
+﻿name: Audit Summary
 
 on:
   workflow_call:
@@ -921,6 +921,52 @@ jobs:
           test -f "$AUDIT_SUMMARY_DOCX_PATH"
           echo "[AI] Audit Summary DOCX generated successfully."
 
+      - name: Prepare Audit Summary analysis pack artifact on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $publishDir = Join-Path $env:RUNNER_TEMP "audit-summary-analysis-pack"
+          $canonicalPath = Join-Path $publishDir "audit-summary-analysis-pack.json"
+
+          New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
+
+          if (-not (Test-Path $env:AUDIT_ANALYSIS_JSON_PATH)) {
+            throw "audit_summary_analysis_pack.json was not found at $env:AUDIT_ANALYSIS_JSON_PATH"
+          }
+
+          Copy-Item -LiteralPath $env:AUDIT_ANALYSIS_JSON_PATH -Destination $canonicalPath -Force
+
+          if (-not (Test-Path $canonicalPath)) {
+            throw "audit-summary-analysis-pack.json was not prepared"
+          }
+
+          Write-Host "[ARTIFACT] audit-summary-analysis-pack -> $canonicalPath"
+
+      - name: Prepare Audit Summary analysis pack artifact on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish_dir="$RUNNER_TEMP/audit-summary-analysis-pack"
+          canonical_path="$publish_dir/audit-summary-analysis-pack.json"
+
+          mkdir -p "$publish_dir"
+
+          test -f "$AUDIT_ANALYSIS_JSON_PATH"
+          cp "$AUDIT_ANALYSIS_JSON_PATH" "$canonical_path"
+          test -f "$canonical_path"
+
+          echo "[ARTIFACT] audit-summary-analysis-pack -> $canonical_path"
+
+      - name: Upload Audit Summary analysis pack
+        uses: actions/upload-artifact@v6
+        with:
+          name: audit-summary-analysis-pack
+          if-no-files-found: error
+          path: ${{ runner.temp }}/audit-summary-analysis-pack/audit-summary-analysis-pack.json
       - name: Prepare DOCX transfer cache on Windows
         if: runner.os == 'Windows'
         shell: powershell
@@ -1071,3 +1117,4 @@ jobs:
           gh api             --method DELETE             -H "Accept: application/vnd.github+json"             "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
 
           echo "[CLEANUP] Deleted temporary artifact id: $artifact_id"
+
