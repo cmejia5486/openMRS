@@ -27,16 +27,21 @@ def _should_patch() -> bool:
 
 def _post_patch_cleanup(scripts_dir: Path) -> None:
     """Repair escaped word-boundary regexes if a runtime patch inserted them as backspace chars."""
-    stage2 = scripts_dir / "audit_summary_stage2_generate_docx.py"
-    if not stage2.is_file():
-        return
+    for filename in (
+        "audit_summary_stage1_build_analysis_pack.py",
+        "audit_summary_stage2_generate_docx.py",
+    ):
+        target = scripts_dir / filename
+        if not target.is_file():
+            continue
 
-    text = stage2.read_text(encoding="utf-8")
-    if "\x08" in text:
-        text = text.replace("\x08", r"\b")
-        stage2.write_text(text, encoding="utf-8")
-        py_compile.compile(str(stage2), doraise=True)
-        print("[OK] Audit Summary runtime patch cleanup normalized regex word-boundaries in Stage 2.")
+        text = target.read_text(encoding="utf-8")
+        if "\x08" in text:
+            text = text.replace("\x08", r"\b")
+            target.write_text(text, encoding="utf-8")
+            print(f"[OK] Audit Summary runtime patch cleanup normalized regex word-boundaries in {filename}.")
+
+        py_compile.compile(str(target), doraise=True)
 
 
 def _run_patch() -> None:
@@ -48,16 +53,20 @@ def _run_patch() -> None:
     if not patch_path.is_file():
         return
 
-    namespace = {"__name__": "__audit_summary_runtime_report_patches__", "__file__": str(patch_path)}
-    code = compile(patch_path.read_text(encoding="utf-8"), str(patch_path), "exec")
-    exec(code, namespace)
-    main = namespace.get("main")
-    if callable(main):
-        main()
-    _post_patch_cleanup(scripts_dir)
+    try:
+        namespace = {"__name__": "__audit_summary_runtime_report_patches__", "__file__": str(patch_path)}
+        code = compile(patch_path.read_text(encoding="utf-8"), str(patch_path), "exec")
+        exec(code, namespace)
+        main = namespace.get("main")
+        if callable(main):
+            main()
+    except Exception as exc:
+        print(f"[WARN] Audit Summary runtime report patch hook failed before cleanup: {exc}", file=sys.stderr)
+    finally:
+        try:
+            _post_patch_cleanup(scripts_dir)
+        except Exception as cleanup_exc:
+            print(f"[WARN] Audit Summary runtime report patch cleanup failed: {cleanup_exc}", file=sys.stderr)
 
 
-try:
-    _run_patch()
-except Exception as exc:
-    print(f"[WARN] Audit Summary runtime report patch hook failed: {exc}", file=sys.stderr)
+_run_patch()
