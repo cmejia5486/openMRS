@@ -111,11 +111,68 @@ def _set_doc_defaults(doc: Document) -> None:
     style = doc.styles["Normal"]
     style.font.name = "Calibri"
     style.font.size = Pt(11)
+    style.paragraph_format.space_after = Pt(6)
+    style.paragraph_format.line_spacing = 1.08
     section = doc.sections[0]
     section.top_margin = Inches(0.75)
     section.bottom_margin = Inches(0.75)
     section.left_margin = Inches(0.85)
     section.right_margin = Inches(0.85)
+
+
+def _is_toc_paragraph(paragraph) -> bool:
+    try:
+        if paragraph._p.xpath("./w:hyperlink"):
+            return True
+    except Exception:
+        pass
+    try:
+        left_indent = paragraph.paragraph_format.left_indent
+        if left_indent is not None and left_indent.pt and left_indent.pt > 0 and paragraph.text.strip():
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _should_justify_paragraph(paragraph) -> bool:
+    text = (paragraph.text or "").strip()
+    if not text:
+        return False
+
+    style_name = getattr(getattr(paragraph, "style", None), "name", "") or ""
+    if style_name.startswith("Heading"):
+        return False
+    if style_name in {"Title", "Subtitle", "List Bullet", "List Number", "Caption"}:
+        return False
+    if paragraph.alignment in {WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.RIGHT}:
+        return False
+    if _is_toc_paragraph(paragraph):
+        return False
+    return True
+
+
+def _format_report_paragraphs(doc: Document) -> None:
+    """Apply professional paragraph formatting to narrative body text only.
+
+    Tables, figures, captions, bullets, headings, cover text, TOC links, headers,
+    and footers are intentionally excluded. The goal is to fix ragged narrative
+    text in the exported PDF without damaging table readability.
+    """
+    for p in doc.paragraphs:
+        if not _should_justify_paragraph(p):
+            continue
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p.paragraph_format.space_after = Pt(6)
+        p.paragraph_format.line_spacing = 1.08
+
+
+def _add_body_paragraph(doc: Document, text: Any):
+    p = doc.add_paragraph(_clean_text(text))
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p.paragraph_format.space_after = Pt(6)
+    p.paragraph_format.line_spacing = 1.08
+    return p
 
 
 def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile Application") -> None:
@@ -468,12 +525,16 @@ def _add_note(doc: Document, text: str) -> None:
 def _sanitize_positive_statement(text: Any) -> str:
     s = _clean_text(text)
     replacements = [
-        (r"^The application applications not change", "The application does not change"),
-        (r"^The application remove", "The application removes"),
-        (r"^The application be free", "The application is free"),
-        (r"^The application request", "The application requests"),
-        (r"^The application provide", "The application provides"),
-        (r"^The application the mobile application", "The mobile application"),
+        (r"^The application applications not change\b", "The application does not change"),
+        (r"^The application remove\b", "The application removes"),
+        (r"^The application be free\b", "The application is free"),
+        (r"^The application request\b", "The application requests"),
+        (r"^The application provide\b", "The application provides"),
+        (r"^The application the mobile application\b", "The mobile application"),
+        (r"\bremovess\b", "removes"),
+        (r"\brequestss\b", "requests"),
+        (r"\bprovidess\b", "provides"),
+        (r"\bCA\) be used\b", "CA) should be used"),
         (r"\bkeep with good SSL practices\b", "align with secure SSL practices"),
         (r"\bpost-development cycle for secure certificate validation\b", "after the development cycle to preserve secure certificate validation"),
     ]
@@ -800,9 +861,9 @@ def _add_mobsf_dynamic_section(doc: Document, technical: Dict[str, Any]) -> None
     doc.add_paragraph("MobSF dynamic evidence was used to summarize runtime storage and behavioral observations, including local files, SharedPreferences, SQLite databases, cache artifacts, and trackers where reported.")
     rows = []
     for label, keys in [
-        ("SharedPreferences artifacts", ["shared_preferences", "shared_preferences_files", "preferences"]),
-        ("SQLite/database artifacts", ["sqlite_databases", "databases", "db_files"]),
-        ("Local storage artifacts", ["local_storage_artifacts", "files", "storage_artifacts"]),
+        ("SharedPreferences artifacts", ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"]),
+        ("SQLite/database artifacts", ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"]),
+        ("Local storage artifacts", ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"]),
         ("Trackers", ["trackers", "detected_trackers"]),
     ]:
         items = _deep_list(dynamic, keys)
@@ -1204,6 +1265,18 @@ def _compact_patterns_for_ai(patterns: List[Dict[str, Any]], limit: int = 10) ->
     return out
 
 
+def _compact_positive_controls_for_ai(pos_controls: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for pc in pos_controls[:limit]:
+        out.append({
+            "puid": pc.get("puid"),
+            "original_statement": _clean_text(pc.get("declarative_statement", "")),
+            "flags_used": _clean_text(pc.get("flags_used", "")),
+            "evidence_excerpt": _clean_text(pc.get("evidence_excerpt", "")),
+        })
+    return out
+
+
 def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
     trivy = _as_dict(technical.get("trivy_sca"))
     mobsf_static = _as_dict(technical.get("mobsf_static"))
@@ -1249,17 +1322,19 @@ def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
         "mobsf_dynamic": {
             "available": _block_available(mobsf_dynamic),
             "local_storage_artifacts_count": _deep_int(mobsf_dynamic, ["local_storage_artifacts_count", "local_storage_artifacts_count_count"]),
-            "local_storage_artifacts_sample": _deep_list(mobsf_dynamic, ["local_storage_artifacts_sample", "local_storage_artifacts"])[:12],
-            "shared_preferences_artifacts": _deep_list(mobsf_dynamic, ["shared_preferences_artifacts", "shared_preferences"])[:12],
-            "sqlite_database_artifacts": _deep_list(mobsf_dynamic, ["sqlite_database_artifacts", "sqlite_databases"])[:12],
+            "local_storage_artifacts_sample": _deep_list(mobsf_dynamic, ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"])[:12],
+            "shared_preferences_artifacts": _deep_list(mobsf_dynamic, ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"])[:12],
+            "sqlite_database_artifacts": _deep_list(mobsf_dynamic, ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"])[:12],
             "detected_trackers": _deep_int(mobsf_dynamic, ["detected_trackers", "trackers_detected"]),
         },
         "sast_app_code": {
             "available": _block_available(sast),
-            "summary": _deep_dict(sast, ["summary"]),
-            "tool_counts": _deep_dict(sast, ["tool_counts", "by_tool"]),
-            "security_findings_sample": _deep_list(sast, ["security_findings_sample", "findings"])[:12],
-            "hardening_signals_sample": _deep_list(sast, ["hardening_signals_sample"])[:8],
+            "retained_app_code_findings": _deep_int(sast, ["total_findings", "total", "results_count"]),
+            "raw_sarif_counts_by_tool": _deep_dict(sast, ["tool_counts", "by_tool"]),
+            "scope_filter_rule": "Only findings retained after the application-scope filter may be described as application-code findings.",
+            "raw_counts_interpretation": "Raw SARIF counts are traceability and coverage signals only; they are not application-code findings unless retained_app_code_findings is greater than zero.",
+            "retained_findings_sample": _deep_list(sast, ["findings", "results", "app_code_findings", "top_findings"])[:12],
+            "sast_notifications_sample": _deep_list(_as_dict(technical.get("coverage_limitations")), ["sast_notifications_sample", "sast_extraction_warnings"])[:8],
         },
         "coverage_limitations": {
             "missing_inputs": _deep_list(limitations, ["missing_inputs"]),
@@ -1274,6 +1349,7 @@ def _call_llm_for_audit_sections(
     patterns: List[Dict[str, Any]],
     technical: Dict[str, Any],
     likelihood_rubric: Dict[str, str],
+    positive_controls: List[Dict[str, Any]] | None = None,
 ) -> Dict[str, Any]:
     if not _ai_enabled():
         return {}
@@ -1283,6 +1359,8 @@ def _call_llm_for_audit_sections(
         "Write in precise technical English for an executive and engineering audience. "
         "Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. "
         "If evidence is absent, state the limitation explicitly. "
+        "Do not contradict normalized evidence. In particular, the field retained_app_code_findings is authoritative for SAST application-code findings. "
+        "If retained_app_code_findings is 0, raw SARIF counts, CodeQL notifications, detekt warnings, and Semgrep counts must be described as traceability or coverage signals only, never as retained application-code findings. "
         "Return exactly one valid JSON object and nothing else."
     )
 
@@ -1295,6 +1373,7 @@ def _call_llm_for_audit_sections(
         "likelihood_rubric": likelihood_rubric,
         "top_weakness_patterns": compact_patterns,
         "technical_evidence": compact_technical,
+        "positive_controls": _compact_positive_controls_for_ai(positive_controls or []),
     }
 
     out: Dict[str, Any] = {}
@@ -1319,6 +1398,37 @@ def _call_llm_for_audit_sections(
     )
     out.update({k: v for k, v in executive.items() if k in {"audit_summary_paragraph", "key_takeaways"}})
 
+    positive_controls_ai = _ai_json_chat(
+        "positive_controls",
+        common_system,
+        {
+            "task": "Rewrite verified positive control statements into precise, grammatical audit-report English.",
+            "constraints": {
+                "use_exact_puid": True,
+                "do_not_overstate": True,
+                "do_not_invent_evidence": True,
+                "if_evidence_is_partial": "State the supported observation and the residual limitation in the same sentence.",
+                "statement_style": "One concise sentence per control, suitable for an executive report.",
+            },
+            "context": {
+                "application": app,
+                "positive_controls": _compact_positive_controls_for_ai(positive_controls or []),
+                "technical_evidence": compact_technical,
+            },
+            "required_output_schema": {
+                "positive_controls": [
+                    {
+                        "puid": "<exact PUID>",
+                        "statement": "<rewritten statement grounded only in flags and evidence>"
+                    }
+                ]
+            },
+        },
+        max_tokens=min(_ai_max_tokens(1400), 1800),
+    )
+    if isinstance(positive_controls_ai.get("positive_controls"), list):
+        out["positive_controls"] = positive_controls_ai["positive_controls"]
+
     technical_narratives = _ai_json_chat(
         "technical_narratives",
         common_system,
@@ -1329,6 +1439,9 @@ def _call_llm_for_audit_sections(
                 "mention_limitations": True,
                 "do_not_overstate_sast": True,
                 "do_not_treat_missing_mobsf_fields_as_clean": True,
+                "sast_rule": "If technical_evidence.sast_app_code.retained_app_code_findings is 0, say that no application-scope SAST findings were retained. You may mention raw SARIF counts only as traceability or parser coverage signals.",
+                "mobsf_dynamic_rule": "Mention runtime artifact examples only when they are present in the normalized MobSF dynamic arrays. If arrays are empty, state that examples were not normalized.",
+                "avoid_absolute_claims": "Do not claim the app is clean, fully protected, or fully encrypted unless the supplied data directly supports that exact statement.",
             },
             "context": base_context,
             "required_output_schema": {
@@ -1355,8 +1468,8 @@ def _call_llm_for_audit_sections(
                 "patterns": "Use exact pattern names from input.",
                 "expected": "1 sentence.",
                 "impact": "1 sentence mentioning confidentiality, integrity, availability, or health-data regulatory exposure only when supported.",
-                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and limitations. Do not use generic boilerplate or static templates.",
-                "closure_criteria": "1 measurable sentence suitable for the MAP, generated from the supplied evidence and scanner context.",
+                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and limitations. Do not use generic boilerplate or static templates. Do not convert raw SARIF counts into app-code findings when retained_app_code_findings is 0.",
+                "closure_criteria": "1 measurable sentence suitable for the MAP, generated from the supplied evidence and scanner context. Prefer evidence-based closure such as updated workbook scoring, updated Trivy/MobSF/SAST artifacts, regression evidence, or formal risk acceptance. Avoid unrealistic permanent phrases such as zero-vulnerability state unless limited to Critical/High fixable findings.",
                 "no_time_window_headings": True,
                 "no_unprovided_metrics": True,
                 "no_static_recommendations": True,
@@ -1390,6 +1503,21 @@ def _call_llm_for_audit_sections(
 def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[str, str], max_takeaways: int = 7) -> Dict[str, Any]:
     # Backward-compatible wrapper retained for older callers.
     return {}
+
+
+def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove or replace AI text that contradicts normalized scanner evidence."""
+    tech_ai = dict(tech_ai or {})
+    sast = _as_dict(technical.get("sast_app_code"))
+    retained = _deep_int(sast, ["total_findings", "total", "results_count"])
+    if retained <= 0:
+        raw_counts = _deep_dict(sast, ["tool_counts", "by_tool"])
+        raw_text = ", ".join(f"{k}: {v}" for k, v in raw_counts.items()) if raw_counts else "raw SARIF counts unavailable"
+        tech_ai["sast_paragraph"] = (
+            "SARIF artifacts were parsed, but no application-scope SAST findings were retained after the configured scope filter. "
+            f"Raw SARIF counts are retained only for traceability and coverage interpretation ({raw_text}); they are not treated as application-code findings in this report."
+        )
+    return tech_ai
 
 def main() -> None:
     in_path = os.getenv("AUDIT_ANALYSIS_JSON_PATH", DEFAULT_IN)
@@ -1438,7 +1566,7 @@ def main() -> None:
 
     prose: Dict[str, Any] = {}
     try:
-        prose = _call_llm_for_audit_sections(metrics, app, patterns, technical, likelihood_rubric)
+        prose = _call_llm_for_audit_sections(metrics, app, patterns, technical, likelihood_rubric, pos_controls)
         if prose:
             ai_sections_path = os.getenv("AUDIT_SUMMARY_AI_SECTIONS_PATH", "").strip()
             if not ai_sections_path:
@@ -1451,8 +1579,13 @@ def main() -> None:
         print(f"[AI][WARN] Sectioned AI generation failed; deterministic fallback will be used: {exc}")
         prose = {}
 
-    tech_ai = _as_dict(prose.get("technical_narratives"))
+    tech_ai = _sanitize_ai_technical_narratives(_as_dict(prose.get("technical_narratives")), technical)
     key_takeaways = prose.get("key_takeaways", [])
+    positive_control_writeups = {
+        _clean_text(w.get("puid")): _clean_text(w.get("statement"))
+        for w in prose.get("positive_controls", [])
+        if isinstance(w, dict) and _clean_text(w.get("puid")) and _clean_text(w.get("statement"))
+    }
     writeups = {w["pattern"]: w for w in prose.get("pattern_writeups", []) if isinstance(w, dict) and "pattern" in w}
     _validate_ai_pattern_writeups(patterns, writeups)
     if not key_takeaways:
@@ -1511,7 +1644,9 @@ def main() -> None:
     doc.add_paragraph("All statements below are derived exclusively from controls recorded as Compliant in the audit workbook and include supporting signals (flags and/or evidence). Verification traceability is provided in Appendix B.")
     if pos_controls:
         for pc in pos_controls:
-            doc.add_paragraph(_sanitize_positive_statement(pc.get("declarative_statement", "")), style="List Bullet")
+            puid = _clean_text(pc.get("puid"))
+            statement = positive_control_writeups.get(puid) or _sanitize_positive_statement(pc.get("declarative_statement", ""))
+            doc.add_paragraph(statement, style="List Bullet")
     else:
         doc.add_paragraph("No compliant controls with supporting evidence/flags were available for verification in the workbook.", style="List Bullet")
 
@@ -1671,7 +1806,8 @@ def main() -> None:
     if pos_controls:
         for pc in pos_controls:
             r = vb.add_row().cells
-            r[0].text = _sanitize_positive_statement(pc.get("declarative_statement", ""))
+            puid = _clean_text(pc.get("puid"))
+            r[0].text = positive_control_writeups.get(puid) or _sanitize_positive_statement(pc.get("declarative_statement", ""))
             r[1].text = pc["puid"]
             r[2].text = pc.get("flags_used", "") or ""
             r[3].text = pc.get("evidence_excerpt", "") or ""
@@ -1689,6 +1825,7 @@ def main() -> None:
 
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)
+    _format_report_paragraphs(doc)
     _quality_gate(doc)
     doc.save(out_path)
     print(f"[OK] DOCX generated -> {out_path}")

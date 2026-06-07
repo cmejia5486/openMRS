@@ -312,9 +312,9 @@ def _present_tense_after_subject(text: str) -> str:
 def _to_declarative(desc: str) -> str:
     """Convert a requirement sentence into a concise positive-control statement.
 
-    This is intentionally deterministic. It avoids translation-like fragments such
-    as "The mobile application ensure" and keeps statements grounded in the
-    workbook description, leaving detailed evidence in Appendix B.
+    The statement is used as a candidate only; Stage 2 may ask the configured AI
+    model to rewrite it. This helper therefore keeps the sentence conservative,
+    grammatical, and grounded in the workbook text.
     """
     t = _clean_text(desc)
     if not t:
@@ -324,26 +324,40 @@ def _to_declarative(desc: str) -> str:
     t = re.sub(r"\(e\.g\.,.*?\)", "", t, flags=re.IGNORECASE)
     t = re.sub(r"\b(is|are) required to\b", "", t, flags=re.IGNORECASE)
     t = re.sub(r"\b(needs? to|must|shall|should)\b", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\bwould\s+", "", t, flags=re.IGNORECASE)
     t = re.sub(r"\s+", " ", t).strip()
+
+    if not t:
+        return "The application implements the control described in the workbook."
 
     if not re.match(r"^the\s+(mobile\s+)?application\b", t, flags=re.IGNORECASE):
         t = "The application " + (t[0].lower() + t[1:] if t else "implements security controls")
     else:
-        # Normalize subject capitalization only.
         t = re.sub(r"^the mobile application\b", "The mobile application", t, flags=re.IGNORECASE)
         t = re.sub(r"^the application\b", "The application", t, flags=re.IGNORECASE)
 
     t = _present_tense_after_subject(t)
-    t = re.sub(r"\b(minimize its usage)\b", "minimizes its usage", t, flags=re.IGNORECASE)
-    t = re.sub(r"\bsecurely handle\b", "securely handles", t, flags=re.IGNORECASE)
-    t = re.sub(r"\band prevent\b", "and prevents", t, flags=re.IGNORECASE)
-    t = re.sub(r"\bas well as disallow the\b", "as well as disallowing the", t, flags=re.IGNORECASE)
-    t = re.sub(r"\s+", " ", t).strip()
 
-    # Prefer a complete concise sentence and avoid generating report text that
-    # ends with dangling punctuation.
+    grammar_fixes = [
+        (r"\bremovess\b", "removes"),
+        (r"\brequestss\b", "requests"),
+        (r"\bprovidess\b", "provides"),
+        (r"\bensuress\b", "ensures"),
+        (r"\bconfiguress\b", "configures"),
+        (r"\bminimize its usage\b", "minimizes its usage"),
+        (r"\bsecurely handle\b", "securely handles"),
+        (r"\band prevent\b", "and prevents"),
+        (r"\bas well as disallow the\b", "as well as disallowing the"),
+        (r"\bCertificate Authority \(CA\) be used\b", "Certificate Authority (CA) is used"),
+        (r"\bSelf-signed certificates or a local Certificate Authority \(CA\) be used\b", "Self-signed certificates or a local Certificate Authority (CA) are used"),
+    ]
+    for pattern, repl in grammar_fixes:
+        t = re.sub(pattern, repl, t, flags=re.IGNORECASE)
+
+    t = re.sub(r"\s+", " ", t).strip()
     t = _excerpt(t, 340).strip().rstrip(".;:") + "."
     return t
+
 
 def _match_pattern(desc: str, flags: str) -> str:
     text = f"{desc or ''} {flags or ''}".lower()
@@ -631,6 +645,9 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
     evidence_source_counts: Dict[str, int] = {}
     active_flags: List[str] = []
     negative_flags: List[str] = []
+    active_flags_by_group: Dict[str, List[str]] = {}
+    negative_flags_by_group: Dict[str, List[str]] = {}
+    flag_state_index: List[Dict[str, str]] = []
 
     for flag in flags:
         if not isinstance(flag, dict):
@@ -643,10 +660,16 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
         group = str(flag.get("group") or flag.get("category") or "UNKNOWN")
         state_counts[state] = state_counts.get(state, 0) + 1
         group_counts[group] = group_counts.get(group, 0) + 1
+
+        if flag_id:
+            flag_state_index.append({"id": flag_id, "group": group, "state": state})
+
         if state in {"true", "present", "detected", "yes", "positive"} and flag_id:
             active_flags.append(flag_id)
+            active_flags_by_group.setdefault(group, []).append(flag_id)
         if state in {"false", "absent", "not_detected", "no", "negative"} and flag_id:
             negative_flags.append(flag_id)
+            negative_flags_by_group.setdefault(group, []).append(flag_id)
 
         for source_key in ("source", "source_tool", "evidence_source", "origin"):
             src = flag.get(source_key)
@@ -662,6 +685,15 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
     if not isinstance(loaded_files, dict):
         loaded_files = {}
 
+    top_active_groups = [
+        {
+            "group": group,
+            "active_flag_count": len(values),
+            "active_flags_sample": _unique_keep_order(values, limit=12),
+        }
+        for group, values in sorted(active_flags_by_group.items(), key=lambda x: len(x[1]), reverse=True)[:12]
+    ]
+
     return {
         "available": bool(fingerprint or output or trace or effective),
         "source_dir": str(vision360_dir),
@@ -676,6 +708,10 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
         ],
         "active_flags_sample": _unique_keep_order(active_flags, limit=40),
         "negative_flags_sample": _unique_keep_order(negative_flags, limit=40),
+        "active_flags_by_group": {group: _unique_keep_order(values, limit=40) for group, values in active_flags_by_group.items()},
+        "negative_flags_by_group": {group: _unique_keep_order(values, limit=40) for group, values in negative_flags_by_group.items()},
+        "top_active_groups": top_active_groups,
+        "flag_state_index_sample": flag_state_index[:80],
         "evidence_source_counts": evidence_source_counts,
         "feature_keys": sorted(effective_features.keys()),
         "has_sca_trace": bool(effective_features.get("sca")),
@@ -687,8 +723,18 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
             "groups_total": len(group_counts),
             "loaded_files_total": len(loaded_files),
             "features_total": len(effective_features),
+            "active_flags_total": len(active_flags),
+            "negative_flags_total": len(negative_flags),
+            "evidence_sources_total": len(evidence_source_counts),
+        },
+        "ai_summary": {
+            "instruction": "Use Vision360 as traceability and feature-coverage evidence. Do not treat a flag as a vulnerability unless it is mapped to a non-compliant requirement or corroborated by scanner evidence.",
+            "top_active_groups": top_active_groups,
+            "state_counts": state_counts,
+            "evidence_source_counts": evidence_source_counts,
         },
     }
+
 
 def _trivy_findings_from_raw(trivy: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     findings: List[Dict[str, Any]] = []
@@ -1085,17 +1131,71 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         r"shared[_-]?prefs",
         r"sharedpreferences",
         r"preferences.*\.xml",
+        r"pref.*\.xml",
         r"\.db(\b|$|-)",
         r"\.sqlite(\b|$)",
         r"\.sqlite3(\b|$)",
         r"/cache/",
         r"/files/",
     ]
+
     artifacts = _collect_strings_matching(dyn, storage_patterns, limit=250)
-    shared_prefs = [x for x in artifacts if re.search(r"shared[_-]?prefs|sharedpreferences|pref.*\.xml|preferences.*\.xml", x, re.IGNORECASE)]
-    sqlite = [x for x in artifacts if re.search(r"\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)]
-    cache_files = [x for x in artifacts if re.search(r"/cache/", x, re.IGNORECASE)]
-    local_files = [x for x in artifacts if re.search(r"/files/", x, re.IGNORECASE)]
+
+    # Some MobSF dynamic reports expose runtime artifacts in semi-structured
+    # sections. Keep a second pass over likely keys so file names such as
+    # OpenMRSPrefFile.xml, sshared_preferences.xml, schucker.db, and openmrs.db
+    # are preserved even when they are not embedded in full Android paths.
+    explicit_values: List[str] = []
+    for value in _deep_find_values(
+        dyn,
+        [
+            r"shared.*pref",
+            r"preferences",
+            r"sqlite",
+            r"database",
+            r"db_files?",
+            r"local.*storage",
+            r"app.*files?",
+            r"cache",
+            r"files",
+        ],
+        limit=120,
+    ):
+        explicit_values.extend(_collect_strings_matching(value, storage_patterns, limit=80))
+        if isinstance(value, str):
+            maybe = _extract_storage_artifact(value)
+            if maybe:
+                explicit_values.append(maybe)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, str):
+                    maybe = _extract_storage_artifact(item)
+                    if maybe:
+                        explicit_values.append(maybe)
+
+    artifacts = _unique_keep_order(list(artifacts) + explicit_values, limit=250)
+
+    def basename_or_path(item: str) -> str:
+        item = _clean_text(item)
+        if not item:
+            return ""
+        # Keep the path when it carries Android storage context; otherwise keep
+        # the file-like artifact name.
+        if "/data/data/" in item or "/cache/" in item or "/files/" in item:
+            return item
+        return Path(item.replace("\\", "/")).name or item
+
+    normalized = _unique_keep_order([basename_or_path(x) for x in artifacts], limit=120)
+    shared_prefs = [
+        x for x in normalized
+        if re.search(r"shared[_-]?prefs|sharedpreferences|pref.*\.xml|preferences.*\.xml|\.xml$", x, re.IGNORECASE)
+    ]
+    sqlite = [
+        x for x in normalized
+        if re.search(r"\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)
+    ]
+    cache_files = [x for x in normalized if re.search(r"/cache/|cache", x, re.IGNORECASE)]
+    local_files = [x for x in normalized if re.search(r"/files/|/data/data/", x, re.IGNORECASE)]
 
     flat = _flatten_text(dyn, limit=500000)
     trackers = 0
@@ -1103,19 +1203,54 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
     if m:
         trackers = _safe_int(m.group(1), 0)
 
+    categories = [
+        {
+            "type": "SharedPreferences artifacts",
+            "count": len(shared_prefs),
+            "examples": _unique_keep_order(shared_prefs, limit=12),
+        },
+        {
+            "type": "SQLite/database artifacts",
+            "count": len(sqlite),
+            "examples": _unique_keep_order(sqlite, limit=12),
+        },
+        {
+            "type": "Local storage artifacts",
+            "count": len(normalized),
+            "examples": _unique_keep_order(normalized, limit=12),
+        },
+        {
+            "type": "Cache artifacts",
+            "count": len(cache_files),
+            "examples": _unique_keep_order(cache_files, limit=12),
+        },
+        {
+            "type": "Trackers",
+            "count": trackers,
+            "examples": [],
+        },
+    ]
+
     return {
         "available": bool(dyn),
         "source_dir": str(dynamic_dir),
         "files": {k: str(v) for k, v in files.items() if v},
-        "local_storage_artifacts_count": len(artifacts),
-        "local_storage_artifacts_sample": _unique_keep_order(artifacts, limit=40),
+        "local_storage_artifacts_count": len(normalized),
+        "local_storage_artifacts_sample": _unique_keep_order(normalized, limit=40),
+        "local_storage_artifacts": _unique_keep_order(normalized, limit=40),
+        "shared_preferences_artifacts_count": len(shared_prefs),
         "shared_preferences_artifacts": _unique_keep_order(shared_prefs, limit=30),
+        "shared_preferences": _unique_keep_order(shared_prefs, limit=30),
+        "sqlite_database_artifacts_count": len(sqlite),
         "sqlite_database_artifacts": _unique_keep_order(sqlite, limit=30),
+        "sqlite_databases": _unique_keep_order(sqlite, limit=30),
         "cache_artifacts": _unique_keep_order(cache_files, limit=30),
         "local_files_artifacts": _unique_keep_order(local_files, limit=30),
         "detected_trackers": trackers,
-        "parser_note": "Examples are normalized from runtime strings and path-like values when present in the MobSF dynamic artifact.",
+        "runtime_evidence_categories": categories,
+        "parser_note": "Runtime storage examples are normalized from MobSF dynamic strings, path-like values, and common runtime artifact keys when present.",
     }
+
 
 def _sarif_runs(sarif: Dict[str, Any]) -> List[Dict[str, Any]]:
     runs = sarif.get("runs") if isinstance(sarif, dict) else []
@@ -1271,6 +1406,13 @@ def _sarif_notifications(run: Dict[str, Any], tool_name: str, limit: int = 20) -
 
 
 def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
+    """Summarize SARIF with explicit raw-vs-retained separation.
+
+    The report generator must never confuse raw SARIF counts with retained
+    application-scope findings. Raw counts are traceability and coverage signals.
+    Retained findings are the only SAST items eligible for application-code
+    findings in the report.
+    """
     selected: List[Tuple[str, Path]] = []
     if files.get("merged_sarif"):
         selected = [("merged", files["merged_sarif"])]  # type: ignore[index]
@@ -1280,6 +1422,8 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
                 selected.append((key, files[key]))  # type: ignore[arg-type]
 
     raw_results = 0
+    raw_by_tool: Dict[str, int] = {}
+    raw_by_rule: Dict[str, int] = {}
     app_results: List[Dict[str, Any]] = []
     excluded_results = 0
     notifications: List[Dict[str, Any]] = []
@@ -1300,12 +1444,16 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
                 if not isinstance(result, dict):
                     continue
                 raw_results += 1
+                raw_by_tool[tool] = raw_by_tool.get(tool, 0) + 1
+
+                rule_id = str(result.get("ruleId") or result.get("rule", {}).get("id") or "unknown")
+                raw_by_rule[rule_id] = raw_by_rule.get(rule_id, 0) + 1
+
                 uri, line = _sarif_location(result)
                 if not _is_app_code_sast_path(uri):
                     excluded_results += 1
                     continue
 
-                rule_id = str(result.get("ruleId") or result.get("rule", {}).get("id") or "unknown")
                 rule = rules.get(rule_id, {})
                 message = _sarif_message_text(result.get("message"))
                 level = str(result.get("level") or "warning")
@@ -1331,29 +1479,37 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
                     "tags": props.get("tags") if isinstance(props.get("tags"), list) else [],
                 })
 
-    by_tool: Dict[str, int] = {}
-    by_rule: Dict[str, int] = {}
+    retained_by_tool: Dict[str, int] = {}
+    retained_by_rule: Dict[str, int] = {}
     for item in app_results:
         tool = str(item.get("tool") or "unknown")
         rule = str(item.get("rule_id") or "unknown")
-        by_tool[tool] = by_tool.get(tool, 0) + 1
-        by_rule[rule] = by_rule.get(rule, 0) + 1
+        retained_by_tool[tool] = retained_by_tool.get(tool, 0) + 1
+        retained_by_rule[rule] = retained_by_rule.get(rule, 0) + 1
 
     def is_security(item: Dict[str, Any]) -> bool:
         tool = str(item.get("tool") or "").lower()
         rule = str(item.get("rule_id") or "").lower()
         tags = " ".join(str(t).lower() for t in item.get("tags") or [])
+        msg = str(item.get("message") or "").lower()
         if "codeql" in tool or "semgrep" in tool:
             return True
-        return any(tok in rule or tok in tags for tok in ["security", "vulnerab", "android", "injection", "storage", "exported", "backup"])
+        return any(tok in f"{rule} {tags} {msg}" for tok in ["security", "vulnerab", "android", "injection", "storage", "exported", "backup", "cleartext", "crypto"])
 
     security_findings = [x for x in app_results if is_security(x)]
     hardening_signals = [x for x in app_results if x not in security_findings]
 
-    top_rules = [
+    top_raw_rules = [
         {"rule_id": rule, "count": count}
-        for rule, count in sorted(by_rule.items(), key=lambda x: x[1], reverse=True)[:20]
+        for rule, count in sorted(raw_by_rule.items(), key=lambda x: x[1], reverse=True)[:20]
     ]
+    top_retained_rules = [
+        {"rule_id": rule, "count": count}
+        for rule, count in sorted(retained_by_rule.items(), key=lambda x: x[1], reverse=True)[:20]
+    ]
+
+    retained_total = len(app_results)
+    retained_security_total = len(security_findings)
 
     return {
         "available": bool(selected),
@@ -1365,14 +1521,38 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
             "excluded": _sast_exclude_patterns(),
             "note": "SAST evidence is filtered by generic Android application-code patterns. Workflow files, audit tooling, tests, generated files, reports, build output, and wrapper tooling are excluded unless project configuration overrides the defaults.",
         },
+        # Stage 2 compatibility aliases. These fields are intentionally explicit.
+        "total_findings": retained_total,
+        "retained_app_code_findings": retained_total,
+        "retained_security_findings": retained_security_total,
+        "raw_results_count": raw_results,
+        "raw_sarif_results": raw_results,
+        "excluded_non_app_results": excluded_results,
+        "tool_counts": raw_by_tool,
+        "raw_tool_counts": raw_by_tool,
+        "retained_tool_counts": retained_by_tool,
         "summary": {
             "raw_results_in_selected_sarif": raw_results,
-            "app_code_results": len(app_results),
+            "raw_tool_counts": raw_by_tool,
+            "app_code_results": retained_total,
+            "retained_app_code_findings": retained_total,
             "excluded_non_app_results": excluded_results,
-            "security_relevant_app_findings": len(security_findings),
+            "security_relevant_app_findings": retained_security_total,
+            "retained_security_findings": retained_security_total,
             "hardening_or_maintainability_signals": len(hardening_signals),
-            "by_tool": by_tool,
-            "top_rules": top_rules,
+            "retained_by_tool": retained_by_tool,
+            "top_raw_rules": top_raw_rules,
+            "top_retained_rules": top_retained_rules,
+        },
+        "ai_guardrails": {
+            "raw_sarif_counts_are_traceability_only": True,
+            "retained_app_code_findings_are_authoritative": True,
+            "instruction": (
+                "When retained_app_code_findings is 0, do not describe raw SARIF "
+                "results or notification counts as application-code findings. Raw "
+                "counts may be described only as parser coverage, tool activity, or "
+                "traceability evidence."
+            ),
         },
         "security_findings_sample": security_findings[:40],
         "hardening_signals_sample": hardening_signals[:30],
@@ -1454,12 +1634,20 @@ def build_technical_evidence() -> Dict[str, Any]:
         if not section.get("available")
     ]
 
+    sast_warning_count = len(sast_notifications) if isinstance(sast_notifications, list) else 0
+    by_tool_text = "; ".join(f"{tool}: {count}" for tool, count in sorted(notif_by_tool.items())) if notif_by_tool else ""
+    by_level_text = "; ".join(f"{level}: {count}" for level, count in sorted(notif_by_level.items())) if notif_by_level else ""
+
     technical["coverage_limitations"] = {
         "missing_inputs": missing_inputs,
-        "sast_notifications_count": len(sast_notifications) if isinstance(sast_notifications, list) else 0,
-        "sast_notifications_by_tool": notif_by_tool,
-        "sast_notifications_by_level": notif_by_level,
-        "sast_notifications_summary": _unique_keep_order(notif_messages, limit=8),
+        "sast_extraction_warnings": (
+            f"{sast_warning_count} SAST extraction or frontend notification(s) were reported by the toolchain. "
+            "These notifications affect coverage interpretation and must not be treated as application findings."
+            if sast_warning_count else ""
+        ),
+        "sast_extraction_warnings_by_tool": by_tool_text,
+        "sast_extraction_warnings_by_level": by_level_text,
+        "sast_extraction_warnings_summary": _unique_keep_order(notif_messages, limit=8),
     }
 
     return technical

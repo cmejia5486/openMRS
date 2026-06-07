@@ -178,17 +178,44 @@ jobs:
             python -c "import sys; print(sys.executable)"
           fi
 
-      - name: Create clean venv on Windows
+      - name: Cache Audit Summary Python runtime
+        id: audit_summary_python_cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ runner.temp }}/audit-summary-venv
+            ~/.cache/pip
+            ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-audit-summary-ai-runtime-${{ env.AI_PYTHON_VERSION }}-${{ hashFiles('requirements/ai-runtime.txt', '.github/workflows/audit-summary.yml', 'scripts/lib/ai_config.py', 'scripts/lib/ai_runtime.py') }}
+          restore-keys: |
+            ${{ runner.os }}-audit-summary-ai-runtime-${{ env.AI_PYTHON_VERSION }}-
+            ${{ runner.os }}-audit-summary-ai-runtime-
+
+      - name: Create or reuse cached venv on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
           $venvDir = Join-Path $env:RUNNER_TEMP "audit-summary-venv"
+          $pythonExe = Join-Path $venvDir "Scripts\python.exe"
           Write-Host "[VENV] Target: $venvDir"
 
+          if (Test-Path $pythonExe) {
+            Write-Host "[VENV] Reusing cached virtual environment."
+            & $pythonExe --version
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "[VENV] Cached virtual environment is invalid. Removing it."
+              Remove-Item -Recurse -Force $venvDir -ErrorAction SilentlyContinue
+            } else {
+              "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+              & $pythonExe -c "import sys; print(sys.executable)"
+              exit 0
+            }
+          }
+
           if (Test-Path $venvDir) {
-            Write-Host "[VENV] Removing previous temporary venv."
+            Write-Host "[VENV] Removing incomplete temporary venv."
             for ($i = 1; $i -le 3; $i++) {
               try {
                 Remove-Item -Recurse -Force $venvDir -ErrorAction Stop
@@ -217,7 +244,6 @@ jobs:
 
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          $pythonExe = Join-Path $venvDir "Scripts\python.exe"
           if (-not (Test-Path $pythonExe)) {
             throw "Virtual environment Python executable was not created: $pythonExe"
           }
@@ -227,14 +253,24 @@ jobs:
           & $pythonExe --version
           & $pythonExe -c "import sys; print(sys.executable)"
 
-      - name: Create clean venv on Unix
+      - name: Create or reuse cached venv on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
 
           venv_dir="$RUNNER_TEMP/audit-summary-venv"
+          python_exe="$venv_dir/bin/python"
           echo "[VENV] Target: $venv_dir"
+
+          if [ -x "$python_exe" ]; then
+            echo "[VENV] Reusing cached virtual environment."
+            "$python_exe" --version
+            echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
+            "$python_exe" -c "import sys; print(sys.executable)"
+            exit 0
+          fi
+
           rm -rf "$venv_dir"
 
           python_version="${AI_PYTHON_VERSION:-}"
@@ -252,14 +288,13 @@ jobs:
             python -m venv "$venv_dir"
           fi
 
-          python_exe="$venv_dir/bin/python"
           test -f "$python_exe"
           echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
 
           "$python_exe" --version
           "$python_exe" -c "import sys; print(sys.executable)"
 
-      - name: Install AI and report dependencies on Windows
+      - name: Install or validate AI and report dependencies on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
@@ -273,7 +308,7 @@ jobs:
             )
 
             for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-              Write-Host ("[PIP] Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
+              Write-Host ("[PIP] $(Get-Date -Format o) Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
               & $env:PYTHON_EXE -m pip @PipArgs
 
               if ($LASTEXITCODE -eq 0) {
@@ -290,22 +325,70 @@ jobs:
             throw ("pip install failed after {0} attempts: {1}" -f $MaxAttempts, ($PipArgs -join ' '))
           }
 
+          function Test-AuditSummaryPythonDeps {
+            $py = @'
+          import importlib
+          import sys
+
+          modules = [
+              "openai",
+              "litellm",
+              "pydantic",
+              "pandas",
+              "openpyxl",
+              "docx",
+              "matplotlib",
+              "requests",
+          ]
+          missing = []
+          for name in modules:
+              try:
+                  importlib.import_module(name)
+              except Exception as exc:
+                  missing.append(f"{name}: {exc}")
+          if missing:
+              print("[PIP] Missing or invalid dependencies:")
+              for item in missing:
+                  print("[PIP] - " + item)
+              sys.exit(1)
+          print("[PIP] Cached dependencies are valid.")
+          '@
+            $py | & $env:PYTHON_EXE -
+            return $LASTEXITCODE -eq 0
+          }
+
           & $env:PYTHON_EXE -m pip --version
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
 
-          Write-Host "[PIP] Installing AI runtime dependencies for LiteLLM/OpenAI SDK compatibility."
-          Invoke-PipInstall -PipArgs @("install", "--upgrade", "pip", "setuptools", "wheel", "--retries", "10", "--timeout", "720", "--prefer-binary")
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib", "requests")
+          if (Test-AuditSummaryPythonDeps) {
+            Write-Host "[PIP] Dependency installation skipped because cached venv is usable."
+          } else {
+            Write-Host "[PIP] Installing minimal AI/report dependencies for Audit Summary."
+            $packages = @(
+              "openai",
+              "litellm",
+              "pydantic>=2.7.0",
+              "pandas",
+              "openpyxl",
+              "python-docx",
+              "matplotlib",
+              "requests"
+            )
+            Invoke-PipInstall -PipArgs (@("install", "--retries", "10", "--timeout", "720", "--prefer-binary") + $packages)
+          }
+
+          if (-not (Test-AuditSummaryPythonDeps)) {
+            throw "Audit Summary Python dependencies are still invalid after installation."
+          }
 
           & $env:PYTHON_EXE -m pip check
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
 
-      - name: Install AI and report dependencies on Unix
+      - name: Install or validate AI and report dependencies on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -314,7 +397,7 @@ jobs:
           pip_install() {
             local attempt
             for attempt in 1 2 3; do
-              echo "[PIP] Attempt $attempt/3: python -m pip $*"
+              echo "[PIP] $(date -u +%Y-%m-%dT%H:%M:%SZ) Attempt $attempt/3: python -m pip $*"
               if "$PYTHON_EXE" -m pip "$@"; then
                 return 0
               fi
@@ -328,13 +411,54 @@ jobs:
             return 1
           }
 
+          test_deps() {
+            "$PYTHON_EXE" - <<'PY'
+          import importlib
+          import sys
+
+          modules = [
+              "openai",
+              "litellm",
+              "pydantic",
+              "pandas",
+              "openpyxl",
+              "docx",
+              "matplotlib",
+              "requests",
+          ]
+          missing = []
+          for name in modules:
+              try:
+                  importlib.import_module(name)
+              except Exception as exc:
+                  missing.append(f"{name}: {exc}")
+          if missing:
+              print("[PIP] Missing or invalid dependencies:")
+              for item in missing:
+                  print("[PIP] - " + item)
+              sys.exit(1)
+          print("[PIP] Cached dependencies are valid.")
+          PY
+          }
+
           "$PYTHON_EXE" -m pip --version
 
-          echo "[PIP] Installing AI runtime dependencies for LiteLLM/OpenAI SDK compatibility."
-          pip_install install --upgrade pip setuptools wheel --retries 10 --timeout 720 --prefer-binary
-          pip_install install --retries 10 --timeout 720 --prefer-binary -r requirements/ai-runtime.txt
-          pip_install install --retries 10 --timeout 720 --prefer-binary pandas openpyxl python-docx matplotlib requests
+          if test_deps; then
+            echo "[PIP] Dependency installation skipped because cached venv is usable."
+          else
+            echo "[PIP] Installing minimal AI/report dependencies for Audit Summary."
+            pip_install install --retries 10 --timeout 720 --prefer-binary \
+              openai \
+              litellm \
+              'pydantic>=2.7.0' \
+              pandas \
+              openpyxl \
+              python-docx \
+              matplotlib \
+              requests
+          fi
 
+          test_deps
           "$PYTHON_EXE" -m pip check
 
       - name: Resolve AI config from parameters/ai.config.json on Windows
