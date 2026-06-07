@@ -533,16 +533,21 @@ def _scanner_context_for_pattern(pattern: str, technical: Dict[str, Any]) -> Dic
     if any(tok in pat for tok in ["input validation", "injection", "xss", "sqli", "command"]):
         add_source("SAST app-code")
         retained = _sast_retained_count(sast)
+        retained_security = _safe_int(sast.get("retained_security_findings"), 0)
+        hardening_total = _safe_int(sast.get("hardening_or_maintainability_signals"), 0)
         context["evidence"]["sast_app_code"] = {
-            "retained_app_code_findings": retained,
-            "retained_security_findings": _safe_int(sast.get("retained_security_findings"), 0),
+            "retained_app_code_signals": retained,
+            "retained_security_findings": retained_security,
+            "hardening_or_maintainability_signals": hardening_total,
             "raw_sarif_results": _safe_int(sast.get("raw_sarif_results"), 0),
-            "security_findings_sample": (sast.get("security_findings_sample") or [])[:8] if retained > 0 else [],
+            "security_findings_sample": (sast.get("security_findings_sample") or [])[:8] if retained_security > 0 else [],
+            "top_security_rules": (sast.get("top_security_rules") or [])[:8],
+            "top_hardening_rules": (sast.get("top_hardening_rules") or [])[:8],
             "scope_filter": sast.get("scope_filter") if isinstance(sast.get("scope_filter"), dict) else {},
         }
-        if retained <= 0:
+        if retained_security <= 0:
             context["guardrails"].append(
-                "SAST raw SARIF counts are traceability only; do not describe them as retained application-code findings."
+                "SAST raw SARIF counts and app-scope hardening/quality signals are traceability only; do not describe them as security vulnerabilities."
             )
 
     if any(tok in pat for tok in ["authorization", "rbac", "authentication", "privacy", "audit logging"]):
@@ -639,9 +644,11 @@ def _build_ai_reporting_context(metrics: Dict[str, Any], patterns: List[Dict[str
             for p in patterns[:10]
         ],
         "sast_guardrail": {
-            "retained_app_code_findings": _sast_retained_count(sast),
+            "retained_app_code_signals": _sast_retained_count(sast),
+            "retained_security_findings": _safe_int(sast.get("retained_security_findings"), 0),
+            "hardening_or_maintainability_signals": _safe_int(sast.get("hardening_or_maintainability_signals"), 0),
             "raw_sarif_results": _safe_int(sast.get("raw_sarif_results"), 0),
-            "instruction": "If retained_app_code_findings is 0, raw SARIF results must be described only as traceability or tool activity, not as application-code findings.",
+            "instruction": "Use retained_security_findings as the authoritative SAST security count. retained_app_code_signals may include hardening/quality findings. Raw SARIF results are traceability only.",
         },
         "mobsf_dynamic_summary": {
             "local_storage_artifacts_count": mobsf_dynamic.get("local_storage_artifacts_count"),
@@ -1409,10 +1416,80 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         "detected_trackers": detected_trackers,
     }
 
+def _normalize_android_storage_artifact(item: Any) -> str:
+    """Normalize MobSF dynamic storage artifacts for report readability.
+
+    Some MobSF JSON exports and intermediate parsers collapse Android paths such
+    as /data/data/org.openmrs.mobile/shared_prefs/OpenMRSPrefFile.xml into
+    strings like datadataorg.openmrs.mobileshared_prefsOpenMRSPrefFile.xml.
+    This helper reconstructs readable Android storage paths when possible and
+    otherwise returns a clean file name or compact value.
+    """
+    raw = _clean_text(item)
+    if not raw:
+        return ""
+
+    s = raw.replace("\\", "/")
+    s = re.sub(r"^(file:/*)", "", s, flags=re.IGNORECASE)
+    s = s.strip().strip("'\"`")
+
+    # Already normalized or near-normalized Android app-private path.
+    if "/data/data/" in s:
+        idx = s.find("/data/data/")
+        candidate = s[idx:]
+        candidate = re.split(r"[\s\"'<>;,)]", candidate)[0]
+        candidate = re.sub(r"/+", "/", candidate)
+        return candidate.rstrip(".,;:")
+
+    # Collapse forms such as data/data/org.openmrs.mobile/shared_prefs/x.xml.
+    if s.lower().startswith("data/data/"):
+        candidate = "/" + s
+        candidate = re.sub(r"/+", "/", candidate)
+        return candidate.rstrip(".,;:")
+
+    collapsed = re.sub(r"[^A-Za-z0-9_./-]+", "", s)
+    collapsed = collapsed.replace("//", "/")
+
+    # Forms observed in MobSF dynamic text:
+    # datadataorg.openmrs.mobileshared_prefsOpenMRSPrefFile.xml
+    # datadataorg.openmrs.mobiledatabasesopenmrs.db
+    if collapsed.lower().startswith("datadata"):
+        tail = collapsed[len("datadata"):]
+        for folder in ("shared_prefs", "databases", "no_backup", "cache", "files"):
+            idx = tail.lower().find(folder)
+            if idx > 0:
+                package_name = tail[:idx].strip("./")
+                rest = tail[idx + len(folder):].lstrip("/._-")
+                if package_name and rest:
+                    return f"/data/data/{package_name}/{folder}/{rest}"
+                if package_name:
+                    return f"/data/data/{package_name}/{folder}"
+        # If folder was not found, keep the most useful app-private tail.
+        if tail:
+            return f"/data/data/{tail}"
+
+    # Handle package + folder without the leading datadata prefix.
+    for folder in ("shared_prefs", "databases", "no_backup", "cache", "files"):
+        idx = collapsed.lower().find(folder)
+        if idx > 0:
+            package_name = collapsed[:idx].strip("./")
+            rest = collapsed[idx + len(folder):].lstrip("/._-")
+            if package_name.startswith("org.") and rest:
+                return f"/data/data/{package_name}/{folder}/{rest}"
+
+    # Fall back to the file-like artifact name when present.
+    path_match = re.search(r"([A-Za-z0-9_.-]+\.(?:xml|db|sqlite|sqlite3|properties))$", collapsed, re.IGNORECASE)
+    if path_match:
+        return path_match.group(1)
+
+    return _excerpt(raw, 220)
+
+
 def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
     dyn = _safe_read_json(files.get("mobsf_dynamic_results") or Path(), {})
     storage_patterns = [
         r"/data/data/",
+        r"data[/\\]?data",
         r"shared[_-]?prefs",
         r"sharedpreferences",
         r"preferences.*\.xml",
@@ -1422,14 +1499,11 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         r"\.sqlite3(\b|$)",
         r"/cache/",
         r"/files/",
+        r"no[_-]?backup",
     ]
 
-    artifacts = _collect_strings_matching(dyn, storage_patterns, limit=250)
+    artifacts = _collect_strings_matching(dyn, storage_patterns, limit=300)
 
-    # Some MobSF dynamic reports expose runtime artifacts in semi-structured
-    # sections. Keep a second pass over likely keys so file names such as
-    # OpenMRSPrefFile.xml, sshared_preferences.xml, schucker.db, and openmrs.db
-    # are preserved even when they are not embedded in full Android paths.
     explicit_values: List[str] = []
     for value in _deep_find_values(
         dyn,
@@ -1443,10 +1517,11 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
             r"app.*files?",
             r"cache",
             r"files",
+            r"no[_-]?backup",
         ],
-        limit=120,
+        limit=160,
     ):
-        explicit_values.extend(_collect_strings_matching(value, storage_patterns, limit=80))
+        explicit_values.extend(_collect_strings_matching(value, storage_patterns, limit=100))
         if isinstance(value, str):
             maybe = _extract_storage_artifact(value)
             if maybe:
@@ -1457,29 +1532,31 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
                     maybe = _extract_storage_artifact(item)
                     if maybe:
                         explicit_values.append(maybe)
+                elif isinstance(item, dict):
+                    explicit_values.extend(_collect_strings_matching(item, storage_patterns, limit=30))
 
-    artifacts = _unique_keep_order(list(artifacts) + explicit_values, limit=250)
+    raw_artifacts = _unique_keep_order(list(artifacts) + explicit_values, limit=300)
+    normalized = _unique_keep_order([_normalize_android_storage_artifact(x) for x in raw_artifacts], limit=160)
+    normalized = [x for x in normalized if x]
 
-    def basename_or_path(item: str) -> str:
-        item = _clean_text(item)
+    def artifact_name(item: str) -> str:
+        item = _normalize_android_storage_artifact(item)
         if not item:
             return ""
-        # Keep the path when it carries Android storage context; otherwise keep
-        # the file-like artifact name.
-        if "/data/data/" in item or "/cache/" in item or "/files/" in item:
-            return item
         return Path(item.replace("\\", "/")).name or item
 
-    normalized = _unique_keep_order([basename_or_path(x) for x in artifacts], limit=120)
+    names = _unique_keep_order([artifact_name(x) for x in normalized], limit=120)
+
     shared_prefs = [
         x for x in normalized
-        if re.search(r"shared[_-]?prefs|sharedpreferences|pref.*\.xml|preferences.*\.xml|\.xml$", x, re.IGNORECASE)
+        if re.search(r"/shared_prefs/|shared[_-]?prefs|sharedpreferences|pref.*\.xml|preferences.*\.xml", x, re.IGNORECASE)
     ]
     sqlite = [
         x for x in normalized
-        if re.search(r"\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)
+        if re.search(r"/databases/|\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)
     ]
     cache_files = [x for x in normalized if re.search(r"/cache/|cache", x, re.IGNORECASE)]
+    backup_files = [x for x in normalized if re.search(r"/no_backup/|no[_-]?backup|workdb", x, re.IGNORECASE)]
     local_files = [x for x in normalized if re.search(r"/files/|/data/data/", x, re.IGNORECASE)]
 
     flat = _flatten_text(dyn, limit=500000)
@@ -1493,26 +1570,31 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
             "type": "SharedPreferences artifacts",
             "count": len(shared_prefs),
             "examples": _unique_keep_order(shared_prefs, limit=12),
+            "example_names": _unique_keep_order([artifact_name(x) for x in shared_prefs], limit=12),
         },
         {
             "type": "SQLite/database artifacts",
             "count": len(sqlite),
             "examples": _unique_keep_order(sqlite, limit=12),
+            "example_names": _unique_keep_order([artifact_name(x) for x in sqlite], limit=12),
         },
         {
             "type": "Local storage artifacts",
             "count": len(normalized),
             "examples": _unique_keep_order(normalized, limit=12),
+            "example_names": names[:12],
         },
         {
-            "type": "Cache artifacts",
-            "count": len(cache_files),
-            "examples": _unique_keep_order(cache_files, limit=12),
+            "type": "Cache / no-backup artifacts",
+            "count": len(cache_files) + len(backup_files),
+            "examples": _unique_keep_order(cache_files + backup_files, limit=12),
+            "example_names": _unique_keep_order([artifact_name(x) for x in cache_files + backup_files], limit=12),
         },
         {
             "type": "Trackers",
             "count": trackers,
             "examples": [],
+            "example_names": [],
         },
     ]
 
@@ -1522,18 +1604,22 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         "files": {k: str(v) for k, v in files.items() if v},
         "local_storage_artifacts_count": len(normalized),
         "local_storage_artifacts_sample": _unique_keep_order(normalized, limit=40),
-        "local_storage_artifacts": _unique_keep_order(normalized, limit=40),
+        "local_storage_artifacts": _unique_keep_order(normalized, limit=80),
+        "local_storage_artifact_names": names[:80],
         "shared_preferences_artifacts_count": len(shared_prefs),
-        "shared_preferences_artifacts": _unique_keep_order(shared_prefs, limit=30),
-        "shared_preferences": _unique_keep_order(shared_prefs, limit=30),
+        "shared_preferences_artifacts": _unique_keep_order(shared_prefs, limit=40),
+        "shared_preferences_artifact_names": _unique_keep_order([artifact_name(x) for x in shared_prefs], limit=40),
+        "shared_preferences": _unique_keep_order(shared_prefs, limit=40),
         "sqlite_database_artifacts_count": len(sqlite),
-        "sqlite_database_artifacts": _unique_keep_order(sqlite, limit=30),
-        "sqlite_databases": _unique_keep_order(sqlite, limit=30),
+        "sqlite_database_artifacts": _unique_keep_order(sqlite, limit=40),
+        "sqlite_database_artifact_names": _unique_keep_order([artifact_name(x) for x in sqlite], limit=40),
+        "sqlite_databases": _unique_keep_order(sqlite, limit=40),
         "cache_artifacts": _unique_keep_order(cache_files, limit=30),
-        "local_files_artifacts": _unique_keep_order(local_files, limit=30),
+        "backup_artifacts": _unique_keep_order(backup_files, limit=30),
+        "local_files_artifacts": _unique_keep_order(local_files, limit=40),
         "detected_trackers": trackers,
         "runtime_evidence_categories": categories,
-        "parser_note": "Runtime storage examples are normalized from MobSF dynamic strings, path-like values, and common runtime artifact keys when present.",
+        "parser_note": "Runtime storage examples are normalized from MobSF dynamic strings, path-like values, and common runtime artifact keys when present. Full readable Android paths are reconstructed when parsable; artifact names are also preserved for executive readability.",
     }
 
 
@@ -1691,12 +1777,14 @@ def _sarif_notifications(run: Dict[str, Any], tool_name: str, limit: int = 20) -
 
 
 def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
-    """Summarize SARIF with explicit raw-vs-retained separation.
+    """Summarize SARIF with strict raw/security/hardening separation.
 
-    The report generator must never confuse raw SARIF counts with retained
-    application-scope findings. Raw counts are traceability and coverage signals.
-    Retained findings are the only SAST items eligible for application-code
-    findings in the report.
+    Raw SARIF results are tool activity and traceability. Retained app-scope
+    signals are findings that pass the configured Android application-code path
+    filter. Retained security findings are a narrower subset that explicitly
+    carry security semantics through rule metadata, tags, severity, CWE, or
+    security-specific rule/message terms. Detekt findings are treated as
+    hardening/quality signals unless they explicitly match security semantics.
     """
     selected: List[Tuple[str, Path]] = []
     if files.get("merged_sarif"):
@@ -1719,7 +1807,7 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
         for run in _sarif_runs(sarif):
             tool = _sarif_tool_name(run)
             rules = _sarif_rule_map(run)
-            notifications.extend(_sarif_notifications(run, tool, limit=50))
+            notifications.extend(_sarif_notifications(run, tool, limit=80))
 
             results = run.get("results") or []
             if not isinstance(results, list):
@@ -1751,6 +1839,8 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
                     continue
                 dedupe.add(key)
 
+                tags = props.get("tags") if isinstance(props.get("tags"), list) else []
+                cwe = props.get("cwe") or props.get("cwes") or props.get("problem.severity") or []
                 app_results.append({
                     "tool": tool,
                     "rule_id": rule_id,
@@ -1761,7 +1851,10 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
                     "rule_name": rule.get("name") if isinstance(rule, dict) else "",
                     "help_uri": rule.get("helpUri") if isinstance(rule, dict) else "",
                     "security_severity": props.get("security-severity"),
-                    "tags": props.get("tags") if isinstance(props.get("tags"), list) else [],
+                    "precision": props.get("precision"),
+                    "problem_severity": props.get("problem.severity"),
+                    "tags": tags,
+                    "cwe": cwe if isinstance(cwe, list) else [cwe] if cwe else [],
                 })
 
     retained_by_tool: Dict[str, int] = {}
@@ -1772,17 +1865,66 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
         retained_by_tool[tool] = retained_by_tool.get(tool, 0) + 1
         retained_by_rule[rule] = retained_by_rule.get(rule, 0) + 1
 
+    security_terms = [
+        "security", "vulnerab", "cwe-", "cve-", "injection", "xss", "sqli", "sql injection",
+        "command injection", "path traversal", "xxe", "deserialization", "secret", "credential",
+        "password", "token", "api key", "hardcoded", "crypto", "cryptograph", "cipher", "hash",
+        "tls", "ssl", "cleartext", "mitm", "certificate", "trustmanager", "hostnameverifier",
+        "webview", "exported", "allowbackup", "backup", "keystore", "sharedpreferences",
+        "permission", "intent", "ipc", "auth", "authorization", "authentication",
+    ]
+
     def is_security(item: Dict[str, Any]) -> bool:
         tool = str(item.get("tool") or "").lower()
         rule = str(item.get("rule_id") or "").lower()
+        rule_name = str(item.get("rule_name") or "").lower()
         tags = " ".join(str(t).lower() for t in item.get("tags") or [])
+        cwe = " ".join(str(t).lower() for t in item.get("cwe") or [])
         msg = str(item.get("message") or "").lower()
-        if "codeql" in tool or "semgrep" in tool:
+        sec_sev = item.get("security_severity")
+
+        haystack = f"{rule} {rule_name} {tags} {cwe} {msg}"
+
+        # CodeQL security queries normally carry security-severity, security tags,
+        # or CWE metadata. Non-security CodeQL diagnostics remain hardening/quality.
+        if sec_sev not in (None, ""):
             return True
-        return any(tok in f"{rule} {tags} {msg}" for tok in ["security", "vulnerab", "android", "injection", "storage", "exported", "backup", "cleartext", "crypto"])
+        if re.search(r"\bcwe-\d+\b", haystack):
+            return True
+        if any(tok in haystack for tok in security_terms):
+            return True
+
+        # Avoid classifying all Detekt and generic Android style rules as
+        # vulnerabilities. They may still be retained as maintainability signals.
+        if "detekt" in tool:
+            return False
+
+        # Semgrep rules without security metadata are not automatically
+        # vulnerabilities. They remain app-scope signals unless the rule/message
+        # contains security terms.
+        return False
 
     security_findings = [x for x in app_results if is_security(x)]
     hardening_signals = [x for x in app_results if x not in security_findings]
+
+    def count_by_tool(items: List[Dict[str, Any]]) -> Dict[str, int]:
+        out: Dict[str, int] = {}
+        for item in items:
+            tool = str(item.get("tool") or "unknown")
+            out[tool] = out.get(tool, 0) + 1
+        return out
+
+    def count_by_rule(items: List[Dict[str, Any]]) -> Dict[str, int]:
+        out: Dict[str, int] = {}
+        for item in items:
+            rule = str(item.get("rule_id") or "unknown")
+            out[rule] = out.get(rule, 0) + 1
+        return out
+
+    retained_security_by_tool = count_by_tool(security_findings)
+    hardening_by_tool = count_by_tool(hardening_signals)
+    retained_security_by_rule = count_by_rule(security_findings)
+    hardening_by_rule = count_by_rule(hardening_signals)
 
     top_raw_rules = [
         {"rule_id": rule, "count": count}
@@ -1792,9 +1934,18 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
         {"rule_id": rule, "count": count}
         for rule, count in sorted(retained_by_rule.items(), key=lambda x: x[1], reverse=True)[:20]
     ]
+    top_security_rules = [
+        {"rule_id": rule, "count": count}
+        for rule, count in sorted(retained_security_by_rule.items(), key=lambda x: x[1], reverse=True)[:20]
+    ]
+    top_hardening_rules = [
+        {"rule_id": rule, "count": count}
+        for rule, count in sorted(hardening_by_rule.items(), key=lambda x: x[1], reverse=True)[:20]
+    ]
 
     retained_total = len(app_results)
     retained_security_total = len(security_findings)
+    hardening_total = len(hardening_signals)
 
     return {
         "available": bool(selected),
@@ -1806,41 +1957,59 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
             "excluded": _sast_exclude_patterns(),
             "note": "SAST evidence is filtered by generic Android application-code patterns. Workflow files, audit tooling, tests, generated files, reports, build output, and wrapper tooling are excluded unless project configuration overrides the defaults.",
         },
-        # Stage 2 compatibility aliases. These fields are intentionally explicit.
+        # Stage 2 compatibility aliases. total_findings remains app-scope signals
+        # for older code, but retained_security_findings is authoritative for
+        # security-relevant SAST findings.
         "total_findings": retained_total,
         "retained_app_code_findings": retained_total,
+        "retained_app_code_signals": retained_total,
         "retained_security_findings": retained_security_total,
+        "hardening_or_maintainability_signals": hardening_total,
         "raw_results_count": raw_results,
         "raw_sarif_results": raw_results,
         "excluded_non_app_results": excluded_results,
-        "tool_counts": raw_by_tool,
-        "raw_tool_counts": raw_by_tool,
+        "tool_counts": retained_by_tool,
         "retained_tool_counts": retained_by_tool,
+        "raw_tool_counts": raw_by_tool,
+        "retained_security_tool_counts": retained_security_by_tool,
+        "hardening_tool_counts": hardening_by_tool,
+        "classification_note": (
+            "retained_app_code_findings counts all app-scope SARIF signals after path filtering. "
+            "retained_security_findings is the authoritative count of security-relevant SAST findings. "
+            "hardening_or_maintainability_signals captures Detekt and other non-security app-scope signals."
+        ),
         "summary": {
             "raw_results_in_selected_sarif": raw_results,
             "raw_tool_counts": raw_by_tool,
             "app_code_results": retained_total,
             "retained_app_code_findings": retained_total,
+            "retained_app_code_signals": retained_total,
             "excluded_non_app_results": excluded_results,
             "security_relevant_app_findings": retained_security_total,
             "retained_security_findings": retained_security_total,
-            "hardening_or_maintainability_signals": len(hardening_signals),
+            "hardening_or_maintainability_signals": hardening_total,
             "retained_by_tool": retained_by_tool,
+            "retained_security_by_tool": retained_security_by_tool,
+            "hardening_by_tool": hardening_by_tool,
             "top_raw_rules": top_raw_rules,
             "top_retained_rules": top_retained_rules,
+            "top_security_rules": top_security_rules,
+            "top_hardening_rules": top_hardening_rules,
         },
         "ai_guardrails": {
             "raw_sarif_counts_are_traceability_only": True,
-            "retained_app_code_findings_are_authoritative": True,
+            "retained_security_findings_are_authoritative": True,
+            "detekt_is_hardening_by_default": True,
             "instruction": (
-                "When retained_app_code_findings is 0, do not describe raw SARIF "
-                "results or notification counts as application-code findings. Raw "
-                "counts may be described only as parser coverage, tool activity, or "
-                "traceability evidence."
+                "Use retained_security_findings as the authoritative SAST security finding count. "
+                "retained_app_code_findings may include hardening, quality, or maintainability signals. "
+                "Do not describe Detekt warnings or raw SARIF counts as vulnerabilities unless they are included in retained_security_findings."
             ),
         },
         "security_findings_sample": security_findings[:40],
-        "hardening_signals_sample": hardening_signals[:30],
+        "hardening_signals_sample": hardening_signals[:40],
+        "top_security_rules": top_security_rules,
+        "top_hardening_rules": top_hardening_rules,
         "coverage_notifications_sample": notifications[:30],
     }
 
@@ -1925,6 +2094,7 @@ def build_technical_evidence() -> Dict[str, Any]:
 
     technical["coverage_limitations"] = {
         "missing_inputs": missing_inputs,
+        "sast_extraction_warning_count": sast_warning_count,
         "sast_extraction_warnings": (
             f"{sast_warning_count} SAST extraction or frontend notification(s) were reported by the toolchain. "
             "These notifications affect coverage interpretation and must not be treated as application findings."
