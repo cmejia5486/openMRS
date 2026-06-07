@@ -5,32 +5,32 @@ on:
     inputs:
       codeql-language:
         description: "CodeQL language"
-        required: false
+        required: true
         type: string
         default: ""
       codeql-build-mode:
         description: "CodeQL build mode: manual or none"
-        required: false
+        required: true
         type: string
         default: ""
       codeql-config-file:
         description: "Path to the CodeQL config file"
-        required: false
+        required: true
         type: string
         default: ""
       build-command:
         description: "Build command for CodeQL when build-mode is manual"
-        required: false
+        required: true
         type: string
         default: ""
       codeql-java-version:
         description: "Java version used for the CodeQL build"
-        required: false
+        required: true
         type: string
         default: ""
       android-sdk-java-version:
         description: "Java version used only for Android SDK setup"
-        required: false
+        required: true
         type: string
         default: ""
 
