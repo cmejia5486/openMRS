@@ -46,16 +46,26 @@ jobs:
           $bundleDir = Join-Path $env:RUNNER_TEMP "vision360-bundle"
           $fingerprintPath = Join-Path $dataDir "vision360_fingerprint.json"
           $requisitesPath = Join-Path $dataDir "requisites.json"
+          $requirementsSourcePath = Join-Path $PWD "scripts\requirements.json"
           $xlsxPath = Join-Path $dataDir "security_audit_requirements.xlsx"
+
+          New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
 
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "VISION360_BUNDLE_DIR=$bundleDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "VISION360_FINGERPRINT_PATH=$fingerprintPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "REQUISITES_PATH=$requisitesPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "REQUISITES_SOURCE_PATH=$requirementsSourcePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SECURITY_AUDIT_XLSX_PATH=$xlsxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+          if (Test-Path $xlsxPath) {
+            Remove-Item -LiteralPath $xlsxPath -Force
+          }
 
           Write-Host "[PATH] VISION360_DATA_DIR=$dataDir"
           Write-Host "[PATH] VISION360_BUNDLE_DIR=$bundleDir"
+          Write-Host "[PATH] REQUISITES_SOURCE_PATH=$requirementsSourcePath"
           Write-Host "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsxPath"
 
       - name: Configure portable runtime paths on Unix
@@ -68,51 +78,25 @@ jobs:
           bundle_dir="$RUNNER_TEMP/vision360-bundle"
           fingerprint_path="$data_dir/vision360_fingerprint.json"
           requisites_path="$data_dir/requisites.json"
+          requirements_source_path="$PWD/scripts/requirements.json"
           xlsx_path="$data_dir/security_audit_requirements.xlsx"
+
+          mkdir -p "$data_dir" "$bundle_dir"
+          rm -f "$xlsx_path"
 
           {
             echo "VISION360_DATA_DIR=$data_dir"
             echo "VISION360_BUNDLE_DIR=$bundle_dir"
             echo "VISION360_FINGERPRINT_PATH=$fingerprint_path"
             echo "REQUISITES_PATH=$requisites_path"
+            echo "REQUISITES_SOURCE_PATH=$requirements_source_path"
             echo "SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
           } >> "$GITHUB_ENV"
 
           echo "[PATH] VISION360_DATA_DIR=$data_dir"
           echo "[PATH] VISION360_BUNDLE_DIR=$bundle_dir"
+          echo "[PATH] REQUISITES_SOURCE_PATH=$requirements_source_path"
           echo "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
-
-      - name: Verify Python launcher on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          python --version
-          python -c "import sys; print(sys.executable)"
-
-          if (Get-Command py -ErrorAction SilentlyContinue) {
-            py --list
-          } else {
-            Write-Host "Python launcher 'py' not found. The workflow will use python from PATH."
-          }
-
-      - name: Verify Python on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if command -v python3 >/dev/null 2>&1; then
-            python3 --version
-            python3 -c "import sys; print(sys.executable)"
-          elif command -v python >/dev/null 2>&1; then
-            python --version
-            python -c "import sys; print(sys.executable)"
-          else
-            echo "Python is not available in PATH."
-            exit 1
-          fi
 
       - name: Create clean venv on Windows
         if: runner.os == 'Windows'
@@ -120,68 +104,31 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          function Remove-PathWithRetry {
-            param(
-              [Parameter(Mandatory = $true)]
-              [string] $PathToRemove,
-              [int] $MaxAttempts = 5
-            )
-
-            if (-not (Test-Path $PathToRemove)) {
-              return
-            }
-
-            for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-              try {
-                Write-Host "[VENV] Removing previous virtual environment: $PathToRemove (attempt $attempt/$MaxAttempts)"
-                Remove-Item -Recurse -Force $PathToRemove -ErrorAction Stop
-                return
-              } catch {
-                if ($attempt -eq $MaxAttempts) {
-                  throw "Unable to remove previous virtual environment at $PathToRemove. Last error: $($_.Exception.Message)"
-                }
-
-                $sleepSeconds = 3 * $attempt
-                Write-Host "[VENV] Remove failed. Retrying in $sleepSeconds seconds. Error: $($_.Exception.Message)"
-                Start-Sleep -Seconds $sleepSeconds
-              }
-            }
+          $venvDir = Join-Path $env:RUNNER_TEMP "ai-requirements-venv"
+          if (Test-Path $venvDir) {
+            Remove-Item -Recurse -Force $venvDir
           }
 
-          $venvDir = Join-Path $env:RUNNER_TEMP "ai-requirements-venv"
-          Remove-PathWithRetry -PathToRemove $venvDir
-          New-Item -ItemType Directory -Force -Path $env:RUNNER_TEMP | Out-Null
-
           $pythonVersion = ($env:AI_PYTHON_VERSION + "").Trim()
-
           if (-not [string]::IsNullOrWhiteSpace($pythonVersion) -and (Get-Command py -ErrorAction SilentlyContinue)) {
-            Write-Host "[VENV] Checking Python $pythonVersion via Python launcher."
             py -$pythonVersion -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
             if ($LASTEXITCODE -ne 0) {
               throw "Python launcher check failed for version $pythonVersion."
             }
-
-            Write-Host "[VENV] Creating virtual environment with Python $pythonVersion at $venvDir"
             py -$pythonVersion -m venv $venvDir
-            if ($LASTEXITCODE -ne 0) {
-              throw "Failed to create virtual environment using py -$pythonVersion -m venv $venvDir"
-            }
           } else {
-            Write-Host "[VENV] Checking default python from PATH."
             python -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
             if ($LASTEXITCODE -ne 0) {
               throw "Default python check failed."
             }
-
-            Write-Host "[VENV] Creating virtual environment with default python at $venvDir"
             python -m venv $venvDir
-            if ($LASTEXITCODE -ne 0) {
-              throw "Failed to create virtual environment using default python at $venvDir"
-            }
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
           }
 
           $pythonExe = Join-Path $venvDir "Scripts\python.exe"
-
           if (-not (Test-Path $pythonExe)) {
             throw "Virtual environment Python executable was not created: $pythonExe"
           }
@@ -202,26 +149,18 @@ jobs:
           rm -rf "$venv_dir"
 
           python_version="${AI_PYTHON_VERSION:-}"
-
           if [ -n "$python_version" ] && command -v "python$python_version" >/dev/null 2>&1; then
-            echo "[VENV] Checking python$python_version."
             "python$python_version" -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            echo "[VENV] Creating virtual environment with python$python_version at $venv_dir."
             "python$python_version" -m venv "$venv_dir"
           elif command -v python3 >/dev/null 2>&1; then
-            echo "[VENV] Checking python3."
             python3 -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            echo "[VENV] Creating virtual environment with python3 at $venv_dir."
             python3 -m venv "$venv_dir"
           else
-            echo "[VENV] Checking python."
             python -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            echo "[VENV] Creating virtual environment with python at $venv_dir."
             python -m venv "$venv_dir"
           fi
 
           python_exe="$venv_dir/bin/python"
-
           if [ ! -f "$python_exe" ]; then
             echo "Virtual environment Python executable was not created: $python_exe"
             exit 1
@@ -258,7 +197,7 @@ jobs:
 
               if ($attempt -lt $MaxAttempts) {
                 $sleepSeconds = 10 * $attempt
-                Write-Host "[PIP] Attempt failed. Retrying in $sleepSeconds seconds..."
+                Write-Host "[PIP] Attempt failed. Retrying in $sleepSeconds seconds."
                 Start-Sleep -Seconds $sleepSeconds
               }
             }
@@ -285,15 +224,13 @@ jobs:
           pip_retry() {
             max_attempts=3
             attempt=1
-
             until "$PYTHON_EXE" -m pip "$@"; do
               if [ "$attempt" -ge "$max_attempts" ]; then
                 echo "pip failed after $max_attempts attempts: $*"
                 return 1
               fi
-
               sleep_seconds=$((10 * attempt))
-              echo "[PIP] Attempt $attempt failed. Retrying in $sleep_seconds seconds..."
+              echo "[PIP] Attempt $attempt failed. Retrying in $sleep_seconds seconds."
               sleep "$sleep_seconds"
               attempt=$((attempt + 1))
             done
@@ -301,7 +238,6 @@ jobs:
 
           pip_retry --retries 10 --timeout 120 install --upgrade pip
           pip_retry --retries 10 --timeout 120 install --prefer-binary -r requirements/ai-runtime.txt
-
           "$PYTHON_EXE" -m pip check
 
       - name: Verify AI imports on Windows
@@ -375,7 +311,6 @@ jobs:
           PYTHONNOUSERSITE: "1"
         run: |
           $ErrorActionPreference = "Stop"
-
           & $env:PYTHON_EXE scripts/resolve_ai_config.py --task "$env:AI_TASK" --github-env "$env:GITHUB_ENV"
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
@@ -390,7 +325,7 @@ jobs:
           set -euo pipefail
           "$PYTHON_EXE" scripts/resolve_ai_config.py --task "$AI_TASK" --github-env "$GITHUB_ENV"
 
-      - name: Verify resolved AI route on Windows
+      - name: Verify AI runtime route on Windows
         if: runner.os == 'Windows'
         shell: powershell
         env:
@@ -407,25 +342,33 @@ jobs:
           Write-Host "AI_TIMEOUT_S=$env:AI_TIMEOUT_S"
           Write-Host "AI_KEY_PRESENT=$env:AI_KEY_PRESENT"
           Write-Host "VISION360_DATA_DIR=$env:VISION360_DATA_DIR"
+          Write-Host "REQUISITES_SOURCE_PATH=$env:REQUISITES_SOURCE_PATH"
           Write-Host "SECURITY_AUDIT_XLSX_PATH=$env:SECURITY_AUDIT_XLSX_PATH"
 
           if ([string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
             throw "OPENAI_API_KEY is empty."
           }
 
-          if (-not [string]::IsNullOrWhiteSpace($env:AI_API_BASE)) {
-            $modelsUrl = $env:AI_API_BASE.TrimEnd('/') + "/models"
-            Write-Host "Testing AI endpoint from resolved configuration."
-
-            $headers = @{}
-            $headers["Authorization"] = "Bearer $env:OPENAI_API_KEY"
-
-            Invoke-RestMethod -Uri $modelsUrl -Headers $headers -Method Get -TimeoutSec 30 | ConvertTo-Json -Depth 10
-          } else {
-            Write-Host "AI_API_BASE is empty. Assuming cloud provider or provider default endpoint. Skipping local /models check."
+          $py = @'
+          from lib.ai_runtime import AIRuntime, OpenAI, completion
+          rt = AIRuntime(task="ai_requirements_excel")
+          print("provider:", rt.provider)
+          print("model:", rt.model)
+          print("litellm_model:", rt.litellm_model)
+          print("api_base:", rt.api_base)
+          print("OpenAI available:", OpenAI is not None)
+          print("LiteLLM completion available:", completion is not None)
+          print("uses direct OpenAI:", rt._use_direct_openai())
+          if rt.provider == "openai_compatible" and not rt._use_direct_openai():
+              raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
+          '@
+          $env:PYTHONPATH = Join-Path $PWD "scripts"
+          $py | & $env:PYTHON_EXE -
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
           }
 
-      - name: Verify resolved AI route on Unix
+      - name: Verify AI runtime route on Unix
         if: runner.os != 'Windows'
         shell: bash
         env:
@@ -442,6 +385,7 @@ jobs:
           echo "AI_TIMEOUT_S=${AI_TIMEOUT_S:-}"
           echo "AI_KEY_PRESENT=${AI_KEY_PRESENT:-}"
           echo "VISION360_DATA_DIR=${VISION360_DATA_DIR:-}"
+          echo "REQUISITES_SOURCE_PATH=${REQUISITES_SOURCE_PATH:-}"
           echo "SECURITY_AUDIT_XLSX_PATH=${SECURITY_AUDIT_XLSX_PATH:-}"
 
           if [ -z "${OPENAI_API_KEY:-}" ]; then
@@ -449,73 +393,9 @@ jobs:
             exit 1
           fi
 
-          if [ -n "${AI_API_BASE:-}" ]; then
-            echo "Testing AI endpoint from resolved configuration."
-            "$PYTHON_EXE" - <<'PY'
-          import json
-          import os
-          import urllib.request
-
-          api_base = os.environ["AI_API_BASE"].rstrip("/")
-          api_key = os.environ.get("OPENAI_API_KEY", "")
-          req = urllib.request.Request(api_base + "/models")
-
-          if api_key:
-              req.add_header("Authorization", "Bearer " + api_key)
-
-          with urllib.request.urlopen(req, timeout=30) as resp:
-              data = json.loads(resp.read().decode("utf-8", errors="replace"))
-
-          print(json.dumps(data, indent=2, ensure_ascii=False))
-          PY
-          else
-            echo "AI_API_BASE is empty. Assuming cloud provider or provider default endpoint. Skipping local /models check."
-          fi
-
-      - name: Verify AI runtime route on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        env:
-          PYTHONNOUSERSITE: "1"
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          $py = @'
-          from lib.ai_runtime import AIRuntime, OpenAI, completion
-
-          rt = AIRuntime(task="ai_requirements_excel")
-
-          print("provider:", rt.provider)
-          print("model:", rt.model)
-          print("litellm_model:", rt.litellm_model)
-          print("api_base:", rt.api_base)
-          print("OpenAI available:", OpenAI is not None)
-          print("LiteLLM completion available:", completion is not None)
-          print("uses direct OpenAI:", rt._use_direct_openai())
-
-          if rt.provider == "openai_compatible" and not rt._use_direct_openai():
-              raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
-          '@
-
-          $env:PYTHONPATH = Join-Path $PWD "scripts"
-          $py | & $env:PYTHON_EXE -
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-      - name: Verify AI runtime route on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        env:
-          PYTHONNOUSERSITE: "1"
-        run: |
-          set -euo pipefail
-
           PYTHONPATH="$PWD/scripts" "$PYTHON_EXE" - <<'PY'
           from lib.ai_runtime import AIRuntime, OpenAI, completion
-
           rt = AIRuntime(task="ai_requirements_excel")
-
           print("provider:", rt.provider)
           print("model:", rt.model)
           print("litellm_model:", rt.litellm_model)
@@ -523,31 +403,9 @@ jobs:
           print("OpenAI available:", OpenAI is not None)
           print("LiteLLM completion available:", completion is not None)
           print("uses direct OpenAI:", rt._use_direct_openai())
-
           if rt.provider == "openai_compatible" and not rt._use_direct_openai():
               raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
           PY
-
-      - name: Prepare data dir on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          New-Item -ItemType Directory -Force -Path $env:VISION360_DATA_DIR | Out-Null
-
-          if (Test-Path $env:SECURITY_AUDIT_XLSX_PATH) {
-            Remove-Item -Force $env:SECURITY_AUDIT_XLSX_PATH
-          }
-
-      - name: Prepare data dir on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          mkdir -p "$VISION360_DATA_DIR"
-          rm -f "$SECURITY_AUDIT_XLSX_PATH"
 
       - name: Download VISION360 bundle artifact
         uses: actions/download-artifact@v6
@@ -571,26 +429,27 @@ jobs:
           import zipfile
           from pathlib import Path
 
-          src = Path("requirements/requisites.json")
+          src = Path(os.environ["REQUISITES_SOURCE_PATH"])
           if not src.is_file():
-              raise SystemExit("requirements/requisites.json not found")
+              raise SystemExit(f"scripts/requirements.json not found at {src}")
 
           requisites_path = Path(os.environ["REQUISITES_PATH"])
           requisites_path.parent.mkdir(parents=True, exist_ok=True)
 
           raw = src.read_text(encoding="utf-8", errors="replace")
           s = raw.lstrip()
-
-          if s.startswith("{{"):
-              raw = raw.replace("{{", "{", 1)
-
-          data = json.loads(raw)
+          if not s.strip():
+              data = []
+          else:
+              if s.startswith("{{"):
+                  raw = raw.replace("{{", "{", 1)
+              data = json.loads(raw)
 
           if isinstance(data, dict) and isinstance(data.get("requirements"), list):
               data = data["requirements"]
 
           if not isinstance(data, list):
-              print("requisites.json must be a JSON array.", file=sys.stderr)
+              print("scripts/requirements.json must be a JSON array or an object with a requirements array.", file=sys.stderr)
               raise SystemExit(1)
 
           requisites_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -619,7 +478,8 @@ jobs:
           if not fingerprint_path.is_file():
               raise SystemExit(f"vision360_fingerprint.json was not prepared at {fingerprint_path}")
 
-          print(f"[OK] requisites -> {requisites_path}")
+          print(f"[OK] requirements source -> {src}")
+          print(f"[OK] requisites runtime copy -> {requisites_path}")
           print(f"[OK] fingerprint -> {fingerprint_path}")
           '@
 
@@ -644,26 +504,27 @@ jobs:
           import zipfile
           from pathlib import Path
 
-          src = Path("requirements/requisites.json")
+          src = Path(os.environ["REQUISITES_SOURCE_PATH"])
           if not src.is_file():
-              raise SystemExit("requirements/requisites.json not found")
+              raise SystemExit(f"scripts/requirements.json not found at {src}")
 
           requisites_path = Path(os.environ["REQUISITES_PATH"])
           requisites_path.parent.mkdir(parents=True, exist_ok=True)
 
           raw = src.read_text(encoding="utf-8", errors="replace")
           s = raw.lstrip()
-
-          if s.startswith("{{"):
-              raw = raw.replace("{{", "{", 1)
-
-          data = json.loads(raw)
+          if not s.strip():
+              data = []
+          else:
+              if s.startswith("{{"):
+                  raw = raw.replace("{{", "{", 1)
+              data = json.loads(raw)
 
           if isinstance(data, dict) and isinstance(data.get("requirements"), list):
               data = data["requirements"]
 
           if not isinstance(data, list):
-              print("requisites.json must be a JSON array.", file=sys.stderr)
+              print("scripts/requirements.json must be a JSON array or an object with a requirements array.", file=sys.stderr)
               raise SystemExit(1)
 
           requisites_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -692,7 +553,8 @@ jobs:
           if not fingerprint_path.is_file():
               raise SystemExit(f"vision360_fingerprint.json was not prepared at {fingerprint_path}")
 
-          print(f"[OK] requisites -> {requisites_path}")
+          print(f"[OK] requirements source -> {src}")
+          print(f"[OK] requisites runtime copy -> {requisites_path}")
           print(f"[OK] fingerprint -> {fingerprint_path}")
           PY
 
