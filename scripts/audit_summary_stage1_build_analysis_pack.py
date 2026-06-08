@@ -247,6 +247,88 @@ def _norm_status(x: Any) -> str:
     return "Not applicable"
 
 
+def _env_int(name: str) -> Optional[int]:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except Exception:
+        raise SystemExit(f"[ERROR] {name} must be an integer, got: {raw}")
+
+
+def _parse_expected_result_counts() -> Dict[str, int]:
+    """Parse optional workbook-result count lock from environment variables.
+
+    This guard does not recalculate or rewrite Excel results.  It only fails the
+    report generation if the downloaded workbook no longer matches the expected
+    audit baseline.
+    """
+    expected: Dict[str, int] = {}
+    mapping = {
+        "YES": "AUDIT_EXPECT_YES",
+        "NO": "AUDIT_EXPECT_NO",
+        "N/A": "AUDIT_EXPECT_NA",
+        "TOTAL": "AUDIT_EXPECT_TOTAL",
+    }
+    for key, env_name in mapping.items():
+        value = _env_int(env_name)
+        if value is not None:
+            expected[key] = value
+
+    compact = os.getenv("AUDIT_EXPECT_RESULT_COUNTS", "").strip()
+    if compact:
+        parts = re.split(r"[;,]\s*", compact)
+        aliases = {"YES": "YES", "Y": "YES", "NO": "NO", "N": "NO", "NA": "N/A", "N/A": "N/A", "TOTAL": "TOTAL"}
+        for part in parts:
+            if not part.strip():
+                continue
+            if "=" not in part:
+                raise SystemExit(f"[ERROR] Invalid AUDIT_EXPECT_RESULT_COUNTS segment: {part}")
+            left, right = part.split("=", 1)
+            key = aliases.get(left.strip().upper())
+            if key is None:
+                raise SystemExit(f"[ERROR] Unsupported AUDIT_EXPECT_RESULT_COUNTS key: {left}")
+            try:
+                expected[key] = int(right.strip())
+            except Exception:
+                raise SystemExit(f"[ERROR] Invalid expected count for {key}: {right}")
+    return expected
+
+
+def _raw_excel_result_counts(values: Any) -> Dict[str, int]:
+    counts = {"YES": 0, "NO": 0, "N/A": 0, "OTHER_OR_BLANK": 0, "TOTAL": 0}
+    for value in values:
+        text = str(value or "").strip().lower()
+        counts["TOTAL"] += 1
+        if text in {"yes", "y"}:
+            counts["YES"] += 1
+        elif text in {"no", "n"}:
+            counts["NO"] += 1
+        elif text in {"n/a", "na", "not applicable"}:
+            counts["N/A"] += 1
+        else:
+            counts["OTHER_OR_BLANK"] += 1
+    return counts
+
+
+def _validate_expected_result_counts(expected: Dict[str, int], actual: Dict[str, int], excel_path: str) -> None:
+    if not expected:
+        return
+    mismatches = []
+    for key in ("YES", "NO", "N/A", "TOTAL"):
+        if key in expected and int(expected[key]) != int(actual.get(key, 0)):
+            mismatches.append(f"{key}: expected {expected[key]}, actual {actual.get(key, 0)}")
+    if mismatches:
+        raise SystemExit(
+            "[ERROR] Workbook Result counts changed before Audit Summary generation. "
+            "The audit workbook is the authoritative source and the report will not continue. "
+            f"Excel: {excel_path}. "
+            "Mismatches: " + "; ".join(mismatches) + ". "
+            "Restore the correct security-audit-excel artifact or fix the upstream Excel-generation step."
+        )
+
+
 def _cat_from_puid(puid: str) -> Dict[str, str]:
     m = re.search(r"SECM-CAT-([A-Z]{3})-", puid or "")
     code = m.group(1) if m else "UNK"
@@ -1126,75 +1208,11 @@ def _evidence_fit_for_technical_item(tech: Dict[str, Any]) -> str:
     return "technical_context"
 
 
-def _control_correlation_haystack(ctrl: Dict[str, Any]) -> str:
-    flags = ctrl.get("flags") if isinstance(ctrl.get("flags"), list) else []
-    parts = [
-        str(ctrl.get("weakness_pattern") or ""),
-        str(ctrl.get("category_code") or ""),
-        str(ctrl.get("category_name") or ""),
-        str(ctrl.get("description") or ""),
-        str(ctrl.get("evidence_excerpt") or ""),
-        " ".join(map(str, flags)),
-        str(ctrl.get("evidence_basis") or ""),
-    ]
-    return " ".join(parts).lower()
-
-
-def _storage_artifact_control_scope(ctrl: Dict[str, Any]) -> str:
-    """Classify how well a runtime storage artifact fits a requirement.
-
-    Runtime files such as SharedPreferences, SQLite databases, WAL, and SHM
-    sidecars are direct evidence only for local-at-rest storage concerns. They
-    must not be treated as direct proof for UI masking, screenshots, consent,
-    backend log retention, SOAP/SAML/FIPS, or organizational-policy controls.
-    """
-    text = _control_correlation_haystack(ctrl)
-    hard_weak_terms = [
-        "soap", "saml", "fips", "xml signature", "xml encryption", "ws-security",
-        "consent", "privacy notice", "classification", "data classification",
-        "retention", "log review", "audit trail", "backend log", "secure backend log",
-        "ui masking", "screenshot", "screenshots", "notification", "notify",
-        "server-side", "backend rbac", "rbac enforcement", "authorization policy",
-    ]
-    soft_weak_terms = ["organizational", "policy", "procedure", "governance", "documentation"]
-    direct_terms = [
-        "sharedpreferences", "shared preferences", "shared_prefs",
-        "sqlite", "database", "local database", "encrypted local database",
-        "local storage", "data at rest", "cache", "local cache", "local caching",
-        "device storage", "external storage", "plaintext", "plain text",
-        "auth token", "tokens", "keys", "keystore", "secure key storage",
-        "ephi", "pii", "phi", "stores sensitive data", "sensitive data on device",
-        "logout", "local session", "user switch", "uninstall",
-    ]
-
-    has_hard_weak = any(term in text for term in hard_weak_terms)
-    has_soft_weak = any(term in text for term in soft_weak_terms)
-    has_direct = any(term in text for term in direct_terms)
-
-    if has_hard_weak:
-        return "weak"
-    if has_soft_weak and not has_direct:
-        return "weak"
-    if has_soft_weak and has_direct:
-        return "indirect"
-    if has_direct:
-        return "direct"
-    if "privacy" in text or "authentication" in text or "session" in text:
-        return "indirect"
-    return "weak"
-
-
 def _correlation_strength_for_item(ctrl: Dict[str, Any], tech: Dict[str, Any]) -> str:
     fit = _evidence_fit_for_technical_item(tech)
     pattern = str(ctrl.get("weakness_pattern") or (tech.get("linked_patterns") or [""])[0]).lower()
     basis = str(ctrl.get("evidence_basis") or "").lower()
 
-    if fit == "runtime_coverage_gap":
-        return "coverage_limitation"
-    if fit == "storage_artifact":
-        return _storage_artifact_control_scope(ctrl)
-    if basis == "organizational_documentation":
-        return "weak"
     if fit == "dependency_vulnerability" and "supply chain" in pattern:
         return "direct"
     if fit == "sast_code_finding" and any(t in pattern for t in ["input validation", "authorization", "authentication", "security misconfiguration"]):
@@ -1203,6 +1221,12 @@ def _correlation_strength_for_item(ctrl: Dict[str, Any], tech: Dict[str, Any]) -
         return "direct"
     if fit == "binary_signing" and any(t in pattern for t in ["tampering", "transport", "binary"]):
         return "direct"
+    if fit == "storage_artifact" and any(t in pattern for t in ["local storage", "key management", "data at rest"]):
+        return "direct"
+    if fit == "storage_artifact" and any(t in pattern for t in ["privacy", "authentication"]):
+        return "indirect"
+    if basis == "organizational_documentation":
+        return "weak"
     return "indirect"
 
 
@@ -1225,10 +1249,7 @@ def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items
                 "evidence_summary": _excerpt(tech.get("observed_issue") or tech.get("affected_component"), 220),
                 "evidence_fit": evidence_fit,
                 "correlation_strength": correlation_strength,
-                "correlation_rule": (
-                    "Scanner evidence supports or qualifies the workbook verdict. It does not override yes/no/n/a. "
-                    "Storage artifacts are direct only for local-at-rest storage controls; otherwise they are indirect or weak context."
-                ),
+                "correlation_rule": "Scanner evidence supports or qualifies the workbook verdict. It does not override yes/no/n/a.",
             })
             if len(rows) >= limit:
                 return rows
@@ -3161,6 +3182,10 @@ def main() -> None:
     df["Evidence"] = df[col_evid].astype(str).fillna("").str.strip() if col_evid else ""
     df["ExcelResultRaw"] = df[col_result].astype(str).fillna("").str.strip()
 
+    raw_excel_result_counts = _raw_excel_result_counts(df[col_result].tolist())
+    expected_excel_result_counts = _parse_expected_result_counts()
+    _validate_expected_result_counts(expected_excel_result_counts, raw_excel_result_counts, excel_path)
+
     df["Status"] = df[col_result].apply(_norm_status)
     df["ResultSource"] = "Excel workbook"
     df["ResultLocked"] = True
@@ -3310,6 +3335,12 @@ def main() -> None:
             "non_compliant": non_compliant,
             "not_applicable": not_applicable,
             "overall_compliance_pct": overall_compliance_pct,
+        },
+        "excel_result_count_lock": {
+            "raw_result_counts": raw_excel_result_counts,
+            "expected_result_counts": expected_excel_result_counts,
+            "validation_enabled": bool(expected_excel_result_counts),
+            "rule": "If configured, fail fast when the downloaded audit workbook Result counts differ from the locked baseline. This guard never rewrites Excel results."
         },
         "category_metrics": cat_stats,
         "likelihood_rubric": LIKELIHOOD_RUBRIC,

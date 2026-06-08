@@ -48,6 +48,13 @@ jobs:
       AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS: "500"
       AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS: "200"
       AUDIT_SUMMARY_MAX_CORRELATION_ROWS: "500"
+      # Lock the audit workbook Result distribution for this OpenMRS assessment.
+      # Stage 1 fails fast if the downloaded security-audit-excel artifact drifts
+      # from the baseline. This does not rewrite or recalculate Excel results.
+      AUDIT_EXPECT_YES: ${{ vars.AUDIT_EXPECT_YES || '18' }}
+      AUDIT_EXPECT_NO: ${{ vars.AUDIT_EXPECT_NO || '386' }}
+      AUDIT_EXPECT_NA: ${{ vars.AUDIT_EXPECT_NA || '65' }}
+      AUDIT_EXPECT_TOTAL: ${{ vars.AUDIT_EXPECT_TOTAL || '469' }}
       PYTHONNOUSERSITE: "1"
 
     steps:
