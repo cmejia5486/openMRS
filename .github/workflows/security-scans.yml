@@ -246,20 +246,46 @@ jobs:
           set -euo pipefail
 
           TRIVY_VERSION="0.71.0"
-          TRIVY_ARCHIVE="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-          TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_ARCHIVE}"
 
-          echo "Downloading Trivy ${TRIVY_VERSION}"
-          curl -fL --retry 5 --retry-delay 10 --retry-all-errors -o "${TRIVY_ARCHIVE}" "${TRIVY_URL}"
+          install_from_apt_repo() {
+            echo "Installing Trivy from Aqua Security APT repository"
 
-          echo "Inspecting archive"
-          tar -tzf "${TRIVY_ARCHIVE}" | sed -n '1,30p'
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg apt-transport-https
 
-          echo "Extracting Trivy"
-          tar -xzf "${TRIVY_ARCHIVE}" trivy
+            curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors \
+              https://aquasecurity.github.io/trivy-repo/deb/public.key \
+              | gpg --dearmor \
+              | sudo tee /usr/share/keyrings/trivy.gpg >/dev/null
 
-          echo "Installing Trivy binary"
-          sudo install -m 0755 trivy /usr/local/bin/trivy
+            echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+              | sudo tee /etc/apt/sources.list.d/trivy.list >/dev/null
+
+            sudo apt-get update
+
+            if apt-cache madison trivy | awk '{print $3}' | grep -qx "${TRIVY_VERSION}"; then
+              sudo apt-get install -y --no-install-recommends "trivy=${TRIVY_VERSION}"
+            else
+              echo "::warning::Trivy ${TRIVY_VERSION} was not listed in the APT repository. Installing repository default."
+              sudo apt-get install -y --no-install-recommends trivy
+            fi
+          }
+
+          install_from_github_release() {
+            echo "Installing Trivy from GitHub release fallback"
+
+            TRIVY_ARCHIVE="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+            TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_ARCHIVE}"
+
+            curl -fL --retry 5 --retry-delay 10 --retry-all-errors -o "${TRIVY_ARCHIVE}" "${TRIVY_URL}"
+            tar -xzf "${TRIVY_ARCHIVE}" trivy
+            sudo install -m 0755 trivy /usr/local/bin/trivy
+          }
+
+          if ! install_from_apt_repo; then
+            echo "::warning::APT installation failed. Falling back to GitHub release tarball."
+            install_from_github_release
+          fi
 
           echo "Validating Trivy installation"
           trivy --version
