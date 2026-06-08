@@ -767,6 +767,18 @@ def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
             flags=re.IGNORECASE,
         )
         text = re.sub(
+            rf"\balongside\s+{app_signals}\s+general\s+signals?\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
+            f"alongside {hardening} hardening, quality, or maintainability signal(s)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        text = re.sub(
+            rf"\b{app_signals}\s+general\s+signals?\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
+            f"{hardening} hardening, quality, or maintainability signal(s)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        text = re.sub(
             rf"\b{app_signals}\s+hardening(?:,?\s+quality,?\s+or\s+maintainability)?\s+signal\(s\)",
             f"{hardening} hardening, quality, or maintainability signal(s)",
             text,
@@ -1054,6 +1066,30 @@ def _sanitize_positive_control_final(value: Any) -> str:
     text = _sanitize_positive_statement(value)
 
     replacements = [
+        (
+            r"Session cookies are assigned from the server, indicating support for secure transmission of session IDs\.",
+            "Server-side session cookie assignment was recorded in the workbook; Secure and HTTPOnly cookie attributes were not directly verified by the available evidence.",
+        ),
+        (
+            r"Session cookies are assigned from the server, indicating support for secure transmission of session IDs",
+            "Server-side session cookie assignment was recorded in the workbook; Secure and HTTPOnly cookie attributes were not directly verified by the available evidence",
+        ),
+        (
+            r"TLS encryption for data exchange is ensured, evidenced by the absence of clear text traffic allowance and the lack of Android SSL pinning detection\.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
+        ),
+        (
+            r"TLS encryption for data exchange is ensured, evidenced by the absence of clear text traffic allowance and the lack of Android SSL pinning detection",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+        ),
+        (
+            r"manifest evidence confirms no clear text traffic was allowed despite absent SSL pinning detection",
+            "available manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+        ),
+        (
+            r"supported by the absence of clear text traffic allowance in the primary AndroidManifest\.xml despite absent SSL pinning detection",
+            "supported by manifest evidence that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+        ),
         (
             r"The application passed malware detection checks based on available evidence, indicating it is free of adware and known malware\.",
             "Available malware-detection evidence did not report adware or known malware for the assessed artifact; this statement remains limited to the scanner coverage available to the report.",
@@ -1593,7 +1629,17 @@ def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
                 f"Raw SARIF counts retained for traceability: {raw_text}.{limitation_note}"
             )
         elif key == "mobsf_static" and available:
-            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present."
+            app_info = _as_dict(block.get("app_info"))
+            trace = _as_dict(block.get("apk_traceability"))
+            build_type = _clean_text(app_info.get("build_type_inferred") or trace.get("build_type_inferred"))
+            version_name = _clean_text(app_info.get("version_name") or trace.get("app_version_name"))
+            extra = []
+            if version_name:
+                extra.append(f"APK version: {version_name}")
+            if build_type:
+                extra.append(f"inferred build type: {build_type}")
+            suffix = " " + "; ".join(extra) + "." if extra else ""
+            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present." + suffix
         elif key == "mobsf_dynamic" and available:
             observed = _as_dict(block.get("runtime_observed_evidence")) or _as_dict(_as_dict(block.get("observed_artifacts")))
             inactive = _as_dict(block.get("inactive_or_unavailable_modules"))
@@ -1627,7 +1673,8 @@ def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
             ("exported components", ["exported_components_count", "exported_component_count"]),
         ]:
             value = _deep_find_first(mobsf, keys)
-            if value is True or _safe_int(value) > 0:
+            value_text = _clean_text(value).lower()
+            if value is True or _safe_int(value) > 0 or value_text in {"detected", "true", "yes"}:
                 indicators.append(label)
         if indicators:
             takeaways.append("MobSF static evidence reported Android hardening indicators requiring review, including " + ", ".join(indicators[:4]) + ".")
@@ -1779,10 +1826,24 @@ def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
         doc.add_paragraph("MobSF static evidence was not available in the analysis pack. Static APK, manifest, signing, certificate, permission, and tracker checks should therefore be treated as not assessed by this report run.")
         return
     doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Missing values mean that the parser did not receive or normalize that indicator; they must not be interpreted as absence of risk.")
+    trace = _as_dict(mobsf.get("apk_traceability"))
+    app_info = _as_dict(mobsf.get("app_info"))
+    if trace or app_info:
+        trace_rows = [
+            ["APK file", _clean_text(trace.get("file_name") or app_info.get("file_name")) or "Not available"],
+            ["Package", _clean_text(trace.get("package_name") or app_info.get("package_name")) or "Not available"],
+            ["Version name", _clean_text(trace.get("app_version_name") or app_info.get("version_name")) or "Not available"],
+            ["Inferred build type", _clean_text(trace.get("build_type_inferred") or app_info.get("build_type_inferred")) or "Not available"],
+            ["APK SHA-256", _clean_text(trace.get("apk_sha256") or app_info.get("apk_sha256")) or "Not available"],
+        ]
+        _add_table(doc, ["APK traceability field", "Value"], trace_rows, max_rows=10)
+        scope_note = _clean_text(trace.get("scope_note"))
+        if scope_note:
+            _add_note(doc, scope_note)
     _add_table(doc, ["Indicator", "Parsed value"], _mobsf_signal_rows(mobsf, technical), max_rows=20)
 
     finding_lists = []
-    for key in ["manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
+    for key in ["manifest_findings_sample", "certificate_findings_sample", "manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
         items = _deep_list(mobsf, [key])
         if items:
             finding_lists.extend(items)
@@ -2357,7 +2418,10 @@ def _classify_positive_control_statement(statement: str, evidence: str = "", fla
     if any(token in text for token in [
         " but ", "however", "residual", "not detected", "not observed", "not available",
         "risky permissions are present", "dangerous permissions", "partially", "fallback verdict",
-        "ssl pinning was not detected", "clear text traffic and ssl pinning"
+        "ssl pinning was not detected", "clear text traffic and ssl pinning",
+        "secure and httponly cookie attributes were not directly verified",
+        "cookie attributes should be verified",
+        "should be evaluated separately according to the threat model"
     ]):
         if "risky permissions" in text or "ssl pinning was not detected" in text or "not detected" in text:
             return "Mixed or partial controls"
@@ -3573,7 +3637,7 @@ def main() -> None:
     doc.add_paragraph(f"Overall, {int(metrics['total_assessed'])} requirements were assessed. {applicable} were applicable controls and {not_applicable} were recorded as not applicable. Of the applicable controls, {compliant} were compliant and {non_compliant} were non-compliant, resulting in an overall compliance rate of {overall_pct:.2f}% (applicable controls only).")
     ai_audit_summary = _clean_text(prose.get("audit_summary_paragraph", ""))
     if ai_audit_summary:
-        doc.add_paragraph(ai_audit_summary)
+        doc.add_paragraph(_sanitize_ai_narrative_text(ai_audit_summary, technical))
     else:
         doc.add_paragraph("This report summarizes the dominant weakness patterns evidenced by non-compliant requirements and proposes actionable remediations suitable for mHealth/EMR environments handling sensitive health information.")
     if technical:
@@ -3642,7 +3706,7 @@ def main() -> None:
     add_nav_heading("6. Technical evidence from automated analysis", 1)
     ai_tech_intro = _clean_text(tech_ai.get("technical_evidence_intro", ""))
     if ai_tech_intro:
-        doc.add_paragraph(ai_tech_intro)
+        doc.add_paragraph(_sanitize_ai_narrative_text(ai_tech_intro, technical))
     else:
         doc.add_paragraph("This section summarizes technical scan evidence relevant to the assessed application and its code. The evidence is used to reinforce and qualify workbook findings while preserving the workbook as the authoritative requirement-level adjudication source.")
     add_nav_heading("6.1 Software Composition Analysis from Trivy", 2)
@@ -3651,15 +3715,15 @@ def main() -> None:
     _add_trivy_section(doc, technical)
     add_nav_heading("6.2 Android static evidence from MobSF", 2)
     if _clean_text(tech_ai.get("mobsf_static_paragraph", "")):
-        doc.add_paragraph(_clean_text(tech_ai.get("mobsf_static_paragraph", "")))
+        doc.add_paragraph(_sanitize_ai_narrative_text(tech_ai.get("mobsf_static_paragraph", ""), technical))
     _add_mobsf_static_section(doc, technical)
     add_nav_heading("6.3 Runtime evidence from MobSF dynamic analysis", 2)
     if _clean_text(tech_ai.get("mobsf_dynamic_paragraph", "")):
-        doc.add_paragraph(_clean_text(tech_ai.get("mobsf_dynamic_paragraph", "")))
+        doc.add_paragraph(_sanitize_ai_narrative_text(tech_ai.get("mobsf_dynamic_paragraph", ""), technical))
     _add_mobsf_dynamic_section(doc, technical)
     add_nav_heading("6.4 Static Application Security Testing evidence", 2)
     if _clean_text(tech_ai.get("sast_paragraph", "")):
-        doc.add_paragraph(_clean_text(tech_ai.get("sast_paragraph", "")))
+        doc.add_paragraph(_sanitize_ai_narrative_text(tech_ai.get("sast_paragraph", ""), technical))
     _add_sast_section(doc, technical)
     add_nav_heading("6.5 Technical coverage limitations", 2)
     if _clean_text(tech_ai.get("coverage_limitations_paragraph", "")):
