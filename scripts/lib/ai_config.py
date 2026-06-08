@@ -13,7 +13,10 @@ def repo_root() -> Path:
 
 
 def config_path() -> Path:
-    return repo_root() / "parameters" / "ai.config.json"
+    env_path = os.getenv("AI_CONFIG_JSON_PATH", "").strip()
+    if env_path:
+        return Path(env_path)
+    return repo_root() / "scripts" / "ai.config.json"
 
 
 def load_json(path: Path) -> Dict[str, Any]:
