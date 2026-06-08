@@ -206,7 +206,16 @@ jobs:
           }
 
           Invoke-Pip -ArgsToPass @("--retries", "10", "--timeout", "120", "install", "--upgrade", "pip")
-          Invoke-Pip -ArgsToPass @("--retries", "10", "--timeout", "120", "install", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
+          Invoke-Pip -ArgsToPass @(
+            "--retries", "10",
+            "--timeout", "120",
+            "install",
+            "--prefer-binary",
+            "openai==1.109.1",
+            "litellm==1.80.0",
+            "pydantic>=2.7.0",
+            "openpyxl>=3.1.0"
+          )
 
           & $env:PYTHON_EXE -m pip check
           if ($LASTEXITCODE -ne 0) {
@@ -237,7 +246,11 @@ jobs:
           }
 
           pip_retry --retries 10 --timeout 120 install --upgrade pip
-          pip_retry --retries 10 --timeout 120 install --prefer-binary -r requirements/ai-runtime.txt
+          pip_retry --retries 10 --timeout 120 install --prefer-binary \
+            "openai==1.109.1" \
+            "litellm==1.80.0" \
+            "pydantic>=2.7.0" \
+            "openpyxl>=3.1.0"
           "$PYTHON_EXE" -m pip check
 
       - name: Verify AI imports on Windows
