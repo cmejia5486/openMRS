@@ -145,13 +145,6 @@
     "max_output_tokens": 6000,
     "batch_size": 10,
     "timeout_s": 600
-  },
-  "ai_correlate": {
-    "profile": "lm_studio_local",
-    "reasoning_effort": "medium",
-    "max_output_tokens": 3000,
-    "batch_size": 10,
-    "timeout_s": 300
   }
  }
 }
