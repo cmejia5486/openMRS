@@ -73,6 +73,13 @@ jobs:
     needs: [gate]
     if: ${{ needs.gate.outputs.run_phase1 == 'true' }}
     uses: ./.github/workflows/codeql-analysis.yml
+    with:
+      codeql-language: ${{ vars.CODEQL_LANGUAGE || 'java' }}
+      codeql-build-mode: ${{ vars.CODEQL_BUILD_MODE || 'manual' }}
+      codeql-config-file: ${{ vars.CODEQL_CONFIG_FILE || '.github/codeql/codeql-security.yml' }}
+      build-command: ${{ vars.CODEQL_BUILD_COMMAND || './gradlew assembleDebug --no-daemon -x lint' }}
+      codeql-java-version: ${{ vars.CODEQL_JAVA_VERSION || '17' }}
+      android-sdk-java-version: ${{ vars.ANDROID_SDK_JAVA_VERSION || '17' }}
     secrets: inherit
 
   security_scans:
