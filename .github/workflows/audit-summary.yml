@@ -6,92 +6,6 @@ on:
       OPENAI_API_KEY:
         required: true
 
-    inputs:
-      AI_TASK:
-        required: true
-        type: string
-        default: "audit_summary_docx"
-      AI_PROFILE:
-        required: true
-        type: string
-        default: "lm_studio_local"
-      AI_PYTHON_VERSION:
-        required: true
-        type: string
-        default: "3.12"
-      AI_RUNTIME_DEBUG:
-        required: true
-        type: string
-        default: "0"
-      AI_PROVIDER:
-        required: true
-        type: string
-        default: ""
-      AI_MODEL:
-        required: true
-        type: string
-        default: ""
-      AI_LITELLM_MODEL:
-        required: true
-        type: string
-        default: ""
-      AI_API_BASE:
-        required: true
-        type: string
-        default: ""
-      AI_API_VERSION:
-        required: true
-        type: string
-        default: ""
-      AI_API_KEY_ENV_VAR:
-        required: true
-        type: string
-        default: "OPENAI_API_KEY"
-      AI_REASONING_EFFORT:
-        required: true
-        type: string
-        default: ""
-      AI_MAX_OUTPUT_TOKENS:
-        required: true
-        type: string
-        default: ""
-      AI_BATCH_SIZE:
-        required: true
-        type: string
-        default: ""
-      AI_TIMEOUT_S:
-        required: true
-        type: string
-        default: ""
-      OPENAI_MODEL:
-        required: true
-        type: string
-        default: ""
-      OPENAI_API_BASE:
-        required: true
-        type: string
-        default: ""
-      OPENAI_REASONING_EFFORT:
-        required: true
-        type: string
-        default: ""
-      OPENAI_MAX_OUTPUT_TOKENS:
-        required: true
-        type: string
-        default: ""
-      OPENAI_TIMEOUT_S:
-        required: true
-        type: string
-        default: ""
-      AUDIT_SUMMARY_USE_AI:
-        required: true
-        type: string
-        default: "1"
-      AUDIT_SUMMARY_AI_SECTION_MODE:
-        required: true
-        type: string
-        default: "1"
-
 permissions:
   contents: read
   actions: write
@@ -110,27 +24,27 @@ jobs:
       PIP_DEFAULT_TIMEOUT: "720"
       PIP_RETRIES: "10"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      AI_TASK: ${{ inputs.AI_TASK }}
-      AI_PROFILE: ${{ inputs.AI_PROFILE }}
-      AI_PYTHON_VERSION: ${{ inputs.AI_PYTHON_VERSION }}
-      AI_RUNTIME_DEBUG: ${{ inputs.AI_RUNTIME_DEBUG }}
-      AI_PROVIDER: ${{ inputs.AI_PROVIDER }}
-      AI_MODEL: ${{ inputs.AI_MODEL }}
-      AI_LITELLM_MODEL: ${{ inputs.AI_LITELLM_MODEL }}
-      AI_API_BASE: ${{ inputs.AI_API_BASE }}
-      AI_API_VERSION: ${{ inputs.AI_API_VERSION }}
-      AI_API_KEY_ENV_VAR: ${{ inputs.AI_API_KEY_ENV_VAR }}
-      AI_REASONING_EFFORT: ${{ inputs.AI_REASONING_EFFORT }}
-      AI_MAX_OUTPUT_TOKENS: ${{ inputs.AI_MAX_OUTPUT_TOKENS }}
-      AI_BATCH_SIZE: ${{ inputs.AI_BATCH_SIZE }}
-      AI_TIMEOUT_S: ${{ inputs.AI_TIMEOUT_S }}
-      OPENAI_MODEL: ${{ inputs.OPENAI_MODEL }}
-      OPENAI_API_BASE: ${{ inputs.OPENAI_API_BASE }}
-      OPENAI_REASONING_EFFORT: ${{ inputs.OPENAI_REASONING_EFFORT }}
-      OPENAI_MAX_OUTPUT_TOKENS: ${{ inputs.OPENAI_MAX_OUTPUT_TOKENS }}
-      OPENAI_TIMEOUT_S: ${{ inputs.OPENAI_TIMEOUT_S }}
-      AUDIT_SUMMARY_USE_AI: ${{ inputs.AUDIT_SUMMARY_USE_AI }}
-      AUDIT_SUMMARY_AI_SECTION_MODE: ${{ inputs.AUDIT_SUMMARY_AI_SECTION_MODE }}
+      AI_TASK: ${{ vars.AUDIT_SUMMARY_AI_TASK || 'audit_summary_docx' }}
+      AI_PROFILE: ${{ vars.AI_PROFILE || 'lm_studio_local' }}
+      AI_PYTHON_VERSION: ${{ vars.AI_PYTHON_VERSION || '3.12' }}
+      AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG || '0' }}
+      AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+      AI_MODEL: ${{ vars.AI_MODEL }}
+      AI_LITELLM_MODEL: ${{ vars.AI_LITELLM_MODEL }}
+      AI_API_BASE: ${{ vars.AI_API_BASE }}
+      AI_API_VERSION: ${{ vars.AI_API_VERSION }}
+      AI_API_KEY_ENV_VAR: ${{ vars.AI_API_KEY_ENV_VAR || 'OPENAI_API_KEY' }}
+      AI_REASONING_EFFORT: ${{ vars.AI_REASONING_EFFORT }}
+      AI_MAX_OUTPUT_TOKENS: ${{ vars.AI_MAX_OUTPUT_TOKENS }}
+      AI_BATCH_SIZE: ${{ vars.AI_BATCH_SIZE }}
+      AI_TIMEOUT_S: ${{ vars.AI_TIMEOUT_S }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      OPENAI_API_BASE: ${{ vars.OPENAI_API_BASE }}
+      OPENAI_REASONING_EFFORT: ${{ vars.OPENAI_REASONING_EFFORT }}
+      OPENAI_MAX_OUTPUT_TOKENS: ${{ vars.OPENAI_MAX_OUTPUT_TOKENS }}
+      OPENAI_TIMEOUT_S: ${{ vars.OPENAI_TIMEOUT_S }}
+      AUDIT_SUMMARY_USE_AI: ${{ vars.AUDIT_SUMMARY_USE_AI || '1' }}
+      AUDIT_SUMMARY_AI_SECTION_MODE: ${{ vars.AUDIT_SUMMARY_AI_SECTION_MODE || '1' }}
       AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS: "500"
       AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS: "200"
       AUDIT_SUMMARY_MAX_CORRELATION_ROWS: "500"
@@ -234,7 +148,7 @@ jobs:
           $ErrorActionPreference = "Stop"
 
           $versions = @(
-            "${{ inputs.AI_PYTHON_VERSION }}",
+            "$env:AI_PYTHON_VERSION",
             "3.12",
             "3.11",
             "3.10"
