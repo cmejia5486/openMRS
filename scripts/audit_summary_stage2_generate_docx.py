@@ -1170,14 +1170,20 @@ def _quality_gate(doc: Document) -> None:
     text = _qa_doc_text(doc)
     forbidden = [
         "No data available",
-        "missing_inputs\n",
+        "missing_inputs\\n",
         "{'tool':",
         '"tool":',
         "The application applications",
         "The application the mobile application",
         "Not reported",
+        "both related to retrofit",
+        "both High findings are Retrofit",
     ]
     hits = [token for token in forbidden if token in text]
+    if "PUID / item" in text:
+        hits.append("PUID / item")
+    if doc.tables and "Table 1." not in text:
+        hits.append("missing table captions")
     if hits:
         raise SystemExit("[ERROR] Audit Summary quality gate failed. Forbidden text found: " + ", ".join(hits))
 
@@ -1264,12 +1270,70 @@ def _format_bool(value: Any) -> str:
     text = _clean_text(value)
     return text if text else "Not available in parsed evidence"
 
-def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None, empty_message: str | None = None) -> bool:
-    """Add a table only when rows exist.
+_TABLE_RENDER_COUNTER = 0
 
-    Returns True when a table was rendered. Empty tables are not emitted because
-    they undermine confidence in the final report.
-    """
+
+def _table_caption_for_headers(headers: List[str]) -> str:
+    joined = " | ".join(_clean_text(x) for x in headers).lower()
+    if "weakness pattern" in joined and "workbook basis" in joined:
+        return "Risk triage summary"
+    if "cve" in joined or "installed -> fixed" in joined or ("component" in joined and "severity" in joined):
+        return "Dependency vulnerability evidence details"
+    if "indicator" in joined and "parsed" in joined:
+        return "Android static evidence indicators"
+    if "runtime evidence type" in joined:
+        return "MobSF dynamic runtime evidence summary"
+    if "sast classification" in joined or "raw sarif" in joined:
+        return "SAST classification and findings summary"
+    if "scanner evidence" in joined or "technical finding" in joined:
+        return "Technical evidence correlation matrix"
+    if "positive control" in joined:
+        return "Positive and qualified control traceability"
+    if "requirement" in joined or "puid" in joined:
+        return "Requirement treatment traceability"
+    if "owner" in joined and "target" in joined:
+        return "Management action plan"
+    return "Audit evidence and treatment table"
+
+
+def _add_table_caption(doc: Document, title: str) -> None:
+    global _TABLE_RENDER_COUNTER
+    _TABLE_RENDER_COUNTER += 1
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(6)
+    p.paragraph_format.space_after = Pt(3)
+    r = p.add_run(f"Table {_TABLE_RENDER_COUNTER}. {title}")
+    r.bold = True
+    r.italic = True
+    r.font.size = Pt(9)
+
+
+def _repeat_table_header(row) -> None:
+    tr_pr = row._tr.get_or_add_trPr()
+    tbl_header = OxmlElement("w:tblHeader")
+    tbl_header.set(qn("w:val"), "true")
+    tr_pr.append(tbl_header)
+
+
+def _set_cell_no_wrap(cell) -> None:
+    tc_pr = cell._tc.get_or_add_tcPr()
+    no_wrap = OxmlElement("w:noWrap")
+    tc_pr.append(no_wrap)
+
+
+def _format_table_cell(cell, font_size: float = 8.0, bold: bool = False, no_wrap: bool = False) -> None:
+    if no_wrap:
+        _set_cell_no_wrap(cell)
+    for paragraph in cell.paragraphs:
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.line_spacing = 1.0
+        for run in paragraph.runs:
+            run.font.size = Pt(font_size)
+            run.bold = bold
+
+
+def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None, empty_message: str | None = None) -> bool:
+    """Add a readable, captioned table only when rows exist."""
     actual_rows = rows[:max_rows] if max_rows is not None else rows
     actual_rows = [r for r in actual_rows if not _is_emptyish(r)]
     if not actual_rows:
@@ -1277,18 +1341,28 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
             _add_note(doc, empty_message)
         return False
 
+    _add_table_caption(doc, _table_caption_for_headers(headers))
     tbl = doc.add_table(rows=1, cols=len(headers))
     tbl.style = "Table Grid"
+    tbl.autofit = True
     h = tbl.rows[0].cells
+    _repeat_table_header(tbl.rows[0])
     for idx, txt in enumerate(headers):
-        h[idx].text = _cell_text(txt)
+        header_text = _cell_text(txt)
+        if header_text == "PUID / item":
+            header_text = "Requirement"
+        h[idx].text = header_text
         _set_cell_shading(h[idx], "D9E1F2")
-        for run in h[idx].paragraphs[0].runs:
-            run.bold = True
+        _format_table_cell(h[idx], font_size=8.5, bold=True, no_wrap=True)
     for row_values in actual_rows:
         r = tbl.add_row().cells
         for idx in range(len(headers)):
-            r[idx].text = _cell_text(row_values[idx] if idx < len(row_values) else "")
+            value = _cell_text(row_values[idx] if idx < len(row_values) else "")
+            if value == "PUID / item":
+                value = "Requirement"
+            r[idx].text = value
+            keep_together = idx == 0 and len(headers) >= 4
+            _format_table_cell(r[idx], font_size=7.8 if len(value) > 180 else 8.0, no_wrap=keep_together)
     doc.add_paragraph()
     return True
 
@@ -1393,7 +1467,7 @@ def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
 
 
 def _trivy_findings(trivy: Dict[str, Any]) -> List[Dict[str, Any]]:
-    for keys in (["cve_table"], ["findings"], ["vulnerabilities"], ["top_findings"]):
+    for keys in (["detailed_findings"], ["vulnerabilities"], ["cve_table"], ["findings"], ["top_findings"]):
         items = _deep_list(trivy, keys)
         if items:
             return [x for x in items if isinstance(x, dict)]
@@ -1411,23 +1485,40 @@ def _add_trivy_section(doc: Document, technical: Dict[str, Any]) -> None:
     licenses = _deep_int(trivy, ["license_entries_detected", "licenses_detected", "license_count"])
     by_sev = _deep_dict(trivy, ["by_severity", "severity_counts"])
     severity_text = ", ".join(f"{k}: {_safe_int(v)}" for k, v in by_sev.items()) if by_sev else "not reported"
+    high_components = _as_list(trivy.get("high_severity_components"))
+    high_note = ""
+    if high_components:
+        high_note = " High-severity findings affect: " + ", ".join(_clean_text(x) for x in high_components[:8] if _clean_text(x)) + "."
 
     doc.add_paragraph(
         f"Trivy Software Composition Analysis reported {packages} detected package(s), {total} known dependency vulnerability finding(s), "
-        f"{fixable} finding(s) with a fixed version available, and {licenses} license entr(y/ies). Severity distribution: {severity_text}."
+        f"{fixable} finding(s) with a fixed version available, and {licenses} license entr(y/ies). Severity distribution: {severity_text}.{high_note}"
     )
 
     rows = []
-    for finding in _trivy_findings(trivy)[:12]:
+    for finding in _trivy_findings(trivy)[:18]:
+        cwe = ", ".join(_clean_text(x) for x in _as_list(_first_present(finding, ["cwe_ids", "cwe", "CweIDs"], []))[:4])
+        cvss = _first_present(finding, ["cvss_v3_score", "cvss", "score"], "")
+        published = _first_present(finding, ["published_at", "published", "PublishedDate"], "")
+        modified = _first_present(finding, ["last_modified_at", "modified", "LastModifiedDate"], "")
+        date_parts = []
+        if published:
+            date_parts.append(f"Published: {published}")
+        if modified:
+            date_parts.append(f"Modified: {modified}")
         rows.append([
             _first_present(finding, ["severity", "Severity"], ""),
             _first_present(finding, ["id", "VulnerabilityID", "cve", "rule_id"], ""),
-            _first_present(finding, ["pkg", "PkgName", "package", "package_name"], ""),
-            _first_present(finding, ["installed", "InstalledVersion", "installed_version"], ""),
-            _first_present(finding, ["fixed", "FixedVersion", "fixed_version"], ""),
-            _first_present(finding, ["title", "Title", "description", "Description"], ""),
+            _first_present(finding, ["pkg", "PkgName", "package", "package_name", "component"], ""),
+            f"{_first_present(finding, ['installed', 'InstalledVersion', 'installed_version'], '')} -> {_first_present(finding, ['fixed', 'FixedVersion', 'fixed_version'], '')}",
+            "; ".join(x for x in [f"CWE: {cwe}" if cwe else "", f"CVSS: {cvss}" if cvss not in (None, "") else ""] if x),
+            _short(" | ".join(x for x in [
+                "; ".join(date_parts),
+                _first_present(finding, ["target", "Target"], ""),
+                _first_present(finding, ["title", "Title", "description", "Description"], ""),
+            ] if x), 360),
         ])
-    _add_table(doc, ["Severity", "CVE / ID", "Package", "Installed", "Fixed", "Title / description"], rows, max_rows=12)
+    _add_table(doc, ["Severity", "CVE / ID", "Component", "Installed -> fixed", "CWE / CVSS", "Dates / target / summary"], rows, max_rows=18)
 
 
 def _mobsf_signal_rows(mobsf: Dict[str, Any]) -> List[List[Any]]:
@@ -2840,48 +2931,104 @@ def _render_treatment_overview(doc: Document, treatment_plan: Dict[str, Any], fi
 def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
     max_rows = _max_control_treatment_rows()
-    rows: List[List[Any]] = []
+    if not items:
+        _add_note(doc, "No SECM-CAT treatment items were available in the analysis pack.")
+        return
+
+    def add_card_row(tbl, label: str, value: Any) -> None:
+        cells = tbl.add_row().cells
+        cells[0].text = _cell_text(label)
+        cells[1].text = _cell_text(value)
+        _set_cell_shading(cells[0], "EDEDED")
+        _format_table_cell(cells[0], font_size=8.5, bold=True, no_wrap=True)
+        _format_table_cell(cells[1], font_size=8.0)
+
     for item in items[:max_rows]:
         item_id = _clean_text(item.get("item_id"))
         writeup = _treatment_writeup(treatment_ai, item_id, technical=False)
-        flags = ", ".join(_as_list(item.get("flags"))[:6])
-        evidence = _short(item.get("evidence_excerpt") or item.get("description"), 240)
-        rows.append([
-            f"{item.get('puid')}\n{item_id}",
-            f"{item.get('weakness_pattern')}\n{item.get('severity')} / {item.get('likelihood')}\nOwner: {item.get('recommended_owner')}",
-            f"Flags: {flags if flags else 'No flags listed'}\nEvidence: {evidence}",
-            _short(writeup.get("treatment_action"), 360),
-            _short(f"Verification: {writeup.get('verification_method')} Closure evidence: {writeup.get('closure_evidence')} Residual risk: {writeup.get('residual_risk')}", 520),
-        ])
+        puid = _clean_text(item.get("puid"))
+        heading = doc.add_paragraph()
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
+        run = heading.add_run(f"{puid} | {item_id}")
+        run.bold = True
+        run.font.size = Pt(10)
+
+        flags = ", ".join(_as_list(item.get("flags"))[:16]) or "No flags listed"
+        evidence = _short(item.get("evidence_excerpt") or item.get("description"), 620)
+        tbl = doc.add_table(rows=0, cols=2)
+        tbl.style = "Table Grid"
+        tbl.autofit = True
+        add_card_row(tbl, "Pattern", item.get("weakness_pattern"))
+        add_card_row(tbl, "Priority", f"{item.get('severity')} / {item.get('likelihood')}")
+        add_card_row(tbl, "Owner", item.get("recommended_owner"))
+        add_card_row(tbl, "Flags", flags)
+        add_card_row(tbl, "Evidence basis", evidence)
+        add_card_row(tbl, "Treatment action", _short(writeup.get("treatment_action"), 620))
+        add_card_row(tbl, "Verification", _short(writeup.get("verification_method"), 620))
+        add_card_row(tbl, "Closure evidence", _short(writeup.get("closure_evidence"), 620))
+        add_card_row(tbl, "Residual risk", _short(writeup.get("residual_risk"), 420))
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
-    _add_table(doc, ["PUID / item", "Pattern / priority", "Evidence basis", "AI treatment action", "Verification / closure"], rows, max_rows=max_rows, empty_message="No SECM-CAT treatment items were available in the analysis pack.")
 
 
 def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
     max_rows = _max_technical_treatment_rows()
-    rows: List[List[Any]] = []
+    if not items:
+        _add_note(doc, "No technical treatment items were available in the analysis pack.")
+        return
+
+    def add_card_row(tbl, label: str, value: Any) -> None:
+        cells = tbl.add_row().cells
+        cells[0].text = _cell_text(label)
+        cells[1].text = _cell_text(value)
+        _set_cell_shading(cells[0], "EDEDED")
+        _format_table_cell(cells[0], font_size=8.5, bold=True, no_wrap=True)
+        _format_table_cell(cells[1], font_size=8.0)
+
     for item in items[:max_rows]:
         item_id = _clean_text(item.get("item_id"))
         writeup = _treatment_writeup(treatment_ai, item_id, technical=True)
-        location_parts = []
-        for k in ("affected_component", "file", "line", "location", "installed_version", "fixed_version"):
-            val = _clean_text(item.get(k))
-            if val:
-                location_parts.append(f"{k}: {val}")
-        linked = ", ".join(_as_list(item.get("linked_puids"))[:8])
-        rows.append([
-            f"{item_id}\n{item.get('source')}\n{item.get('item_type')}",
-            f"{item.get('severity')}\n{item.get('finding_id')}\n{_short(item.get('observed_issue'), 220)}",
-            _short(" | ".join(location_parts), 260),
-            _short(writeup.get("treatment_action"), 360),
-            _short(f"Verification: {writeup.get('verification_method')} Closure evidence: {writeup.get('closure_evidence')} Residual risk: {writeup.get('residual_risk')}", 520),
-            linked,
-        ])
+        heading = doc.add_paragraph()
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
+        run = heading.add_run(f"{item_id} | {item.get('source')} | {item.get('finding_id')}")
+        run.bold = True
+        run.font.size = Pt(10)
+
+        affected = []
+        for key, label in [
+            ("affected_component", "component"),
+            ("installed_version", "installed"),
+            ("fixed_version", "fixed"),
+            ("fix_available", "fix_available"),
+            ("cwe_ids", "CWE"),
+            ("cvss_v3_score", "CVSS"),
+            ("published_at", "published"),
+            ("last_modified_at", "modified"),
+            ("file", "file"),
+            ("line", "line"),
+        ]:
+            value = item.get(key)
+            if value not in (None, "", [], {}):
+                affected.append(f"{label}: {_clean_text(value)}")
+        linked = ", ".join(_as_list(item.get("linked_puids"))[:14]) or "No linked PUIDs normalized"
+
+        tbl = doc.add_table(rows=0, cols=2)
+        tbl.style = "Table Grid"
+        tbl.autofit = True
+        add_card_row(tbl, "Type", item.get("item_type"))
+        add_card_row(tbl, "Severity", item.get("severity"))
+        add_card_row(tbl, "Affected component", " | ".join(affected))
+        add_card_row(tbl, "Observed issue", _short(item.get("observed_issue"), 720))
+        add_card_row(tbl, "Treatment action", _short(writeup.get("treatment_action"), 620))
+        add_card_row(tbl, "Verification", _short(writeup.get("verification_method"), 620))
+        add_card_row(tbl, "Closure evidence", _short(writeup.get("closure_evidence"), 620))
+        add_card_row(tbl, "Linked PUIDs", linked)
+        add_card_row(tbl, "Residual risk", _short(writeup.get("residual_risk"), 420))
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} technical treatment items. Increase AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS to include more rows.")
-    _add_table(doc, ["Item / source", "Finding", "Affected component", "AI recommended fix", "Verification / closure", "Linked PUIDs"], rows, max_rows=max_rows, empty_message="No technical treatment items were available in the analysis pack.")
 
 
 def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) -> None:
@@ -2889,18 +3036,21 @@ def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) 
     max_rows = _max_correlation_rows()
     rows: List[List[Any]] = []
     for item in items[:max_rows]:
-        rows.append([
-            item.get("weakness_pattern"),
-            item.get("puid"),
-            ", ".join(_as_list(item.get("flags_sample"))[:6]),
-            item.get("technical_source"),
-            item.get("technical_finding_id"),
-            item.get("technical_item_id"),
-            _short(item.get("evidence_summary"), 260),
-        ])
+        requirement = f"{item.get('puid')}\\n{item.get('weakness_pattern')}"
+        flags = ", ".join(_as_list(item.get("flags_sample"))[:8])
+        scanner = f"{item.get('technical_source')}\\n{item.get('technical_finding_id')}"
+        evidence = f"Treatment item: {item.get('technical_item_id')}\\n{_short(item.get('evidence_summary'), 360)}"
+        rows.append([requirement, flags, scanner, evidence])
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
-    _add_table(doc, ["Weakness pattern", "PUID", "Flags", "Scanner source", "Technical finding", "Treatment item", "Evidence summary"], rows, max_rows=max_rows, empty_message="No evidence correlation items were available in the analysis pack.")
+    _add_table(
+        doc,
+        ["Requirement / pattern", "Flags", "Scanner evidence", "Treatment / evidence summary"],
+        rows,
+        max_rows=max_rows,
+        empty_message="No evidence correlation items were available in the analysis pack.",
+    )
+
 
 def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[str, str], max_takeaways: int = 7) -> Dict[str, Any]:
     # Backward-compatible wrapper retained for older callers.
@@ -3119,6 +3269,7 @@ def main() -> None:
 
     add_nav_heading("5.4 Risk triage (prioritized)", 2)
     _add_body_paragraph(doc, "The table below keeps the executive triage compact. Detailed impact narratives and evidence anchors are provided in Section 7 for each weakness pattern.")
+    _add_table_caption(doc, "Risk triage summary")
     rt = doc.add_table(rows=1, cols=5)
     rt.style = "Table Grid"
     h = rt.rows[0].cells
@@ -3223,6 +3374,7 @@ def main() -> None:
 
     add_nav_heading("10. Management Action Plan (MAP)", 1)
     _add_body_paragraph(doc, "The MAP is designed for executive readability. Detailed evidence remains in the workbook and technical artifacts. Priority combines severity and workbook-derived likelihood from Section 5.3.")
+    _add_table_caption(doc, "Management action plan")
     mp = doc.add_table(rows=1, cols=4)
     mp.style = "Table Grid"
     mh = mp.rows[0].cells
@@ -3273,6 +3425,7 @@ def main() -> None:
     doc.add_page_break()
     add_nav_heading("Appendix D - Positive controls verification (workbook traceability)", 1)
     doc.add_paragraph("This appendix verifies each Positive controls observed statement by providing the originating PUID, flags used, and an evidence excerpt when available.")
+    _add_table_caption(doc, "Positive control verification traceability")
     vb = doc.add_table(rows=1, cols=4)
     vb.style = "Table Grid"
     vh = vb.rows[0].cells

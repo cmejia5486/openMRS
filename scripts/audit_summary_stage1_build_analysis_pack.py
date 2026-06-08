@@ -790,6 +790,13 @@ def _make_trivy_treatment_items(technical: Dict[str, Any], non_df: Any, start_id
             "installed_version": str(finding.get("installed") or ""),
             "fixed_version": str(finding.get("fixed") or ""),
             "fix_available": bool(finding.get("fix_available") or finding.get("fixed")),
+            "status": str(finding.get("status") or ""),
+            "severity_source": str(finding.get("severity_source") or ""),
+            "cwe_ids": finding.get("cwe_ids") or finding.get("cwe") or [],
+            "cvss_v3_score": finding.get("cvss_v3_score"),
+            "cvss_v3_vector": finding.get("cvss_v3_vector"),
+            "published_at": str(finding.get("published_at") or ""),
+            "last_modified_at": str(finding.get("last_modified_at") or ""),
             "observed_issue": title,
             "linked_patterns": patterns,
             "linked_puids": _linked_puids_for_patterns(non_df, patterns, limit=12),
@@ -1273,6 +1280,168 @@ def _indicator_value(value: Any, detected: Optional[bool] = None) -> str:
         return _excerpt(value, 120)
     return "Not available in parsed evidence"
 
+
+def _best_cvss_from_any(raw: Any) -> Dict[str, Any]:
+    """Return the highest CVSS v3 score/vector available in a Trivy CVSS map."""
+    best: Dict[str, Any] = {"source": "", "v3_score": None, "v3_vector": ""}
+    best_score = -1.0
+    if not isinstance(raw, dict):
+        return best
+    for source, value in raw.items():
+        if not isinstance(value, dict):
+            continue
+        try:
+            score = float(value.get("V3Score") or 0)
+        except Exception:
+            score = 0.0
+        if score > best_score:
+            best_score = score
+            best = {
+                "source": str(source or ""),
+                "v3_score": score if value.get("V3Score") is not None else None,
+                "v3_vector": value.get("V3Vector") or "",
+            }
+    return best
+
+
+def _normalize_sca_technical_vulnerability(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize VISION360/Trivy SCA vulnerability evidence for Audit Summary."""
+    if not isinstance(item, dict):
+        return {}
+    best_cvss = item.get("best_cvss") if isinstance(item.get("best_cvss"), dict) else {}
+    cve = item.get("cve") or item.get("vulnerability_id") or item.get("id") or item.get("VulnerabilityID")
+    component = item.get("component") or item.get("package") or item.get("pkg") or item.get("PkgName")
+    fixed = item.get("fixed_version") or item.get("fixed") or item.get("FixedVersion")
+    installed = item.get("installed_version") or item.get("installed") or item.get("InstalledVersion")
+    cwe_ids = item.get("cwe_ids") or item.get("cwe") or item.get("CweIDs") or item.get("CWEIDs") or []
+    return {
+        "id": cve,
+        "cve": cve,
+        "severity": _severity_norm(item.get("severity") or item.get("Severity")),
+        "package": component,
+        "pkg": component,
+        "package_id": item.get("package_id") or item.get("pkg_id") or item.get("PkgID"),
+        "installed": installed,
+        "fixed": fixed,
+        "fix_available": bool(item.get("fix_available") or fixed),
+        "status": item.get("status") or item.get("Status"),
+        "severity_source": item.get("severity_source") or item.get("SeveritySource"),
+        "cwe_ids": cwe_ids if isinstance(cwe_ids, list) else [cwe_ids],
+        "cvss_v3_score": best_cvss.get("v3_score"),
+        "cvss_v3_vector": best_cvss.get("v3_vector"),
+        "title": _excerpt(item.get("title") or item.get("Title") or item.get("description") or item.get("Description"), 260),
+        "description": _excerpt(item.get("description") or item.get("Description") or item.get("title") or item.get("Title"), 420),
+        "primary_url": item.get("primary_url") or item.get("PrimaryURL"),
+        "references": item.get("references") or item.get("References") or [],
+        "published_at": item.get("published_at") or item.get("published") or item.get("PublishedDate"),
+        "last_modified_at": item.get("last_modified_at") or item.get("modified") or item.get("LastModifiedDate"),
+        "target": item.get("target") or item.get("Target"),
+        "scanner_type": item.get("scanner_type") or item.get("type") or item.get("Type"),
+        "class": item.get("class") or item.get("Class"),
+        "source": item.get("source") or "TRIVY",
+        "artifact_source": item.get("artifact_source") or "vision360_fingerprint.technical_details.sca",
+        "evidence_confidence": "observed_technical_finding",
+    }
+
+
+def _dedupe_sca_findings(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    seen = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        key = (
+            str(item.get("id") or item.get("cve") or ""),
+            str(item.get("package") or item.get("pkg") or ""),
+            str(item.get("installed") or ""),
+            str(item.get("target") or ""),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out
+
+
+def _sca_severity_sort_key(f: Dict[str, Any]) -> Tuple[int, str, str]:
+    rank = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "UNKNOWN": 0}
+    return (
+        rank.get(_severity_norm(f.get("severity")), 0),
+        str(f.get("package") or f.get("pkg") or ""),
+        str(f.get("id") or f.get("cve") or ""),
+    )
+
+
+def _merge_vision360_sca_into_trivy(trivy: Dict[str, Any], vision: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge additive SCA technical details from VISION360 fingerprint into Trivy block.
+
+    This preserves existing Trivy summaries while promoting richer fingerprint
+    fields for the Audit Summary. It does not change workbook results.
+    """
+    trivy = dict(trivy or {})
+    vision = vision if isinstance(vision, dict) else {}
+    sca = vision.get("sca_technical_details")
+    if not isinstance(sca, dict):
+        details = vision.get("technical_details")
+        if isinstance(details, dict):
+            sca = details.get("sca")
+    if not isinstance(sca, dict):
+        return trivy
+
+    raw_vulns = sca.get("vulnerabilities") if isinstance(sca.get("vulnerabilities"), list) else []
+    detailed = [_normalize_sca_technical_vulnerability(x) for x in raw_vulns if isinstance(x, dict)]
+    existing = []
+    for item in trivy.get("detailed_findings") or trivy.get("vulnerabilities") or trivy.get("top_findings") or []:
+        if isinstance(item, dict):
+            existing.append(_normalize_sca_technical_vulnerability(item))
+    detailed = _dedupe_sca_findings(detailed + existing)
+    detailed.sort(key=_sca_severity_sort_key, reverse=True)
+
+    if detailed:
+        trivy["detailed_findings"] = detailed
+        trivy["vulnerabilities"] = detailed
+        trivy["top_findings"] = detailed[:25]
+        by_component: Dict[str, int] = {}
+        components_by_severity: Dict[str, List[str]] = {}
+        for item in detailed:
+            component = str(item.get("package") or item.get("pkg") or "unknown component")
+            severity = _severity_norm(item.get("severity"))
+            by_component[component] = by_component.get(component, 0) + 1
+            components_by_severity.setdefault(severity, [])
+            if component not in components_by_severity[severity]:
+                components_by_severity[severity].append(component)
+        trivy["affected_packages_top"] = [
+            {"package": pkg, "count": count}
+            for pkg, count in sorted(by_component.items(), key=lambda x: x[1], reverse=True)[:15]
+        ]
+        trivy["components_by_severity"] = {k: sorted(v) for k, v in components_by_severity.items()}
+        trivy["high_severity_components"] = trivy["components_by_severity"].get("HIGH", [])
+
+    summary = sca.get("summary") if isinstance(sca.get("summary"), dict) else {}
+    if summary:
+        trivy.setdefault("summary", {})
+        for key, value in summary.items():
+            trivy["summary"][key] = value
+            trivy[key] = value
+        if "by_severity" in summary:
+            trivy["summary"]["by_severity"] = summary.get("by_severity")
+        if "total_vulnerabilities" in summary:
+            trivy["summary"]["total_vulnerabilities"] = _safe_int(summary.get("total_vulnerabilities"), len(detailed))
+        if "fixable_total" in summary:
+            trivy["summary"]["fixable_total"] = _safe_int(summary.get("fixable_total"), 0)
+        if "unfixed_total" in summary:
+            trivy["summary"]["unfixed_total"] = _safe_int(summary.get("unfixed_total"), 0)
+
+    if isinstance(sca.get("packages"), list):
+        trivy["packages"] = sca.get("packages")[:100]
+    if isinstance(sca.get("licenses"), list):
+        trivy["license_entries"] = sca.get("licenses")[:100]
+
+    trivy["technical_details_source"] = "vision360_fingerprint.technical_details.sca"
+    trivy["evidence_confidence"] = "observed_technical_finding"
+    trivy["available"] = trivy.get("available") or bool(detailed or summary)
+    return trivy
+
 def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
     fingerprint = _safe_read_json(files.get("vision360_fingerprint") or Path(), {})
     output = _safe_read_json(files.get("vision360_output") or Path(), {})
@@ -1328,6 +1497,11 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
     if not isinstance(loaded_files, dict):
         loaded_files = {}
 
+    technical_details = fingerprint.get("technical_details") if isinstance(fingerprint, dict) else {}
+    if not isinstance(technical_details, dict):
+        technical_details = {}
+    sca_technical_details = technical_details.get("sca") if isinstance(technical_details.get("sca"), dict) else {}
+
     top_active_groups = [
         {
             "group": group,
@@ -1342,6 +1516,9 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
         "source_dir": str(vision360_dir),
         "files": {k: str(v) for k, v in files.items() if v},
         "project": (fingerprint.get("project") if isinstance(fingerprint, dict) else {}) or (output.get("project") if isinstance(output, dict) else {}),
+        "technical_details_available": bool(technical_details),
+        "technical_details": technical_details,
+        "sca_technical_details": sca_technical_details,
         "flags_count": len(flags),
         "state_counts": state_counts,
         "group_counts": group_counts,
@@ -1434,6 +1611,15 @@ def _trivy_findings_from_raw(trivy: Dict[str, Any]) -> Tuple[List[Dict[str, Any]
                     "references": vuln.get("References") or [],
                     "primary_url": vuln.get("PrimaryURL"),
                     "cwe": vuln.get("CweIDs") or vuln.get("CWEIDs") or [],
+                    "severity_source": vuln.get("SeveritySource"),
+                    "status": vuln.get("Status"),
+                    "published": vuln.get("PublishedDate"),
+                    "modified": vuln.get("LastModifiedDate"),
+                    "best_cvss": _best_cvss_from_any(vuln.get("CVSS") or {}),
+                    "data_source": vuln.get("DataSource") or {},
+                    "artifact_source": "trivy.json:Results[].Vulnerabilities[]",
+                    "source": "TRIVY",
+                    "evidence_confidence": "observed_technical_finding",
                 })
 
     return findings, packages, licenses, targets
@@ -1513,15 +1699,32 @@ def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[
 
     top_findings = []
     for finding in sorted(findings, key=sort_key, reverse=True)[:25]:
+        best_cvss = finding.get("best_cvss") if isinstance(finding.get("best_cvss"), dict) else {}
         top_findings.append({
             "id": finding.get("id"),
+            "cve": finding.get("id"),
             "severity": _severity_norm(finding.get("severity")),
             "package": finding.get("pkg"),
+            "pkg": finding.get("pkg"),
+            "package_id": finding.get("pkg_id"),
             "installed": finding.get("installed"),
             "fixed": finding.get("fixed"),
             "fix_available": bool(finding.get("fix_available") or finding.get("fixed")),
-            "title": _excerpt(finding.get("title") or finding.get("description"), 220),
+            "status": finding.get("status"),
+            "severity_source": finding.get("severity_source"),
+            "cwe_ids": finding.get("cwe") or [],
+            "cvss_v3_score": best_cvss.get("v3_score"),
+            "cvss_v3_vector": best_cvss.get("v3_vector"),
+            "title": _excerpt(finding.get("title") or finding.get("description"), 260),
+            "description": _excerpt(finding.get("description") or finding.get("title"), 420),
+            "primary_url": finding.get("primary_url"),
+            "references": finding.get("references") or [],
+            "published_at": finding.get("published"),
+            "last_modified_at": finding.get("modified"),
             "target": finding.get("target"),
+            "source": finding.get("source") or "TRIVY",
+            "artifact_source": finding.get("artifact_source"),
+            "evidence_confidence": finding.get("evidence_confidence") or "observed_technical_finding",
         })
 
     license_names = []
@@ -1555,6 +1758,8 @@ def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[
             for pkg, count in sorted(affected_packages.items(), key=lambda x: x[1], reverse=True)[:15]
         ],
         "top_findings": top_findings,
+        "detailed_findings": top_findings,
+        "vulnerabilities": top_findings,
         "licenses": {
             "total": license_entries,
             "unique_names": _unique_keep_order(license_names, limit=50),
@@ -2410,6 +2615,16 @@ def build_technical_evidence() -> Dict[str, Any]:
         "mobsf_dynamic": _summarize_mobsf_dynamic(dyn_dirs[0] if dyn_dirs else Path(), dyn_files),
         "sast_app_code": _summarize_sast(sast_dirs[0] if sast_dirs else Path(), sast_files),
     }
+    technical["trivy_sca"] = _merge_vision360_sca_into_trivy(technical.get("trivy_sca", {}), technical.get("vision360", {}))
+    technical["report_quality"] = {
+        "sca_enriched_from_fingerprint": bool(technical.get("trivy_sca", {}).get("technical_details_source")),
+        "evidence_classes": [
+            "observed_technical_finding",
+            "evidence_gap",
+            "mixed_or_partial",
+            "manual_auditor_determination",
+        ],
+    }
 
     sast_notifications = technical["sast_app_code"].get("coverage_notifications_sample", [])
     notif_by_tool: Dict[str, int] = {}
@@ -2627,6 +2842,7 @@ def main() -> None:
         "positive_controls_candidates": positive_controls[:12],  # cap
         "weakness_patterns": pattern_summary,
         "technical_evidence": technical_evidence,
+        "report_quality": technical_evidence.get("report_quality", {}),
         "ai_reporting_context": ai_reporting_context,
         "treatment_plan": treatment_plan,
         "notes": {
