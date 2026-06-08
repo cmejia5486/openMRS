@@ -324,7 +324,45 @@ jobs:
           PYTHONNOUSERSITE: "1"
         run: |
           $ErrorActionPreference = "Stop"
-          & $env:PYTHON_EXE scripts/resolve_ai_config.py --task "$env:AI_TASK" --github-env "$env:GITHUB_ENV"
+          $env:PYTHONPATH = Join-Path $PWD "scripts"
+
+          $py = @'
+          import json
+          import os
+          from pathlib import Path
+          from lib.ai_config import resolve_config, resolved_api_base, resolved_api_key, resolved_api_version, resolved_litellm_model
+
+          task = os.environ.get("AI_TASK", "").strip()
+          cfg = resolve_config(task_name=task or None)
+          exports = {
+              "AI_TASK": task,
+              "AI_PROFILE": str(cfg.get("resolved_profile") or ""),
+              "AI_PROVIDER": str(cfg.get("provider") or "openai"),
+              "AI_MODEL": str(cfg.get("model") or ""),
+              "AI_LITELLM_MODEL": resolved_litellm_model(cfg),
+              "AI_API_BASE": resolved_api_base(cfg),
+              "AI_API_VERSION": resolved_api_version(cfg),
+              "AI_API_KEY_ENV_VAR": str(cfg.get("api_key_env_var") or "OPENAI_API_KEY"),
+              "AI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "AI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "AI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "AI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "OPENAI_MODEL": str(cfg.get("model") or ""),
+              "OPENAI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "OPENAI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "OPENAI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "OPENAI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "AI_KEY_PRESENT": "1" if resolved_api_key(cfg) else "0",
+          }
+
+          env_path = Path(os.environ["GITHUB_ENV"])
+          with env_path.open("a", encoding="utf-8") as fh:
+              for key, value in exports.items():
+                  fh.write(f"{key}={value}\n")
+          print(json.dumps(exports, indent=2, ensure_ascii=False))
+          '@
+
+          $py | & $env:PYTHON_EXE -
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
@@ -336,7 +374,42 @@ jobs:
           PYTHONNOUSERSITE: "1"
         run: |
           set -euo pipefail
-          "$PYTHON_EXE" scripts/resolve_ai_config.py --task "$AI_TASK" --github-env "$GITHUB_ENV"
+
+          PYTHONPATH="$PWD/scripts" "$PYTHON_EXE" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from lib.ai_config import resolve_config, resolved_api_base, resolved_api_key, resolved_api_version, resolved_litellm_model
+
+          task = os.environ.get("AI_TASK", "").strip()
+          cfg = resolve_config(task_name=task or None)
+          exports = {
+              "AI_TASK": task,
+              "AI_PROFILE": str(cfg.get("resolved_profile") or ""),
+              "AI_PROVIDER": str(cfg.get("provider") or "openai"),
+              "AI_MODEL": str(cfg.get("model") or ""),
+              "AI_LITELLM_MODEL": resolved_litellm_model(cfg),
+              "AI_API_BASE": resolved_api_base(cfg),
+              "AI_API_VERSION": resolved_api_version(cfg),
+              "AI_API_KEY_ENV_VAR": str(cfg.get("api_key_env_var") or "OPENAI_API_KEY"),
+              "AI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "AI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "AI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "AI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "OPENAI_MODEL": str(cfg.get("model") or ""),
+              "OPENAI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "OPENAI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "OPENAI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "OPENAI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "AI_KEY_PRESENT": "1" if resolved_api_key(cfg) else "0",
+          }
+
+          env_path = Path(os.environ["GITHUB_ENV"])
+          with env_path.open("a", encoding="utf-8") as fh:
+              for key, value in exports.items():
+                  fh.write(f"{key}={value}\n")
+          print(json.dumps(exports, indent=2, ensure_ascii=False))
+          PY
 
       - name: Verify AI runtime route on Windows
         if: runner.os == 'Windows'
@@ -362,6 +435,7 @@ jobs:
             throw "OPENAI_API_KEY is empty."
           }
 
+          $env:PYTHONPATH = Join-Path $PWD "scripts"
           $py = @'
           from lib.ai_runtime import AIRuntime, OpenAI, completion
           rt = AIRuntime(task="ai_requirements_excel")
@@ -375,7 +449,6 @@ jobs:
           if rt.provider == "openai_compatible" and not rt._use_direct_openai():
               raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
           '@
-          $env:PYTHONPATH = Join-Path $PWD "scripts"
           $py | & $env:PYTHON_EXE -
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
