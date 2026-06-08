@@ -247,88 +247,6 @@ def _norm_status(x: Any) -> str:
     return "Not applicable"
 
 
-def _env_int(name: str) -> Optional[int]:
-    raw = os.getenv(name, "").strip()
-    if not raw:
-        return None
-    try:
-        return int(raw)
-    except Exception:
-        raise SystemExit(f"[ERROR] {name} must be an integer, got: {raw}")
-
-
-def _parse_expected_result_counts() -> Dict[str, int]:
-    """Parse optional workbook-result count lock from environment variables.
-
-    This guard does not recalculate or rewrite Excel results.  It only fails the
-    report generation if the downloaded workbook no longer matches the expected
-    audit baseline.
-    """
-    expected: Dict[str, int] = {}
-    mapping = {
-        "YES": "AUDIT_EXPECT_YES",
-        "NO": "AUDIT_EXPECT_NO",
-        "N/A": "AUDIT_EXPECT_NA",
-        "TOTAL": "AUDIT_EXPECT_TOTAL",
-    }
-    for key, env_name in mapping.items():
-        value = _env_int(env_name)
-        if value is not None:
-            expected[key] = value
-
-    compact = os.getenv("AUDIT_EXPECT_RESULT_COUNTS", "").strip()
-    if compact:
-        parts = re.split(r"[;,]\s*", compact)
-        aliases = {"YES": "YES", "Y": "YES", "NO": "NO", "N": "NO", "NA": "N/A", "N/A": "N/A", "TOTAL": "TOTAL"}
-        for part in parts:
-            if not part.strip():
-                continue
-            if "=" not in part:
-                raise SystemExit(f"[ERROR] Invalid AUDIT_EXPECT_RESULT_COUNTS segment: {part}")
-            left, right = part.split("=", 1)
-            key = aliases.get(left.strip().upper())
-            if key is None:
-                raise SystemExit(f"[ERROR] Unsupported AUDIT_EXPECT_RESULT_COUNTS key: {left}")
-            try:
-                expected[key] = int(right.strip())
-            except Exception:
-                raise SystemExit(f"[ERROR] Invalid expected count for {key}: {right}")
-    return expected
-
-
-def _raw_excel_result_counts(values: Any) -> Dict[str, int]:
-    counts = {"YES": 0, "NO": 0, "N/A": 0, "OTHER_OR_BLANK": 0, "TOTAL": 0}
-    for value in values:
-        text = str(value or "").strip().lower()
-        counts["TOTAL"] += 1
-        if text in {"yes", "y"}:
-            counts["YES"] += 1
-        elif text in {"no", "n"}:
-            counts["NO"] += 1
-        elif text in {"n/a", "na", "not applicable"}:
-            counts["N/A"] += 1
-        else:
-            counts["OTHER_OR_BLANK"] += 1
-    return counts
-
-
-def _validate_expected_result_counts(expected: Dict[str, int], actual: Dict[str, int], excel_path: str) -> None:
-    if not expected:
-        return
-    mismatches = []
-    for key in ("YES", "NO", "N/A", "TOTAL"):
-        if key in expected and int(expected[key]) != int(actual.get(key, 0)):
-            mismatches.append(f"{key}: expected {expected[key]}, actual {actual.get(key, 0)}")
-    if mismatches:
-        raise SystemExit(
-            "[ERROR] Workbook Result counts changed before Audit Summary generation. "
-            "The audit workbook is the authoritative source and the report will not continue. "
-            f"Excel: {excel_path}. "
-            "Mismatches: " + "; ".join(mismatches) + ". "
-            "Restore the correct security-audit-excel artifact or fix the upstream Excel-generation step."
-        )
-
-
 def _cat_from_puid(puid: str) -> Dict[str, str]:
     m = re.search(r"SECM-CAT-([A-Z]{3})-", puid or "")
     code = m.group(1) if m else "UNK"
@@ -819,7 +737,6 @@ def _enrich_weakness_patterns_for_ai(patterns: List[Dict[str, Any]], non_df: Any
 def _build_ai_reporting_context(metrics: Dict[str, Any], patterns: List[Dict[str, Any]], technical: Dict[str, Any]) -> Dict[str, Any]:
     sast = technical.get("sast_app_code") if isinstance(technical.get("sast_app_code"), dict) else {}
     mobsf_dynamic = technical.get("mobsf_dynamic") if isinstance(technical.get("mobsf_dynamic"), dict) else {}
-    mobsf_static = technical.get("mobsf_static") if isinstance(technical.get("mobsf_static"), dict) else {}
     vision = technical.get("vision360") if isinstance(technical.get("vision360"), dict) else {}
 
     return {
@@ -849,19 +766,6 @@ def _build_ai_reporting_context(metrics: Dict[str, Any], patterns: List[Dict[str
                 "verdict_override_allowed": False,
             },
             "instruction": "Use retained_security_findings as the authoritative SAST security count. retained_app_code_signals may include hardening/quality findings. Raw SARIF results are traceability only. Coverage limitations affect confidence and must not be treated as application vulnerabilities.",
-        },
-        "mobsf_static_summary": {
-            "app_info": mobsf_static.get("app_info", {}),
-            "apk_traceability": mobsf_static.get("apk_traceability", {}),
-            "normalized_indicators": mobsf_static.get("normalized_indicators", []),
-            "manifest_findings_count": mobsf_static.get("manifest_findings_count"),
-            "certificate_findings_count": mobsf_static.get("certificate_findings_count"),
-            "flags": mobsf_static.get("flags", {}),
-            "evidence_semantics": {
-                "observed_indicators": "static_apk_evidence",
-                "missing_indicators": "parser_limitation",
-                "verdict_override_allowed": False,
-            },
         },
         "mobsf_dynamic_summary": {
             "observed_artifacts": {
@@ -1325,10 +1229,7 @@ def _safe_read_json(path: Path, default: Any = None) -> Any:
     try:
         if not path or not path.is_file():
             return default
-        # MobSF JSON artifacts produced on Windows runners may include a UTF-8
-        # BOM.  Using utf-8-sig keeps normal UTF-8 files working and prevents
-        # the static report from being misclassified as missing.
-        with path.open("r", encoding="utf-8-sig", errors="replace") as f:
+        with path.open("r", encoding="utf-8", errors="replace") as f:
             return json.load(f)
     except Exception:
         return default
@@ -1516,11 +1417,8 @@ def _extract_storage_artifact(text: str) -> str:
     text = _clean_text(text)
     if not text:
         return ""
-    # Preserve SQLite sidecar suffixes such as .db-wal and .db-shm.
-    # The previous expression truncated them to the base .db file, causing
-    # sidecar evidence to be lost during de-duplication.
     path_rx = re.compile(
-        r"(/data/data/[^\s\"'<>;,]+|[^\s\"'<>;,]+\.(?:db|sqlite|sqlite3)(?:[-.](?:wal|shm))?|[^\s\"'<>;,]+\.(?:xml|properties))",
+        r"(/data/data/[^\s\"'<>;,]+|[^\s\"'<>;,]+\.(?:db|sqlite|sqlite3|xml|properties))",
         re.IGNORECASE,
     )
     match = path_rx.search(text)
@@ -2188,11 +2086,9 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
     backup_value = _first_deep_value(mobsf, [r"allow_?backup", r"android_allow_backup", r"backup_enabled"])
     min_sdk = _first_deep_value(mobsf, [r"^min_?sdk$", r"minsdk", r"minSdk"])
     target_sdk = _first_deep_value(mobsf, [r"^target_?sdk$", r"targetSdk"])
-    exported_value = _first_deep_value(mobsf, [r"exported_components?_count", r"exported_count", r"exported_components?", r"exported_activities", r"exported_services", r"exported_receivers", r"exported_providers"])
+    exported_value = _first_deep_value(mobsf, [r"exported_components?_count", r"exported_count", r"exported_components?"])
 
     debug_cert_detected = ("debug certificate" in flat or "cn=android debug" in flat)
-    debuggable_detected = ("android:debuggable=true" in flat or "debug enabled for app" in flat or "app_is_debuggable" in flat)
-    backup_detected = ("android:allowbackup=true" in flat or "app_allowbackup" in flat or "application data can be backed up" in flat)
     v1_or_janus_detected = ("janus" in flat or "v1 signature" in flat or "v1 signature scheme" in flat)
     sha1_detected = ("sha1withrsa" in flat or " sha1 " in flat or "hash algorithm: sha1" in flat)
     cleartext_detected = ("cleartext" in flat and ("true" in flat or "enabled" in flat or "traffic" in flat))
@@ -2202,11 +2098,7 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
     elif isinstance(exported_value, dict):
         exported_count = len(exported_value)
     elif exported_value not in (None, ""):
-        exported_text = str(exported_value)
-        # MobSF may serialize exported_activities as a Python-style list string.
-        # Count class names rather than coercing to zero.
-        class_like = re.findall(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+", exported_text)
-        exported_count = len(_unique_keep_order(class_like, limit=200)) if class_like else _safe_int(exported_value, 0)
+        exported_count = _safe_int(exported_value, 0)
     else:
         exported_count = "Not available in parsed evidence"
 
@@ -2214,11 +2106,11 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
     vulnerable_min_sdk = bool(min_sdk_value and min_sdk_value < 23)
 
     indicators = {
-        "debuggable": _indicator_value(debug_value, debuggable_detected if debuggable_detected else None),
+        "debuggable": _indicator_value(debug_value, None),
         "debug_certificate": _indicator_value(None, debug_cert_detected if debug_cert_detected else None),
         "v1_signature": _indicator_value(None, v1_or_janus_detected if v1_or_janus_detected else None),
         "sha1": _indicator_value(None, sha1_detected if sha1_detected else None),
-        "allow_backup": _indicator_value(backup_value, backup_detected if backup_detected else None),
+        "allow_backup": _indicator_value(backup_value, None),
         "min_sdk": min_sdk_value if min_sdk_value is not None else "Not available in parsed evidence",
         "target_sdk": _safe_int(target_sdk, 0) if target_sdk not in (None, "") else "Not available in parsed evidence",
         "dangerous_permissions_count": len(dangerous_permissions),
@@ -2252,38 +2144,11 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         {"indicator": "Trackers detected", "value": indicators["trackers_detected"]},
     ]
 
-    audit_pipeline_metadata = mobsf.get("audit_pipeline_metadata") if isinstance(mobsf, dict) else {}
-    if not isinstance(audit_pipeline_metadata, dict):
-        audit_pipeline_metadata = {}
-    apk_sha256 = mobsf.get("sha256") if isinstance(mobsf, dict) else None
-    if apk_sha256 and "apk_sha256" not in app_info:
-        app_info["apk_sha256"] = apk_sha256
-    if audit_pipeline_metadata and "audit_pipeline_metadata_present" not in app_info:
-        app_info["audit_pipeline_metadata_present"] = True
-
-    version_name_text = str(app_info.get("version_name") or "").lower()
-    file_name_text = str(app_info.get("file_name") or audit_pipeline_metadata.get("apk_name") or "").lower()
-    inferred_build_type = "debug" if ("debug" in version_name_text or "debug" in file_name_text or debug_cert_detected or debuggable_detected) else "release_or_unknown"
-    app_info["build_type_inferred"] = inferred_build_type
-
-    apk_traceability = {
-        "mobsf_app_version": mobsf.get("version") if isinstance(mobsf, dict) else None,
-        "app_version_name": app_info.get("version_name"),
-        "package_name": app_info.get("package_name"),
-        "file_name": app_info.get("file_name") or audit_pipeline_metadata.get("apk_name"),
-        "apk_sha256": apk_sha256,
-        "build_type_inferred": inferred_build_type,
-        "audit_pipeline_metadata": audit_pipeline_metadata,
-        "scope_note": "MobSF static evidence is tied to the scanned APK artifact and must be interpreted within that artifact scope; it does not override workbook verdicts.",
-    }
-
     return {
         "available": bool(mobsf),
         "source_dir": str(mobsf_dir),
         "files": {k: str(v) for k, v in files.items() if v},
         "app_info": app_info,
-        "audit_pipeline_metadata": audit_pipeline_metadata,
-        "apk_traceability": apk_traceability,
         "flags": flags,
         **indicators,
         "normalized_indicators": normalized_indicators,
@@ -2331,14 +2196,6 @@ def _normalize_android_storage_artifact(item: Any) -> str:
 
     collapsed = re.sub(r"[^A-Za-z0-9_./-]+", "", s)
     collapsed = collapsed.replace("//", "/")
-
-    # Windows MobSF exports sometimes prefix app-private artifacts with an
-    # absolute host path before the collapsed datadata... segment.  Trim to the
-    # Android artifact segment so the same normalization logic works for all
-    # applications and runners.
-    datadata_idx = collapsed.lower().find("datadata")
-    if datadata_idx > 0:
-        collapsed = collapsed[datadata_idx:]
 
     # Forms observed in MobSF dynamic text:
     # datadataorg.openmrs.mobileshared_prefsOpenMRSPrefFile.xml
@@ -2427,9 +2284,7 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
 
     raw_artifacts = _unique_keep_order(list(artifacts) + explicit_values, limit=300)
     normalized = _unique_keep_order([_normalize_android_storage_artifact(x) for x in raw_artifacts], limit=160)
-    # Remove generic tokens that can appear as MobSF type labels and are not
-    # concrete runtime artifacts.
-    normalized = [x for x in normalized if x and x.strip().lower() not in {"db", "sqlite", "sqlite3", "xml", "file", "files", "cache", "others"}]
+    normalized = [x for x in normalized if x]
 
     def artifact_name(item: str) -> str:
         item = _normalize_android_storage_artifact(item)
@@ -2439,23 +2294,21 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
 
     names = _unique_keep_order([artifact_name(x) for x in normalized], limit=120)
 
-    sidecar_rx = r"(?:\.db|\.sqlite|\.sqlite3)?[-.](?:wal|shm)\b|\b(?:wal|shm)\b"
     shared_prefs = [
         x for x in normalized
         if re.search(r"/shared_prefs/|shared[_-]?prefs|sharedpreferences|pref.*\.xml|preferences.*\.xml", x, re.IGNORECASE)
     ]
-    wal_shm_files = [
-        x for x in normalized
-        if re.search(sidecar_rx, x, re.IGNORECASE)
-    ]
     sqlite = [
         x for x in normalized
-        if re.search(r"/databases/|/no_backup/|\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)|workdb", x, re.IGNORECASE)
-        and not re.search(sidecar_rx, x, re.IGNORECASE)
+        if re.search(r"/databases/|\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)
     ]
     cache_files = [x for x in normalized if re.search(r"/cache/|cache", x, re.IGNORECASE)]
     backup_files = [x for x in normalized if re.search(r"/no_backup/|no[_-]?backup|workdb", x, re.IGNORECASE)]
     local_files = [x for x in normalized if re.search(r"/files/|/data/data/", x, re.IGNORECASE)]
+    wal_shm_files = [
+        x for x in normalized
+        if re.search(r"(?:\.db|\.sqlite|\.sqlite3)?[-.](?:wal|shm)\b|\b(?:wal|shm)\b", x, re.IGNORECASE)
+    ]
 
     dynamic_module_keys = [
         "tls_tests",
@@ -3182,10 +3035,6 @@ def main() -> None:
     df["Evidence"] = df[col_evid].astype(str).fillna("").str.strip() if col_evid else ""
     df["ExcelResultRaw"] = df[col_result].astype(str).fillna("").str.strip()
 
-    raw_excel_result_counts = _raw_excel_result_counts(df[col_result].tolist())
-    expected_excel_result_counts = _parse_expected_result_counts()
-    _validate_expected_result_counts(expected_excel_result_counts, raw_excel_result_counts, excel_path)
-
     df["Status"] = df[col_result].apply(_norm_status)
     df["ResultSource"] = "Excel workbook"
     df["ResultLocked"] = True
@@ -3335,12 +3184,6 @@ def main() -> None:
             "non_compliant": non_compliant,
             "not_applicable": not_applicable,
             "overall_compliance_pct": overall_compliance_pct,
-        },
-        "excel_result_count_lock": {
-            "raw_result_counts": raw_excel_result_counts,
-            "expected_result_counts": expected_excel_result_counts,
-            "validation_enabled": bool(expected_excel_result_counts),
-            "rule": "If configured, fail fast when the downloaded audit workbook Result counts differ from the locked baseline. This guard never rewrites Excel results."
         },
         "category_metrics": cat_stats,
         "likelihood_rubric": LIKELIHOOD_RUBRIC,

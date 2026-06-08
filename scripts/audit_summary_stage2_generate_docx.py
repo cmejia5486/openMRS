@@ -261,32 +261,17 @@ def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile
 
 def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: str = "Mobile Application") -> None:
     doc.add_paragraph()
-
-    title = doc.add_paragraph("mSEC-AM Audit Summary")
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title.paragraph_format.space_after = Pt(3)
-    if title.runs:
-        _set_run_font(title.runs[0], size_pt=22, bold=True)
-
-    subtitle = doc.add_paragraph(report_title)
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle.paragraph_format.space_after = Pt(10)
-    if subtitle.runs:
-        _set_run_font(subtitle.runs[0], size_pt=13, bold=True)
-
+    t = doc.add_paragraph("mSEC-AM Audit Summary")
+    t.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _set_run_font(t.runs[0], size_pt=22, bold=True)
+    s = doc.add_paragraph(report_title)
+    s.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _set_run_font(s.runs[0], size_pt=13, bold=True)
     doc.add_paragraph()
-
-    for line in (
-        f"Audit Date: {audit_date_str}",
-        f"Auditor: {auditor}",
-        "Classification: Confidential / Internal Use",
-    ):
-        info = doc.add_paragraph()
-        info.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        info.paragraph_format.space_after = Pt(1)
-        run = info.add_run(line)
-        _set_run_font(run, size_pt=REPORT_BODY_PT)
-
+    info = doc.add_paragraph()
+    info.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = info.add_run(f"Audit Date: {audit_date_str}\\nAuditor: {auditor}\\nClassification: Confidential / Internal Use")
+    _set_run_font(r, size_pt=REPORT_BODY_PT)
     doc.add_page_break()
 
 
@@ -782,18 +767,6 @@ def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
             flags=re.IGNORECASE,
         )
         text = re.sub(
-            rf"\balongside\s+{app_signals}\s+general\s+signals?\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
-            f"alongside {hardening} hardening, quality, or maintainability signal(s)",
-            text,
-            flags=re.IGNORECASE,
-        )
-        text = re.sub(
-            rf"\b{app_signals}\s+general\s+signals?\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
-            f"{hardening} hardening, quality, or maintainability signal(s)",
-            text,
-            flags=re.IGNORECASE,
-        )
-        text = re.sub(
             rf"\b{app_signals}\s+hardening(?:,?\s+quality,?\s+or\s+maintainability)?\s+signal\(s\)",
             f"{hardening} hardening, quality, or maintainability signal(s)",
             text,
@@ -1069,49 +1042,6 @@ def _sanitize_closure_criteria(value: Any) -> str:
     return text
 
 
-
-
-def _sanitize_expected_state(pattern_name: Any, value: Any) -> str:
-    """Ensure Main deficiencies Expected text describes the secure target state.
-
-    AI-generated prose occasionally restates the observed deficiency as the
-    expected condition. This guardrail keeps the section methodologically
-    correct without changing workbook verdicts or scanner evidence.
-    """
-    text = _clean_text(value)
-    pattern = _clean_text(pattern_name).lower()
-    insecure_cues = [
-        " contains ", "contains numerous", "lacks", "lack of", "missing",
-        "deficienc", "vulnerab", "gaps", "weak", "insecure", "not implemented",
-        "does not", "fails to", "is absent", "are absent",
-    ]
-    bad = not text or any(cue in text.lower() for cue in insecure_cues)
-    if not bad:
-        return text
-
-    templates = [
-        ("hardcoded credentials", "The application should not contain hardcoded credentials, embedded secrets, API keys, tokens, passwords, or environment-specific sensitive values in source code, resources, binaries, or build artifacts."),
-        ("authorization", "The application should enforce documented authorization, RBAC, least-privilege access, and server-side access-control decisions for all sensitive resources and workflows."),
-        ("rbac", "The application should enforce documented authorization, RBAC, least-privilege access, and server-side access-control decisions for all sensitive resources and workflows."),
-        ("local storage", "The application should protect sensitive data at rest using appropriate platform storage controls, encryption, key management, data minimization, and verified cleanup across logout, user-switch, and uninstall scenarios."),
-        ("key management", "The application should protect sensitive data at rest using appropriate platform storage controls, encryption, key management, data minimization, and verified cleanup across logout, user-switch, and uninstall scenarios."),
-        ("authentication lifecycle", "The application should enforce a robust authentication lifecycle, including session timeout, logout, session invalidation, account lifecycle controls, and resistance to brute-force or replay scenarios."),
-        ("brute-force", "The application should enforce a robust authentication lifecycle, including session timeout, logout, session invalidation, account lifecycle controls, and resistance to brute-force or replay scenarios."),
-        ("transport security", "The application should enforce secure transport, disable cleartext where applicable, use production signing, and document certificate-validation or pinning decisions according to the threat model."),
-        ("certificate validation", "The application should enforce secure transport, disable cleartext where applicable, use production signing, and document certificate-validation or pinning decisions according to the threat model."),
-        ("supply chain", "The application should maintain a governed dependency inventory, remediate vulnerable components within defined timelines, and preserve traceable evidence of dependency review and update decisions."),
-        ("input validation", "The application should validate, constrain, encode, and sanitize inputs and outputs across relevant client and backend trust boundaries to prevent injection and data-handling weaknesses."),
-        ("audit logging", "The application and supporting services should produce protected, retained, reviewable, and actionable audit evidence for security-relevant events according to the assessed scope."),
-        ("tampering", "The application should implement release-appropriate binary hardening, non-debuggable production configuration, integrity controls, and reverse-engineering resistance based on the assessed risk profile."),
-        ("reverse engineering", "The application should implement release-appropriate binary hardening, non-debuggable production configuration, integrity controls, and reverse-engineering resistance based on the assessed risk profile."),
-        ("privacy", "The application and governing process should provide privacy, consent, data-minimization, notification, and user-rights controls aligned with the assessed mHealth data-processing scope."),
-        ("security misconfiguration", "The application should use secure-by-default Android and backend configuration, with explicit hardening for exported components, backup behavior, permissions, cookies, errors, and operational safeguards."),
-    ]
-    for key, replacement in templates:
-        if key in pattern:
-            return replacement
-    return "The application should implement the workbook-defined control objective with evidence sufficient to support the target audit verdict for the assessed scope."
-
 def _sanitize_positive_control_final(value: Any) -> str:
     """Make positive-control statements precise and conservative.
 
@@ -1124,50 +1054,6 @@ def _sanitize_positive_control_final(value: Any) -> str:
     text = _sanitize_positive_statement(value)
 
     replacements = [
-        (
-            r"TLS encryption for data exchange is ensured as clear text traffic was not allowed and Android SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
-        ),
-        (
-            r"TLS encryption for data exchange is ensured as clear text traffic was not allowed and Android SSL pinning was not detected",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
-        ),
-        (
-            r"The application does not permit cleartext traffic, although SSL pinning evidence was absent\.",
-            "Available manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
-        ),
-        (
-            r"The application does not allow cleartext traffic in the primary AndroidManifest\.xml, although SSL pinning evidence was absent\.",
-            "Available manifest evidence supports that cleartext traffic is not allowed in the primary AndroidManifest.xml; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
-        ),
-        (
-            r"No malware detections were found for this requirement\.",
-            "No malware detections were reported for this workbook-compliant requirement; this statement remains limited to the available scanner coverage.",
-        ),
-        (
-            r"Session cookies are assigned from the server, indicating support for secure transmission of session IDs\.",
-            "Server-side session cookie assignment was recorded in the workbook; Secure and HTTPOnly cookie attributes were not directly verified by the available evidence.",
-        ),
-        (
-            r"Session cookies are assigned from the server, indicating support for secure transmission of session IDs",
-            "Server-side session cookie assignment was recorded in the workbook; Secure and HTTPOnly cookie attributes were not directly verified by the available evidence",
-        ),
-        (
-            r"TLS encryption for data exchange is ensured, evidenced by the absence of clear text traffic allowance and the lack of Android SSL pinning detection\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
-        ),
-        (
-            r"TLS encryption for data exchange is ensured, evidenced by the absence of clear text traffic allowance and the lack of Android SSL pinning detection",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
-        ),
-        (
-            r"manifest evidence confirms no clear text traffic was allowed despite absent SSL pinning detection",
-            "available manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
-        ),
-        (
-            r"supported by the absence of clear text traffic allowance in the primary AndroidManifest\.xml despite absent SSL pinning detection",
-            "supported by manifest evidence that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
-        ),
         (
             r"The application passed malware detection checks based on available evidence, indicating it is free of adware and known malware\.",
             "Available malware-detection evidence did not report adware or known malware for the assessed artifact; this statement remains limited to the scanner coverage available to the report.",
@@ -1190,27 +1076,27 @@ def _sanitize_positive_control_final(value: Any) -> str:
         ),
         (
             r"Data exchange enforces TLS encryption, supported by the manifest disallowing clear text traffic; however, Android SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; Android SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+            "Manifest evidence supports that cleartext traffic is not allowed; Android SSL pinning was not detected and should be evaluated separately according to the threat model.",
         ),
         (
             r"Data exchange confidentiality and integrity are supported because the application does not allow clear text traffic, although SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
         ),
         (
             r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
         ),
         (
             r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
         ),
         (
             r"Data exchange is not permitted over clear text traffic, and SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
         ),
         (
             r"Data exchange is not permitted over clear text traffic, and SSL pinning was not detected",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
         ),
         (
             r"The application prevents acceptance of all SSL/TLS certificates, supported by the absence of clear text traffic allowance in the manifest\.",
@@ -1435,8 +1321,6 @@ def _quality_gate(doc: Document) -> None:
         hits.append("PUID / item")
     if doc.tables and "Table 1." not in full_text:
         hits.append("missing table captions")
-    if "\\n" in combined:
-        hits.append("literal \\n escape sequence")
     if "java/android/backup-enabled" in lowered and "backup enabled\nnot available in parsed evidence" in lowered:
         hits.append("backup fallback not applied")
     if hits:
@@ -1709,17 +1593,7 @@ def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
                 f"Raw SARIF counts retained for traceability: {raw_text}.{limitation_note}"
             )
         elif key == "mobsf_static" and available:
-            app_info = _as_dict(block.get("app_info"))
-            trace = _as_dict(block.get("apk_traceability"))
-            build_type = _clean_text(app_info.get("build_type_inferred") or trace.get("build_type_inferred"))
-            version_name = _clean_text(app_info.get("version_name") or trace.get("app_version_name"))
-            extra = []
-            if version_name:
-                extra.append(f"APK version: {version_name}")
-            if build_type:
-                extra.append(f"inferred build type: {build_type}")
-            suffix = " " + "; ".join(extra) + "." if extra else ""
-            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present." + suffix
+            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present."
         elif key == "mobsf_dynamic" and available:
             observed = _as_dict(block.get("runtime_observed_evidence")) or _as_dict(_as_dict(block.get("observed_artifacts")))
             inactive = _as_dict(block.get("inactive_or_unavailable_modules"))
@@ -1753,8 +1627,7 @@ def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
             ("exported components", ["exported_components_count", "exported_component_count"]),
         ]:
             value = _deep_find_first(mobsf, keys)
-            value_text = _clean_text(value).lower()
-            if value is True or _safe_int(value) > 0 or value_text in {"detected", "true", "yes"}:
+            if value is True or _safe_int(value) > 0:
                 indicators.append(label)
         if indicators:
             takeaways.append("MobSF static evidence reported Android hardening indicators requiring review, including " + ", ".join(indicators[:4]) + ".")
@@ -1906,24 +1779,10 @@ def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
         doc.add_paragraph("MobSF static evidence was not available in the analysis pack. Static APK, manifest, signing, certificate, permission, and tracker checks should therefore be treated as not assessed by this report run.")
         return
     doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Missing values mean that the parser did not receive or normalize that indicator; they must not be interpreted as absence of risk.")
-    trace = _as_dict(mobsf.get("apk_traceability"))
-    app_info = _as_dict(mobsf.get("app_info"))
-    if trace or app_info:
-        trace_rows = [
-            ["APK file", _clean_text(trace.get("file_name") or app_info.get("file_name")) or "Not available"],
-            ["Package", _clean_text(trace.get("package_name") or app_info.get("package_name")) or "Not available"],
-            ["Version name", _clean_text(trace.get("app_version_name") or app_info.get("version_name")) or "Not available"],
-            ["Inferred build type", _clean_text(trace.get("build_type_inferred") or app_info.get("build_type_inferred")) or "Not available"],
-            ["APK SHA-256", _clean_text(trace.get("apk_sha256") or app_info.get("apk_sha256")) or "Not available"],
-        ]
-        _add_table(doc, ["APK traceability field", "Value"], trace_rows, max_rows=10)
-        scope_note = _clean_text(trace.get("scope_note"))
-        if scope_note:
-            _add_note(doc, scope_note)
     _add_table(doc, ["Indicator", "Parsed value"], _mobsf_signal_rows(mobsf, technical), max_rows=20)
 
     finding_lists = []
-    for key in ["manifest_findings_sample", "certificate_findings_sample", "manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
+    for key in ["manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
         items = _deep_list(mobsf, [key])
         if items:
             finding_lists.extend(items)
@@ -2498,14 +2357,9 @@ def _classify_positive_control_statement(statement: str, evidence: str = "", fla
     if any(token in text for token in [
         " but ", "however", "residual", "not detected", "not observed", "not available",
         "risky permissions are present", "dangerous permissions", "partially", "fallback verdict",
-        "ssl pinning was not detected", "ssl pinning evidence was absent", "absent ssl pinning",
-        "residual control gap", "clear text traffic and ssl pinning",
-        "secure and httponly cookie attributes were not directly verified",
-        "no malware detections were reported", "available scanner coverage",
-        "cookie attributes should be verified",
-        "should be evaluated separately according to the threat model"
+        "ssl pinning was not detected", "clear text traffic and ssl pinning"
     ]):
-        if "risky permissions" in text or "ssl pinning was not detected" in text or "ssl pinning evidence was absent" in text or "residual control gap" in text or "not detected" in text:
+        if "risky permissions" in text or "ssl pinning was not detected" in text or "not detected" in text:
             return "Mixed or partial controls"
         return "Qualified positives with residual risk"
     if any(token in text for token in ["scanner coverage", "did not report", "manual logout", "auditor review"]):
@@ -3505,14 +3359,11 @@ def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) 
     max_rows = _max_correlation_rows()
     rows: List[List[Any]] = []
     for item in items[:max_rows]:
-        requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
+        requirement = f"{item.get('puid')}\\n{item.get('weakness_pattern')}"
         flags = ", ".join(_as_list(item.get("flags_sample"))[:8])
-        scanner = f"{item.get('technical_source')}\n{item.get('technical_finding_id')}"
-        fit = _clean_text(item.get("evidence_fit")) or "Not classified"
-        strength = _clean_text(item.get("correlation_strength")) or "Not classified"
-        fit_strength = f"{fit} / {strength}"
-        evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 360)}"
-        rows.append([requirement, flags, scanner, fit_strength, evidence])
+        scanner = f"{item.get('technical_source')}\\n{item.get('technical_finding_id')}"
+        evidence = f"Treatment item: {item.get('technical_item_id')}\\n{_short(item.get('evidence_summary'), 360)}"
+        rows.append([requirement, flags, scanner, evidence])
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
     _add_table(
@@ -3722,7 +3573,7 @@ def main() -> None:
     doc.add_paragraph(f"Overall, {int(metrics['total_assessed'])} requirements were assessed. {applicable} were applicable controls and {not_applicable} were recorded as not applicable. Of the applicable controls, {compliant} were compliant and {non_compliant} were non-compliant, resulting in an overall compliance rate of {overall_pct:.2f}% (applicable controls only).")
     ai_audit_summary = _clean_text(prose.get("audit_summary_paragraph", ""))
     if ai_audit_summary:
-        doc.add_paragraph(_sanitize_ai_narrative_text(ai_audit_summary, technical))
+        doc.add_paragraph(ai_audit_summary)
     else:
         doc.add_paragraph("This report summarizes the dominant weakness patterns evidenced by non-compliant requirements and proposes actionable remediations suitable for mHealth/EMR environments handling sensitive health information.")
     if technical:
@@ -3791,7 +3642,7 @@ def main() -> None:
     add_nav_heading("6. Technical evidence from automated analysis", 1)
     ai_tech_intro = _clean_text(tech_ai.get("technical_evidence_intro", ""))
     if ai_tech_intro:
-        doc.add_paragraph(_sanitize_ai_narrative_text(ai_tech_intro, technical))
+        doc.add_paragraph(ai_tech_intro)
     else:
         doc.add_paragraph("This section summarizes technical scan evidence relevant to the assessed application and its code. The evidence is used to reinforce and qualify workbook findings while preserving the workbook as the authoritative requirement-level adjudication source.")
     add_nav_heading("6.1 Software Composition Analysis from Trivy", 2)
@@ -3800,15 +3651,15 @@ def main() -> None:
     _add_trivy_section(doc, technical)
     add_nav_heading("6.2 Android static evidence from MobSF", 2)
     if _clean_text(tech_ai.get("mobsf_static_paragraph", "")):
-        doc.add_paragraph(_sanitize_ai_narrative_text(tech_ai.get("mobsf_static_paragraph", ""), technical))
+        doc.add_paragraph(_clean_text(tech_ai.get("mobsf_static_paragraph", "")))
     _add_mobsf_static_section(doc, technical)
     add_nav_heading("6.3 Runtime evidence from MobSF dynamic analysis", 2)
     if _clean_text(tech_ai.get("mobsf_dynamic_paragraph", "")):
-        doc.add_paragraph(_sanitize_ai_narrative_text(tech_ai.get("mobsf_dynamic_paragraph", ""), technical))
+        doc.add_paragraph(_clean_text(tech_ai.get("mobsf_dynamic_paragraph", "")))
     _add_mobsf_dynamic_section(doc, technical)
     add_nav_heading("6.4 Static Application Security Testing evidence", 2)
     if _clean_text(tech_ai.get("sast_paragraph", "")):
-        doc.add_paragraph(_sanitize_ai_narrative_text(tech_ai.get("sast_paragraph", ""), technical))
+        doc.add_paragraph(_clean_text(tech_ai.get("sast_paragraph", "")))
     _add_sast_section(doc, technical)
     add_nav_heading("6.5 Technical coverage limitations", 2)
     if _clean_text(tech_ai.get("coverage_limitations_paragraph", "")):
@@ -3818,21 +3669,17 @@ def main() -> None:
     add_nav_heading("7. Main deficiencies", 1)
     doc.add_paragraph("The following deficiencies are synthesized as common weakness patterns based on non-compliant requirements and supported, where available, by technical scan evidence. They are not grouped by category; instead they represent cross-cutting gaps evidenced in the audit workbook and related artifacts.")
     for p in patterns[:10]:
-        if not isinstance(p, dict):
-            continue
-        pat = str(p.get("pattern") or "").strip()
-        if not pat:
-            continue
-        cnt = int(p.get("mapped_noncompliant_count", 0))
-        sev = p.get("severity", "Medium")
-        owner = p.get("recommended_owner", "Owner to be assigned")
+        pat = p["pattern"]
+        cnt = int(p["mapped_noncompliant_count"])
+        sev = p["severity"]
+        owner = p["recommended_owner"]
         ex_ids = p.get("example_puids", [])[:4]
         anchors = p.get("description_anchors", [])[:2]
         doc.add_paragraph(f"{pat} ({sev})", style="Heading 2")
         doc.add_paragraph(f"Workbook basis: {cnt} related non-compliant control(s) mapped to this pattern.")
-        expected = _sanitize_expected_state(pat, _ai_field_for_pattern(pat, writeups, "expected"))
+        expected = _ai_field_for_pattern(pat, writeups, "expected") or "AI-generated expected-state narrative was not returned for this pattern."
         impact = _ai_field_for_pattern(pat, writeups, "impact") or "AI-generated impact narrative was not returned for this pattern."
-        doc.add_paragraph(f"Expected secure state: {expected}")
+        doc.add_paragraph(f"Expected: {expected}")
         doc.add_paragraph("Observed: The audit workbook indicates the related controls are missing, insufficient, or not evidenced for the assessed scope.")
         doc.add_paragraph(f"Impact: {impact}")
         doc.add_paragraph(f"Recommended owner: {owner}")
@@ -3845,11 +3692,7 @@ def main() -> None:
     add_nav_heading("8. Recommendations", 1)
     doc.add_paragraph("Recommendations are generated by the configured AI model using the audit workbook, weakness-pattern prevalence, PUID examples, Vision360, Trivy, MobSF, SAST, and coverage limitations. Static fallback recommendations are intentionally not used.")
     for p in patterns[:10]:
-        if not isinstance(p, dict):
-            continue
-        pat = str(p.get("pattern") or "").strip()
-        if not pat:
-            continue
+        pat = p["pattern"]
         doc.add_paragraph(pat, style="Heading 2")
         recs = _ai_recommendations_for_pattern(pat, writeups)
         if not recs:
@@ -3882,15 +3725,11 @@ def main() -> None:
         for run in mh[idx].paragraphs[0].runs:
             run.bold = True
     for p in patterns[:10]:
-        if not isinstance(p, dict):
-            continue
-        pat = str(p.get("pattern") or "").strip()
-        if not pat:
-            continue
-        cnt = int(p.get("mapped_noncompliant_count", 0))
-        sev = p.get("severity", "Medium")
+        pat = p["pattern"]
+        cnt = int(p["mapped_noncompliant_count"])
+        sev = p["severity"]
         lik = _likelihood_from_count(cnt)
-        owner = p.get("recommended_owner", "Owner to be assigned")
+        owner = p["recommended_owner"]
         target_date = _target_date_str(audit_dt, sev)
         criteria = _sanitize_closure_criteria(_ai_field_for_pattern(pat, writeups, "closure_criteria") or "AI-generated closure criteria were not returned for this pattern.")
         row = mp.add_row().cells
