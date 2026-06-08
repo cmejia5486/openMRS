@@ -62,6 +62,7 @@ jobs:
           $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
           $transferDir = Join-Path $env:RUNNER_TEMP "audit-summary-docx-transfer"
           $technicalDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
+          $auditConfigPath = Join-Path $PWD "scripts\audit_summary_literals.json"
 
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
           New-Item -ItemType Directory -Force -Path $transferDir | Out-Null
@@ -70,6 +71,7 @@ jobs:
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_SUMMARY_TRANSFER_DIR=$transferDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_CONFIG_JSON_PATH=$auditConfigPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "VISION360_BUNDLE_DIR=$(Join-Path $technicalDir 'vision360')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "TRIVY_PAYLOAD_DIR=$(Join-Path $technicalDir 'trivy')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "MOBSF_REPORT_DIR=$(Join-Path $technicalDir 'mobsf')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
