@@ -1579,30 +1579,15 @@ def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
             counts = _sast_counts(block)
             raw_counts = _deep_dict(block, ["raw_tool_counts", "tool_counts", "by_tool"])
             raw_text = ", ".join(f"{k}: {v}" for k, v in raw_counts.items()) if raw_counts else "raw tool counts unavailable"
-            coverage_limitations = _as_list(block.get("coverage_limitations"))
-            visible_limitations = [x for x in coverage_limitations if isinstance(x, dict) and x.get("executive_visibility")]
-            if visible_limitations:
-                status = "Available with coverage limitation"
-            limitation_note = ""
-            if visible_limitations:
-                total_notifications = sum(_safe_int(x.get("count"), 0) for x in visible_limitations)
-                limitation_note = f" Coverage confidence is qualified by {total_notifications} extraction or frontend notification(s)."
             summary = (
                 f"{counts['retained_security_findings']} security-relevant application-code finding(s) and "
                 f"{counts['hardening_or_maintainability_signals']} hardening/quality signal(s) retained after scope filtering. "
-                f"Raw SARIF counts retained for traceability: {raw_text}.{limitation_note}"
+                f"Raw SARIF counts retained for traceability: {raw_text}."
             )
         elif key == "mobsf_static" and available:
             summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present."
         elif key == "mobsf_dynamic" and available:
-            observed = _as_dict(block.get("runtime_observed_evidence")) or _as_dict(_as_dict(block.get("observed_artifacts")))
-            inactive = _as_dict(block.get("inactive_or_unavailable_modules"))
-            observed_count = _deep_int(observed, ["local_storage_artifacts_count"]) or _deep_int(block, ["local_storage_artifacts_count"])
-            inactive_count = len([v for v in inactive.values() if _clean_text(v) in {"empty", "not_available", "false", "not_available_or_false"}])
-            summary = (
-                f"Runtime storage evidence parsed where present, including {observed_count} local storage artifact(s). "
-                f"{inactive_count} dynamic module(s) were empty or unavailable and are treated as coverage limitations."
-            )
+            summary = "Runtime storage, SharedPreferences, database, cache, tracker, and observed artifact evidence was parsed where present."
         rows.append([label, status, summary])
     return rows
 
@@ -1631,32 +1616,17 @@ def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
                 indicators.append(label)
         if indicators:
             takeaways.append("MobSF static evidence reported Android hardening indicators requiring review, including " + ", ".join(indicators[:4]) + ".")
-    mobsf_dynamic = _as_dict(technical.get("mobsf_dynamic"))
-    if _block_available(mobsf_dynamic):
-        observed = _as_dict(mobsf_dynamic.get("runtime_observed_evidence"))
-        storage_count = _deep_int(observed, ["local_storage_artifacts_count"]) or _deep_int(mobsf_dynamic, ["local_storage_artifacts_count"])
-        wal_shm_count = _deep_int(observed, ["wal_shm_artifacts_count"]) or _deep_int(mobsf_dynamic, ["wal_shm_artifacts_count"])
-        inactive = _as_dict(mobsf_dynamic.get("inactive_or_unavailable_modules"))
-        if storage_count:
-            suffix = f", including {wal_shm_count} WAL/SHM sidecar artifact(s)" if wal_shm_count else ""
-            takeaways.append(f"MobSF dynamic evidence observed {storage_count} runtime local-storage artifact(s){suffix}; empty or unavailable dynamic modules are treated as coverage limitations, not absence of risk.")
     sast = _as_dict(technical.get("sast_app_code"))
     if _block_available(sast):
         counts = _sast_counts(sast)
-        coverage_limitations = _as_list(sast.get("coverage_limitations"))
-        visible_limitations = [x for x in coverage_limitations if isinstance(x, dict) and x.get("executive_visibility")]
-        limitation_suffix = ""
-        if visible_limitations:
-            warning_total = sum(_safe_int(x.get("count"), 0) for x in visible_limitations)
-            limitation_suffix = f" Coverage confidence is qualified by {warning_total} CodeQL/SAST extraction or frontend notification(s)."
         if counts["retained_security_findings"] > 0:
             takeaways.append(
                 f"SAST evidence retained {counts['retained_security_findings']} security-relevant application-code finding(s) after scope filtering; "
-                f"{counts['hardening_or_maintainability_signals']} additional hardening/quality signal(s) are reported separately.{limitation_suffix}"
+                f"{counts['hardening_or_maintainability_signals']} additional hardening/quality signal(s) are reported separately."
             )
         elif counts["retained_app_code_signals"] > 0:
             takeaways.append(
-                f"SAST evidence retained {counts['retained_app_code_signals']} application-scope hardening/quality signal(s), but no security-relevant SAST findings were classified from the normalized evidence.{limitation_suffix}"
+                f"SAST evidence retained {counts['retained_app_code_signals']} application-scope hardening/quality signal(s), but no security-relevant SAST findings were classified from the normalized evidence."
             )
     return takeaways
 
@@ -1803,53 +1773,22 @@ def _add_mobsf_dynamic_section(doc: Document, technical: Dict[str, Any]) -> None
     if not _block_available(dynamic):
         _add_body_paragraph(doc, "MobSF dynamic evidence was not available in the analysis pack. If dynamic analysis is not executed for a given application, runtime storage and behavioral observations should be treated as not assessed rather than clean.")
         return
-
-    semantics = _as_dict(dynamic.get("evidence_semantics"))
-    absence_rule = _clean_text(semantics.get("absence_rule")) or "do_not_interpret_empty_dynamic_module_as_absence_of_risk"
-    _add_body_paragraph(
-        doc,
-        "MobSF dynamic evidence was used to summarize runtime observations. Observed storage artifacts are treated as direct runtime evidence. Empty, false, or unavailable dynamic modules are treated as coverage limitations and must not be interpreted as proof that runtime risk is absent."
-    )
-
-    observed = _as_dict(dynamic.get("runtime_observed_evidence"))
+    _add_body_paragraph(doc, "MobSF dynamic evidence was used to summarize runtime storage and behavioral observations, including local files, SharedPreferences, SQLite databases, cache artifacts, and trackers where reported.")
     rows = []
     for label, keys in [
         ("SharedPreferences artifacts", ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"]),
         ("SQLite/database artifacts", ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"]),
-        ("WAL/SHM sidecar artifacts", ["wal_shm_artifacts"]),
         ("Local storage artifacts", ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"]),
-        ("Trackers", ["trackers", "detected_trackers", "trackers_detected"]),
+        ("Trackers", ["trackers", "detected_trackers"]),
     ]:
         items = _deep_list(dynamic, keys)
         count = len(items) if items else _deep_int(dynamic, [keys[0] + "_count"], 0)
-        if count == 0 and observed:
-            observed_key = {
-                "SharedPreferences artifacts": "shared_preferences_artifacts_count",
-                "SQLite/database artifacts": "sqlite_database_artifacts_count",
-                "WAL/SHM sidecar artifacts": "wal_shm_artifacts_count",
-                "Local storage artifacts": "local_storage_artifacts_count",
-                "Trackers": "trackers_detected",
-            }.get(label)
-            if observed_key:
-                count = _safe_int(observed.get(observed_key), 0)
         if label == "Trackers" and not items:
             sample = "No trackers reported in normalized dynamic evidence" if count == 0 else "Tracker details not normalized into analysis pack"
         else:
             sample = _format_artifact_list(items, limit=4, names_only=False) if items else "No examples normalized into analysis pack"
         rows.append([label, count, sample])
     _add_table(doc, ["Runtime evidence type", "Count", "Examples / parser note"], rows, max_rows=20)
-
-    inactive = _as_dict(dynamic.get("inactive_or_unavailable_modules"))
-    inactive_rows = []
-    for module, state in inactive.items():
-        state_text = _clean_text(state)
-        if state_text in {"empty", "not_available", "false", "not_available_or_false"}:
-            inactive_rows.append([module, state_text, "Coverage limitation; do not treat as absence of runtime risk."])
-        elif state_text:
-            inactive_rows.append([module, state_text, "Dynamic evidence was present or partially available."])
-    if inactive_rows:
-        _add_table(doc, ["Dynamic module", "Observed state", "Interpretation"], inactive_rows, max_rows=20)
-        _add_note(doc, f"MobSF dynamic absence rule: {absence_rule}.")
 
 
 def _sast_findings(sast: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -1884,28 +1823,11 @@ def _add_sast_section(doc: Document, technical: Dict[str, Any]) -> None:
         f"{_clean_text(scope_note)}"
     )
 
-    coverage_limitations = _as_list(sast.get("coverage_limitations"))
-    visible_limitations = [x for x in coverage_limitations if isinstance(x, dict) and x.get("executive_visibility")]
-    if visible_limitations:
-        warning_total = sum(_safe_int(x.get("count"), 0) for x in visible_limitations)
-        tools = sorted(set(_clean_text(x.get("tool")) for x in visible_limitations if _clean_text(x.get("tool"))))
-        tool_text = ", ".join(tools) if tools else "SAST toolchain"
-        _add_body_paragraph(
-            doc,
-            f"{tool_text} reported {warning_total} extraction or frontend notification(s). These notifications qualify SAST coverage confidence and are not application vulnerabilities."
-        )
-
     breakdown_rows = [
         ["Security-relevant app-code findings", counts["retained_security_findings"], "Eligible for security remediation narrative."],
         ["Hardening / quality / maintainability signals", counts["hardening_or_maintainability_signals"], "Useful engineering evidence; not counted as vulnerabilities unless separately classified as security-relevant."],
         ["Raw SARIF results", counts["raw_sarif_results"], "Traceability and coverage signal; not automatically an app-code finding."],
     ]
-    if visible_limitations:
-        breakdown_rows.append([
-            "Coverage limitations",
-            sum(_safe_int(x.get("count"), 0) for x in visible_limitations),
-            "Extraction or frontend notifications affect coverage confidence and are not application vulnerabilities.",
-        ])
     _add_table(doc, ["SAST classification", "Count", "Interpretation"], breakdown_rows, max_rows=10)
 
     tool_rows: List[List[Any]] = []
@@ -2451,20 +2373,14 @@ def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
         },
         "mobsf_dynamic": {
             "available": _block_available(mobsf_dynamic),
-            "observed_artifacts": {
-                "local_storage_artifacts_count": _deep_int(mobsf_dynamic, ["local_storage_artifacts_count"]),
-                "local_storage_artifacts_sample": _deep_list(mobsf_dynamic, ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"])[:12],
-                "local_storage_artifact_names": _deep_list(mobsf_dynamic, ["local_storage_artifact_names"])[:12],
-                "shared_preferences_artifacts": _deep_list(mobsf_dynamic, ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"])[:12],
-                "shared_preferences_artifact_names": _deep_list(mobsf_dynamic, ["shared_preferences_artifact_names"])[:12],
-                "sqlite_database_artifacts": _deep_list(mobsf_dynamic, ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"])[:12],
-                "sqlite_database_artifact_names": _deep_list(mobsf_dynamic, ["sqlite_database_artifact_names"])[:12],
-                "wal_shm_artifacts": _deep_list(mobsf_dynamic, ["wal_shm_artifacts"])[:12],
-                "wal_shm_artifact_names": _deep_list(mobsf_dynamic, ["wal_shm_artifact_names"])[:12],
-                "detected_trackers": _deep_int(mobsf_dynamic, ["detected_trackers", "trackers_detected"]),
-            },
-            "inactive_or_unavailable_modules": _as_dict(mobsf_dynamic.get("inactive_or_unavailable_modules")),
-            "evidence_semantics": _as_dict(mobsf_dynamic.get("evidence_semantics")),
+            "local_storage_artifacts_count": _deep_int(mobsf_dynamic, ["local_storage_artifacts_count"]),
+            "local_storage_artifacts_sample": _deep_list(mobsf_dynamic, ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"])[:12],
+            "local_storage_artifact_names": _deep_list(mobsf_dynamic, ["local_storage_artifact_names"])[:12],
+            "shared_preferences_artifacts": _deep_list(mobsf_dynamic, ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"])[:12],
+            "shared_preferences_artifact_names": _deep_list(mobsf_dynamic, ["shared_preferences_artifact_names"])[:12],
+            "sqlite_database_artifacts": _deep_list(mobsf_dynamic, ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"])[:12],
+            "sqlite_database_artifact_names": _deep_list(mobsf_dynamic, ["sqlite_database_artifact_names"])[:12],
+            "detected_trackers": _deep_int(mobsf_dynamic, ["detected_trackers", "trackers_detected"]),
         },
         "sast_app_code": {
             "available": _block_available(sast),
@@ -2482,8 +2398,6 @@ def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
             "security_findings_sample": _deep_list(sast, ["security_findings_sample"])[:12],
             "hardening_signals_sample": _deep_list(sast, ["hardening_signals_sample"])[:12],
             "sast_notifications_sample": _deep_list(_as_dict(technical.get("coverage_limitations")), ["sast_notifications_sample", "sast_extraction_warnings_summary"])[:8],
-            "coverage_limitations": _as_list(sast.get("coverage_limitations")),
-            "executive_coverage_status": _clean_text(sast.get("executive_coverage_status", "")),
         },
         "coverage_limitations": {
             "missing_inputs": _deep_list(limitations, ["missing_inputs"]),
@@ -2510,7 +2424,7 @@ def _call_llm_for_audit_sections(
         "Write in precise technical English for an executive and engineering audience. "
         "Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. "
         "If evidence is absent, state the limitation explicitly. "
-        "Do not contradict normalized evidence. Workbook yes/no/n/a verdicts are immutable and scanner evidence must never override them. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. "
+        "Do not contradict normalized evidence. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. "
         "retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. "
         "Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or coverage signals unless they are explicitly classified as retained_security_findings. "
         "Return exactly one valid JSON object and nothing else."
@@ -2522,7 +2436,6 @@ def _call_llm_for_audit_sections(
     base_context = {
         "application": app,
         "metrics": metrics,
-        "requirement_verdict_policy": _as_dict(technical.get("requirement_verdict_policy")),
         "likelihood_rubric": likelihood_rubric,
         "top_weakness_patterns": compact_patterns,
         "technical_evidence": compact_technical,
@@ -2539,7 +2452,7 @@ def _call_llm_for_audit_sections(
             "constraints": {
                 "key_takeaways_count": "5 to 7",
                 "must_reference": ["overall compliance rate", "applicable controls", "non-compliant controls", "top weakness patterns", "technical scanner evidence where available"],
-                "do_not_claim": ["full codebase is clean", "MobSF absence equals no risk", "SAST raw findings are app findings", "scanner evidence changes workbook yes/no/n/a verdicts"],
+                "do_not_claim": ["full codebase is clean", "MobSF absence equals no risk", "SAST raw findings are app findings"],
             },
             "context": base_context,
             "required_output_schema": {
@@ -2600,7 +2513,7 @@ def _call_llm_for_audit_sections(
                 "do_not_overstate_sast": True,
                 "do_not_treat_missing_mobsf_fields_as_clean": True,
                 "sast_rule": "Use technical_evidence.sast_app_code.retained_security_findings as the SAST security finding count. retained_app_code_signals may include hardening or maintainability findings. Mention raw SARIF counts only as traceability or parser coverage signals.",
-                "mobsf_dynamic_rule": "Mention runtime artifact examples only when they are present in the normalized MobSF dynamic arrays. Use normalized Android paths or artifact names only; do not repeat collapsed raw strings such as datadata... If dynamic modules are empty, false, or unavailable, describe them as coverage limitations rather than absence of risk.",
+                "mobsf_dynamic_rule": "Mention runtime artifact examples only when they are present in the normalized MobSF dynamic arrays. Use normalized Android paths or artifact names only; do not repeat collapsed raw strings such as datadata... If arrays are empty, state that examples were not normalized.",
                 "avoid_absolute_claims": "Do not claim the app is clean, fully protected, or fully encrypted unless the supplied data directly supports that exact statement.",
             },
             "context": base_context,
@@ -3368,7 +3281,7 @@ def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) 
         _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
     _add_table(
         doc,
-        ["Requirement / pattern", "Flags", "Scanner evidence", "Evidence fit / strength", "Treatment / evidence summary"],
+        ["Requirement / pattern", "Flags", "Scanner evidence", "Treatment / evidence summary"],
         rows,
         max_rows=max_rows,
         empty_message="No evidence correlation items were available in the analysis pack.",
@@ -3387,28 +3300,23 @@ def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[s
     counts = _sast_counts(sast)
     raw_counts = _deep_dict(sast, ["raw_tool_counts", "tool_counts", "by_tool"])
     raw_text = ", ".join(f"{k}: {v}" for k, v in raw_counts.items()) if raw_counts else "raw SARIF counts unavailable"
-    visible_limitations = [x for x in _as_list(sast.get("coverage_limitations")) if isinstance(x, dict) and x.get("executive_visibility")]
-    limitation_suffix = ""
-    if visible_limitations:
-        warning_total = sum(_safe_int(x.get("count"), 0) for x in visible_limitations)
-        limitation_suffix = f" Coverage confidence is qualified by {warning_total} extraction or frontend notification(s), which are not application vulnerabilities."
 
     if counts["retained_security_findings"] <= 0 and counts["retained_app_code_signals"] > 0:
         tech_ai["sast_paragraph"] = (
             f"SAST retained {counts['retained_app_code_signals']} application-scope hardening, quality, or maintainability signal(s) after scope filtering, "
             "but no security-relevant SAST findings were classified from the normalized evidence. "
-            f"Raw SARIF counts are retained for traceability and coverage interpretation ({raw_text}); they must not be treated as application vulnerabilities.{limitation_suffix}"
+            f"Raw SARIF counts are retained for traceability and coverage interpretation ({raw_text}); they must not be treated as application vulnerabilities."
         )
     elif counts["retained_security_findings"] <= 0:
         tech_ai["sast_paragraph"] = (
             "SARIF artifacts were parsed, but no security-relevant application-code SAST findings were classified from the normalized evidence. "
-            f"Raw SARIF counts are retained only for traceability and coverage interpretation ({raw_text}); they are not treated as application-code vulnerabilities in this report.{limitation_suffix}"
+            f"Raw SARIF counts are retained only for traceability and coverage interpretation ({raw_text}); they are not treated as application-code vulnerabilities in this report."
         )
     else:
         tech_ai["sast_paragraph"] = (
             f"SAST retained {counts['retained_security_findings']} security-relevant application-code finding(s) and "
             f"{counts['hardening_or_maintainability_signals']} hardening, quality, or maintainability signal(s) after scope filtering. "
-            f"Raw SARIF counts remain traceability evidence ({raw_text}).{limitation_suffix}"
+            f"Raw SARIF counts remain traceability evidence ({raw_text})."
         )
 
     limitations = _as_dict(technical.get("coverage_limitations"))
@@ -3563,10 +3471,10 @@ def main() -> None:
     _add_two_col_table(doc, [["Auditor", actors["Auditor"]], ["Requirement Engineering team", "\n".join(actors["Requirement Engineering team"])], ["Engineering Group (EN)", "\n".join(actors["Engineering Group (EN)"])]])
 
     add_nav_heading("3. Scope and limitations", 1)
-    doc.add_paragraph("This Audit Summary consolidates the compliance determinations recorded in the audit workbook. The workbook Result column is the authoritative source for requirement-level verdicts: yes is reported as Compliant, no as Non-compliant, and n/a as Not applicable. Automated evidence from Vision360, Trivy, MobSF, and app-code SAST is used to support, explain, qualify, or limit the workbook-derived findings, but it does not override workbook verdicts. CI/CD workflows and audit-generation scripts are outside the application audit scope unless explicitly included by project configuration.")
+    doc.add_paragraph("This Audit Summary consolidates the compliance determinations recorded in the audit workbook. The results reflect the assessed application version and the workbook-defined scope. Controls not evidenced as implemented in the workbook are reported as non-compliant for summary purposes. Where available, technical evidence from Vision360, Trivy, MobSF, and app-code SAST is used to support and qualify the workbook-derived findings. CI/CD workflows and audit-generation scripts are outside the application audit scope unless explicitly included by project configuration.")
 
     add_nav_heading("4. Evidence criteria", 1)
-    doc.add_paragraph("- Compliant: the workbook records the control as yes for the assessed scope.\n- Non-compliant: the workbook records the control as no for the assessed scope.\n- Not applicable: the workbook records the control as n/a, out of scope, or not relevant for the assessed context. Not applicable controls are excluded from non-compliance narratives, weakness patterns, treatment plans, executive triage, and remediation counts.\n- Technical evidence: automated scan artifacts are used as supporting evidence for application code, Android manifest, binary, dependency, runtime, and storage observations. They do not replace requirement-level judgment and are interpreted within the declared audit scope.\n- Governance/documentation evidence: when a control depends on organizational policies or internal records, absence of documentation is reported only according to the workbook verdict and must not be presented as a scanner-confirmed technical vulnerability.")
+    doc.add_paragraph("- Compliant: the workbook provides sufficient evidence that the control is implemented and effective for the assessed scope.\n- Non-compliant: the workbook indicates the control is missing, insufficient, or not evidenced.\n- Not applicable: the control is recorded as out of scope or not relevant for the assessed context.\n- Technical evidence: automated scan artifacts are used as supporting evidence for application code, Android manifest, binary, dependency, runtime, and storage observations. They do not replace requirement-level judgment and are interpreted within the declared audit scope.")
 
     add_nav_heading("5. Audit summary", 1)
     doc.add_paragraph("The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).")

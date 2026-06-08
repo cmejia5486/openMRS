@@ -338,15 +338,7 @@ jobs:
           $canonicalPath = Join-Path $publishDir "mobsf-report.json"
 
           New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
-
-          $report = Get-Content -LiteralPath "mobsf_results.json" -Raw | ConvertFrom-Json
-          if (Test-Path "mobsf_scan_metadata.json") {
-            $metadata = Get-Content -LiteralPath "mobsf_scan_metadata.json" -Raw | ConvertFrom-Json
-            $report | Add-Member -NotePropertyName "audit_pipeline_metadata" -NotePropertyValue $metadata -Force
-          } else {
-            Write-Host "mobsf_scan_metadata.json was not present; publishing MobSF report without embedded pipeline metadata."
-          }
-          $report | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $canonicalPath -Encoding UTF8
+          Copy-Item -LiteralPath "mobsf_results.json" -Destination $canonicalPath -Force
 
           if (-not (Test-Path $canonicalPath)) {
             throw "mobsf-report.json was not prepared."
