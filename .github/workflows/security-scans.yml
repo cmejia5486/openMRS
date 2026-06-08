@@ -341,28 +341,6 @@ jobs:
               path.write_text('{"SchemaVersion":2,"Results":[]}\n', encoding="utf-8")
           PYJSON
 
-      - name: Run Trivy SARIF report
-        shell: bash
-        env:
-          TRIVY_CACHE_DIR: .cache/trivy
-          TRIVY_NO_PROGRESS: 'true'
-          TRIVY_USERNAME: ${{ github.actor }}
-          TRIVY_PASSWORD: ${{ github.token }}
-        run: |
-          set +e
-          mkdir -p .cache/trivy
-
-          trivy fs . \
-            --scanners vuln,secret,misconfig,license \
-            --vuln-type library \
-            --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
-            --include-dev-deps \
-            --detection-priority comprehensive \
-            --format sarif \
-            --output trivy.sarif \
-            --exit-code 0 \
-            --timeout 20m
-
       - name: Collect meta
         if: always()
         id: meta
@@ -541,15 +519,38 @@ jobs:
             }
             ' > agent_payload.json
 
+      - name: Prepare strict Trivy payload artifact
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish_dir="artifact_publish/trivy-payload"
+          rm -rf "$publish_dir"
+          mkdir -p "$publish_dir"
+
+          test -f agent_payload.json
+          test -f trivy.json
+
+          cp agent_payload.json "$publish_dir/agent_payload.json"
+          cp trivy.json "$publish_dir/trivy.json"
+
+          echo "[ARTIFACT] trivy-payload will publish only:"
+          find "$publish_dir" -maxdepth 1 -type f -printf '%f\n' | sort
+
+          unexpected_count=$(find "$publish_dir" -maxdepth 1 -type f ! -name agent_payload.json ! -name trivy.json | wc -l)
+          if [ "$unexpected_count" -ne 0 ]; then
+            echo "Unexpected file found in $publish_dir"
+            exit 1
+          fi
+
       - name: Upload artifact (payload para IA)
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: trivy-payload
           path: |
-            agent_payload.json
-            trivy.json
-            trivy.sarif
-            trivy-fallback-gradle.lockfile
-          if-no-files-found: ignore
+            artifact_publish/trivy-payload/agent_payload.json
+            artifact_publish/trivy-payload/trivy.json
+          if-no-files-found: error
           retention-days: 14
