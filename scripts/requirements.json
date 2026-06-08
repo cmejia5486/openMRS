@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "metadata": {
     "schema": "secm-cat-requirements-with-flags-v1",
@@ -11322,3 +11323,6 @@
     }
   ]
 }
+=======
+[]
+>>>>>>> b73f26b22f443cc94898f17e440264563ac7dc65
