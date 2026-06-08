@@ -290,6 +290,196 @@ jobs:
           set -euo pipefail
           python scripts/vision360_generator.py
 
+          python - <<'PY'
+          import copy
+          import json
+          import zipfile
+          from pathlib import Path
+
+          out_dir = Path('/mnt/data')
+          fp_path = out_dir / 'vision360_fingerprint.json'
+          trace_path = out_dir / 'vision360_trace.json'
+          trivy_zip = out_dir / 'trivy-payload.zip'
+
+          def load_json(path, default):
+              try:
+                  if not path.is_file():
+                      return copy.deepcopy(default)
+                  return json.loads(path.read_text(encoding='utf-8'))
+              except Exception:
+                  return copy.deepcopy(default)
+
+          def load_zip_json(zip_path, member, default):
+              try:
+                  if not zip_path.is_file():
+                      return copy.deepcopy(default)
+                  with zipfile.ZipFile(zip_path, 'r') as zf:
+                      raw = zf.read(member)
+                  for enc in ('utf-8', 'cp1252', 'latin-1'):
+                      try:
+                          return json.loads(raw.decode(enc))
+                      except Exception:
+                          pass
+              except Exception:
+                  pass
+              return copy.deepcopy(default)
+
+          def sev(value):
+              value = str(value or 'UNKNOWN').strip().upper()
+              return value if value in {'CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'} else 'UNKNOWN'
+
+          def to_int(value, default=0):
+              try:
+                  return int(value) if value is not None else default
+              except Exception:
+                  return default
+
+          def counter(items):
+              out = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0, 'UNKNOWN': 0}
+              for item in items:
+                  out[sev(item.get('severity'))] += 1
+              return out
+
+          def best_cvss(raw):
+              best = {'source': None, 'v3_score': None, 'v3_vector': None}
+              best_score = -1.0
+              if not isinstance(raw, dict):
+                  return best
+              for source, value in raw.items():
+                  if not isinstance(value, dict):
+                      continue
+                  try:
+                      score = float(value.get('V3Score') or 0)
+                  except Exception:
+                      score = 0.0
+                  if score > best_score:
+                      best_score = score
+                      best = {'source': str(source), 'v3_score': score, 'v3_vector': value.get('V3Vector')}
+              return best
+
+          def norm_trace(item):
+              vuln_id = item.get('id') or item.get('VulnerabilityID')
+              fixed = item.get('fixed') or item.get('FixedVersion')
+              return {
+                  'cve': vuln_id,
+                  'vulnerability_id': vuln_id,
+                  'type': 'dependency_vulnerability',
+                  'component': item.get('pkg') or item.get('PkgName'),
+                  'package_id': item.get('pkg_id') or item.get('PkgID'),
+                  'installed_version': item.get('installed') or item.get('InstalledVersion'),
+                  'fixed_version': fixed,
+                  'fix_available': bool(item.get('fix_available') or fixed),
+                  'severity': sev(item.get('severity') or item.get('Severity')),
+                  'severity_source': item.get('severity_source') or item.get('SeveritySource'),
+                  'status': item.get('status') or item.get('Status'),
+                  'cwe_ids': item.get('cwe') or item.get('CweIDs') or item.get('CWEIDs') or [],
+                  'title': item.get('title') or item.get('Title'),
+                  'description': item.get('description') or item.get('Description'),
+                  'primary_url': item.get('primary_url') or item.get('PrimaryURL'),
+                  'references': item.get('references') or item.get('References') or [],
+                  'published_at': item.get('published') or item.get('PublishedDate'),
+                  'last_modified_at': item.get('modified') or item.get('LastModifiedDate'),
+                  'target': item.get('target') or item.get('Target'),
+                  'source': 'TRIVY',
+                  'artifact_source': 'vision360_trace.json:effective_features.sca.findings',
+              }
+
+          def norm_trivy(result, vuln):
+              fixed = vuln.get('FixedVersion')
+              return {
+                  'cve': vuln.get('VulnerabilityID'),
+                  'vulnerability_id': vuln.get('VulnerabilityID'),
+                  'type': 'dependency_vulnerability',
+                  'component': vuln.get('PkgName'),
+                  'package_id': vuln.get('PkgID'),
+                  'installed_version': vuln.get('InstalledVersion'),
+                  'fixed_version': fixed,
+                  'fix_available': bool(fixed),
+                  'severity': sev(vuln.get('Severity')),
+                  'severity_source': vuln.get('SeveritySource'),
+                  'status': vuln.get('Status'),
+                  'cwe_ids': vuln.get('CweIDs') or vuln.get('CWEIDs') or [],
+                  'title': vuln.get('Title'),
+                  'description': vuln.get('Description'),
+                  'primary_url': vuln.get('PrimaryURL'),
+                  'references': vuln.get('References') or [],
+                  'published_at': vuln.get('PublishedDate'),
+                  'last_modified_at': vuln.get('LastModifiedDate'),
+                  'target': result.get('Target'),
+                  'class': result.get('Class'),
+                  'scanner_type': result.get('Type'),
+                  'best_cvss': best_cvss(vuln.get('CVSS') or {}),
+                  'data_source': vuln.get('DataSource') or {},
+                  'source': 'TRIVY',
+                  'artifact_source': 'trivy.json:Results[].Vulnerabilities[]',
+              }
+
+          def trivy_vulns():
+              data = load_zip_json(trivy_zip, 'trivy.json', {})
+              out = []
+              if not isinstance(data, dict):
+                  return out
+              for result in data.get('Results') or []:
+                  if not isinstance(result, dict):
+                      continue
+                  for vuln in result.get('Vulnerabilities') or []:
+                      if isinstance(vuln, dict):
+                          out.append(norm_trivy(result, vuln))
+              return out
+
+          def dedupe(items):
+              seen = set()
+              out = []
+              for item in items:
+                  key = (str(item.get('vulnerability_id') or ''), str(item.get('component') or ''), str(item.get('installed_version') or ''), str(item.get('target') or ''))
+                  if key in seen:
+                      continue
+                  seen.add(key)
+                  out.append(item)
+              return out
+
+          fp = load_json(fp_path, {})
+          trace = load_json(trace_path, {})
+          if isinstance(fp, dict) and fp:
+              features = trace.get('effective_features') if isinstance(trace, dict) else {}
+              sca = (features or {}).get('sca') if isinstance(features, dict) else {}
+              sca = sca if isinstance(sca, dict) else {}
+              findings = sca.get('findings') if isinstance(sca.get('findings'), list) else []
+              vulns = dedupe([norm_trace(x) for x in findings if isinstance(x, dict)] + trivy_vulns())
+              fixable = [x for x in vulns if x.get('fix_available')]
+              unfixed = [x for x in vulns if not x.get('fix_available')]
+              packages = sca.get('packages') if isinstance(sca.get('packages'), list) else []
+              licenses = sca.get('licenses') if isinstance(sca.get('licenses'), list) else []
+              project = fp.get('project') if isinstance(fp.get('project'), dict) else {}
+              fp['technical_details'] = {
+                  'schema_version': 1,
+                  'execution': {
+                      'generated_at': project.get('generated_at') or trace.get('generated_at'),
+                      'source_manifest_path': trace.get('source_manifest_path'),
+                      'source_zip_name': trace.get('source_zip_name'),
+                      'source_label': trace.get('source_label'),
+                      'declared_sources': project.get('sources') or [],
+                  },
+                  'sca': {
+                      'source': 'TRIVY',
+                      'artifact_sources': ['trivy-payload.zip/trivy.json', 'trivy-payload.zip/agent_payload.json', 'vision360_trace.json:effective_features.sca'],
+                      'summary': {
+                          'total_vulnerabilities': to_int(sca.get('total_vulnerabilities'), len(vulns)),
+                          'by_severity': sca.get('by_severity') if isinstance(sca.get('by_severity'), dict) else counter(vulns),
+                          'fixable_total': to_int(sca.get('fixable_total'), len(fixable)),
+                          'fixable_by_severity': sca.get('fixable_by_severity') if isinstance(sca.get('fixable_by_severity'), dict) else counter(fixable),
+                          'unfixed_total': to_int(sca.get('unfixed_total'), len(unfixed)),
+                          'packages_detected': to_int(sca.get('packages_detected'), len(packages)),
+                          'license_entries_detected': to_int(sca.get('license_entries_detected'), len(licenses)),
+                      },
+                      'vulnerabilities': vulns,
+                      'packages': packages[:100],
+                      'licenses': licenses[:100],
+                  },
+              }
+              fp_path.write_text(json.dumps(fp, indent=2, ensure_ascii=False), encoding='utf-8')
+          PY
+
       - name: Validate VISION360 outputs
         shell: bash
         run: |
