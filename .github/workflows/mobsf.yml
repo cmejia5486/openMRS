@@ -1,4 +1,4 @@
-﻿name: Mobile Security Scan
+name: Mobile Security Scan
 
 on:
   workflow_call:
@@ -13,10 +13,10 @@ jobs:
     timeout-minutes: 180
     permissions:
       contents: read
+      actions: write
     env:
       MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY }}
       MOBSF_BASE_URL: ${{ vars.MOBSF_BASE_URL }}
-      APK_ARTIFACT_NAME: ${{ vars.APK_ARTIFACT_NAME }}
       APK_FILE_PATTERN: ${{ vars.APK_FILE_PATTERN }}
 
     steps:
@@ -24,10 +24,7 @@ jobs:
         id: cfg
         shell: powershell
         run: |
-          $artifactName = ($env:APK_ARTIFACT_NAME + '').Trim()
-          if ([string]::IsNullOrWhiteSpace($artifactName)) {
-            $artifactName = 'mobile-apk'
-          }
+          $artifactName = 'mobsf-apk-transfer'
 
           $apkPattern = ($env:APK_FILE_PATTERN + '').Trim()
           if ([string]::IsNullOrWhiteSpace($apkPattern)) {
@@ -37,11 +34,45 @@ jobs:
           "artifact_name=$artifactName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "apk_pattern=$apkPattern" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Download APK artifact
+      - name: Download APK internal transfer artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.cfg.outputs.artifact_name }}
           path: apk_input
+
+      - name: Delete APK internal transfer artifact
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $repo = $env:GITHUB_REPOSITORY
+          $runId = $env:GITHUB_RUN_ID
+          $artifactName = "${{ steps.cfg.outputs.artifact_name }}"
+
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+
+          $listUrl = "https://api.github.com/repos/$repo/actions/runs/$runId/artifacts?name=$artifactName"
+          $response = Invoke-RestMethod -Uri $listUrl -Headers $headers -Method Get
+
+          $found = $false
+          foreach ($artifact in $response.artifacts) {
+            if ($artifact.name -eq $artifactName) {
+              $found = $true
+              $deleteUrl = "https://api.github.com/repos/$repo/actions/artifacts/$($artifact.id)"
+              Invoke-RestMethod -Uri $deleteUrl -Headers $headers -Method Delete
+              Write-Host "Deleted internal APK transfer artifact: $($artifact.id)"
+            }
+          }
+
+          if (-not $found) {
+            Write-Host "No internal APK transfer artifact found to delete."
+          }
 
       - name: Resolve APK from artifact
         id: locate_apk
@@ -321,6 +352,7 @@ jobs:
           name: mobsf-report
           path: artifact_publish/mobsf-report/mobsf-report.json
           if-no-files-found: error
+
       - name: Try to download MobSF dynamic JSON report if available
         if: ${{ steps.static_scan.outputs.hash != '' }}
         continue-on-error: true
