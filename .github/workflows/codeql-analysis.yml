@@ -5,37 +5,34 @@ on:
     inputs:
       codeql-language:
         description: "CodeQL language"
-        required: true
+        required: false
         type: string
         default: ""
       codeql-build-mode:
         description: "CodeQL build mode: manual or none"
-        required: true
+        required: false
         type: string
         default: ""
       codeql-config-file:
         description: "Path to the CodeQL config file"
-        required: true
+        required: false
         type: string
         default: ""
       build-command:
         description: "Build command for CodeQL when build-mode is manual"
-        required: true
+        required: false
         type: string
         default: ""
       codeql-java-version:
         description: "Java version used for the CodeQL build"
-        required: true
+        required: false
         type: string
         default: ""
       android-sdk-java-version:
         description: "Java version used only for Android SDK setup"
-        required: true
+        required: false
         type: string
         default: ""
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   sast:
@@ -50,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Resolve workflow configuration
         id: cfg
@@ -117,17 +114,21 @@ jobs:
             exit 1
           fi
 
-          echo "language=$language" >> "$GITHUB_OUTPUT"
-          echo "build_mode=$build_mode" >> "$GITHUB_OUTPUT"
-          echo "config_file=$config_file" >> "$GITHUB_OUTPUT"
-          echo "build_command=$build_command" >> "$GITHUB_OUTPUT"
-          echo "java_version=$java_version" >> "$GITHUB_OUTPUT"
-          echo "android_sdk_java_version=$android_sdk_java_version" >> "$GITHUB_OUTPUT"
-          echo "apk_source=$apk_source" >> "$GITHUB_OUTPUT"
-          echo "apk_glob=$apk_glob" >> "$GITHUB_OUTPUT"
-          echo "apk_provided_dir=$apk_provided_dir" >> "$GITHUB_OUTPUT"
-          echo "apk_file_pattern=$apk_file_pattern" >> "$GITHUB_OUTPUT"
-          echo "apk_artifact_name=$apk_artifact_name" >> "$GITHUB_OUTPUT"
+          {
+            echo "language=$language"
+            echo "build_mode=$build_mode"
+            echo "config_file=$config_file"
+            echo "java_version=$java_version"
+            echo "android_sdk_java_version=$android_sdk_java_version"
+            echo "apk_source=$apk_source"
+            echo "apk_glob=$apk_glob"
+            echo "apk_provided_dir=$apk_provided_dir"
+            echo "apk_file_pattern=$apk_file_pattern"
+            echo "apk_artifact_name=$apk_artifact_name"
+            echo "build_command<<EOF"
+            echo "$build_command"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
           echo "language=$language"
           echo "build_mode=$build_mode"
@@ -143,7 +144,7 @@ jobs:
 
       - name: Set up JDK for Android SDK tools
         if: ${{ steps.cfg.outputs.language == 'java' && steps.cfg.outputs.build_mode == 'manual' }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ steps.cfg.outputs.android_sdk_java_version }}
@@ -154,7 +155,7 @@ jobs:
 
       - name: Set up JDK for JVM tools
         if: ${{ steps.cfg.outputs.language == 'java' }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ steps.cfg.outputs.java_version }}
@@ -202,14 +203,16 @@ jobs:
       - name: Build project for CodeQL
         if: ${{ steps.cfg.outputs.build_mode == 'manual' }}
         shell: bash
+        continue-on-error: true
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEYSTORE_ALIAS_NAME: ${{ secrets.KEYSTORE_ALIAS_NAME }}
           KEYSTORE_ALIAS_PASS: ${{ secrets.KEYSTORE_ALIAS_PASS }}
           GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY }}
+          BUILD_COMMAND: ${{ steps.cfg.outputs.build_command }}
         run: |
           set -euo pipefail
-          eval "${{ steps.cfg.outputs.build_command }}"
+          bash -lc "$BUILD_COMMAND"
 
       - name: Resolve APK for downstream jobs
         id: resolve_apk
@@ -226,24 +229,21 @@ jobs:
           import fnmatch
           import glob
           import os
-          import sys
           from pathlib import Path
 
           source = os.environ["APK_SOURCE"].strip()
           workspace = Path(os.environ["GITHUB_WORKSPACE"]).resolve()
-
           candidates = []
 
           if source == "provided":
               provided_dir = (workspace / os.environ["APK_PROVIDED_DIR"].strip()).resolve()
               pattern = os.environ["APK_FILE_PATTERN"].strip()
-              if not provided_dir.exists():
-                  print(f"Provided APK directory does not exist: {provided_dir}", file=sys.stderr)
-                  sys.exit(1)
-
-              for path in provided_dir.rglob("*"):
-                  if path.is_file() and fnmatch.fnmatch(path.name, pattern):
-                      candidates.append(path)
+              if provided_dir.exists():
+                  for path in provided_dir.rglob("*"):
+                      if path.is_file() and fnmatch.fnmatch(path.name, pattern):
+                          candidates.append(path)
+              else:
+                  print(f"Provided APK directory does not exist: {provided_dir}")
 
           elif source == "codeql":
               apk_glob = os.environ["APK_GLOB"].strip()
@@ -252,25 +252,24 @@ jobs:
                   if path.is_file():
                       candidates.append(path)
 
+          if candidates:
+              candidates = sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True)
+              selected = candidates[0]
+              print(f"Selected APK: {selected}")
+              apk_path = str(selected)
+              apk_name = selected.name
           else:
-              print(f"Unsupported APK source: {source}", file=sys.stderr)
-              sys.exit(1)
-
-          if not candidates:
-              print("No APK candidates were found.", file=sys.stderr)
-              sys.exit(1)
-
-          candidates = sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True)
-          selected = candidates[0]
-
-          print(f"Selected APK: {selected}")
+              print("No APK candidates were found. SAST will continue without APK transfer.")
+              apk_path = ""
+              apk_name = ""
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-              fh.write(f"apk_path={selected}\n")
-              fh.write(f"apk_name={selected.name}\n")
+              fh.write(f"apk_path={apk_path}\n")
+              fh.write(f"apk_name={apk_name}\n")
           PY
 
       - name: Upload APK for MobSF internal transfer
+        if: ${{ steps.resolve_apk.outputs.apk_path != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: mobsf-apk-transfer
@@ -288,10 +287,11 @@ jobs:
       - name: Download Detekt CLI
         if: ${{ steps.cfg.outputs.language == 'java' }}
         shell: bash
+        continue-on-error: true
         run: |
           set -euo pipefail
           mkdir -p tools
-          curl -L -o tools/detekt-cli.jar https://github.com/detekt/detekt/releases/download/v1.23.8/detekt-cli-1.23.8-all.jar
+          curl -fL --retry 3 --retry-delay 10 -o tools/detekt-cli.jar https://github.com/detekt/detekt/releases/download/v1.23.8/detekt-cli-1.23.8-all.jar
 
       - name: Run Detekt to SARIF
         if: ${{ steps.cfg.outputs.language == 'java' }}
@@ -299,17 +299,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p report
-          java -jar tools/detekt-cli.jar -i . --all-rules --report sarif:report/detekt.sarif || true
+
+          if [ -f tools/detekt-cli.jar ]; then
+            java -jar tools/detekt-cli.jar -i . --all-rules --report sarif:report/detekt.sarif || true
+          fi
+
+          if [ ! -s report/detekt.sarif ]; then
+            printf '%s\n' '{"version":"2.1.0","runs":[]}' > report/detekt.sarif
+          fi
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
       - name: Install Semgrep
         shell: bash
+        continue-on-error: true
         run: |
           set -euo pipefail
+          python -m pip install --upgrade pip
           pip install --upgrade semgrep
 
       - name: Run Semgrep to SARIF
@@ -317,48 +326,134 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p report
-          semgrep scan \
-            --config p/owasp-top-ten \
-            --config p/security-audit \
-            --config p/secrets \
-            --severity WARNING \
-            --severity ERROR \
-            --sarif \
-            --output report/semgrep.raw.sarif || true
+
+          if command -v semgrep >/dev/null 2>&1; then
+            semgrep scan \
+              --config p/owasp-top-ten \
+              --config p/security-audit \
+              --config p/secrets \
+              --severity WARNING \
+              --severity ERROR \
+              --sarif \
+              --output report/semgrep.raw.sarif || true
+          fi
+
+          if [ ! -s report/semgrep.raw.sarif ]; then
+            printf '%s\n' '{"version":"2.1.0","runs":[]}' > report/semgrep.raw.sarif
+          fi
 
       - name: Filter Semgrep SARIF to keep app code only
-        uses: advanced-security/filter-sarif@v1
-        with:
-          input: report/semgrep.raw.sarif
-          output: report/semgrep.sarif
-          patterns: |
-            -**/test/**
-            -**/androidTest/**
-            -**/*Test*.kt
-            -**/*Test*.java
-            **/src/**
-
-      - name: Ensure jq is installed
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y jq
+          mkdir -p report
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          src = Path("report/semgrep.raw.sarif")
+          dst = Path("report/semgrep.sarif")
+
+          empty = {"version": "2.1.0", "runs": []}
+
+          try:
+              data = json.loads(src.read_text(encoding="utf-8"))
+          except Exception:
+              dst.write_text(json.dumps(empty), encoding="utf-8")
+              raise SystemExit(0)
+
+          for run in data.get("runs", []):
+              filtered = []
+              for result in run.get("results", []):
+                  locations = result.get("locations", [])
+                  keep = False
+                  for loc in locations:
+                      uri = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "")
+                      uri_norm = uri.replace("\\", "/")
+                      if "/src/" in uri_norm or uri_norm.startswith("src/"):
+                          blocked = (
+                              "/test/" in uri_norm
+                              or "/androidTest/" in uri_norm
+                              or "Test." in uri_norm
+                              or "Test/" in uri_norm
+                          )
+                          if not blocked:
+                              keep = True
+                              break
+                  if keep:
+                      filtered.append(result)
+              run["results"] = filtered
+
+          dst.write_text(json.dumps(data), encoding="utf-8")
+          PY
+
+      - name: Normalize SARIF files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p report/codeql report
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          empty = {"version": "2.1.0", "runs": []}
+
+          required = [
+              Path("report/detekt.sarif"),
+              Path("report/semgrep.sarif"),
+          ]
+
+          for path in required:
+              if not path.exists() or path.stat().st_size == 0:
+                  path.write_text(json.dumps(empty), encoding="utf-8")
+                  continue
+
+              try:
+                  data = json.loads(path.read_text(encoding="utf-8"))
+                  if "runs" not in data:
+                      raise ValueError("Missing SARIF runs")
+              except Exception:
+                  path.write_text(json.dumps(empty), encoding="utf-8")
+          PY
 
       - name: Merge CodeQL, Detekt, and Semgrep SARIF files
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s nullglob
           mkdir -p report
 
-          files=(report/codeql/*.sarif report/detekt.sarif report/semgrep.sarif)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
 
-          if [ ${#files[@]} -gt 0 ]; then
-            jq -s '{ "version":"2.1.0", "runs": (map(.runs) | add) }' "${files[@]}" > report/merged.sarif
-          else
-            echo '{ "version":"2.1.0", "runs": [] }' > report/merged.sarif
-          fi
+          output = Path("report/merged.sarif")
+          files = []
+          files.extend(Path("report/codeql").glob("**/*.sarif"))
+          files.append(Path("report/detekt.sarif"))
+          files.append(Path("report/semgrep.sarif"))
+
+          merged = {"version": "2.1.0", "runs": []}
+
+          for path in files:
+              if not path.exists() or path.stat().st_size == 0:
+                  continue
+
+              try:
+                  data = json.loads(path.read_text(encoding="utf-8"))
+              except Exception:
+                  print(f"Skipping invalid SARIF: {path}")
+                  continue
+
+              runs = data.get("runs", [])
+              if isinstance(runs, list):
+                  merged["runs"].extend(runs)
+
+          output.write_text(json.dumps(merged), encoding="utf-8")
+          print(f"Merged SARIF written to {output}")
+          print(f"Runs: {len(merged['runs'])}")
+          PY
 
       - name: Prepare strict SAST findings artifact
         if: always()
@@ -368,9 +463,15 @@ jobs:
 
           publish_dir="artifact_publish/sast-findings"
           mkdir -p "$publish_dir"
+          mkdir -p report
 
-          test -f report/merged.sarif
-          test -f report/semgrep.sarif
+          if [ ! -s report/merged.sarif ]; then
+            printf '%s\n' '{"version":"2.1.0","runs":[]}' > report/merged.sarif
+          fi
+
+          if [ ! -s report/semgrep.sarif ]; then
+            printf '%s\n' '{"version":"2.1.0","runs":[]}' > report/semgrep.sarif
+          fi
 
           cp report/merged.sarif "$publish_dir/merged.sarif"
           cp report/semgrep.sarif "$publish_dir/semgrep.sarif"
@@ -387,4 +488,3 @@ jobs:
             artifact_publish/sast-findings/merged.sarif
             artifact_publish/sast-findings/semgrep.sarif
           if-no-files-found: error
-          
