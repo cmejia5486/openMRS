@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Additive VISION360 fingerprint enrichment hook.
-
-Imported automatically by Python only when scripts/ is on sys.path. The hook is
-inactive for every script except vision360_generator.py. It enriches only
-vision360_fingerprint.json with technical_details and leaves flags, verdicts,
-vision360_output.json and Excel audit outputs unchanged.
-"""
 from __future__ import annotations
 
 import atexit
@@ -229,7 +222,6 @@ def _enrich() -> None:
         details = fp.get("technical_details") if isinstance(fp.get("technical_details"), dict) else {}
         details.update({
             "schema_version": 1,
-            "enrichment_mode": "additive_non_breaking",
             "execution": {
                 "generated_at": project.get("generated_at") or trace.get("generated_at"),
                 "source_manifest_path": trace.get("source_manifest_path"),
@@ -241,9 +233,8 @@ def _enrich() -> None:
         })
         fp["technical_details"] = details
         fp_path.write_text(json.dumps(fp, indent=2, ensure_ascii=False), encoding="utf-8")
-        print("[VISION360] fingerprint technical_details enrichment applied.")
-    except Exception as exc:
-        print(f"[VISION360] fingerprint technical_details enrichment skipped: {exc}")
+    except Exception:
+        pass
 
 
 if _is_enabled():
