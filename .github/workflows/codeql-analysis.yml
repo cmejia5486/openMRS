@@ -102,7 +102,7 @@ jobs:
           [ -z "$apk_glob" ] && apk_glob="**/*debug*.apk"
           [ -z "$apk_provided_dir" ] && apk_provided_dir="apk"
           [ -z "$apk_file_pattern" ] && apk_file_pattern="*.apk"
-          [ -z "$apk_artifact_name" ] && apk_artifact_name="mobile-apk"
+          [ -z "$apk_artifact_name" ] && apk_artifact_name="mobsf-apk-transfer"
 
           case "$apk_source" in
             codeql|provided) ;;
@@ -270,12 +270,13 @@ jobs:
               fh.write(f"apk_name={selected.name}\n")
           PY
 
-      - name: Upload APK artifact for downstream jobs
+      - name: Upload APK for MobSF internal transfer
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.cfg.outputs.apk_artifact_name }}
+          name: mobsf-apk-transfer
           path: ${{ steps.resolve_apk.outputs.apk_path }}
           if-no-files-found: error
+          retention-days: 1
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
@@ -357,8 +358,8 @@ jobs:
             jq -s '{ "version":"2.1.0", "runs": (map(.runs) | add) }' "${files[@]}" > report/merged.sarif
           else
             echo '{ "version":"2.1.0", "runs": [] }' > report/merged.sarif
-          fi      
-          
+          fi
+
       - name: Prepare strict SAST findings artifact
         if: always()
         shell: bash
