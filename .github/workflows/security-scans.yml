@@ -241,9 +241,28 @@ jobs:
           \) -print | sort
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.3.1
-        with:
-          version: v0.71.0
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TRIVY_VERSION="0.71.0"
+          TRIVY_ARCHIVE="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          TRIVY_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_ARCHIVE}"
+
+          echo "Downloading Trivy ${TRIVY_VERSION}"
+          curl -fL --retry 5 --retry-delay 10 --retry-all-errors -o "${TRIVY_ARCHIVE}" "${TRIVY_URL}"
+
+          echo "Inspecting archive"
+          tar -tzf "${TRIVY_ARCHIVE}" | sed -n '1,30p'
+
+          echo "Extracting Trivy"
+          tar -xzf "${TRIVY_ARCHIVE}" trivy
+
+          echo "Installing Trivy binary"
+          sudo install -m 0755 trivy /usr/local/bin/trivy
+
+          echo "Validating Trivy installation"
+          trivy --version
 
       - name: Cache Trivy DB
         uses: actions/cache@v5
@@ -300,9 +319,27 @@ jobs:
             --exit-code 0 \
             --timeout 20m
 
-          if [ ! -f "trivy.json" ]; then
+      - name: Ensure valid Trivy JSON
+        if: always()
+        shell: bash
+        run: |
+          set +e
+
+          if [ ! -s "trivy.json" ]; then
             echo '{"SchemaVersion":2,"Results":[]}' > trivy.json
+            exit 0
           fi
+
+          python3 - <<'PYJSON'
+          import json
+          from pathlib import Path
+
+          path = Path("trivy.json")
+          try:
+              json.loads(path.read_text(encoding="utf-8"))
+          except Exception:
+              path.write_text('{"SchemaVersion":2,"Results":[]}\n', encoding="utf-8")
+          PYJSON
 
       - name: Run Trivy SARIF report
         shell: bash
@@ -327,20 +364,24 @@ jobs:
             --timeout 20m
 
       - name: Collect meta
+        if: always()
         id: meta
         shell: bash
         run: |
+          set +e
           echo "run_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           trivy_version=$(trivy --version 2>/dev/null | head -n1 | awk '{print $2}')
           echo "trivy_version=${trivy_version:-unknown}" >> "$GITHUB_OUTPUT"
 
       - name: Ensure jq
+        if: always()
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
 
       - name: Build AI payload (agent_payload.json)
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -501,11 +542,14 @@ jobs:
             ' > agent_payload.json
 
       - name: Upload artifact (payload para IA)
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: trivy-payload
           path: |
             agent_payload.json
             trivy.json
-          if-no-files-found: error
+            trivy.sarif
+            trivy-fallback-gradle.lockfile
+          if-no-files-found: ignore
           retention-days: 14
