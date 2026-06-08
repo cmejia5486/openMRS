@@ -416,6 +416,115 @@ def _flags_by_family(flags: List[str]) -> Dict[str, List[str]]:
     return {k: _unique_keep_order(v, limit=30) for k, v in sorted(grouped.items())}
 
 
+
+
+def _verdict_policy() -> Dict[str, Any]:
+    """Return the immutable workbook-verdict policy used by the reporting pipeline."""
+    return {
+        "source_of_truth": "excel.result",
+        "immutable": True,
+        "scanner_override_allowed": False,
+        "vision360_override_allowed": False,
+        "ai_override_allowed": False,
+        "allowed_normalization": {
+            "yes": "Compliant",
+            "no": "Non-compliant",
+            "n/a": "Not applicable",
+        },
+        "not_applicable_controls_excluded_from_non_compliance": True,
+        "rule": (
+            "Requirement-level verdicts are locked to the audit workbook. "
+            "Automated evidence sources provide supporting observations, technical context, and coverage limitations only."
+        ),
+    }
+
+
+def _evidence_basis_from_flags(flags: List[str]) -> str:
+    families = set(_flags_by_family(flags).keys())
+    if not families:
+        return "workbook_verdict"
+    if families == {"Organizational"}:
+        return "organizational_documentation"
+    if "Organizational" in families:
+        return "mixed_technical_and_governance"
+    if families & {"SCA", "MobSF static", "MobSF dynamic", "SAST", "Android manifest", "Android permissions", "Cryptography / transport"}:
+        return "technical_supporting_evidence"
+    return "workbook_verdict"
+
+
+def _assertion_strength(status: str, flags: List[str]) -> str:
+    basis = _evidence_basis_from_flags(flags)
+    if status == "Not applicable":
+        return "not_applicable_locked"
+    if basis == "organizational_documentation":
+        return "workbook_verdict_only"
+    if basis == "mixed_technical_and_governance":
+        return "qualified_supporting_evidence"
+    if basis == "technical_supporting_evidence":
+        return "technical_supporting_evidence"
+    return "workbook_verdict"
+
+
+def _reporting_rule_for_status(status: str, flags: List[str]) -> str:
+    basis = _evidence_basis_from_flags(flags)
+    if status == "Not applicable":
+        return "Do not include in non-compliance narratives, weakness patterns, treatment plans, executive triage, or remediation counts."
+    if status == "Non-compliant" and basis == "organizational_documentation":
+        return "Describe as a governance or documentation evidence gap recorded by the workbook, not as a scanner-confirmed technical vulnerability."
+    if status == "Non-compliant" and basis == "mixed_technical_and_governance":
+        return "Separate direct technical evidence from governance or documentation evidence gaps. Do not let scanner evidence override the workbook verdict."
+    if status == "Compliant":
+        return "May be described as compliant only because the workbook verdict is compliant. Scanner evidence may qualify or support the statement but cannot create the verdict."
+    return "Scanner evidence may support or qualify the workbook verdict but cannot override it."
+
+
+def _mobsf_module_state(value: Any) -> str:
+    if value is None:
+        return "not_available"
+    if value is False:
+        return "false"
+    if value is True:
+        return "present"
+    if isinstance(value, dict):
+        return "present" if any(not _is_empty_module_value(v) for v in value.values()) else "empty"
+    if isinstance(value, list):
+        return "present" if any(not _is_empty_module_value(v) for v in value) else "empty"
+    text = str(value).strip()
+    if not text:
+        return "empty"
+    if text.lower() in {"false", "none", "null", "not available", "n/a"}:
+        return "not_available_or_false"
+    return "present"
+
+
+def _is_empty_module_value(value: Any) -> bool:
+    if value in (None, "", False):
+        return True
+    if isinstance(value, dict):
+        return all(_is_empty_module_value(v) for v in value.values())
+    if isinstance(value, list):
+        return all(_is_empty_module_value(v) for v in value)
+    return False
+
+
+def _deep_first_by_key_name(obj: Any, key_name: str) -> Any:
+    key_l = str(key_name).lower()
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if str(key).lower() == key_l:
+                return value
+        for value in obj.values():
+            found = _deep_first_by_key_name(value, key_name)
+            if found is not None:
+                return found
+    elif isinstance(obj, list):
+        for item in obj:
+            found = _deep_first_by_key_name(item, key_name)
+            if found is not None:
+                return found
+    return None
+
+
 def _pick_dict_fields(obj: Dict[str, Any], fields: List[str]) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
     if not isinstance(obj, dict):
@@ -643,17 +752,40 @@ def _build_ai_reporting_context(metrics: Dict[str, Any], patterns: List[Dict[str
             }
             for p in patterns[:10]
         ],
+        "requirement_verdict_policy": _verdict_policy(),
         "sast_guardrail": {
             "retained_app_code_signals": _sast_retained_count(sast),
             "retained_security_findings": _safe_int(sast.get("retained_security_findings"), 0),
             "hardening_or_maintainability_signals": _safe_int(sast.get("hardening_or_maintainability_signals"), 0),
             "raw_sarif_results": _safe_int(sast.get("raw_sarif_results"), 0),
-            "instruction": "Use retained_security_findings as the authoritative SAST security count. retained_app_code_signals may include hardening/quality findings. Raw SARIF results are traceability only.",
+            "coverage_limitations": sast.get("coverage_limitations", []),
+            "reporting_rules": {
+                "authoritative_security_count_field": "retained_security_findings",
+                "raw_sarif_results_usage": "traceability_only",
+                "coverage_limitation_rule": "show_when_executive_visibility_is_true",
+                "verdict_override_allowed": False,
+            },
+            "instruction": "Use retained_security_findings as the authoritative SAST security count. retained_app_code_signals may include hardening/quality findings. Raw SARIF results are traceability only. Coverage limitations affect confidence and must not be treated as application vulnerabilities.",
         },
         "mobsf_dynamic_summary": {
-            "local_storage_artifacts_count": mobsf_dynamic.get("local_storage_artifacts_count"),
-            "shared_preferences_artifacts": mobsf_dynamic.get("shared_preferences_artifacts", [])[:12],
-            "sqlite_database_artifacts": mobsf_dynamic.get("sqlite_database_artifacts", [])[:12],
+            "observed_artifacts": {
+                "local_storage_artifacts_count": mobsf_dynamic.get("local_storage_artifacts_count"),
+                "shared_preferences_artifacts_count": mobsf_dynamic.get("shared_preferences_artifacts_count"),
+                "sqlite_database_artifacts_count": mobsf_dynamic.get("sqlite_database_artifacts_count"),
+                "wal_shm_artifacts_count": mobsf_dynamic.get("wal_shm_artifacts_count"),
+                "trackers_detected": mobsf_dynamic.get("trackers_detected", mobsf_dynamic.get("detected_trackers")),
+                "shared_preferences_artifacts": mobsf_dynamic.get("shared_preferences_artifacts", [])[:12],
+                "sqlite_database_artifacts": mobsf_dynamic.get("sqlite_database_artifacts", [])[:12],
+                "wal_shm_artifacts": mobsf_dynamic.get("wal_shm_artifacts", [])[:12],
+                "local_storage_artifacts_sample": mobsf_dynamic.get("local_storage_artifacts_sample", [])[:12],
+            },
+            "inactive_or_unavailable_modules": mobsf_dynamic.get("inactive_or_unavailable_modules", {}),
+            "evidence_semantics": mobsf_dynamic.get("evidence_semantics", {
+                "observed_artifacts": "direct_runtime_evidence",
+                "inactive_or_unavailable_modules": "coverage_limitation",
+                "absence_rule": "do_not_interpret_empty_dynamic_module_as_absence_of_risk",
+                "verdict_override_allowed": False,
+            }),
         },
         "vision360_summary": {
             "flags_count": vision.get("flags_count"),
@@ -662,8 +794,9 @@ def _build_ai_reporting_context(metrics: Dict[str, Any], patterns: List[Dict[str
         },
         "global_guardrails": [
             "Use only evidence present in this analysis pack.",
-            "Do not treat absence of a parsed MobSF field as absence of risk.",
-            "Do not transform raw SAST counts into retained app-code findings.",
+            "Workbook yes/no/n/a verdicts are immutable and cannot be overridden by Vision360, MobSF, Trivy, SAST, CodeQL, Semgrep, Detekt, or AI.",
+            "Do not treat absence of a parsed MobSF field or empty dynamic module as absence of risk.",
+            "Do not transform raw SAST counts or CodeQL notifications into retained app-code findings.",
             "Recommendations must be generated from workbook and scanner context, not static templates.",
         ],
     }
@@ -724,7 +857,11 @@ def _make_control_treatment_items(non_df: Any, patterns: List[Dict[str, Any]]) -
             "puid": str(row.get("PUID") or ""),
             "category_code": str(row.get("CategoryCode") or ""),
             "category_name": str(row.get("CategoryName") or ""),
+            "excel_result_raw": str(row.get("ExcelResultRaw") or ""),
             "current_status": "Non-compliant",
+            "normalized_result": "Non-compliant",
+            "result_source": str(row.get("ResultSource") or "Excel workbook"),
+            "result_locked": bool(row.get("ResultLocked", True)),
             "weakness_pattern": pattern,
             "severity": severity,
             "likelihood": likelihood,
@@ -733,9 +870,13 @@ def _make_control_treatment_items(non_df: Any, patterns: List[Dict[str, Any]]) -
             "evidence_excerpt": _excerpt(row.get("Evidence", ""), 260),
             "flags": flags[:40],
             "flags_by_family": _flags_by_family(flags),
+            "evidence_basis": str(row.get("EvidenceBasis") or _evidence_basis_from_flags(flags)),
+            "assertion_strength": str(row.get("AssertionStrength") or _assertion_strength("Non-compliant", flags)),
+            "reporting_rule": str(row.get("ReportingRule") or _reporting_rule_for_status("Non-compliant", flags)),
             "ai_instruction": (
                 "Generate treatment_action, verification_method, closure_evidence, and residual_risk from this control, "
-                "its flags, evidence excerpt, weakness pattern, and any correlated scanner evidence. Do not invent PUIDs, flags, files, CVEs, or scanner findings."
+                "its immutable workbook verdict, flags, evidence excerpt, weakness pattern, and any correlated scanner evidence. "
+                "Do not invent PUIDs, flags, files, CVEs, or scanner findings. Do not let scanner evidence override the workbook verdict."
             ),
         })
     return items
@@ -948,6 +1089,51 @@ def _priority_summary_from_patterns(patterns: List[Dict[str, Any]]) -> List[Dict
     return rows
 
 
+
+
+def _evidence_fit_for_technical_item(tech: Dict[str, Any]) -> str:
+    source = str(tech.get("source") or "").lower()
+    item_type = str(tech.get("item_type") or "").lower()
+    finding = str(tech.get("finding_id") or "").lower()
+    issue = str(tech.get("observed_issue") or "").lower()
+    component = str(tech.get("affected_component") or tech.get("location") or "").lower()
+    haystack = f"{source} {item_type} {finding} {issue} {component}"
+
+    if "trivy" in source or "cve" in finding:
+        return "dependency_vulnerability"
+    if "sast" in source:
+        return "sast_code_finding"
+    if "mobsf dynamic" in source and any(t in haystack for t in ["sharedpreferences", "sqlite", ".db", "storage", "database", "cache", "wal", "shm"]):
+        return "storage_artifact"
+    if "mobsf static" in source and any(t in haystack for t in ["manifest", "exported", "allow-backup", "permission", "cleartext"]):
+        return "manifest_configuration"
+    if "certificate" in haystack or "signature" in haystack or "debug-certificate" in haystack:
+        return "binary_signing"
+    return "technical_context"
+
+
+def _correlation_strength_for_item(ctrl: Dict[str, Any], tech: Dict[str, Any]) -> str:
+    fit = _evidence_fit_for_technical_item(tech)
+    pattern = str(ctrl.get("weakness_pattern") or (tech.get("linked_patterns") or [""])[0]).lower()
+    basis = str(ctrl.get("evidence_basis") or "").lower()
+
+    if fit == "dependency_vulnerability" and "supply chain" in pattern:
+        return "direct"
+    if fit == "sast_code_finding" and any(t in pattern for t in ["input validation", "authorization", "authentication", "security misconfiguration"]):
+        return "direct"
+    if fit == "manifest_configuration" and any(t in pattern for t in ["misconfiguration", "transport", "tampering", "binary"]):
+        return "direct"
+    if fit == "binary_signing" and any(t in pattern for t in ["tampering", "transport", "binary"]):
+        return "direct"
+    if fit == "storage_artifact" and any(t in pattern for t in ["local storage", "key management", "data at rest"]):
+        return "direct"
+    if fit == "storage_artifact" and any(t in pattern for t in ["privacy", "authentication"]):
+        return "indirect"
+    if basis == "organizational_documentation":
+        return "weak"
+    return "indirect"
+
+
 def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items: List[Dict[str, Any]], limit: int = 500) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     control_by_puid = {str(c.get("puid")): c for c in control_items}
@@ -955,6 +1141,8 @@ def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items
         linked_puids = tech.get("linked_puids") if isinstance(tech.get("linked_puids"), list) else []
         for puid in linked_puids[:12]:
             ctrl = control_by_puid.get(str(puid), {})
+            evidence_fit = _evidence_fit_for_technical_item(tech)
+            correlation_strength = _correlation_strength_for_item(ctrl, tech)
             rows.append({
                 "weakness_pattern": ctrl.get("weakness_pattern") or (tech.get("linked_patterns") or [""])[0],
                 "puid": puid,
@@ -963,6 +1151,9 @@ def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items
                 "technical_finding_id": tech.get("finding_id"),
                 "technical_item_id": tech.get("item_id"),
                 "evidence_summary": _excerpt(tech.get("observed_issue") or tech.get("affected_component"), 220),
+                "evidence_fit": evidence_fit,
+                "correlation_strength": correlation_strength,
+                "correlation_rule": "Scanner evidence supports or qualifies the workbook verdict. It does not override yes/no/n/a.",
             })
             if len(rows) >= limit:
                 return rows
@@ -2114,6 +2305,24 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
     cache_files = [x for x in normalized if re.search(r"/cache/|cache", x, re.IGNORECASE)]
     backup_files = [x for x in normalized if re.search(r"/no_backup/|no[_-]?backup|workdb", x, re.IGNORECASE)]
     local_files = [x for x in normalized if re.search(r"/files/|/data/data/", x, re.IGNORECASE)]
+    wal_shm_files = [
+        x for x in normalized
+        if re.search(r"(?:\.db|\.sqlite|\.sqlite3)?[-.](?:wal|shm)\b|\b(?:wal|shm)\b", x, re.IGNORECASE)
+    ]
+
+    dynamic_module_keys = [
+        "tls_tests",
+        "apimon",
+        "droidmon",
+        "frida_logs",
+        "screenshots",
+        "activity_tester",
+        "exported_activity_tester",
+    ]
+    inactive_or_unavailable_modules = {
+        key: _mobsf_module_state(_deep_first_by_key_name(dyn, key))
+        for key in dynamic_module_keys
+    }
 
     flat = _flatten_text(dyn, limit=500000)
     trackers = 0
@@ -2139,6 +2348,12 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
             "count": len(normalized),
             "examples": _unique_keep_order(normalized, limit=12),
             "example_names": names[:12],
+        },
+        {
+            "type": "WAL/SHM sidecar artifacts",
+            "count": len(wal_shm_files),
+            "examples": _unique_keep_order(wal_shm_files, limit=12),
+            "example_names": _unique_keep_order([artifact_name(x) for x in wal_shm_files], limit=12),
         },
         {
             "type": "Cache / no-backup artifacts",
@@ -2173,9 +2388,27 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         "cache_artifacts": _unique_keep_order(cache_files, limit=30),
         "backup_artifacts": _unique_keep_order(backup_files, limit=30),
         "local_files_artifacts": _unique_keep_order(local_files, limit=40),
+        "wal_shm_artifacts_count": len(wal_shm_files),
+        "wal_shm_artifacts": _unique_keep_order(wal_shm_files, limit=40),
+        "wal_shm_artifact_names": _unique_keep_order([artifact_name(x) for x in wal_shm_files], limit=40),
         "detected_trackers": trackers,
+        "trackers_detected": trackers,
+        "runtime_observed_evidence": {
+            "local_storage_artifacts_count": len(normalized),
+            "shared_preferences_artifacts_count": len(shared_prefs),
+            "sqlite_database_artifacts_count": len(sqlite),
+            "wal_shm_artifacts_count": len(wal_shm_files),
+            "trackers_detected": trackers,
+        },
+        "inactive_or_unavailable_modules": inactive_or_unavailable_modules,
+        "evidence_semantics": {
+            "observed_artifacts": "direct_runtime_evidence",
+            "inactive_or_unavailable_modules": "coverage_limitation",
+            "absence_rule": "do_not_interpret_empty_dynamic_module_as_absence_of_risk",
+            "verdict_override_allowed": False,
+        },
         "runtime_evidence_categories": categories,
-        "parser_note": "Runtime storage examples are normalized from MobSF dynamic strings, path-like values, and common runtime artifact keys when present. Full readable Android paths are reconstructed when parsable; artifact names are also preserved for executive readability.",
+        "parser_note": "Runtime storage examples are normalized from MobSF dynamic strings, path-like values, and common runtime artifact keys when present. Full readable Android paths are reconstructed when parsable; artifact names are also preserved for executive readability. Empty or unavailable dynamic modules are coverage limitations, not proof of absence of runtime risk.",
     }
 
 
@@ -2746,6 +2979,28 @@ def build_technical_evidence() -> Dict[str, Any]:
         "sast_extraction_warnings_summary": _unique_keep_order(notif_messages, limit=8),
     }
 
+    sast_limitations = []
+    if sast_warning_count:
+        sast_limitations.append({
+            "tool": "CodeQL" if any(str(k).lower() == "codeql" for k in notif_by_tool) else "SAST toolchain",
+            "type": "extraction_or_frontend_notification",
+            "count": sast_warning_count,
+            "affects": "coverage_confidence",
+            "is_application_vulnerability": False,
+            "executive_visibility": True,
+            "verdict_override_allowed": False,
+            "summary": technical["coverage_limitations"]["sast_extraction_warnings"],
+            "by_tool": by_tool_text,
+            "by_level": by_level_text,
+            "examples": _unique_keep_order(notif_messages, limit=8),
+        })
+    if isinstance(technical.get("sast_app_code"), dict):
+        technical["sast_app_code"]["coverage_limitations"] = sast_limitations
+        technical["sast_app_code"]["executive_coverage_status"] = (
+            "Available with coverage limitation" if sast_limitations else "Available"
+        )
+        technical["sast_app_code"]["verdict_override_allowed"] = False
+
     return technical
 
 
@@ -2778,8 +3033,16 @@ def main() -> None:
     df["Description"] = df[col_desc].astype(str)
     df["Flags"] = df[col_flags].astype(str).fillna("").str.strip()
     df["Evidence"] = df[col_evid].astype(str).fillna("").str.strip() if col_evid else ""
+    df["ExcelResultRaw"] = df[col_result].astype(str).fillna("").str.strip()
 
     df["Status"] = df[col_result].apply(_norm_status)
+    df["ResultSource"] = "Excel workbook"
+    df["ResultLocked"] = True
+    df["FlagList"] = df["Flags"].apply(_split_flags_cell)
+    df["FlagsByFamily"] = df["FlagList"].apply(_flags_by_family)
+    df["EvidenceBasis"] = df["FlagList"].apply(_evidence_basis_from_flags)
+    df["AssertionStrength"] = df.apply(lambda rr: _assertion_strength(rr["Status"], rr["FlagList"]), axis=1)
+    df["ReportingRule"] = df.apply(lambda rr: _reporting_rule_for_status(rr["Status"], rr["FlagList"]), axis=1)
     df["CategoryCode"] = df["PUID"].apply(lambda x: _cat_from_puid(x)["code"])
     df["CategoryName"] = df["PUID"].apply(lambda x: _cat_from_puid(x)["name"])
 
@@ -2818,6 +3081,7 @@ def main() -> None:
 
     positive_controls = []
     for _, r in comp.iterrows():
+        row_flags = _split_flags_cell(r["Flags"])
         positive_controls.append({
             "puid": r["PUID"],
             "category_code": r["CategoryCode"],
@@ -2825,6 +3089,14 @@ def main() -> None:
             "declarative_statement": r["Declarative"],
             "flags_used": r["Flags"],
             "evidence_excerpt": r["EvidenceExcerpt"],
+            "excel_result_raw": str(r.get("ExcelResultRaw") or ""),
+            "normalized_result": "Compliant",
+            "result_source": "Excel workbook",
+            "result_locked": True,
+            "flags_by_family": _flags_by_family(row_flags),
+            "evidence_basis": _evidence_basis_from_flags(row_flags),
+            "assertion_strength": _assertion_strength("Compliant", row_flags),
+            "reporting_rule": _reporting_rule_for_status("Compliant", row_flags),
         })
 
     # Non-compliance mapping to weakness patterns
@@ -2899,10 +3171,11 @@ def main() -> None:
         },
         "app_metadata": app_metadata,
         "actors": actors,
+        "requirement_verdict_policy": _verdict_policy(),
         "normalization": {
             "status_values": ["Compliant", "Non-compliant", "Not applicable"],
             "category_map": CAT_MAP,
-            "result_mapping_note": "Upstream 'Result' values yes/no/n/a are normalized to Compliant/Non-compliant/Not applicable.",
+            "result_mapping_note": "Upstream 'Result' values yes/no/n/a are normalized to Compliant/Non-compliant/Not applicable and then locked as the requirement-level verdict. Scanner evidence cannot override the workbook result.",
         },
         "metrics": {
             "total_assessed": total_assessed,
