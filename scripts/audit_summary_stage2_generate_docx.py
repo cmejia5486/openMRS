@@ -261,17 +261,32 @@ def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile
 
 def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: str = "Mobile Application") -> None:
     doc.add_paragraph()
-    t = doc.add_paragraph("mSEC-AM Audit Summary")
-    t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _set_run_font(t.runs[0], size_pt=22, bold=True)
-    s = doc.add_paragraph(report_title)
-    s.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _set_run_font(s.runs[0], size_pt=13, bold=True)
+
+    title = doc.add_paragraph("mSEC-AM Audit Summary")
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title.paragraph_format.space_after = Pt(3)
+    if title.runs:
+        _set_run_font(title.runs[0], size_pt=22, bold=True)
+
+    subtitle = doc.add_paragraph(report_title)
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    subtitle.paragraph_format.space_after = Pt(10)
+    if subtitle.runs:
+        _set_run_font(subtitle.runs[0], size_pt=13, bold=True)
+
     doc.add_paragraph()
-    info = doc.add_paragraph()
-    info.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = info.add_run(f"Audit Date: {audit_date_str}\\nAuditor: {auditor}\\nClassification: Confidential / Internal Use")
-    _set_run_font(r, size_pt=REPORT_BODY_PT)
+
+    for line in (
+        f"Audit Date: {audit_date_str}",
+        f"Auditor: {auditor}",
+        "Classification: Confidential / Internal Use",
+    ):
+        info = doc.add_paragraph()
+        info.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        info.paragraph_format.space_after = Pt(1)
+        run = info.add_run(line)
+        _set_run_font(run, size_pt=REPORT_BODY_PT)
+
     doc.add_page_break()
 
 
@@ -1420,6 +1435,8 @@ def _quality_gate(doc: Document) -> None:
         hits.append("PUID / item")
     if doc.tables and "Table 1." not in full_text:
         hits.append("missing table captions")
+    if "\\n" in combined:
+        hits.append("literal \\n escape sequence")
     if "java/android/backup-enabled" in lowered and "backup enabled\nnot available in parsed evidence" in lowered:
         hits.append("backup fallback not applied")
     if hits:
@@ -3488,11 +3505,14 @@ def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) 
     max_rows = _max_correlation_rows()
     rows: List[List[Any]] = []
     for item in items[:max_rows]:
-        requirement = f"{item.get('puid')}\\n{item.get('weakness_pattern')}"
+        requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
         flags = ", ".join(_as_list(item.get("flags_sample"))[:8])
-        scanner = f"{item.get('technical_source')}\\n{item.get('technical_finding_id')}"
-        evidence = f"Treatment item: {item.get('technical_item_id')}\\n{_short(item.get('evidence_summary'), 360)}"
-        rows.append([requirement, flags, scanner, evidence])
+        scanner = f"{item.get('technical_source')}\n{item.get('technical_finding_id')}"
+        fit = _clean_text(item.get("evidence_fit")) or "Not classified"
+        strength = _clean_text(item.get("correlation_strength")) or "Not classified"
+        fit_strength = f"{fit} / {strength}"
+        evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 360)}"
+        rows.append([requirement, flags, scanner, fit_strength, evidence])
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
     _add_table(
