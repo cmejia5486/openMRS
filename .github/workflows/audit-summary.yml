@@ -201,6 +201,7 @@ jobs:
           $code = @'
           import json
           import os
+          import re
           from pathlib import Path
 
           analysis_path = Path(os.environ["AUDIT_ANALYSIS_JSON_PATH"])
@@ -214,17 +215,29 @@ jobs:
                   return default
               return default
 
+          def clean(value):
+              return re.sub(r"\s+", " ", str(value or "")).strip()
+
+          def severity_rank(value):
+              return {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "UNKNOWN": 0}.get(str(value or "UNKNOWN").upper(), 0)
+
           def normalize(item):
               cvss = item.get("best_cvss") if isinstance(item.get("best_cvss"), dict) else {}
+              vuln_id = item.get("vulnerability_id") or item.get("cve") or item.get("id")
+              component = item.get("component") or item.get("package") or item.get("pkg")
+              fixed = item.get("fixed_version") or item.get("fixed")
               return {
-                  "id": item.get("vulnerability_id") or item.get("cve") or item.get("id"),
-                  "cve": item.get("cve") or item.get("vulnerability_id") or item.get("id"),
+                  "id": vuln_id,
+                  "cve": vuln_id,
                   "severity": str(item.get("severity") or "UNKNOWN").upper(),
-                  "package": item.get("component") or item.get("package") or item.get("pkg"),
-                  "pkg": item.get("component") or item.get("package") or item.get("pkg"),
+                  "package": component,
+                  "pkg": component,
+                  "package_id": item.get("package_id") or item.get("pkg_id"),
                   "installed": item.get("installed_version") or item.get("installed"),
-                  "fixed": item.get("fixed_version") or item.get("fixed"),
-                  "fix_available": bool(item.get("fix_available") or item.get("fixed_version") or item.get("fixed")),
+                  "fixed": fixed,
+                  "fix_available": bool(item.get("fix_available") or fixed),
+                  "status": item.get("status"),
+                  "severity_source": item.get("severity_source"),
                   "cwe_ids": item.get("cwe_ids") or item.get("cwe") or [],
                   "cvss_v3_score": cvss.get("v3_score"),
                   "cvss_v3_vector": cvss.get("v3_vector"),
@@ -235,6 +248,7 @@ jobs:
                   "description": item.get("description") or item.get("title"),
                   "source": item.get("source") or "TRIVY",
                   "artifact_source": item.get("artifact_source"),
+                  "evidence_confidence": "observed_technical_finding",
               }
 
           fingerprint_path = vision_dir / "vision360_fingerprint.json"
@@ -242,6 +256,7 @@ jobs:
           fingerprint = load_json(fingerprint_path, {})
           details = fingerprint.get("technical_details") if isinstance(fingerprint, dict) else {}
           sca = details.get("sca") if isinstance(details, dict) else {}
+
           if isinstance(pack, dict) and isinstance(sca, dict):
               tech = pack.setdefault("technical_evidence", {})
               vision = tech.setdefault("vision360", {})
@@ -251,6 +266,7 @@ jobs:
               raw = sca.get("vulnerabilities") if isinstance(sca.get("vulnerabilities"), list) else []
               detailed = [normalize(x) for x in raw if isinstance(x, dict)]
               detailed = [x for x in detailed if x.get("id") or x.get("package")]
+              detailed.sort(key=lambda x: (severity_rank(x.get("severity")), clean(x.get("package")), clean(x.get("id"))), reverse=True)
               if detailed:
                   trivy["detailed_findings"] = detailed
                   trivy["vulnerabilities"] = detailed
@@ -258,8 +274,20 @@ jobs:
               summary = sca.get("summary") if isinstance(sca.get("summary"), dict) else {}
               for key, value in summary.items():
                   trivy[key] = value
-              trivy["high_severity_components"] = sorted({str(x.get("package") or "").strip() for x in detailed if str(x.get("severity") or "").upper() == "HIGH" and str(x.get("package") or "").strip()})
+              by_component = {}
+              by_severity_component = {}
+              for item in detailed:
+                  component = clean(item.get("package")) or "unknown component"
+                  severity = clean(item.get("severity")) or "UNKNOWN"
+                  by_component.setdefault(component, 0)
+                  by_component[component] += 1
+                  by_severity_component.setdefault(severity, set()).add(component)
+              trivy["components_by_severity"] = {k: sorted(v) for k, v in by_severity_component.items()}
+              trivy["high_severity_components"] = trivy["components_by_severity"].get("HIGH", [])
               trivy["technical_details_source"] = "vision360_fingerprint.technical_details.sca"
+              trivy["evidence_confidence"] = "observed_technical_finding"
+              pack.setdefault("report_quality", {})["sca_enriched_from_fingerprint"] = bool(detailed)
+              pack.setdefault("report_quality", {})["evidence_classes"] = ["observed_technical_finding", "evidence_gap", "mixed_or_partial", "manual_auditor_determination"]
               analysis_path.write_text(json.dumps(pack, ensure_ascii=False, indent=2), encoding="utf-8")
           '@
           $script = Join-Path $env:RUNNER_TEMP "audit_summary_enrich.py"
@@ -274,26 +302,73 @@ jobs:
           & $env:PYTHON_EXE scripts/audit_summary_stage2_generate_docx.py --in $env:AUDIT_ANALYSIS_JSON_PATH --out $env:AUDIT_SUMMARY_DOCX_PATH
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Polish Audit Summary DOCX layout
+      - name: Polish and QA Audit Summary DOCX layout
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
           $code = @'
           import os
+          import re
           from pathlib import Path
           from docx import Document
+          from docx.enum.section import WD_ORIENT
           from docx.oxml import OxmlElement
           from docx.oxml.ns import qn
-          from docx.shared import Pt
+          from docx.shared import Inches, Pt
 
           docx_path = Path(os.environ["AUDIT_SUMMARY_DOCX_PATH"])
           doc = Document(str(docx_path))
 
+          def norm(value):
+              return re.sub(r"\s+", " ", str(value or "")).strip()
+
+          def table_headers(table):
+              if not table.rows:
+                  return []
+              return [norm(cell.text) for cell in table.rows[0].cells]
+
+          def caption_for(headers):
+              joined = " | ".join(headers).lower()
+              if "weakness pattern" in joined and "workbook basis" in joined:
+                  return "Risk triage summary"
+              if "cve" in joined or "installed" in joined or "fixed" in joined:
+                  return "Dependency vulnerability evidence details"
+              if "indicator" in joined and "parsed" in joined:
+                  return "Android static evidence indicators"
+              if "runtime evidence" in joined:
+                  return "MobSF dynamic runtime evidence summary"
+              if "sast" in joined or "sarif" in joined:
+                  return "SAST classification and findings summary"
+              if "management" in joined or "owner" in joined or "target" in joined:
+                  return "Management action plan"
+              if "puid" in joined or "requirement" in joined:
+                  return "Requirement treatment traceability"
+              if "scanner" in joined or "technical finding" in joined:
+                  return "Technical evidence correlation matrix"
+              if "positive control" in joined:
+                  return "Positive and qualified control traceability"
+              return "Audit evidence and treatment table"
+
           def insert_caption_before(table, text):
               p = OxmlElement("w:p")
+              pPr = OxmlElement("w:pPr")
+              spacing = OxmlElement("w:spacing")
+              spacing.set(qn("w:before"), "120")
+              spacing.set(qn("w:after"), "60")
+              pPr.append(spacing)
+              p.append(pPr)
               r = OxmlElement("w:r")
+              rPr = OxmlElement("w:rPr")
+              b = OxmlElement("w:b")
+              i = OxmlElement("w:i")
+              sz = OxmlElement("w:sz")
+              sz.set(qn("w:val"), "18")
+              rPr.append(b)
+              rPr.append(i)
+              rPr.append(sz)
               t = OxmlElement("w:t")
               t.text = text
+              r.append(rPr)
               r.append(t)
               p.append(r)
               table._tbl.addprevious(p)
@@ -304,26 +379,68 @@ jobs:
               shd.set(qn("w:fill"), fill)
               tcPr.append(shd)
 
+          def repeat_header(row):
+              trPr = row._tr.get_or_add_trPr()
+              tblHeader = OxmlElement("w:tblHeader")
+              tblHeader.set(qn("w:val"), "true")
+              trPr.append(tblHeader)
+
+          def no_wrap(cell):
+              tcPr = cell._tc.get_or_add_tcPr()
+              nowrap = OxmlElement("w:noWrap")
+              tcPr.append(nowrap)
+
+          def format_cell(cell, size=8.0, bold=False, nowrap=False):
+              if nowrap:
+                  no_wrap(cell)
+              for paragraph in cell.paragraphs:
+                  paragraph.paragraph_format.space_after = Pt(0)
+                  paragraph.paragraph_format.line_spacing = 1.0
+                  for run in paragraph.runs:
+                      run.font.size = Pt(size)
+                      run.bold = bold
+
+          for section in doc.sections:
+              section.top_margin = Inches(0.55)
+              section.bottom_margin = Inches(0.55)
+              section.left_margin = Inches(0.55)
+              section.right_margin = Inches(0.55)
+
+          seen_tables = 0
           for index, table in enumerate(doc.tables, start=1):
-              insert_caption_before(table, f"Table {index}. Audit evidence and treatment table")
-              if not table.rows:
-                  continue
-              for cell in table.rows[0].cells:
-                  shade(cell, "D9E1F2")
-                  for paragraph in cell.paragraphs:
-                      for run in paragraph.runs:
-                          run.bold = True
-                          run.font.size = Pt(8.5)
+              headers = table_headers(table)
+              insert_caption_before(table, f"Table {index}. {caption_for(headers)}")
+              seen_tables += 1
+              table.autofit = True
+              if table.rows:
+                  repeat_header(table.rows[0])
+                  for cell in table.rows[0].cells:
+                      header = norm(cell.text)
+                      if header == "PUID / item":
+                          cell.text = "Requirement"
+                      shade(cell, "D9E1F2")
+                      format_cell(cell, size=8.5, bold=True, nowrap=True)
               for row in table.rows[1:]:
-                  for cell in row.cells:
-                      text = cell.text.strip()
+                  for col_idx, cell in enumerate(row.cells):
+                      text = norm(cell.text)
                       if text == "PUID / item":
                           cell.text = "Requirement"
-                      for paragraph in cell.paragraphs:
-                          paragraph.paragraph_format.space_after = Pt(0)
-                          for run in paragraph.runs:
-                              run.font.size = Pt(8)
+                      keep_together = col_idx == 0 or bool(re.match(r"^(SECM-|CVE-|TECH-|CTRL-)", text))
+                      format_cell(cell, size=7.8 if len(text) > 180 else 8.0, bold=False, nowrap=keep_together)
+
+          qa_text = "\n".join(paragraph.text for paragraph in doc.paragraphs)
+          qa_issues = []
+          if "PUID / item" in qa_text:
+              qa_issues.append("Legacy table header 'PUID / item' is still present.")
+          if seen_tables and "Table 1." not in qa_text:
+              qa_issues.append("Table captions were not inserted.")
+          if "both related to retrofit" in qa_text.lower():
+              qa_issues.append("SCA narrative still states that all High findings are Retrofit-related.")
+
           doc.save(str(docx_path))
+
+          if qa_issues:
+              raise SystemExit("Audit Summary DOCX QA failed: " + " | ".join(qa_issues))
           '@
           $script = Join-Path $env:RUNNER_TEMP "audit_summary_polish_docx.py"
           Set-Content -LiteralPath $script -Value $code -Encoding UTF8
