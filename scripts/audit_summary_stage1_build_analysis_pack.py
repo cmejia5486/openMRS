@@ -948,6 +948,85 @@ def _priority_summary_from_patterns(patterns: List[Dict[str, Any]]) -> List[Dict
     return rows
 
 
+def _correlation_text_blob(ctrl: Dict[str, Any], tech: Dict[str, Any]) -> str:
+    parts: List[str] = []
+    for obj in (ctrl, tech):
+        if not isinstance(obj, dict):
+            continue
+        for key in (
+            "weakness_pattern", "puid", "flags", "flags_sample", "source",
+            "finding_id", "technical_item_id", "item_id", "observed_issue",
+            "affected_component", "evidence_summary", "linked_patterns",
+        ):
+            value = obj.get(key)
+            if isinstance(value, list):
+                parts.extend(_clean_text(x) for x in value)
+            elif isinstance(value, dict):
+                parts.append(_clean_text(value))
+            else:
+                parts.append(_clean_text(value))
+    return " ".join(x for x in parts if x).lower()
+
+
+def _evidence_fit_and_strength(ctrl: Dict[str, Any], tech: Dict[str, Any]) -> Tuple[str, str]:
+    """Describe how a scanner finding supports a workbook control.
+
+    This is a reporting classification only. It never changes the workbook
+    Result value and is intended for Appendix C traceability.
+    """
+    blob = _correlation_text_blob(ctrl, tech)
+    source = _clean_text(tech.get("source")).lower()
+
+    storage_terms = [
+        "sharedpreferences", "shared preferences", "sqlite", "database", ".db",
+        "wal", "shm", "local storage", "data at rest", "keystore", "plaintext",
+        "token", "key", "secret", "credential", "cache", "no_backup",
+    ]
+    manifest_terms = [
+        "manifest", "exported", "permission", "debuggable", "allowbackup",
+        "backup", "min sdk", "minsdk", "component", "activity", "service",
+    ]
+    binary_terms = [
+        "certificate", "signature", "janus", "sha1", "debug certificate", "v1 signature",
+    ]
+    dependency_terms = [
+        "cve", "dependency", "library", "package", "sca", "trivy", "fixed version", "vulnerab",
+    ]
+    sast_terms = [
+        "codeql", "semgrep", "cleartext-storage", "implicitly-exported", "androidmanifest.xml", "source code",
+    ]
+    governance_terms = [
+        "org_", "policy", "process", "governance", "retention", "review", "notice", "consent", "fips", "saml", "soap",
+    ]
+
+    has_storage = any(t in blob for t in storage_terms)
+    has_manifest = any(t in blob for t in manifest_terms)
+    has_binary = any(t in blob for t in binary_terms)
+    has_dependency = any(t in blob for t in dependency_terms)
+    has_sast = any(t in blob for t in sast_terms)
+    has_governance = any(t in blob for t in governance_terms)
+
+    if "mobsf dynamic" in source:
+        if has_storage:
+            return "Runtime storage evidence", "Direct"
+        return "Runtime context evidence", "Contextual"
+    if "mobsf static" in source:
+        if has_manifest or has_binary:
+            return "Android APK, manifest, or signing evidence", "Direct"
+        return "Android static evidence", "Supporting"
+    if "trivy" in source:
+        if has_dependency:
+            return "Dependency vulnerability evidence", "Direct"
+        return "Software composition evidence", "Supporting"
+    if "sast" in source or "codeql" in source or "semgrep" in source:
+        if has_sast or has_manifest or has_storage:
+            return "Application-code evidence", "Direct"
+        return "Application-code signal", "Supporting"
+    if has_governance:
+        return "Governance traceability evidence", "Contextual"
+    return "Technical supporting evidence", "Supporting"
+
+
 def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items: List[Dict[str, Any]], limit: int = 500) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     control_by_puid = {str(c.get("puid")): c for c in control_items}
@@ -955,6 +1034,7 @@ def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items
         linked_puids = tech.get("linked_puids") if isinstance(tech.get("linked_puids"), list) else []
         for puid in linked_puids[:12]:
             ctrl = control_by_puid.get(str(puid), {})
+            evidence_fit, correlation_strength = _evidence_fit_and_strength(ctrl, tech)
             rows.append({
                 "weakness_pattern": ctrl.get("weakness_pattern") or (tech.get("linked_patterns") or [""])[0],
                 "puid": puid,
@@ -963,6 +1043,8 @@ def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items
                 "technical_finding_id": tech.get("finding_id"),
                 "technical_item_id": tech.get("item_id"),
                 "evidence_summary": _excerpt(tech.get("observed_issue") or tech.get("affected_component"), 220),
+                "evidence_fit": evidence_fit,
+                "correlation_strength": correlation_strength,
             })
             if len(rows) >= limit:
                 return rows
@@ -1897,17 +1979,36 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
     target_sdk = _first_deep_value(mobsf, [r"^target_?sdk$", r"targetSdk"])
     exported_value = _first_deep_value(mobsf, [r"exported_components?_count", r"exported_count", r"exported_components?"])
 
+    manifest_blob = _flatten_text(manifest_findings, limit=250000).lower()
+    debuggable_from_manifest = "app_is_debuggable" in manifest_blob or "android:debuggable=true" in manifest_blob or "debug enabled for app" in manifest_blob
+    backup_from_manifest = "app_allowbackup" in manifest_blob or "android:allowbackup=true" in manifest_blob or "application data can be backed up" in manifest_blob
+
+    if debug_value in (None, "") and debuggable_from_manifest:
+        debug_value = True
+    if backup_value in (None, "") and backup_from_manifest:
+        backup_value = True
+
     debug_cert_detected = ("debug certificate" in flat or "cn=android debug" in flat)
     v1_or_janus_detected = ("janus" in flat or "v1 signature" in flat or "v1 signature scheme" in flat)
     sha1_detected = ("sha1withrsa" in flat or " sha1 " in flat or "hash algorithm: sha1" in flat)
     cleartext_detected = ("cleartext" in flat and ("true" in flat or "enabled" in flat or "traffic" in flat))
 
+    exported_activities_raw = mobsf.get("exported_activities") if isinstance(mobsf, dict) else None
+    exported_names: List[str] = []
+    if isinstance(exported_activities_raw, list):
+        exported_names = [_clean_text(x) for x in exported_activities_raw if _clean_text(x)]
+    elif isinstance(exported_activities_raw, str):
+        exported_names = re.findall(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+", exported_activities_raw)
+        exported_names = _unique_keep_order(exported_names, limit=80)
+
     if isinstance(exported_value, list):
         exported_count: Any = len(exported_value)
     elif isinstance(exported_value, dict):
         exported_count = len(exported_value)
-    elif exported_value not in (None, ""):
+    elif exported_value not in (None, "") and _safe_int(exported_value, 0) > 0:
         exported_count = _safe_int(exported_value, 0)
+    elif exported_names:
+        exported_count = len(exported_names)
     else:
         exported_count = "Not available in parsed evidence"
 
@@ -1929,6 +2030,26 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         "vulnerable_min_sdk_signal": "Detected" if vulnerable_min_sdk else "Not detected" if min_sdk_value is not None else "Not available in parsed evidence",
     }
 
+    inferred_build_type = "debug" if (
+        "debug" in _clean_text(app_info.get("version_name")).lower()
+        or indicators["debuggable"] == "Detected"
+        or debug_cert_detected
+    ) else "release/unknown"
+
+    apk_traceability = {
+        "file_name": app_info.get("file_name") or mobsf.get("file_name") if isinstance(mobsf, dict) else "",
+        "app_name": app_info.get("app_name") or mobsf.get("app_name") if isinstance(mobsf, dict) else "",
+        "package_name": app_info.get("package_name") or mobsf.get("package_name") if isinstance(mobsf, dict) else "",
+        "version_name": app_info.get("version_name") or mobsf.get("version_name") if isinstance(mobsf, dict) else "",
+        "version_code": app_info.get("version_code") or mobsf.get("version_code") if isinstance(mobsf, dict) else "",
+        "sha256": mobsf.get("sha256") if isinstance(mobsf, dict) else "",
+        "md5": mobsf.get("md5") if isinstance(mobsf, dict) else "",
+        "min_sdk": indicators["min_sdk"],
+        "target_sdk": indicators["target_sdk"],
+        "inferred_build_type": inferred_build_type,
+        "mobsf_version": mobsf.get("version") if isinstance(mobsf, dict) else "",
+    }
+
     flags = {
         "debuggable_detected": indicators["debuggable"] == "Detected",
         "allow_backup_detected": indicators["allow_backup"] == "Detected",
@@ -1938,6 +2059,8 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         "cleartext_detected": cleartext_detected,
         "exported_components_detected": isinstance(exported_count, int) and exported_count > 0,
         "vulnerable_min_sdk_signal": vulnerable_min_sdk,
+        "debuggable_from_manifest": debuggable_from_manifest,
+        "backup_from_manifest": backup_from_manifest,
     }
 
     normalized_indicators = [
@@ -1958,6 +2081,8 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         "source_dir": str(mobsf_dir),
         "files": {k: str(v) for k, v in files.items() if v},
         "app_info": app_info,
+        "apk_traceability": apk_traceability,
+        "exported_components": exported_names[:80],
         "flags": flags,
         **indicators,
         "normalized_indicators": normalized_indicators,
@@ -2009,8 +2134,9 @@ def _normalize_android_storage_artifact(item: Any) -> str:
     # Forms observed in MobSF dynamic text:
     # datadataorg.openmrs.mobileshared_prefsOpenMRSPrefFile.xml
     # datadataorg.openmrs.mobiledatabasesopenmrs.db
-    if collapsed.lower().startswith("datadata"):
-        tail = collapsed[len("datadata"):]
+    dd_idx = collapsed.lower().find("datadata")
+    if dd_idx >= 0:
+        tail = collapsed[dd_idx + len("datadata"):]
         for folder in ("shared_prefs", "databases", "no_backup", "cache", "files"):
             idx = tail.lower().find(folder)
             if idx > 0:
@@ -2091,9 +2217,23 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
                 elif isinstance(item, dict):
                     explicit_values.extend(_collect_strings_matching(item, storage_patterns, limit=30))
 
+    # Prefer explicit MobSF dynamic buckets when present. They preserve XML,
+    # SQLite, no_backup, and WAL/SHM sidecar artifacts better than text mining.
+    for bucket in ("xml", "sqlite", "others"):
+        for entry in _as_list(dyn.get(bucket) if isinstance(dyn, dict) else []):
+            if isinstance(entry, dict):
+                file_value = entry.get("file") or entry.get("path") or entry.get("name")
+                if file_value:
+                    explicit_values.append(str(file_value))
+            elif isinstance(entry, str):
+                explicit_values.append(entry)
+
     raw_artifacts = _unique_keep_order(list(artifacts) + explicit_values, limit=300)
-    normalized = _unique_keep_order([_normalize_android_storage_artifact(x) for x in raw_artifacts], limit=160)
-    normalized = [x for x in normalized if x]
+    normalized = _unique_keep_order([_normalize_android_storage_artifact(x) for x in raw_artifacts], limit=200)
+    normalized = [
+        x for x in normalized
+        if x and _clean_text(Path(str(x).replace("\\", "/")).name).lower() not in {"db", "sqlite", "sqlite3"}
+    ]
 
     def artifact_name(item: str) -> str:
         item = _normalize_android_storage_artifact(item)
@@ -2109,8 +2249,13 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
     ]
     sqlite = [
         x for x in normalized
-        if re.search(r"/databases/|\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)", x, re.IGNORECASE)
+        if re.search(r"/databases/|/no_backup/|\.db(\b|$|-)|\.sqlite(\b|$)|\.sqlite3(\b|$)|workdb", x, re.IGNORECASE)
     ]
+    wal_shm = [
+        x for x in normalized
+        if re.search(r"-(?:wal|shm)$|\.(?:db|sqlite|sqlite3)-(?:wal|shm)$", x, re.IGNORECASE)
+    ]
+    sqlite_primary = [x for x in sqlite if x not in set(wal_shm)]
     cache_files = [x for x in normalized if re.search(r"/cache/|cache", x, re.IGNORECASE)]
     backup_files = [x for x in normalized if re.search(r"/no_backup/|no[_-]?backup|workdb", x, re.IGNORECASE)]
     local_files = [x for x in normalized if re.search(r"/files/|/data/data/", x, re.IGNORECASE)]
@@ -2130,21 +2275,21 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         },
         {
             "type": "SQLite/database artifacts",
-            "count": len(sqlite),
-            "examples": _unique_keep_order(sqlite, limit=12),
-            "example_names": _unique_keep_order([artifact_name(x) for x in sqlite], limit=12),
+            "count": len(sqlite_primary),
+            "examples": _unique_keep_order(sqlite_primary, limit=12),
+            "example_names": _unique_keep_order([artifact_name(x) for x in sqlite_primary], limit=12),
         },
         {
-            "type": "Local storage artifacts",
+            "type": "WAL/SHM sidecar artifacts",
+            "count": len(wal_shm),
+            "examples": _unique_keep_order(wal_shm, limit=12),
+            "example_names": _unique_keep_order([artifact_name(x) for x in wal_shm], limit=12),
+        },
+        {
+            "type": "Runtime local-storage artifacts",
             "count": len(normalized),
             "examples": _unique_keep_order(normalized, limit=12),
             "example_names": names[:12],
-        },
-        {
-            "type": "Cache / no-backup artifacts",
-            "count": len(cache_files) + len(backup_files),
-            "examples": _unique_keep_order(cache_files + backup_files, limit=12),
-            "example_names": _unique_keep_order([artifact_name(x) for x in cache_files + backup_files], limit=12),
         },
         {
             "type": "Trackers",
@@ -2166,10 +2311,13 @@ def _summarize_mobsf_dynamic(dynamic_dir: Path, files: Dict[str, Optional[Path]]
         "shared_preferences_artifacts": _unique_keep_order(shared_prefs, limit=40),
         "shared_preferences_artifact_names": _unique_keep_order([artifact_name(x) for x in shared_prefs], limit=40),
         "shared_preferences": _unique_keep_order(shared_prefs, limit=40),
-        "sqlite_database_artifacts_count": len(sqlite),
-        "sqlite_database_artifacts": _unique_keep_order(sqlite, limit=40),
-        "sqlite_database_artifact_names": _unique_keep_order([artifact_name(x) for x in sqlite], limit=40),
-        "sqlite_databases": _unique_keep_order(sqlite, limit=40),
+        "sqlite_database_artifacts_count": len(sqlite_primary),
+        "sqlite_database_artifacts": _unique_keep_order(sqlite_primary, limit=40),
+        "sqlite_database_artifact_names": _unique_keep_order([artifact_name(x) for x in sqlite_primary], limit=40),
+        "sqlite_databases": _unique_keep_order(sqlite_primary, limit=40),
+        "wal_shm_artifacts_count": len(wal_shm),
+        "wal_shm_artifacts": _unique_keep_order(wal_shm, limit=40),
+        "wal_shm_artifact_names": _unique_keep_order([artifact_name(x) for x in wal_shm], limit=40),
         "cache_artifacts": _unique_keep_order(cache_files, limit=30),
         "backup_artifacts": _unique_keep_order(backup_files, limit=30),
         "local_files_artifacts": _unique_keep_order(local_files, limit=40),

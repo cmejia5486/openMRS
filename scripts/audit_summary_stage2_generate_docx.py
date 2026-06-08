@@ -268,10 +268,15 @@ def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: s
     s.alignment = WD_ALIGN_PARAGRAPH.CENTER
     _set_run_font(s.runs[0], size_pt=13, bold=True)
     doc.add_paragraph()
-    info = doc.add_paragraph()
-    info.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = info.add_run(f"Audit Date: {audit_date_str}\\nAuditor: {auditor}\\nClassification: Confidential / Internal Use")
-    _set_run_font(r, size_pt=REPORT_BODY_PT)
+    for line in [
+        f"Audit Date: {audit_date_str}",
+        f"Auditor: {auditor}",
+        "Classification: Confidential / Internal Use",
+    ]:
+        info = doc.add_paragraph()
+        info.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = info.add_run(line)
+        _set_run_font(r, size_pt=REPORT_BODY_PT)
     doc.add_page_break()
 
 
@@ -756,19 +761,19 @@ def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
         # Common LLM mistake: using total app-scope signals as hardening signal count.
         text = re.sub(
             rf"\b{app_signals}\s+(?:additional\s+)?(?:signals?|findings?)\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
-            f"{hardening} hardening, quality, or maintainability signal(s)",
+            f"{hardening} hardening, quality, or maintainability signals",
             text,
             flags=re.IGNORECASE,
         )
         text = re.sub(
             rf"\balongside\s+{app_signals}\s+(?:signals?|findings?)\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
-            f"alongside {hardening} hardening, quality, or maintainability signal(s)",
+            f"alongside {hardening} hardening, quality, or maintainability signals",
             text,
             flags=re.IGNORECASE,
         )
         text = re.sub(
             rf"\b{app_signals}\s+hardening(?:,?\s+quality,?\s+or\s+maintainability)?\s+signal\(s\)",
-            f"{hardening} hardening, quality, or maintainability signal(s)",
+            f"{hardening} hardening, quality, or maintainability signals",
             text,
             flags=re.IGNORECASE,
         )
@@ -776,7 +781,7 @@ def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
     if security >= 0 and hardening >= 0:
         text = re.sub(
             r"SAST process yielded\s+(\d+)\s+retained security findings from the analyzed application code,\s+alongside\s+\d+\s+signals related to hardening or maintainability",
-            f"SAST process retained {security} security-relevant application-code finding(s) and {hardening} hardening, quality, or maintainability signal(s)",
+            f"SAST process retained {security} security-relevant application-code findings and {hardening} hardening, quality, or maintainability signals",
             text,
             flags=re.IGNORECASE,
         )
@@ -784,13 +789,13 @@ def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
     # Clean common duplicated tail left by LLM phrasing or regex replacement.
     text = re.sub(
         r"hardening, quality, or maintainability signal\(s\)\s+or\s+maintainability\b",
-        "hardening, quality, or maintainability signal(s)",
+        "hardening, quality, or maintainability signals",
         text,
         flags=re.IGNORECASE,
     )
     text = re.sub(
         r"hardening, quality, or maintainability signal\(s\)\s*,?\s+or\s+maintainability\b",
-        "hardening, quality, or maintainability signal(s)",
+        "hardening, quality, or maintainability signals",
         text,
         flags=re.IGNORECASE,
     )
@@ -1315,6 +1320,14 @@ def _quality_gate(doc: Document) -> None:
         "Not reported",
         "both related to retrofit",
         "both High findings are Retrofit",
+        "\\nAuditor",
+        "entr(y/ies)",
+        "retained_app_code_findings",
+        "hardening_or_maintainability_signals",
+        "discrepanc",
+        "contradict",
+        "technical coverage limitations",
+        "scope and limitations",
     ]
     hits = [token for token in forbidden_fragments if token.lower() in lowered]
     if "puid / item" in lowered:
@@ -1449,8 +1462,10 @@ def _table_caption_for_headers(headers: List[str]) -> str:
         return "SAST security-relevant finding details"
     if "top hardening" in joined:
         return "Top hardening and maintainability signals"
+    if "execution item" in joined and "summary" in joined:
+        return "Technical execution metadata"
     if "limitation" in joined and "report-safe explanation" in joined:
-        return "Technical coverage limitations"
+        return "Technical execution metadata"
     if "scanner evidence" in joined or "technical finding" in joined:
         return "Technical evidence correlation matrix"
     if "positive control" in joined:
@@ -1561,7 +1576,7 @@ def _technical_evidence(pack: Dict[str, Any]) -> Dict[str, Any]:
 
 def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
     labels = [
-        ("Vision360 trace", "vision360"),
+        ("Audit workbook", "workbook"),
         ("Trivy SCA", "trivy_sca"),
         ("MobSF static", "mobsf_static"),
         ("MobSF dynamic", "mobsf_dynamic"),
@@ -1569,25 +1584,32 @@ def _source_status_rows(technical: Dict[str, Any]) -> List[List[Any]]:
     ]
     rows = []
     for label, key in labels:
+        if key == "workbook":
+            rows.append([label, "Authoritative", "Provides requirement-level yes, no, and n/a audit results, metrics, PUIDs, categories, flags, and workbook justifications."])
+            continue
         block = _as_dict(technical.get(key))
         available = _block_available(block)
-        status = "Available" if available else "Not available to report generator"
-        summary = "Parsed and available for report correlation." if available else "Artifact was not present, not downloaded, or not normalized into the analysis pack."
+        status = "Processed" if available else "No artifact processed"
+        summary = "Parsed into the analysis pack for technical evidence." if available else "No normalized evidence was included in the analysis pack for this source."
         if key == "trivy_sca" and available:
-            summary = f"{_deep_int(block, ['total_vulnerabilities', 'vulnerabilities_total', 'total'])} dependency vulnerability finding(s); {_deep_int(block, ['packages_detected', 'package_count', 'packages_total'])} package(s) detected."
+            summary = f"{_deep_int(block, ['total_vulnerabilities', 'vulnerabilities_total', 'total'])} dependency vulnerability findings; {_deep_int(block, ['packages_detected', 'package_count', 'packages_total'])} packages detected."
         elif key == "sast_app_code" and available:
             counts = _sast_counts(block)
             raw_counts = _deep_dict(block, ["raw_tool_counts", "tool_counts", "by_tool"])
             raw_text = ", ".join(f"{k}: {v}" for k, v in raw_counts.items()) if raw_counts else "raw tool counts unavailable"
             summary = (
-                f"{counts['retained_security_findings']} security-relevant application-code finding(s) and "
-                f"{counts['hardening_or_maintainability_signals']} hardening/quality signal(s) retained after scope filtering. "
+                f"{counts['retained_security_findings']} security-relevant application-code findings and "
+                f"{counts['hardening_or_maintainability_signals']} hardening and quality signals retained after scope filtering. "
                 f"Raw SARIF counts retained for traceability: {raw_text}."
             )
         elif key == "mobsf_static" and available:
-            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed where present."
+            trace = _as_dict(block.get("apk_traceability"))
+            version = _clean_text(trace.get("version_name")) or _clean_text(_as_dict(block.get("app_info")).get("version_name"))
+            build = _clean_text(trace.get("inferred_build_type"))
+            extra = f" Version {version}; build type {build}." if version or build else ""
+            summary = "Android APK, manifest, certificate, permission, signing, tracker, and hardening indicators were parsed." + extra
         elif key == "mobsf_dynamic" and available:
-            summary = "Runtime storage, SharedPreferences, database, cache, tracker, and observed artifact evidence was parsed where present."
+            summary = "Runtime SharedPreferences, SQLite/database, WAL/SHM sidecar, local-storage, URL, and tracker evidence was parsed."
         rows.append([label, status, summary])
     return rows
 
@@ -1601,7 +1623,7 @@ def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
         critical = _safe_int(by_sev.get("CRITICAL") or by_sev.get("critical"))
         high = _safe_int(by_sev.get("HIGH") or by_sev.get("high"))
         if total > 0:
-            takeaways.append(f"Trivy SCA evidence identified {total} known dependency vulnerability finding(s), including {critical} Critical and {high} High finding(s) where reported.")
+            takeaways.append(f"Trivy SCA evidence identified {total} known dependency vulnerability findings, including {critical} Critical and {high} High findings where reported.")
     mobsf = _as_dict(technical.get("mobsf_static"))
     if _block_available(mobsf):
         indicators = []
@@ -1621,12 +1643,12 @@ def _technical_takeaways(technical: Dict[str, Any]) -> List[str]:
         counts = _sast_counts(sast)
         if counts["retained_security_findings"] > 0:
             takeaways.append(
-                f"SAST evidence retained {counts['retained_security_findings']} security-relevant application-code finding(s) after scope filtering; "
-                f"{counts['hardening_or_maintainability_signals']} additional hardening/quality signal(s) are reported separately."
+                f"SAST evidence retained {counts['retained_security_findings']} security-relevant application-code findings after scope filtering; "
+                f"{counts['hardening_or_maintainability_signals']} additional hardening and quality signals are reported separately."
             )
         elif counts["retained_app_code_signals"] > 0:
             takeaways.append(
-                f"SAST evidence retained {counts['retained_app_code_signals']} application-scope hardening/quality signal(s), but no security-relevant SAST findings were classified from the normalized evidence."
+                f"SAST evidence retained {counts['retained_app_code_signals']} application-scope hardening and quality signals, but no security-relevant SAST findings were classified from the normalized evidence."
             )
     return takeaways
 
@@ -1656,8 +1678,8 @@ def _add_trivy_section(doc: Document, technical: Dict[str, Any]) -> None:
         high_note = " High-severity findings affect: " + ", ".join(_clean_text(x) for x in high_components[:8] if _clean_text(x)) + "."
 
     doc.add_paragraph(
-        f"Trivy Software Composition Analysis reported {packages} detected package(s), {total} known dependency vulnerability finding(s), "
-        f"{fixable} finding(s) with a fixed version available, and {licenses} license entr(y/ies). Severity distribution: {severity_text}.{high_note}"
+        f"Trivy Software Composition Analysis reported {packages} detected packages, {total} known dependency vulnerability findings, "
+        f"{fixable} findings with a fixed version available, and {licenses} license entries. Severity distribution: {severity_text}.{high_note}"
     )
 
     rows = []
@@ -1746,13 +1768,25 @@ def _mobsf_signal_rows(mobsf: Dict[str, Any], technical: Dict[str, Any] | None =
 def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
     mobsf = _as_dict(technical.get("mobsf_static"))
     if not _block_available(mobsf):
-        doc.add_paragraph("MobSF static evidence was not available in the analysis pack. Static APK, manifest, signing, certificate, permission, and tracker checks should therefore be treated as not assessed by this report run.")
+        doc.add_paragraph("MobSF static evidence was not processed in the analysis pack.")
         return
-    doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Missing values mean that the parser did not receive or normalize that indicator; they must not be interpreted as absence of risk.")
+    doc.add_paragraph("MobSF static evidence summarizes the APK identity, manifest configuration, permissions, signing, certificate, tracker, and binary hardening indicators observed in the analyzed artifact.")
+    trace = _as_dict(mobsf.get("apk_traceability"))
+    if trace:
+        trace_rows = [
+            ["APK file", trace.get("file_name")],
+            ["Package", trace.get("package_name")],
+            ["Version", trace.get("version_name")],
+            ["SHA-256", trace.get("sha256")],
+            ["Minimum SDK", trace.get("min_sdk")],
+            ["Target SDK", trace.get("target_sdk")],
+            ["Build type", trace.get("inferred_build_type")],
+        ]
+        _add_table(doc, ["APK traceability item", "Observed value"], trace_rows, max_rows=10)
     _add_table(doc, ["Indicator", "Parsed value"], _mobsf_signal_rows(mobsf, technical), max_rows=20)
 
     finding_lists = []
-    for key in ["manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
+    for key in ["manifest_findings", "manifest_findings_sample", "certificate_findings", "certificate_findings_sample", "findings", "high_findings", "warnings"]:
         items = _deep_list(mobsf, [key])
         if items:
             finding_lists.extend(items)
@@ -1771,25 +1805,29 @@ def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
 def _add_mobsf_dynamic_section(doc: Document, technical: Dict[str, Any]) -> None:
     dynamic = _as_dict(technical.get("mobsf_dynamic"))
     if not _block_available(dynamic):
-        _add_body_paragraph(doc, "MobSF dynamic evidence was not available in the analysis pack. If dynamic analysis is not executed for a given application, runtime storage and behavioral observations should be treated as not assessed rather than clean.")
+        _add_body_paragraph(doc, "MobSF dynamic evidence was not processed in the analysis pack.")
         return
-    _add_body_paragraph(doc, "MobSF dynamic evidence was used to summarize runtime storage and behavioral observations, including local files, SharedPreferences, SQLite databases, cache artifacts, and trackers where reported.")
+    _add_body_paragraph(doc, "MobSF dynamic evidence summarizes runtime storage and behavioral observations, including SharedPreferences, SQLite databases, WAL/SHM sidecars, no-backup storage, URLs, and trackers reported for the analyzed execution.")
     rows = []
-    for label, keys in [
-        ("SharedPreferences artifacts", ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"]),
-        ("SQLite/database artifacts", ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"]),
-        ("Local storage artifacts", ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"]),
-        ("Trackers", ["trackers", "detected_trackers"]),
-    ]:
-        items = _deep_list(dynamic, keys)
-        count = len(items) if items else _deep_int(dynamic, [keys[0] + "_count"], 0)
-        if label == "Trackers" and not items:
-            sample = "No trackers reported in normalized dynamic evidence" if count == 0 else "Tracker details not normalized into analysis pack"
-        else:
-            sample = _format_artifact_list(items, limit=4, names_only=False) if items else "No examples normalized into analysis pack"
-        rows.append([label, count, sample])
+    categories = [x for x in _as_list(dynamic.get("runtime_evidence_categories")) if isinstance(x, dict)]
+    if categories:
+        for cat in categories:
+            items = _as_list(cat.get("examples")) or _as_list(cat.get("example_names"))
+            sample = _format_artifact_list(items, limit=5, names_only=False) if items else "Observed count recorded without item sample"
+            rows.append([_clean_text(cat.get("type")), _safe_int(cat.get("count"), 0), sample])
+    else:
+        for label, keys in [
+            ("SharedPreferences artifacts", ["shared_preferences_artifacts", "shared_preferences", "shared_preferences_files", "preferences"]),
+            ("SQLite/database artifacts", ["sqlite_database_artifacts", "sqlite_databases", "databases", "db_files"]),
+            ("WAL/SHM sidecar artifacts", ["wal_shm_artifacts"]),
+            ("Runtime local-storage artifacts", ["local_storage_artifacts_sample", "local_storage_artifacts", "files", "storage_artifacts"]),
+            ("Trackers", ["trackers", "detected_trackers"]),
+        ]:
+            items = _deep_list(dynamic, keys)
+            count = len(items) if items else _deep_int(dynamic, [keys[0] + "_count"], 0)
+            sample = _format_artifact_list(items, limit=5, names_only=False) if items else "Observed count recorded without item sample"
+            rows.append([label, count, sample])
     _add_table(doc, ["Runtime evidence type", "Count", "Examples / parser note"], rows, max_rows=20)
-
 
 def _sast_findings(sast: Dict[str, Any]) -> List[Dict[str, Any]]:
     for key in ["findings", "results", "app_code_findings", "top_findings"]:
@@ -1817,9 +1855,9 @@ def _add_sast_section(doc: Document, technical: Dict[str, Any]) -> None:
 
     _add_body_paragraph(
         doc,
-        f"SAST retained {counts['retained_app_code_signals']} application-scope signal(s) after scope filtering. "
-        f"Of these, {counts['retained_security_findings']} are classified as security-relevant finding(s) and "
-        f"{counts['hardening_or_maintainability_signals']} are classified as hardening, quality, or maintainability signal(s). "
+        f"SAST retained {counts['retained_app_code_signals']} application-scope signals after scope filtering. "
+        f"Of these, {counts['retained_security_findings']} are classified as security-relevant findings and "
+        f"{counts['hardening_or_maintainability_signals']} are classified as hardening, quality, or maintainability signals. "
         f"{_clean_text(scope_note)}"
     )
 
@@ -1881,15 +1919,15 @@ def _format_limitation_row(key: str, value: Any) -> List[str] | None:
         details = _clean_text(value)
         if not details:
             return None
-        return ["Missing technical inputs", details]
+        return ["Technical inputs", details]
 
     if normalized_key == "sast_extraction_warning_count":
         count = _safe_int(value, 0)
         if count <= 0:
             return None
         return [
-            "SAST extraction warnings",
-            f"{count} SAST extraction or frontend notification(s) were reported by the toolchain. These notifications affect coverage interpretation and must not be treated as application findings."
+            "SAST execution notifications",
+            f"{count} SAST extraction or frontend notification(s) were reported by the toolchain. The findings table presents application-code findings separately from execution notifications."
         ]
 
     if normalized_key == "sast_notifications_sample":
@@ -1903,8 +1941,8 @@ def _format_limitation_row(key: str, value: Any) -> List[str] | None:
             tools.append(str(value.get("tool")))
         tool_text = ", ".join(sorted(set(tools))) if tools else "SAST toolchain"
         return [
-            "SAST extraction warnings",
-            f"{tool_text} reported {count} extraction or frontend warning(s). Findings detected remain valid for analyzed files, but absence of additional findings must not be interpreted as proof that the full codebase is free of vulnerabilities."
+            "SAST execution notifications",
+            f"{tool_text} reported {count} extraction or frontend notification(s). The findings table presents the application-code findings produced for this execution."
         ]
 
     if normalized_key in {"sast_extraction_warnings", "sast_extraction_warnings_by_tool", "sast_extraction_warnings_by_level", "sast_extraction_warnings_summary"}:
@@ -1915,10 +1953,10 @@ def _format_limitation_row(key: str, value: Any) -> List[str] | None:
         if not details:
             return None
         label_map = {
-            "sast_extraction_warnings": "SAST extraction warnings",
-            "sast_extraction_warnings_by_tool": "SAST extraction warnings by tool",
-            "sast_extraction_warnings_by_level": "SAST extraction warnings by level",
-            "sast_extraction_warnings_summary": "SAST extraction warnings summary",
+            "sast_extraction_warnings": "SAST execution notifications",
+            "sast_extraction_warnings_by_tool": "SAST execution notifications by tool",
+            "sast_extraction_warnings_by_level": "SAST execution notifications by level",
+            "sast_extraction_warnings_summary": "SAST execution notification summary",
         }
         return [label_map.get(normalized_key, normalized_key.replace("_", " ").title()), details]
 
@@ -1933,7 +1971,7 @@ def _format_limitation_row(key: str, value: Any) -> List[str] | None:
     return [normalized_key.replace("_", " ").title(), details]
 
 
-def _add_coverage_limitations(doc: Document, technical: Dict[str, Any]) -> None:
+def _add_technical_execution_metadata(doc: Document, technical: Dict[str, Any]) -> None:
     limitations = _as_dict(technical.get("coverage_limitations"))
     rows: List[List[str]] = []
     seen_labels: set[str] = set()
@@ -1954,19 +1992,19 @@ def _add_coverage_limitations(doc: Document, technical: Dict[str, Any]) -> None:
 
     missing_inputs = _deep_list(limitations, ["missing_inputs"])
     if not missing_inputs:
-        add_row(["Missing technical inputs", "No technical input artifacts were reported missing in the analysis pack."])
+        add_row(["Technical inputs", "All expected technical input artifact categories were present in the analysis pack."])
 
     if isinstance(limitations, dict):
         for key, value in limitations.items():
             row = _format_limitation_row(str(key), value)
             if row:
-                if row[0] == "Missing technical inputs" and not missing_inputs:
+                if row[0] == "Technical inputs" and not missing_inputs:
                     continue
                 add_row(row)
     if rows:
-        _add_table(doc, ["Limitation", "Report-safe explanation"], rows, max_rows=12)
+        _add_table(doc, ["Execution item", "Summary"], rows, max_rows=12)
     else:
-        _add_body_paragraph(doc, "No additional technical coverage limitations were reported in the analysis pack beyond the workbook-defined scope and tool-specific execution constraints.")
+        _add_body_paragraph(doc, "Technical execution metadata was not populated in the analysis pack.")
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -2282,18 +2320,18 @@ def _classify_positive_control_statement(statement: str, evidence: str = "", fla
         "ssl pinning was not detected", "clear text traffic and ssl pinning"
     ]):
         if "risky permissions" in text or "ssl pinning was not detected" in text or "not detected" in text:
-            return "Mixed or partial controls"
-        return "Qualified positives with residual risk"
+            return "Observed controls with additional technical context"
+        return "Observed supporting signals"
     if any(token in text for token in ["scanner coverage", "did not report", "manual logout", "auditor review"]):
-        return "Qualified positives with residual risk"
-    return "Confirmed positive controls"
+        return "Observed supporting signals"
+    return "Observed positive controls"
 
 
 def _group_positive_controls(pos_controls: List[Dict[str, Any]], positive_control_writeups: Dict[str, str]) -> Dict[str, List[Dict[str, Any]]]:
     groups = {
-        "Confirmed positive controls": [],
-        "Qualified positives with residual risk": [],
-        "Mixed or partial controls": [],
+        "Observed positive controls": [],
+        "Observed supporting signals": [],
+        "Observed controls with additional technical context": [],
     }
     for pc in pos_controls:
         puid = _clean_text(pc.get("puid"))
@@ -2509,7 +2547,7 @@ def _call_llm_for_audit_sections(
             "task": "Generate report-ready technical narrative paragraphs from scanner evidence.",
             "constraints": {
                 "one_paragraph_each": True,
-                "mention_limitations": True,
+                "mention_execution_metadata": True,
                 "do_not_overstate_sast": True,
                 "do_not_treat_missing_mobsf_fields_as_clean": True,
                 "sast_rule": "Use technical_evidence.sast_app_code.retained_security_findings as the SAST security finding count. retained_app_code_signals may include hardening or maintainability findings. Mention raw SARIF counts only as traceability or parser coverage signals.",
@@ -2541,7 +2579,7 @@ def _call_llm_for_audit_sections(
                 "patterns": "Use exact pattern names from input.",
                 "expected": "1 sentence.",
                 "impact": "1 sentence mentioning confidentiality, integrity, availability, or health-data regulatory exposure only when supported.",
-                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and limitations. Do not use generic boilerplate or static templates. Do not convert raw SARIF counts or Detekt quality findings into vulnerabilities. Treat TLS pinning as threat-model dependent, not a universal absolute. Prefer documenting certificate validation and pinning decisions over mandating pinning across all communications. Translate raw flag names into operational actions; use exact flag names sparingly because detailed flag traceability belongs in the workbook and appendices.",
+                "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and execution metadata. Do not use generic boilerplate or static templates. Do not convert raw SARIF counts or Detekt quality findings into vulnerabilities. Treat TLS pinning as threat-model dependent, not a universal absolute. Prefer documenting certificate validation and pinning decisions over mandating pinning across all communications. Translate raw flag names into operational actions; use exact flag names sparingly because detailed flag traceability belongs in the workbook and appendices.",
                 "closure_criteria": "1 measurable sentence suitable for the MAP, generated from the supplied evidence and scanner context. Prefer evidence-based closure such as updated workbook scoring, updated Trivy/MobSF/SAST artifacts, regression evidence, or formal risk acceptance. Avoid broad zero noncompliant findings language for governance or multi-control patterns. Use zero only for narrowly scoped Critical/High fixable vulnerabilities when supported by Trivy evidence.",
                 "no_time_window_headings": True,
                 "no_unprovided_metrics": True,
@@ -3272,16 +3310,17 @@ def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) 
     max_rows = _max_correlation_rows()
     rows: List[List[Any]] = []
     for item in items[:max_rows]:
-        requirement = f"{item.get('puid')}\\n{item.get('weakness_pattern')}"
+        requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
         flags = ", ".join(_as_list(item.get("flags_sample"))[:8])
-        scanner = f"{item.get('technical_source')}\\n{item.get('technical_finding_id')}"
-        evidence = f"Treatment item: {item.get('technical_item_id')}\\n{_short(item.get('evidence_summary'), 360)}"
-        rows.append([requirement, flags, scanner, evidence])
+        scanner = f"{item.get('technical_source')}\n{item.get('technical_finding_id')}"
+        fit = f"{_clean_text(item.get('evidence_fit'))}\n{_clean_text(item.get('correlation_strength'))}"
+        evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 300)}"
+        rows.append([requirement, flags, scanner, fit, evidence])
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
     _add_table(
         doc,
-        ["Requirement / pattern", "Flags", "Scanner evidence", "Treatment / evidence summary"],
+        ["Requirement / pattern", "Flags", "Scanner evidence", "Evidence fit / strength", "Treatment / evidence summary"],
         rows,
         max_rows=max_rows,
         empty_message="No evidence correlation items were available in the analysis pack.",
@@ -3303,7 +3342,7 @@ def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[s
 
     if counts["retained_security_findings"] <= 0 and counts["retained_app_code_signals"] > 0:
         tech_ai["sast_paragraph"] = (
-            f"SAST retained {counts['retained_app_code_signals']} application-scope hardening, quality, or maintainability signal(s) after scope filtering, "
+            f"SAST retained {counts['retained_app_code_signals']} application-scope hardening, quality, or maintainability signals after scope filtering, "
             "but no security-relevant SAST findings were classified from the normalized evidence. "
             f"Raw SARIF counts are retained for traceability and coverage interpretation ({raw_text}); they must not be treated as application vulnerabilities."
         )
@@ -3314,8 +3353,8 @@ def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[s
         )
     else:
         tech_ai["sast_paragraph"] = (
-            f"SAST retained {counts['retained_security_findings']} security-relevant application-code finding(s) and "
-            f"{counts['hardening_or_maintainability_signals']} hardening, quality, or maintainability signal(s) after scope filtering. "
+            f"SAST retained {counts['retained_security_findings']} security-relevant application-code findings and "
+            f"{counts['hardening_or_maintainability_signals']} hardening, quality, or maintainability signals after scope filtering. "
             f"Raw SARIF counts remain traceability evidence ({raw_text})."
         )
 
@@ -3340,6 +3379,40 @@ def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[s
             tech_ai[key] = _sanitize_ai_narrative_text(value, technical)
 
     return tech_ai
+
+
+def _expected_secure_state(pattern: str, ai_expected: Any = "") -> str:
+    pat = _clean_text(pattern).lower()
+    ai = _clean_text(ai_expected)
+    unsafe_ai = any(token in ai.lower() for token in [
+        "contains numerous", "exhibits deficiencies", "demonstrates instances", "lacks robust",
+        "exhibits vulnerabilities", "is missing", "insufficient", "not evidenced", "fails to",
+        "weakness", "gap", "deficienc", "vulnerab",
+    ])
+    if ai and not unsafe_ai and re.search(r"\b(should|must|is expected to|requires|implements|enforces|protects|prevents)\b", ai, re.IGNORECASE):
+        return ai
+    templates = [
+        ("hardcoded", "The application should keep credentials, API keys, tokens, passwords, signing material, and environment-specific secrets outside the source code, binary, and version control, using approved secure storage and injection mechanisms."),
+        ("authorization", "The application should enforce approved authorization, RBAC, least privilege, and separation of duties for sensitive workflows, privileged actions, and backend API access."),
+        ("rbac", "The application should enforce approved authorization, RBAC, least privilege, and separation of duties for sensitive workflows, privileged actions, and backend API access."),
+        ("local storage", "The application should protect sensitive local data with approved encryption, secure key storage, minimal retention, and controlled cleanup during logout, user switching, and uninstall workflows."),
+        ("key management", "The application should protect cryptographic keys and sensitive local data using OS-backed secure storage, approved key lifecycle controls, and encrypted local persistence where client-side storage is required."),
+        ("authentication", "The application should implement strong authentication lifecycle controls, including session timeout, lockout, reauthentication, logout, and brute-force protection aligned with the assessed risk profile."),
+        ("brute", "The application should implement strong authentication lifecycle controls, including session timeout, lockout, reauthentication, logout, and brute-force protection aligned with the assessed risk profile."),
+        ("transport", "The application should enforce secure transport, approved certificate validation, cleartext traffic prevention, and documented TLS handling for all sensitive data exchanges."),
+        ("certificate", "The application should enforce secure transport, approved certificate validation, cleartext traffic prevention, and documented TLS handling for all sensitive data exchanges."),
+        ("supply chain", "The application should maintain an approved dependency inventory, remediate vulnerable or outdated components, protect build and signing processes, and document supply-chain security controls."),
+        ("input validation", "The application should validate, sanitize, encode, and constrain untrusted input and output across client, backend, logging, file path, and data exchange flows."),
+        ("injection", "The application should validate, sanitize, encode, and constrain untrusted input and output across client, backend, logging, file path, and data exchange flows."),
+        ("audit logging", "The application and supporting services should record security-relevant events, protect audit data, retain records according to policy, and support review and alerting workflows."),
+        ("tampering", "The production application should use release signing, disable debug behavior, apply binary hardening controls, and protect against tampering or unauthorized modification."),
+        ("reverse engineering", "The production application should use release signing, disable debug behavior, apply binary hardening controls, and protect against tampering or unauthorized modification."),
+        ("privacy", "The application should implement privacy notice, consent, data minimization, masking, retention, and user-data handling controls aligned with the assessed health-data context."),
+    ]
+    for needle, text in templates:
+        if needle in pat:
+            return text
+    return "The application should implement the control objective recorded in the workbook and retain evidence sufficient to support the requirement-level result."
 
 
 def main() -> None:
@@ -3439,7 +3512,7 @@ def main() -> None:
     writeups = {w["pattern"]: w for w in prose.get("pattern_writeups", []) if isinstance(w, dict) and "pattern" in w}
     _validate_ai_pattern_writeups(patterns, writeups)
     if not key_takeaways:
-        key_takeaways = [f"{p['pattern']} - {p['severity']} severity; {int(p['mapped_noncompliant_count'])} related non-compliant control(s) in the workbook." for p in patterns[:7]]
+        key_takeaways = [f"{p['pattern']} - {p['severity']} severity; {int(p['mapped_noncompliant_count'])} related non-compliant controls in the workbook." for p in patterns[:7]]
     technical_takeaways = _technical_takeaways(technical)
     if technical_takeaways:
         key_takeaways = (technical_takeaways + key_takeaways)[:7]
@@ -3470,11 +3543,11 @@ def main() -> None:
     add_nav_heading("2. Actors", 1)
     _add_two_col_table(doc, [["Auditor", actors["Auditor"]], ["Requirement Engineering team", "\n".join(actors["Requirement Engineering team"])], ["Engineering Group (EN)", "\n".join(actors["Engineering Group (EN)"])]])
 
-    add_nav_heading("3. Scope and limitations", 1)
-    doc.add_paragraph("This Audit Summary consolidates the compliance determinations recorded in the audit workbook. The results reflect the assessed application version and the workbook-defined scope. Controls not evidenced as implemented in the workbook are reported as non-compliant for summary purposes. Where available, technical evidence from Vision360, Trivy, MobSF, and app-code SAST is used to support and qualify the workbook-derived findings. CI/CD workflows and audit-generation scripts are outside the application audit scope unless explicitly included by project configuration.")
+    add_nav_heading("3. Audit scope and evidence sources", 1)
+    doc.add_paragraph("This Audit Summary consolidates the compliance determinations recorded in the audit workbook for the assessed application version and workbook-defined scope. The workbook provides the authoritative requirement-level results. Technical scan evidence from Trivy, MobSF static analysis, MobSF dynamic analysis, and app-code SAST is organized by source to provide observed technical context, prioritization inputs, and traceability for treatment actions.")
 
     add_nav_heading("4. Evidence criteria", 1)
-    doc.add_paragraph("- Compliant: the workbook provides sufficient evidence that the control is implemented and effective for the assessed scope.\n- Non-compliant: the workbook indicates the control is missing, insufficient, or not evidenced.\n- Not applicable: the control is recorded as out of scope or not relevant for the assessed context.\n- Technical evidence: automated scan artifacts are used as supporting evidence for application code, Android manifest, binary, dependency, runtime, and storage observations. They do not replace requirement-level judgment and are interpreted within the declared audit scope.")
+    doc.add_paragraph("- Compliant: the workbook records the control as implemented for the assessed scope.\n- Non-compliant: the workbook records the control as missing, insufficient, or not evidenced.\n- Not applicable: the workbook records the control as outside the assessed context.\n- Technical evidence: automated scan artifacts provide observed application-code, Android manifest, binary, dependency, runtime, and storage evidence used for prioritization and treatment traceability.")
 
     add_nav_heading("5. Audit summary", 1)
     doc.add_paragraph("The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).")
@@ -3485,16 +3558,16 @@ def main() -> None:
     else:
         doc.add_paragraph("This report summarizes the dominant weakness patterns evidenced by non-compliant requirements and proposes actionable remediations suitable for mHealth/EMR environments handling sensitive health information.")
     if technical:
-        doc.add_paragraph("The report also incorporates technical scan evidence where available, including dependency vulnerability evidence from Trivy, Android APK and manifest evidence from MobSF, runtime observations from MobSF dynamic analysis, and SAST findings filtered to application code.")
+        doc.add_paragraph("The report organizes technical scan evidence by source, including dependency vulnerability evidence from Trivy, Android APK and manifest evidence from MobSF static analysis, runtime observations from MobSF dynamic analysis, and SAST findings filtered to application code.")
 
     add_nav_heading("5.1 Key takeaways (Top findings)", 2)
     _add_callout(doc, "Key takeaways (Top findings)", key_takeaways[:7])
 
     add_nav_heading("5.2 Positive controls observed", 2)
-    doc.add_paragraph("All statements below are derived from controls recorded as Compliant in the audit workbook and are separated by evidence confidence. Verification traceability is provided in Appendix D.")
+    doc.add_paragraph("The statements below summarize controls recorded as Compliant in the audit workbook and the observed technical or audit evidence associated with them. Verification traceability is provided in Appendix D.")
     positive_groups = _group_positive_controls(pos_controls, positive_control_writeups)
     rendered_positive = False
-    for group_title in ["Confirmed positive controls", "Qualified positives with residual risk", "Mixed or partial controls"]:
+    for group_title in ["Observed positive controls", "Observed supporting signals", "Observed controls with additional technical context"]:
         items = positive_groups.get(group_title, [])
         if not items:
             continue
@@ -3527,32 +3600,21 @@ def main() -> None:
         row = rt.add_row().cells
         row[0].text = p["pattern"]
         row[1].text = f"{sev} / {lik}"
-        row[2].text = f"{cnt} mapped non-compliant control(s)."
+        row[2].text = f"{cnt} mapped non-compliant controls."
         row[3].text = owner
         row[4].text = _target_timeline(sev)
     doc.add_paragraph()
 
-    add_nav_heading("5.5 Technical scan coverage", 2)
-    ai_technical_coverage = _clean_text(tech_ai.get("technical_coverage_paragraph", ""))
-    if ai_technical_coverage:
-        doc.add_paragraph(ai_technical_coverage)
-    else:
-        doc.add_paragraph("The following table summarizes which automated technical evidence sources were available to support the audit summary. Absence of a technical source means that the source was not available to the report generator, not necessarily that the corresponding risk is absent.")
-    vision_counts = _deep_dict(_as_dict(technical.get("vision360")), ["state_counts"])
-    vision_failures = _safe_int(vision_counts.get("fail"), 0) if vision_counts else 0
-    if vision_failures:
-        _add_body_paragraph(
-            doc,
-            f"For clarity, {non_compliant} refers to workbook non-compliant applicable controls, while {vision_failures} refers to Vision360 failed flags or technical control signals used as supporting evidence. These are related but not interchangeable counts."
-        )
-    _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
+    add_nav_heading("5.5 Technical evidence snapshot", 2)
+    doc.add_paragraph("The following table summarizes the principal evidence sources used in the report. The workbook provides requirement results, while each scanner contributes observed technical evidence for prioritization and treatment planning.")
+    _add_table(doc, ["Evidence source", "Status", "Summary"], _source_status_rows(technical), max_rows=10)
 
-    add_nav_heading("6. Technical evidence from automated analysis", 1)
+    add_nav_heading("6. Technical evidence by scanner", 1)
     ai_tech_intro = _clean_text(tech_ai.get("technical_evidence_intro", ""))
     if ai_tech_intro:
         doc.add_paragraph(ai_tech_intro)
     else:
-        doc.add_paragraph("This section summarizes technical scan evidence relevant to the assessed application and its code. The evidence is used to reinforce and qualify workbook findings while preserving the workbook as the authoritative requirement-level adjudication source.")
+        doc.add_paragraph("This section presents observed technical evidence by scanner. Each scanner is reported separately so that dependency, APK, runtime, and source-code findings remain clear and actionable.")
     add_nav_heading("6.1 Software Composition Analysis from Trivy", 2)
     if _clean_text(tech_ai.get("trivy_paragraph", "")):
         doc.add_paragraph(_clean_text(tech_ai.get("trivy_paragraph", "")))
@@ -3569,13 +3631,9 @@ def main() -> None:
     if _clean_text(tech_ai.get("sast_paragraph", "")):
         doc.add_paragraph(_clean_text(tech_ai.get("sast_paragraph", "")))
     _add_sast_section(doc, technical)
-    add_nav_heading("6.5 Technical coverage limitations", 2)
-    if _clean_text(tech_ai.get("coverage_limitations_paragraph", "")):
-        doc.add_paragraph(_clean_text(tech_ai.get("coverage_limitations_paragraph", "")))
-    _add_coverage_limitations(doc, technical)
 
     add_nav_heading("7. Main deficiencies", 1)
-    doc.add_paragraph("The following deficiencies are synthesized as common weakness patterns based on non-compliant requirements and supported, where available, by technical scan evidence. They are not grouped by category; instead they represent cross-cutting gaps evidenced in the audit workbook and related artifacts.")
+    doc.add_paragraph("The following weakness patterns summarize non-compliant requirements and associated technical evidence. They are organized as cross-cutting themes to support prioritization, ownership assignment, and remediation planning.")
     for p in patterns[:10]:
         pat = p["pattern"]
         cnt = int(p["mapped_noncompliant_count"])
@@ -3584,11 +3642,11 @@ def main() -> None:
         ex_ids = p.get("example_puids", [])[:4]
         anchors = p.get("description_anchors", [])[:2]
         doc.add_paragraph(f"{pat} ({sev})", style="Heading 2")
-        doc.add_paragraph(f"Workbook basis: {cnt} related non-compliant control(s) mapped to this pattern.")
-        expected = _ai_field_for_pattern(pat, writeups, "expected") or "AI-generated expected-state narrative was not returned for this pattern."
-        impact = _ai_field_for_pattern(pat, writeups, "impact") or "AI-generated impact narrative was not returned for this pattern."
-        doc.add_paragraph(f"Expected: {expected}")
-        doc.add_paragraph("Observed: The audit workbook indicates the related controls are missing, insufficient, or not evidenced for the assessed scope.")
+        doc.add_paragraph(f"Workbook basis: {cnt} related non-compliant controls mapped to this pattern.")
+        expected = _expected_secure_state(pat, _ai_field_for_pattern(pat, writeups, "expected"))
+        impact = _ai_field_for_pattern(pat, writeups, "impact") or "This pattern increases security and privacy exposure for the assessed application and should be prioritized according to severity, prevalence, and implementation dependency."
+        doc.add_paragraph(f"Expected secure state: {expected}")
+        doc.add_paragraph("Observed condition: The audit workbook records the mapped controls as non-compliant for the assessed scope.")
         doc.add_paragraph(f"Impact: {impact}")
         doc.add_paragraph(f"Recommended owner: {owner}")
         if ex_ids:
@@ -3598,7 +3656,7 @@ def main() -> None:
 
     doc.add_page_break()
     add_nav_heading("8. Recommendations", 1)
-    doc.add_paragraph("Recommendations are generated by the configured AI model using the audit workbook, weakness-pattern prevalence, PUID examples, Vision360, Trivy, MobSF, SAST, and coverage limitations. Static fallback recommendations are intentionally not used.")
+    doc.add_paragraph("Recommendations are generated from the audit workbook, weakness-pattern prevalence, PUID examples, and observed technical evidence from Trivy, MobSF static analysis, MobSF dynamic analysis, and SAST. Detailed flags and PUID-level traceability remain in the appendices.")
     for p in patterns[:10]:
         pat = p["pattern"]
         doc.add_paragraph(pat, style="Heading 2")
@@ -3641,7 +3699,7 @@ def main() -> None:
         target_date = _target_date_str(audit_dt, sev)
         criteria = _sanitize_closure_criteria(_ai_field_for_pattern(pat, writeups, "closure_criteria") or "AI-generated closure criteria were not returned for this pattern.")
         row = mp.add_row().cells
-        row[0].text = f"{pat}\nWorkbook basis: {cnt} mapped non-compliant control(s)."
+        row[0].text = f"{pat}\nWorkbook basis: {cnt} mapped non-compliant controls."
         row[1].text = f"{owner}\n{sev} / {lik}"
         row[2].text = target_date
         row[3].text = _short(criteria, 320)
@@ -3657,22 +3715,22 @@ def main() -> None:
 
     doc.add_page_break()
     add_nav_heading("Appendix A - SECM-CAT treatment plan", 1)
-    _add_body_paragraph(doc, "This appendix lists non-compliant SECM-CAT controls as treatment items. Requirement facts, PUIDs, flags, and evidence are deterministic; treatment actions and verification language are generated by the configured AI model from the current run's evidence.")
+    _add_body_paragraph(doc, "This appendix lists non-compliant SECM-CAT controls as treatment items. It preserves PUIDs, categories, flags, workbook evidence, weakness patterns, owners, timelines, treatment actions, and expected closure evidence.")
     _render_control_treatment_appendix(doc, treatment_plan, treatment_ai)
 
     doc.add_page_break()
     add_nav_heading("Appendix B - Technical vulnerability treatment plan", 1)
-    _add_body_paragraph(doc, "This appendix lists technical treatment items derived from Trivy, SAST, MobSF static, and MobSF dynamic evidence. The AI-generated remediation text is constrained to the finding ID, source tool, package or file/line, observed issue, and linked PUIDs supplied by Stage 1.")
+    _add_body_paragraph(doc, "This appendix lists technical treatment items derived from Trivy, SAST, MobSF static, and MobSF dynamic evidence. It strengthens the body of the report with scanner-specific findings, affected components, source files, observed issues, linked PUIDs, and treatment evidence.")
     _render_technical_treatment_appendix(doc, treatment_plan, treatment_ai)
 
     doc.add_page_break()
     add_nav_heading("Appendix C - Evidence correlation matrix", 1)
-    _add_body_paragraph(doc, "This matrix links SECM-CAT requirements, flags, scanner evidence, and treatment item IDs. It is intended to help technical teams trace each remediation action back to requirement-level audit evidence.")
+    _add_body_paragraph(doc, "This matrix links SECM-CAT requirements, flags, scanner evidence, evidence fit, correlation strength, and treatment item IDs. It supports technical traceability from each treatment action back to requirement-level audit evidence.")
     _render_correlation_appendix(doc, treatment_plan)
 
     doc.add_page_break()
     add_nav_heading("Appendix D - Positive controls verification (workbook traceability)", 1)
-    doc.add_paragraph("This appendix verifies each Positive controls observed statement by providing the originating PUID, flags used, and an evidence excerpt when available.")
+    doc.add_paragraph("This appendix verifies each Positive controls observed statement by providing the originating PUID, flags used, evidence class, and evidence excerpt when available.")
     _add_table_caption(doc, "Positive control verification traceability")
     vb = doc.add_table(rows=1, cols=5)
     vb.style = "Table Grid"
@@ -3682,7 +3740,7 @@ def main() -> None:
         _set_cell_shading(vh[idx], "D9E1F2")
         _format_table_cell(vh[idx], font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
     if pos_controls:
-        for group_title in ["Confirmed positive controls", "Qualified positives with residual risk", "Mixed or partial controls"]:
+        for group_title in ["Observed positive controls", "Observed supporting signals", "Observed controls with additional technical context"]:
             for pc in positive_groups.get(group_title, []):
                 r = vb.add_row().cells
                 puid = _clean_text(pc.get("puid"))
@@ -3704,7 +3762,8 @@ def main() -> None:
     doc.add_page_break()
     add_nav_heading("Appendix E - Technical evidence summary", 1)
     doc.add_paragraph("This appendix provides a compact index of the technical evidence parsed from scan artifacts. Detailed raw JSON, SARIF, and tool reports remain in their original pipeline artifacts and are not embedded in the report package.")
-    _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
+    _add_table(doc, ["Evidence source", "Status", "Summary"], _source_status_rows(technical), max_rows=10)
+    _add_technical_execution_metadata(doc, technical)
 
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)
