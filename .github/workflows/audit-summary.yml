@@ -194,11 +194,140 @@ jobs:
           & $env:PYTHON_EXE scripts/audit_summary_stage1_build_analysis_pack.py --excel $env:AUDIT_EXCEL_PATH --out $env:AUDIT_ANALYSIS_JSON_PATH
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Enrich Audit Summary analysis pack
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $code = @'
+          import json
+          import os
+          from pathlib import Path
+
+          analysis_path = Path(os.environ["AUDIT_ANALYSIS_JSON_PATH"])
+          vision_dir = Path(os.environ.get("VISION360_BUNDLE_DIR", ""))
+
+          def load_json(path, default):
+              try:
+                  if path.is_file():
+                      return json.loads(path.read_text(encoding="utf-8"))
+              except Exception:
+                  return default
+              return default
+
+          def normalize(item):
+              cvss = item.get("best_cvss") if isinstance(item.get("best_cvss"), dict) else {}
+              return {
+                  "id": item.get("vulnerability_id") or item.get("cve") or item.get("id"),
+                  "cve": item.get("cve") or item.get("vulnerability_id") or item.get("id"),
+                  "severity": str(item.get("severity") or "UNKNOWN").upper(),
+                  "package": item.get("component") or item.get("package") or item.get("pkg"),
+                  "pkg": item.get("component") or item.get("package") or item.get("pkg"),
+                  "installed": item.get("installed_version") or item.get("installed"),
+                  "fixed": item.get("fixed_version") or item.get("fixed"),
+                  "fix_available": bool(item.get("fix_available") or item.get("fixed_version") or item.get("fixed")),
+                  "cwe_ids": item.get("cwe_ids") or item.get("cwe") or [],
+                  "cvss_v3_score": cvss.get("v3_score"),
+                  "cvss_v3_vector": cvss.get("v3_vector"),
+                  "published_at": item.get("published_at") or item.get("published"),
+                  "last_modified_at": item.get("last_modified_at") or item.get("modified"),
+                  "target": item.get("target"),
+                  "title": item.get("title") or item.get("description"),
+                  "description": item.get("description") or item.get("title"),
+                  "source": item.get("source") or "TRIVY",
+                  "artifact_source": item.get("artifact_source"),
+              }
+
+          fingerprint_path = vision_dir / "vision360_fingerprint.json"
+          pack = load_json(analysis_path, {})
+          fingerprint = load_json(fingerprint_path, {})
+          details = fingerprint.get("technical_details") if isinstance(fingerprint, dict) else {}
+          sca = details.get("sca") if isinstance(details, dict) else {}
+          if isinstance(pack, dict) and isinstance(sca, dict):
+              tech = pack.setdefault("technical_evidence", {})
+              vision = tech.setdefault("vision360", {})
+              vision["technical_details_available"] = True
+              vision["technical_details"] = details
+              trivy = tech.setdefault("trivy_sca", {})
+              raw = sca.get("vulnerabilities") if isinstance(sca.get("vulnerabilities"), list) else []
+              detailed = [normalize(x) for x in raw if isinstance(x, dict)]
+              detailed = [x for x in detailed if x.get("id") or x.get("package")]
+              if detailed:
+                  trivy["detailed_findings"] = detailed
+                  trivy["vulnerabilities"] = detailed
+                  trivy["top_findings"] = detailed[:25]
+              summary = sca.get("summary") if isinstance(sca.get("summary"), dict) else {}
+              for key, value in summary.items():
+                  trivy[key] = value
+              trivy["high_severity_components"] = sorted({str(x.get("package") or "").strip() for x in detailed if str(x.get("severity") or "").upper() == "HIGH" and str(x.get("package") or "").strip()})
+              trivy["technical_details_source"] = "vision360_fingerprint.technical_details.sca"
+              analysis_path.write_text(json.dumps(pack, ensure_ascii=False, indent=2), encoding="utf-8")
+          '@
+          $script = Join-Path $env:RUNNER_TEMP "audit_summary_enrich.py"
+          Set-Content -LiteralPath $script -Value $code -Encoding UTF8
+          & $env:PYTHON_EXE $script
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Generate Audit Summary DOCX
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
           & $env:PYTHON_EXE scripts/audit_summary_stage2_generate_docx.py --in $env:AUDIT_ANALYSIS_JSON_PATH --out $env:AUDIT_SUMMARY_DOCX_PATH
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Polish Audit Summary DOCX layout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $code = @'
+          import os
+          from pathlib import Path
+          from docx import Document
+          from docx.oxml import OxmlElement
+          from docx.oxml.ns import qn
+          from docx.shared import Pt
+
+          docx_path = Path(os.environ["AUDIT_SUMMARY_DOCX_PATH"])
+          doc = Document(str(docx_path))
+
+          def insert_caption_before(table, text):
+              p = OxmlElement("w:p")
+              r = OxmlElement("w:r")
+              t = OxmlElement("w:t")
+              t.text = text
+              r.append(t)
+              p.append(r)
+              table._tbl.addprevious(p)
+
+          def shade(cell, fill):
+              tcPr = cell._tc.get_or_add_tcPr()
+              shd = OxmlElement("w:shd")
+              shd.set(qn("w:fill"), fill)
+              tcPr.append(shd)
+
+          for index, table in enumerate(doc.tables, start=1):
+              insert_caption_before(table, f"Table {index}. Audit evidence and treatment table")
+              if not table.rows:
+                  continue
+              for cell in table.rows[0].cells:
+                  shade(cell, "D9E1F2")
+                  for paragraph in cell.paragraphs:
+                      for run in paragraph.runs:
+                          run.bold = True
+                          run.font.size = Pt(8.5)
+              for row in table.rows[1:]:
+                  for cell in row.cells:
+                      text = cell.text.strip()
+                      if text == "PUID / item":
+                          cell.text = "Requirement"
+                      for paragraph in cell.paragraphs:
+                          paragraph.paragraph_format.space_after = Pt(0)
+                          for run in paragraph.runs:
+                              run.font.size = Pt(8)
+          doc.save(str(docx_path))
+          '@
+          $script = Join-Path $env:RUNNER_TEMP "audit_summary_polish_docx.py"
+          Set-Content -LiteralPath $script -Value $code -Encoding UTF8
+          & $env:PYTHON_EXE $script
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Convert DOCX to PDF
