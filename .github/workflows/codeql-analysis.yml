@@ -387,3 +387,4 @@ jobs:
             artifact_publish/sast-findings/merged.sarif
             artifact_publish/sast-findings/semgrep.sarif
           if-no-files-found: error
+          
