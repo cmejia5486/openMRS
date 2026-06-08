@@ -229,10 +229,21 @@ jobs:
             exit $LASTEXITCODE
           }
 
-          Write-Host "[PIP] Installing AI runtime dependencies for LiteLLM/OpenAI SDK compatibility."
-          Invoke-PipInstall -PipArgs @("install", "--upgrade", "pip", "setuptools", "wheel", "--retries", "10", "--timeout", "720", "--prefer-binary")
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "-r", "requirements/ai-runtime.txt")
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "pandas", "openpyxl", "python-docx", "matplotlib", "requests")
+          Write-Host "[PIP] Installing Audit Summary runtime dependencies."
+          Invoke-PipInstall -PipArgs @(
+            "install",
+            "--retries", "10",
+            "--timeout", "720",
+            "--prefer-binary",
+            "openai==1.109.1",
+            "litellm==1.80.0",
+            "pydantic>=2.7.0",
+            "openpyxl>=3.1.0",
+            "pandas",
+            "python-docx",
+            "matplotlib",
+            "requests"
+          )
 
           & $env:PYTHON_EXE -m pip check
           if ($LASTEXITCODE -ne 0) {
