@@ -1054,6 +1054,49 @@ def _sanitize_closure_criteria(value: Any) -> str:
     return text
 
 
+
+
+def _sanitize_expected_state(pattern_name: Any, value: Any) -> str:
+    """Ensure Main deficiencies Expected text describes the secure target state.
+
+    AI-generated prose occasionally restates the observed deficiency as the
+    expected condition. This guardrail keeps the section methodologically
+    correct without changing workbook verdicts or scanner evidence.
+    """
+    text = _clean_text(value)
+    pattern = _clean_text(pattern_name).lower()
+    insecure_cues = [
+        " contains ", "contains numerous", "lacks", "lack of", "missing",
+        "deficienc", "vulnerab", "gaps", "weak", "insecure", "not implemented",
+        "does not", "fails to", "is absent", "are absent",
+    ]
+    bad = not text or any(cue in text.lower() for cue in insecure_cues)
+    if not bad:
+        return text
+
+    templates = [
+        ("hardcoded credentials", "The application should not contain hardcoded credentials, embedded secrets, API keys, tokens, passwords, or environment-specific sensitive values in source code, resources, binaries, or build artifacts."),
+        ("authorization", "The application should enforce documented authorization, RBAC, least-privilege access, and server-side access-control decisions for all sensitive resources and workflows."),
+        ("rbac", "The application should enforce documented authorization, RBAC, least-privilege access, and server-side access-control decisions for all sensitive resources and workflows."),
+        ("local storage", "The application should protect sensitive data at rest using appropriate platform storage controls, encryption, key management, data minimization, and verified cleanup across logout, user-switch, and uninstall scenarios."),
+        ("key management", "The application should protect sensitive data at rest using appropriate platform storage controls, encryption, key management, data minimization, and verified cleanup across logout, user-switch, and uninstall scenarios."),
+        ("authentication lifecycle", "The application should enforce a robust authentication lifecycle, including session timeout, logout, session invalidation, account lifecycle controls, and resistance to brute-force or replay scenarios."),
+        ("brute-force", "The application should enforce a robust authentication lifecycle, including session timeout, logout, session invalidation, account lifecycle controls, and resistance to brute-force or replay scenarios."),
+        ("transport security", "The application should enforce secure transport, disable cleartext where applicable, use production signing, and document certificate-validation or pinning decisions according to the threat model."),
+        ("certificate validation", "The application should enforce secure transport, disable cleartext where applicable, use production signing, and document certificate-validation or pinning decisions according to the threat model."),
+        ("supply chain", "The application should maintain a governed dependency inventory, remediate vulnerable components within defined timelines, and preserve traceable evidence of dependency review and update decisions."),
+        ("input validation", "The application should validate, constrain, encode, and sanitize inputs and outputs across relevant client and backend trust boundaries to prevent injection and data-handling weaknesses."),
+        ("audit logging", "The application and supporting services should produce protected, retained, reviewable, and actionable audit evidence for security-relevant events according to the assessed scope."),
+        ("tampering", "The application should implement release-appropriate binary hardening, non-debuggable production configuration, integrity controls, and reverse-engineering resistance based on the assessed risk profile."),
+        ("reverse engineering", "The application should implement release-appropriate binary hardening, non-debuggable production configuration, integrity controls, and reverse-engineering resistance based on the assessed risk profile."),
+        ("privacy", "The application and governing process should provide privacy, consent, data-minimization, notification, and user-rights controls aligned with the assessed mHealth data-processing scope."),
+        ("security misconfiguration", "The application should use secure-by-default Android and backend configuration, with explicit hardening for exported components, backup behavior, permissions, cookies, errors, and operational safeguards."),
+    ]
+    for key, replacement in templates:
+        if key in pattern:
+            return replacement
+    return "The application should implement the workbook-defined control objective with evidence sufficient to support the target audit verdict for the assessed scope."
+
 def _sanitize_positive_control_final(value: Any) -> str:
     """Make positive-control statements precise and conservative.
 
@@ -1067,6 +1110,26 @@ def _sanitize_positive_control_final(value: Any) -> str:
 
     replacements = [
         (
+            r"TLS encryption for data exchange is ensured as clear text traffic was not allowed and Android SSL pinning was not detected\.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+        ),
+        (
+            r"TLS encryption for data exchange is ensured as clear text traffic was not allowed and Android SSL pinning was not detected",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
+        ),
+        (
+            r"The application does not permit cleartext traffic, although SSL pinning evidence was absent\.",
+            "Available manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+        ),
+        (
+            r"The application does not allow cleartext traffic in the primary AndroidManifest\.xml, although SSL pinning evidence was absent\.",
+            "Available manifest evidence supports that cleartext traffic is not allowed in the primary AndroidManifest.xml; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
+        ),
+        (
+            r"No malware detections were found for this requirement\.",
+            "No malware detections were reported for this workbook-compliant requirement; this statement remains limited to the available scanner coverage.",
+        ),
+        (
             r"Session cookies are assigned from the server, indicating support for secure transmission of session IDs\.",
             "Server-side session cookie assignment was recorded in the workbook; Secure and HTTPOnly cookie attributes were not directly verified by the available evidence.",
         ),
@@ -1076,11 +1139,11 @@ def _sanitize_positive_control_final(value: Any) -> str:
         ),
         (
             r"TLS encryption for data exchange is ensured, evidenced by the absence of clear text traffic allowance and the lack of Android SSL pinning detection\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
         ),
         (
             r"TLS encryption for data exchange is ensured, evidenced by the absence of clear text traffic allowance and the lack of Android SSL pinning detection",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
         ),
         (
             r"manifest evidence confirms no clear text traffic was allowed despite absent SSL pinning detection",
@@ -1112,27 +1175,27 @@ def _sanitize_positive_control_final(value: Any) -> str:
         ),
         (
             r"Data exchange enforces TLS encryption, supported by the manifest disallowing clear text traffic; however, Android SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; Android SSL pinning was not detected and should be evaluated separately according to the threat model.",
+            "Manifest evidence supports that cleartext traffic is not allowed; Android SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
         ),
         (
             r"Data exchange confidentiality and integrity are supported because the application does not allow clear text traffic, although SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
         ),
         (
             r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
         ),
         (
             r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
         ),
         (
             r"Data exchange is not permitted over clear text traffic, and SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement.",
         ),
         (
             r"Data exchange is not permitted over clear text traffic, and SSL pinning was not detected",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
+            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and remains a residual control gap or threat-model-dependent requirement",
         ),
         (
             r"The application prevents acceptance of all SSL/TLS certificates, supported by the absence of clear text traffic allowance in the manifest\.",
@@ -2418,12 +2481,14 @@ def _classify_positive_control_statement(statement: str, evidence: str = "", fla
     if any(token in text for token in [
         " but ", "however", "residual", "not detected", "not observed", "not available",
         "risky permissions are present", "dangerous permissions", "partially", "fallback verdict",
-        "ssl pinning was not detected", "clear text traffic and ssl pinning",
+        "ssl pinning was not detected", "ssl pinning evidence was absent", "absent ssl pinning",
+        "residual control gap", "clear text traffic and ssl pinning",
         "secure and httponly cookie attributes were not directly verified",
+        "no malware detections were reported", "available scanner coverage",
         "cookie attributes should be verified",
         "should be evaluated separately according to the threat model"
     ]):
-        if "risky permissions" in text or "ssl pinning was not detected" in text or "not detected" in text:
+        if "risky permissions" in text or "ssl pinning was not detected" in text or "ssl pinning evidence was absent" in text or "residual control gap" in text or "not detected" in text:
             return "Mixed or partial controls"
         return "Qualified positives with residual risk"
     if any(token in text for token in ["scanner coverage", "did not report", "manual logout", "auditor review"]):
@@ -3741,9 +3806,9 @@ def main() -> None:
         anchors = p.get("description_anchors", [])[:2]
         doc.add_paragraph(f"{pat} ({sev})", style="Heading 2")
         doc.add_paragraph(f"Workbook basis: {cnt} related non-compliant control(s) mapped to this pattern.")
-        expected = _ai_field_for_pattern(pat, writeups, "expected") or "AI-generated expected-state narrative was not returned for this pattern."
+        expected = _sanitize_expected_state(pat.get("pattern"), _ai_field_for_pattern(pat, writeups, "expected"))
         impact = _ai_field_for_pattern(pat, writeups, "impact") or "AI-generated impact narrative was not returned for this pattern."
-        doc.add_paragraph(f"Expected: {expected}")
+        doc.add_paragraph(f"Expected secure state: {expected}")
         doc.add_paragraph("Observed: The audit workbook indicates the related controls are missing, insufficient, or not evidenced for the assessed scope.")
         doc.add_paragraph(f"Impact: {impact}")
         doc.add_paragraph(f"Recommended owner: {owner}")

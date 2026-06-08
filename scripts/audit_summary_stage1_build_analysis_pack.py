@@ -1126,11 +1126,75 @@ def _evidence_fit_for_technical_item(tech: Dict[str, Any]) -> str:
     return "technical_context"
 
 
+def _control_correlation_haystack(ctrl: Dict[str, Any]) -> str:
+    flags = ctrl.get("flags") if isinstance(ctrl.get("flags"), list) else []
+    parts = [
+        str(ctrl.get("weakness_pattern") or ""),
+        str(ctrl.get("category_code") or ""),
+        str(ctrl.get("category_name") or ""),
+        str(ctrl.get("description") or ""),
+        str(ctrl.get("evidence_excerpt") or ""),
+        " ".join(map(str, flags)),
+        str(ctrl.get("evidence_basis") or ""),
+    ]
+    return " ".join(parts).lower()
+
+
+def _storage_artifact_control_scope(ctrl: Dict[str, Any]) -> str:
+    """Classify how well a runtime storage artifact fits a requirement.
+
+    Runtime files such as SharedPreferences, SQLite databases, WAL, and SHM
+    sidecars are direct evidence only for local-at-rest storage concerns. They
+    must not be treated as direct proof for UI masking, screenshots, consent,
+    backend log retention, SOAP/SAML/FIPS, or organizational-policy controls.
+    """
+    text = _control_correlation_haystack(ctrl)
+    hard_weak_terms = [
+        "soap", "saml", "fips", "xml signature", "xml encryption", "ws-security",
+        "consent", "privacy notice", "classification", "data classification",
+        "retention", "log review", "audit trail", "backend log", "secure backend log",
+        "ui masking", "screenshot", "screenshots", "notification", "notify",
+        "server-side", "backend rbac", "rbac enforcement", "authorization policy",
+    ]
+    soft_weak_terms = ["organizational", "policy", "procedure", "governance", "documentation"]
+    direct_terms = [
+        "sharedpreferences", "shared preferences", "shared_prefs",
+        "sqlite", "database", "local database", "encrypted local database",
+        "local storage", "data at rest", "cache", "local cache", "local caching",
+        "device storage", "external storage", "plaintext", "plain text",
+        "auth token", "tokens", "keys", "keystore", "secure key storage",
+        "ephi", "pii", "phi", "stores sensitive data", "sensitive data on device",
+        "logout", "local session", "user switch", "uninstall",
+    ]
+
+    has_hard_weak = any(term in text for term in hard_weak_terms)
+    has_soft_weak = any(term in text for term in soft_weak_terms)
+    has_direct = any(term in text for term in direct_terms)
+
+    if has_hard_weak:
+        return "weak"
+    if has_soft_weak and not has_direct:
+        return "weak"
+    if has_soft_weak and has_direct:
+        return "indirect"
+    if has_direct:
+        return "direct"
+    if "privacy" in text or "authentication" in text or "session" in text:
+        return "indirect"
+    return "weak"
+
+
 def _correlation_strength_for_item(ctrl: Dict[str, Any], tech: Dict[str, Any]) -> str:
     fit = _evidence_fit_for_technical_item(tech)
     pattern = str(ctrl.get("weakness_pattern") or (tech.get("linked_patterns") or [""])[0]).lower()
     basis = str(ctrl.get("evidence_basis") or "").lower()
 
+    if fit == "runtime_coverage_gap":
+        return "coverage_limitation"
+    if fit == "storage_artifact":
+        return _storage_artifact_control_scope(ctrl)
+    if basis == "organizational_documentation":
+        return "weak"
     if fit == "dependency_vulnerability" and "supply chain" in pattern:
         return "direct"
     if fit == "sast_code_finding" and any(t in pattern for t in ["input validation", "authorization", "authentication", "security misconfiguration"]):
@@ -1139,12 +1203,6 @@ def _correlation_strength_for_item(ctrl: Dict[str, Any], tech: Dict[str, Any]) -
         return "direct"
     if fit == "binary_signing" and any(t in pattern for t in ["tampering", "transport", "binary"]):
         return "direct"
-    if fit == "storage_artifact" and any(t in pattern for t in ["local storage", "key management", "data at rest"]):
-        return "direct"
-    if fit == "storage_artifact" and any(t in pattern for t in ["privacy", "authentication"]):
-        return "indirect"
-    if basis == "organizational_documentation":
-        return "weak"
     return "indirect"
 
 
@@ -1167,7 +1225,10 @@ def _make_correlation_items(control_items: List[Dict[str, Any]], technical_items
                 "evidence_summary": _excerpt(tech.get("observed_issue") or tech.get("affected_component"), 220),
                 "evidence_fit": evidence_fit,
                 "correlation_strength": correlation_strength,
-                "correlation_rule": "Scanner evidence supports or qualifies the workbook verdict. It does not override yes/no/n/a.",
+                "correlation_rule": (
+                    "Scanner evidence supports or qualifies the workbook verdict. It does not override yes/no/n/a. "
+                    "Storage artifacts are direct only for local-at-rest storage controls; otherwise they are indirect or weak context."
+                ),
             })
             if len(rows) >= limit:
                 return rows
