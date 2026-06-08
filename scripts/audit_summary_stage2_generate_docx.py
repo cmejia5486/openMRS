@@ -63,6 +63,17 @@ CHART_DIR = str(_env_path("AUDIT_SUMMARY_CHART_DIR", "_audit_summary_charts"))
 
 HEADER_TEXT_TEMPLATE = "mSEC-AM Audit Summary - {report_title}"
 
+REPORT_FONT_NAME = "Arial"
+REPORT_BODY_PT = 9.5
+REPORT_HEADING1_PT = 14.0
+REPORT_HEADING2_PT = 12.0
+REPORT_HEADING3_PT = 10.5
+REPORT_CAPTION_PT = 8.5
+REPORT_TABLE_HEADER_PT = 8.0
+REPORT_TABLE_BODY_PT = 7.6
+REPORT_HEADER_FOOTER_PT = 7.5
+
+
 
 def _wrap_label(s: str, width: int = 30) -> str:
     s = str(s)
@@ -107,17 +118,69 @@ def _add_field_run(paragraph, field_instr: str) -> None:
     run._r.append(fldChar3)
 
 
+def _set_run_font(run, name: str = REPORT_FONT_NAME, size_pt: float | None = None, bold: bool | None = None, italic: bool | None = None) -> None:
+    """Apply a single Word font consistently across latin/complex/east-Asian slots."""
+    try:
+        run.font.name = name
+        rpr = run._element.get_or_add_rPr()
+        rfonts = rpr.rFonts
+        if rfonts is None:
+            rfonts = OxmlElement("w:rFonts")
+            rpr.append(rfonts)
+        for attr in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
+            rfonts.set(qn(attr), name)
+        if size_pt is not None:
+            run.font.size = Pt(size_pt)
+        if bold is not None:
+            run.bold = bold
+        if italic is not None:
+            run.italic = italic
+    except Exception:
+        pass
+
+
+def _set_style_font(doc: Document, style_name: str, size_pt: float, bold: bool | None = None, italic: bool | None = None) -> None:
+    try:
+        style = doc.styles[style_name]
+    except Exception:
+        return
+    try:
+        style.font.name = REPORT_FONT_NAME
+        style.font.size = Pt(size_pt)
+        if bold is not None:
+            style.font.bold = bold
+        if italic is not None:
+            style.font.italic = italic
+        rpr = style._element.get_or_add_rPr()
+        rfonts = rpr.rFonts
+        if rfonts is None:
+            rfonts = OxmlElement("w:rFonts")
+            rpr.append(rfonts)
+        for attr in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
+            rfonts.set(qn(attr), REPORT_FONT_NAME)
+    except Exception:
+        pass
+
+
 def _set_doc_defaults(doc: Document) -> None:
+    _set_style_font(doc, "Normal", REPORT_BODY_PT)
+    _set_style_font(doc, "Title", 22.0, bold=True)
+    _set_style_font(doc, "Subtitle", 13.0, bold=True)
+    _set_style_font(doc, "Heading 1", REPORT_HEADING1_PT, bold=True)
+    _set_style_font(doc, "Heading 2", REPORT_HEADING2_PT, bold=True)
+    _set_style_font(doc, "Heading 3", REPORT_HEADING3_PT, bold=True)
+    _set_style_font(doc, "Caption", REPORT_CAPTION_PT, italic=True)
+    _set_style_font(doc, "List Bullet", REPORT_BODY_PT)
+    _set_style_font(doc, "List Number", REPORT_BODY_PT)
+
     style = doc.styles["Normal"]
-    style.font.name = "Calibri"
-    style.font.size = Pt(11)
-    style.paragraph_format.space_after = Pt(6)
-    style.paragraph_format.line_spacing = 1.08
+    style.paragraph_format.space_after = Pt(5)
+    style.paragraph_format.line_spacing = 1.05
     section = doc.sections[0]
-    section.top_margin = Inches(0.75)
-    section.bottom_margin = Inches(0.75)
-    section.left_margin = Inches(0.85)
-    section.right_margin = Inches(0.85)
+    section.top_margin = Inches(0.65)
+    section.bottom_margin = Inches(0.65)
+    section.left_margin = Inches(0.75)
+    section.right_margin = Inches(0.75)
 
 
 def _is_toc_paragraph(paragraph) -> bool:
@@ -181,14 +244,14 @@ def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile
     p = header.paragraphs[0]
     p.text = HEADER_TEXT_TEMPLATE.format(report_title=report_title)
     if p.runs:
-        p.runs[0].font.size = Pt(9)
+        _set_run_font(p.runs[0], size_pt=REPORT_HEADER_FOOTER_PT)
 
     footer = section.footer
     footer.is_linked_to_previous = False
     fp = footer.paragraphs[0]
     fp.text = f"{audit_date_str} | "
     if fp.runs:
-        fp.runs[0].font.size = Pt(9)
+        _set_run_font(fp.runs[0], size_pt=REPORT_HEADER_FOOTER_PT)
     fp.add_run("Page ")
     _add_field_run(fp, " PAGE ")
     fp.add_run(" of ")
@@ -200,17 +263,15 @@ def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: s
     doc.add_paragraph()
     t = doc.add_paragraph("mSEC-AM Audit Summary")
     t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    t.runs[0].font.size = Pt(28)
-    t.runs[0].bold = True
+    _set_run_font(t.runs[0], size_pt=22, bold=True)
     s = doc.add_paragraph(report_title)
     s.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    s.runs[0].font.size = Pt(16)
-    s.runs[0].bold = True
+    _set_run_font(s.runs[0], size_pt=13, bold=True)
     doc.add_paragraph()
     info = doc.add_paragraph()
     info.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = info.add_run(f"Audit Date: {audit_date_str}\nAuditor: {auditor}\nClassification: Confidential / Internal Use")
-    r.font.size = Pt(11)
+    r = info.add_run(f"Audit Date: {audit_date_str}\\nAuditor: {auditor}\\nClassification: Confidential / Internal Use")
+    _set_run_font(r, size_pt=REPORT_BODY_PT)
     doc.add_page_break()
 
 
@@ -320,10 +381,11 @@ def _add_callout(doc: Document, title: str, bullets: List[str]) -> None:
     _set_cell_shading(cell, "EDEDED")
     p = cell.paragraphs[0]
     r = p.add_run(title)
-    r.bold = True
-    r.font.size = Pt(11)
+    _set_run_font(r, size_pt=REPORT_BODY_PT, bold=True)
     for b in bullets:
-        cell.add_paragraph(b, style="List Bullet")
+        bp = cell.add_paragraph(b, style="List Bullet")
+        for run in bp.runs:
+            _set_run_font(run, size_pt=REPORT_BODY_PT)
     doc.add_paragraph()
 
 
@@ -332,8 +394,7 @@ def _add_figure(doc: Document, img_path: str, caption: str) -> None:
     cap = doc.add_paragraph(caption)
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     if cap.runs:
-        cap.runs[0].italic = True
-        cap.runs[0].font.size = Pt(9)
+        _set_run_font(cap.runs[0], size_pt=REPORT_CAPTION_PT, italic=True)
     doc.add_paragraph()
 
 
@@ -1166,9 +1227,85 @@ def _qa_doc_text(doc: Document) -> str:
     return "\n".join(parts)
 
 
+def _normalize_document_typography(doc: Document) -> None:
+    """Final typographic normalization to keep the DOCX visually consistent."""
+    _set_style_font(doc, "Normal", REPORT_BODY_PT)
+    _set_style_font(doc, "Heading 1", REPORT_HEADING1_PT, bold=True)
+    _set_style_font(doc, "Heading 2", REPORT_HEADING2_PT, bold=True)
+    _set_style_font(doc, "Heading 3", REPORT_HEADING3_PT, bold=True)
+    _set_style_font(doc, "Caption", REPORT_CAPTION_PT, italic=True)
+    _set_style_font(doc, "List Bullet", REPORT_BODY_PT)
+    _set_style_font(doc, "List Number", REPORT_BODY_PT)
+
+    for section in doc.sections:
+        section.top_margin = Inches(0.65)
+        section.bottom_margin = Inches(0.65)
+        section.left_margin = Inches(0.75)
+        section.right_margin = Inches(0.75)
+        for part in (section.header, section.footer):
+            for paragraph in part.paragraphs:
+                for run in paragraph.runs:
+                    _set_run_font(run, size_pt=REPORT_HEADER_FOOTER_PT)
+
+    for paragraph in doc.paragraphs:
+        style_name = getattr(getattr(paragraph, "style", None), "name", "") or ""
+        if style_name == "Title":
+            target = 22.0
+            bold = True
+            italic = None
+        elif style_name == "Subtitle":
+            target = 13.0
+            bold = True
+            italic = None
+        elif style_name.startswith("Heading 1"):
+            target = REPORT_HEADING1_PT
+            bold = True
+            italic = None
+        elif style_name.startswith("Heading 2"):
+            target = REPORT_HEADING2_PT
+            bold = True
+            italic = None
+        elif style_name.startswith("Heading 3"):
+            target = REPORT_HEADING3_PT
+            bold = True
+            italic = None
+        elif style_name == "Caption" or paragraph.text.strip().startswith(("Table ", "Figure ")):
+            target = REPORT_CAPTION_PT
+            bold = None
+            italic = True
+        else:
+            target = REPORT_BODY_PT
+            bold = None
+            italic = None
+        for run in paragraph.runs:
+            _set_run_font(run, size_pt=target, bold=bold, italic=italic)
+
+    for table in doc.tables:
+        if table.rows:
+            _repeat_table_header(table.rows[0])
+            for cell in table.rows[0].cells:
+                _set_cell_shading(cell, "D9E1F2")
+                _format_table_cell(cell, font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
+        for row_idx, row in enumerate(table.rows):
+            for col_idx, cell in enumerate(row.cells):
+                if row_idx == 0:
+                    continue
+                text = _clean_text(cell.text)
+                if text == "PUID / item":
+                    cell.text = "Requirement"
+                    text = "Requirement"
+                keep_together = col_idx == 0 or bool(re.match(r"^(SECM-|CVE-|TECH-|CTRL-)", text))
+                _format_table_cell(cell, font_size=7.2 if len(text) > 220 else REPORT_TABLE_BODY_PT, no_wrap=keep_together)
+
+
+
 def _quality_gate(doc: Document) -> None:
-    text = _qa_doc_text(doc)
-    forbidden = [
+    """Fail fast on content or presentation defects that would make the report misleading."""
+    full_text = "\n".join(p.text for p in doc.paragraphs)
+    table_text = "\n".join(cell.text for table in doc.tables for row in table.rows for cell in row.cells)
+    combined = full_text + "\n" + table_text
+    lowered = combined.lower()
+    forbidden_fragments = [
         "No data available",
         "missing_inputs\\n",
         "{'tool':",
@@ -1179,13 +1316,32 @@ def _quality_gate(doc: Document) -> None:
         "both related to retrofit",
         "both High findings are Retrofit",
     ]
-    hits = [token for token in forbidden if token in text]
-    if "PUID / item" in text:
+    hits = [token for token in forbidden_fragments if token.lower() in lowered]
+    if "puid / item" in lowered:
         hits.append("PUID / item")
-    if doc.tables and "Table 1." not in text:
+    if doc.tables and "Table 1." not in full_text:
         hits.append("missing table captions")
+    if "java/android/backup-enabled" in lowered and "backup enabled\nnot available in parsed evidence" in lowered:
+        hits.append("backup fallback not applied")
     if hits:
         raise SystemExit("[ERROR] Audit Summary quality gate failed. Forbidden text found: " + ", ".join(hits))
+
+    unexpected_fonts = set()
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            name = getattr(run.font, "name", None)
+            if name and name != REPORT_FONT_NAME:
+                unexpected_fonts.add(name)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        name = getattr(run.font, "name", None)
+                        if name and name != REPORT_FONT_NAME:
+                            unexpected_fonts.add(name)
+    if unexpected_fonts:
+        raise SystemExit("[ERROR] Audit Summary quality gate failed. Unexpected direct font families remain: " + ", ".join(sorted(unexpected_fonts)[:10]))
 
 
 def _short(value: Any, limit: int = 170) -> str:
@@ -1277,14 +1433,24 @@ def _table_caption_for_headers(headers: List[str]) -> str:
     joined = " | ".join(_clean_text(x) for x in headers).lower()
     if "weakness pattern" in joined and "workbook basis" in joined:
         return "Risk triage summary"
+    if "evidence source" in joined and "available" in joined:
+        return "Technical evidence source coverage"
     if "cve" in joined or "installed -> fixed" in joined or ("component" in joined and "severity" in joined):
         return "Dependency vulnerability evidence details"
     if "indicator" in joined and "parsed" in joined:
         return "Android static evidence indicators"
     if "runtime evidence type" in joined:
         return "MobSF dynamic runtime evidence summary"
-    if "sast classification" in joined or "raw sarif" in joined:
-        return "SAST classification and findings summary"
+    if "sast classification" in joined:
+        return "SAST classification summary"
+    if "tool" in joined and "security findings" in joined and "raw sarif" in joined:
+        return "SAST findings by tool"
+    if "tool" in joined and "rule" in joined and "message" in joined:
+        return "SAST security-relevant finding details"
+    if "top hardening" in joined:
+        return "Top hardening and maintainability signals"
+    if "limitation" in joined and "report-safe explanation" in joined:
+        return "Technical coverage limitations"
     if "scanner evidence" in joined or "technical finding" in joined:
         return "Technical evidence correlation matrix"
     if "positive control" in joined:
@@ -1293,7 +1459,7 @@ def _table_caption_for_headers(headers: List[str]) -> str:
         return "Requirement treatment traceability"
     if "owner" in joined and "target" in joined:
         return "Management action plan"
-    return "Audit evidence and treatment table"
+    return "Audit evidence table"
 
 
 def _add_table_caption(doc: Document, title: str) -> None:
@@ -1305,7 +1471,7 @@ def _add_table_caption(doc: Document, title: str) -> None:
     r = p.add_run(f"Table {_TABLE_RENDER_COUNTER}. {title}")
     r.bold = True
     r.italic = True
-    r.font.size = Pt(9)
+    _set_run_font(r, size_pt=REPORT_CAPTION_PT, bold=True, italic=True)
 
 
 def _repeat_table_header(row) -> None:
@@ -1321,15 +1487,14 @@ def _set_cell_no_wrap(cell) -> None:
     tc_pr.append(no_wrap)
 
 
-def _format_table_cell(cell, font_size: float = 8.0, bold: bool = False, no_wrap: bool = False) -> None:
+def _format_table_cell(cell, font_size: float = REPORT_TABLE_BODY_PT, bold: bool = False, no_wrap: bool = False) -> None:
     if no_wrap:
         _set_cell_no_wrap(cell)
     for paragraph in cell.paragraphs:
         paragraph.paragraph_format.space_after = Pt(0)
         paragraph.paragraph_format.line_spacing = 1.0
         for run in paragraph.runs:
-            run.font.size = Pt(font_size)
-            run.bold = bold
+            _set_run_font(run, size_pt=font_size, bold=bold)
 
 
 def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None, empty_message: str | None = None) -> bool:
@@ -1353,7 +1518,7 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
             header_text = "Requirement"
         h[idx].text = header_text
         _set_cell_shading(h[idx], "D9E1F2")
-        _format_table_cell(h[idx], font_size=8.5, bold=True, no_wrap=True)
+        _format_table_cell(h[idx], font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
     for row_values in actual_rows:
         r = tbl.add_row().cells
         for idx in range(len(headers)):
@@ -1362,7 +1527,7 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
                 value = "Requirement"
             r[idx].text = value
             keep_together = idx == 0 and len(headers) >= 4
-            _format_table_cell(r[idx], font_size=7.8 if len(value) > 180 else 8.0, no_wrap=keep_together)
+            _format_table_cell(r[idx], font_size=7.3 if len(value) > 180 else REPORT_TABLE_BODY_PT, no_wrap=keep_together)
     doc.add_paragraph()
     return True
 
@@ -1521,7 +1686,45 @@ def _add_trivy_section(doc: Document, technical: Dict[str, Any]) -> None:
     _add_table(doc, ["Severity", "CVE / ID", "Component", "Installed -> fixed", "CWE / CVSS", "Dates / target / summary"], rows, max_rows=18)
 
 
-def _mobsf_signal_rows(mobsf: Dict[str, Any]) -> List[List[Any]]:
+def _sast_has_rule(technical: Dict[str, Any], rule_substring: str) -> bool:
+    rule_substring = str(rule_substring or "").lower()
+    if not rule_substring:
+        return False
+    sast = _as_dict(technical.get("sast_app_code"))
+    candidate_lists = [
+        "security_findings_sample",
+        "hardening_signals_sample",
+        "findings",
+        "security_findings",
+        "top_security_rules",
+        "top_hardening_rules",
+    ]
+    for key in candidate_lists:
+        for item in _as_list(sast.get(key)):
+            if isinstance(item, dict):
+                haystack = " ".join(_clean_text(item.get(field)) for field in ("rule_id", "rule", "id", "message", "title", "name")).lower()
+                if rule_substring in haystack:
+                    return True
+            elif rule_substring in _clean_text(item).lower():
+                return True
+    summary = _as_dict(sast.get("summary"))
+    for key in ("top_security_rules", "top_retained_rules", "top_raw_rules"):
+        for item in _as_list(summary.get(key)):
+            if isinstance(item, dict) and rule_substring in _clean_text(item.get("rule_id")).lower():
+                return True
+    return False
+
+
+def _indicator_with_fallback(label: str, value: Any, technical: Dict[str, Any]) -> str:
+    formatted = _format_bool(value)
+    if label.lower() == "backup enabled" and formatted == "Not available in parsed evidence":
+        if _sast_has_rule(technical, "java/android/backup-enabled") or _sast_has_rule(technical, "backup-enabled"):
+            return "Detected (SAST CodeQL fallback)"
+    return formatted
+
+
+
+def _mobsf_signal_rows(mobsf: Dict[str, Any], technical: Dict[str, Any] | None = None) -> List[List[Any]]:
     checks = [
         ("Debuggable", ["debuggable", "has_debuggable", "debuggable_true", "android_debuggable"]),
         ("Debug certificate", ["debug_certificate", "has_debug_cert", "signed_with_debug_certificate"]),
@@ -1536,7 +1739,7 @@ def _mobsf_signal_rows(mobsf: Dict[str, Any]) -> List[List[Any]]:
     rows = []
     for label, keys in checks:
         value = _deep_find_first(mobsf, keys)
-        rows.append([label, _format_bool(value)])
+        rows.append([label, _indicator_with_fallback(label, value, technical or {})])
     return rows
 
 
@@ -1546,7 +1749,7 @@ def _add_mobsf_static_section(doc: Document, technical: Dict[str, Any]) -> None:
         doc.add_paragraph("MobSF static evidence was not available in the analysis pack. Static APK, manifest, signing, certificate, permission, and tracker checks should therefore be treated as not assessed by this report run.")
         return
     doc.add_paragraph("MobSF static evidence was used to summarize Android APK, manifest, certificate, signing, permissions, tracker, and binary hardening indicators. Missing values mean that the parser did not receive or normalize that indicator; they must not be interpreted as absence of risk.")
-    _add_table(doc, ["Indicator", "Parsed value"], _mobsf_signal_rows(mobsf), max_rows=20)
+    _add_table(doc, ["Indicator", "Parsed value"], _mobsf_signal_rows(mobsf, technical), max_rows=20)
 
     finding_lists = []
     for key in ["manifest_findings", "certificate_findings", "findings", "high_findings", "warnings"]:
@@ -2071,6 +2274,39 @@ def _compact_patterns_for_ai(patterns: List[Dict[str, Any]], limit: int = 10) ->
     return out
 
 
+def _classify_positive_control_statement(statement: str, evidence: str = "", flags: str = "") -> str:
+    text = " ".join([_clean_text(statement), _clean_text(evidence), _clean_text(flags)]).lower()
+    if any(token in text for token in [
+        " but ", "however", "residual", "not detected", "not observed", "not available",
+        "risky permissions are present", "dangerous permissions", "partially", "fallback verdict",
+        "ssl pinning was not detected", "clear text traffic and ssl pinning"
+    ]):
+        if "risky permissions" in text or "ssl pinning was not detected" in text or "not detected" in text:
+            return "Mixed or partial controls"
+        return "Qualified positives with residual risk"
+    if any(token in text for token in ["scanner coverage", "did not report", "manual logout", "auditor review"]):
+        return "Qualified positives with residual risk"
+    return "Confirmed positive controls"
+
+
+def _group_positive_controls(pos_controls: List[Dict[str, Any]], positive_control_writeups: Dict[str, str]) -> Dict[str, List[Dict[str, Any]]]:
+    groups = {
+        "Confirmed positive controls": [],
+        "Qualified positives with residual risk": [],
+        "Mixed or partial controls": [],
+    }
+    for pc in pos_controls:
+        puid = _clean_text(pc.get("puid"))
+        statement = _sanitize_positive_control_final(positive_control_writeups.get(puid) or pc.get("declarative_statement", ""))
+        bucket = _classify_positive_control_statement(statement, _clean_text(pc.get("evidence_excerpt")), _clean_text(pc.get("flags_used")))
+        enriched = dict(pc)
+        enriched["reported_statement"] = statement
+        enriched["evidence_class"] = bucket
+        groups.setdefault(bucket, []).append(enriched)
+    return groups
+
+
+
 def _compact_positive_controls_for_ai(pos_controls: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for pc in pos_controls[:limit]:
@@ -2129,7 +2365,7 @@ def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
         },
         "mobsf_static": {
             "available": _block_available(mobsf_static),
-            "signals": _mobsf_signal_rows(mobsf_static) if _block_available(mobsf_static) else [],
+            "signals": _mobsf_signal_rows(mobsf_static, technical) if _block_available(mobsf_static) else [],
             "manifest_findings_count": _deep_int(mobsf_static, ["manifest_findings_count"]),
             "certificate_findings_count": _deep_int(mobsf_static, ["certificate_findings_count"]),
             "dangerous_permissions": _deep_list(mobsf_static, ["dangerous_permissions"])[:20],
@@ -3255,13 +3491,18 @@ def main() -> None:
     _add_callout(doc, "Key takeaways (Top findings)", key_takeaways[:7])
 
     add_nav_heading("5.2 Positive controls observed", 2)
-    doc.add_paragraph("All statements below are derived exclusively from controls recorded as Compliant in the audit workbook and include supporting signals (flags and/or evidence). Verification traceability is provided in Appendix B.")
-    if pos_controls:
-        for pc in pos_controls:
-            puid = _clean_text(pc.get("puid"))
-            statement = _sanitize_positive_control_final(positive_control_writeups.get(puid) or pc.get("declarative_statement", ""))
-            doc.add_paragraph(statement, style="List Bullet")
-    else:
+    doc.add_paragraph("All statements below are derived from controls recorded as Compliant in the audit workbook and are separated by evidence confidence. Verification traceability is provided in Appendix D.")
+    positive_groups = _group_positive_controls(pos_controls, positive_control_writeups)
+    rendered_positive = False
+    for group_title in ["Confirmed positive controls", "Qualified positives with residual risk", "Mixed or partial controls"]:
+        items = positive_groups.get(group_title, [])
+        if not items:
+            continue
+        doc.add_paragraph(group_title, style="Heading 3")
+        for pc in items:
+            doc.add_paragraph(pc.get("reported_statement", ""), style="List Bullet")
+            rendered_positive = True
+    if not rendered_positive:
         doc.add_paragraph("No compliant controls with supporting evidence/flags were available for verification in the workbook.", style="List Bullet")
 
     add_nav_heading("5.3 Risk scoring approach", 2)
@@ -3297,6 +3538,13 @@ def main() -> None:
         doc.add_paragraph(ai_technical_coverage)
     else:
         doc.add_paragraph("The following table summarizes which automated technical evidence sources were available to support the audit summary. Absence of a technical source means that the source was not available to the report generator, not necessarily that the corresponding risk is absent.")
+    vision_counts = _deep_dict(_as_dict(technical.get("vision360")), ["state_counts"])
+    vision_failures = _safe_int(vision_counts.get("fail"), 0) if vision_counts else 0
+    if vision_failures:
+        _add_body_paragraph(
+            doc,
+            f"For clarity, {non_compliant} refers to workbook non-compliant applicable controls, while {vision_failures} refers to Vision360 failed flags or technical control signals used as supporting evidence. These are related but not interchangeable counts."
+        )
     _add_table(doc, ["Evidence source", "Available", "Summary"], _source_status_rows(technical), max_rows=10)
 
     add_nav_heading("6. Technical evidence from automated analysis", 1)
@@ -3426,28 +3674,32 @@ def main() -> None:
     add_nav_heading("Appendix D - Positive controls verification (workbook traceability)", 1)
     doc.add_paragraph("This appendix verifies each Positive controls observed statement by providing the originating PUID, flags used, and an evidence excerpt when available.")
     _add_table_caption(doc, "Positive control verification traceability")
-    vb = doc.add_table(rows=1, cols=4)
+    vb = doc.add_table(rows=1, cols=5)
     vb.style = "Table Grid"
     vh = vb.rows[0].cells
-    for idx, txt in enumerate(["Positive control statement (as reported)", "Workbook PUID", "Flags used", "Evidence / justification (excerpt)"]):
+    for idx, txt in enumerate(["Positive control statement (as reported)", "Evidence class", "Workbook PUID", "Flags used", "Evidence / justification (excerpt)"]):
         vh[idx].text = txt
         _set_cell_shading(vh[idx], "D9E1F2")
-        for run in vh[idx].paragraphs[0].runs:
-            run.bold = True
+        _format_table_cell(vh[idx], font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
     if pos_controls:
-        for pc in pos_controls:
-            r = vb.add_row().cells
-            puid = _clean_text(pc.get("puid"))
-            r[0].text = _sanitize_positive_control_final(positive_control_writeups.get(puid) or pc.get("declarative_statement", ""))
-            r[1].text = pc["puid"]
-            r[2].text = pc.get("flags_used", "") or ""
-            r[3].text = _sanitize_positive_statement(pc.get("evidence_excerpt", "") or "")
+        for group_title in ["Confirmed positive controls", "Qualified positives with residual risk", "Mixed or partial controls"]:
+            for pc in positive_groups.get(group_title, []):
+                r = vb.add_row().cells
+                puid = _clean_text(pc.get("puid"))
+                r[0].text = pc.get("reported_statement", "")
+                r[1].text = group_title
+                r[2].text = puid
+                r[3].text = pc.get("flags_used", "") or ""
+                r[4].text = _sanitize_positive_statement(pc.get("evidence_excerpt", "") or "")
+                for idx, cell in enumerate(r):
+                    _format_table_cell(cell, font_size=REPORT_TABLE_BODY_PT, no_wrap=(idx in {1, 2}))
     else:
         r = vb.add_row().cells
         r[0].text = "No verified positive controls available."
         r[1].text = ""
         r[2].text = ""
         r[3].text = ""
+        r[4].text = ""
 
     doc.add_page_break()
     add_nav_heading("Appendix E - Technical evidence summary", 1)
@@ -3457,6 +3709,7 @@ def main() -> None:
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)
     _format_report_paragraphs(doc)
+    _normalize_document_typography(doc)
     _quality_gate(doc)
     doc.save(out_path)
     print(f"[OK] DOCX generated -> {out_path}")

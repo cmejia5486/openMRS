@@ -2570,6 +2570,79 @@ def _summarize_sast(sast_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[st
     }
 
 
+
+def _sast_rule_present(sast: Dict[str, Any], needle: str) -> bool:
+    needle = str(needle or "").lower()
+    if not needle or not isinstance(sast, dict):
+        return False
+    candidate_keys = [
+        "security_findings_sample",
+        "hardening_signals_sample",
+        "findings",
+        "security_findings",
+        "top_security_rules",
+        "top_hardening_rules",
+    ]
+    for key in candidate_keys:
+        items = sast.get(key)
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if isinstance(item, dict):
+                haystack = " ".join(_clean_text(item.get(k)) for k in ("rule_id", "rule", "id", "message", "title", "name")).lower()
+                if needle in haystack:
+                    return True
+            elif needle in _clean_text(item).lower():
+                return True
+    summary = sast.get("summary") if isinstance(sast.get("summary"), dict) else {}
+    for key in ("top_security_rules", "top_retained_rules", "top_raw_rules"):
+        items = summary.get(key)
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if isinstance(item, dict) and needle in _clean_text(item.get("rule_id")).lower():
+                return True
+    return False
+
+
+def _apply_cross_source_static_evidence(technical: Dict[str, Any]) -> Dict[str, Any]:
+    """Promote corroborated SAST manifest findings into the MobSF static summary.
+
+    This keeps the report from saying an Android manifest indicator is not
+    available when the same run already contains an equivalent CodeQL finding.
+    """
+    mobsf = technical.get("mobsf_static") if isinstance(technical.get("mobsf_static"), dict) else {}
+    sast = technical.get("sast_app_code") if isinstance(technical.get("sast_app_code"), dict) else {}
+    if not mobsf or not sast:
+        return technical
+
+    cross = mobsf.setdefault("cross_source_fallbacks", [])
+    backup_from_sast = _sast_rule_present(sast, "java/android/backup-enabled") or _sast_rule_present(sast, "backup-enabled")
+    if backup_from_sast and str(mobsf.get("allow_backup", "")).lower() == "not available in parsed evidence":
+        mobsf["allow_backup"] = "Detected (SAST CodeQL fallback)"
+        flags = mobsf.setdefault("flags", {})
+        if isinstance(flags, dict):
+            flags["allow_backup_detected"] = True
+        cross.append({
+            "indicator": "Backup enabled",
+            "value": "Detected",
+            "source": "SAST CodeQL",
+            "rule_id": "java/android/backup-enabled",
+            "note": "MobSF static parser did not normalize allowBackup, but SAST reported backups are allowed in AndroidManifest.xml.",
+        })
+
+    indicators = mobsf.get("normalized_indicators")
+    if isinstance(indicators, list):
+        for item in indicators:
+            if isinstance(item, dict) and str(item.get("indicator", "")).lower() == "backup enabled" and backup_from_sast:
+                item["value"] = mobsf.get("allow_backup", "Detected (SAST CodeQL fallback)")
+                item["source"] = "SAST CodeQL fallback"
+
+    technical["mobsf_static"] = mobsf
+    return technical
+
+
+
 def build_technical_evidence() -> Dict[str, Any]:
     vision_dirs = _artifact_dir_candidates("VISION360_BUNDLE_DIR", ["vision360", "vision360-bundle"])
     trivy_dirs = _artifact_dir_candidates("TRIVY_PAYLOAD_DIR", ["trivy", "trivy-payload"])
@@ -2616,8 +2689,10 @@ def build_technical_evidence() -> Dict[str, Any]:
         "sast_app_code": _summarize_sast(sast_dirs[0] if sast_dirs else Path(), sast_files),
     }
     technical["trivy_sca"] = _merge_vision360_sca_into_trivy(technical.get("trivy_sca", {}), technical.get("vision360", {}))
+    technical = _apply_cross_source_static_evidence(technical)
     technical["report_quality"] = {
         "sca_enriched_from_fingerprint": bool(technical.get("trivy_sca", {}).get("technical_details_source")),
+        "mobsf_static_cross_source_fallbacks": len(technical.get("mobsf_static", {}).get("cross_source_fallbacks", [])) if isinstance(technical.get("mobsf_static"), dict) else 0,
         "evidence_classes": [
             "observed_technical_finding",
             "evidence_gap",
