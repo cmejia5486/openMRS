@@ -261,6 +261,381 @@ jobs:
             exit $LASTEXITCODE
           }
 
+      - name: Refine Audit Summary evidence and renderer
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $patch = @'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          analysis_path = Path(os.environ["AUDIT_ANALYSIS_JSON_PATH"])
+          vision_dir = Path(os.environ.get("VISION360_BUNDLE_DIR", ""))
+          renderer_path = Path("scripts/audit_summary_stage2_generate_docx.py")
+
+          def load_json(path, default):
+              try:
+                  if path.is_file():
+                      return json.loads(path.read_text(encoding="utf-8"))
+              except Exception:
+                  pass
+              return default
+
+          def clean(value):
+              return re.sub(r"\s+", " ", str(value or "")).strip()
+
+          def sev_rank(value):
+              return {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "UNKNOWN": 0}.get(str(value or "UNKNOWN").upper(), 0)
+
+          def first(paths):
+              for path in paths:
+                  if path and path.is_file():
+                      return path
+              return None
+
+          def normalize_vuln(item):
+              if not isinstance(item, dict):
+                  return {}
+              cvss = item.get("best_cvss") if isinstance(item.get("best_cvss"), dict) else {}
+              score = cvss.get("v3_score")
+              return {
+                  "id": item.get("vulnerability_id") or item.get("cve") or item.get("id"),
+                  "cve": item.get("cve") or item.get("vulnerability_id") or item.get("id"),
+                  "severity": str(item.get("severity") or "UNKNOWN").upper(),
+                  "package": item.get("component") or item.get("package") or item.get("pkg"),
+                  "pkg": item.get("component") or item.get("package") or item.get("pkg"),
+                  "package_id": item.get("package_id") or item.get("pkg_id"),
+                  "installed": item.get("installed_version") or item.get("installed"),
+                  "fixed": item.get("fixed_version") or item.get("fixed"),
+                  "fix_available": bool(item.get("fix_available") or item.get("fixed_version") or item.get("fixed")),
+                  "status": item.get("status"),
+                  "severity_source": item.get("severity_source"),
+                  "cwe_ids": item.get("cwe_ids") or item.get("cwe") or [],
+                  "cvss_v3_score": score,
+                  "cvss_v3_vector": cvss.get("v3_vector"),
+                  "title": item.get("title") or item.get("description"),
+                  "description": item.get("description") or item.get("title"),
+                  "primary_url": item.get("primary_url"),
+                  "published_at": item.get("published_at") or item.get("published"),
+                  "last_modified_at": item.get("last_modified_at") or item.get("modified"),
+                  "target": item.get("target"),
+                  "artifact_source": item.get("artifact_source"),
+                  "source": item.get("source") or "TRIVY",
+              }
+
+          pack = load_json(analysis_path, {})
+          fp_path = first([
+              vision_dir / "vision360_fingerprint.json",
+              vision_dir / "vision_360_fingerprint.json",
+          ])
+          if isinstance(pack, dict) and fp_path:
+              fingerprint = load_json(fp_path, {})
+              details = fingerprint.get("technical_details") if isinstance(fingerprint, dict) else {}
+              sca = details.get("sca") if isinstance(details, dict) else {}
+              if isinstance(sca, dict):
+                  tech = pack.setdefault("technical_evidence", {})
+                  vision = tech.setdefault("vision360", {})
+                  vision["technical_details_available"] = True
+                  vision["technical_details"] = details
+
+                  trivy = tech.setdefault("trivy_sca", {})
+                  raw_vulns = sca.get("vulnerabilities") if isinstance(sca.get("vulnerabilities"), list) else []
+                  detailed = [normalize_vuln(x) for x in raw_vulns if isinstance(x, dict)]
+                  detailed = [x for x in detailed if x.get("id") or x.get("package")]
+                  detailed = sorted(detailed, key=lambda x: (sev_rank(x.get("severity")), clean(x.get("id"))), reverse=True)
+                  if detailed:
+                      trivy["detailed_findings"] = detailed
+                      trivy["vulnerabilities"] = detailed
+                      trivy["top_findings"] = detailed[:25]
+
+                  summary = sca.get("summary") if isinstance(sca.get("summary"), dict) else {}
+                  if summary:
+                      trivy.setdefault("summary", {}).update(summary)
+                      for key in ("total_vulnerabilities", "by_severity", "fixable_total", "fixable_by_severity", "unfixed_total", "packages_detected", "license_entries_detected"):
+                          if key in summary:
+                              trivy[key] = summary[key]
+                      trivy.setdefault("coverage", {})["packages_detected"] = summary.get("packages_detected", trivy.get("packages_detected"))
+                      trivy.setdefault("coverage", {})["license_entries_detected"] = summary.get("license_entries_detected", trivy.get("license_entries_detected"))
+
+                  if isinstance(sca.get("packages"), list):
+                      trivy["packages"] = sca.get("packages")[:100]
+                  if isinstance(sca.get("licenses"), list):
+                      trivy["license_entries"] = sca.get("licenses")[:100]
+
+                  high_components = sorted({clean(x.get("package") or x.get("pkg")) for x in detailed if str(x.get("severity", "")).upper() == "HIGH" and clean(x.get("package") or x.get("pkg"))})
+                  trivy["high_severity_components"] = high_components
+                  trivy["technical_details_source"] = "vision360_fingerprint.technical_details.sca"
+                  analysis_path.write_text(json.dumps(pack, ensure_ascii=False, indent=2), encoding="utf-8")
+                  print(f"[REFINE] Analysis pack enriched from {fp_path}")
+
+          src = renderer_path.read_text(encoding="utf-8")
+
+          enhanced_table = r'''_TABLE_RENDER_COUNTER = 0
+
+          def _table_caption_for_headers(headers: List[str]) -> str:
+              h = " | ".join(str(x) for x in headers).lower()
+              if "evidence source" in h and "available" in h:
+                  return "Technical evidence source coverage"
+              if "severity" in h and ("cve" in h or "package" in h):
+                  return "Dependency vulnerability evidence details"
+              if "indicator" in h and "parsed value" in h:
+                  return "Android static evidence indicators"
+              if "sast classification" in h:
+                  return "SAST classification summary"
+              if "tool" in h and "raw sarif" in h:
+                  return "SAST findings by tool"
+              if "runtime evidence type" in h:
+                  return "MobSF dynamic runtime evidence summary"
+              if "scanner source" in h and "treatment item" in h:
+                  return "Evidence correlation matrix"
+              if "positive control statement" in h:
+                  return "Positive control verification traceability"
+              return "Evidence table"
+
+
+          def _add_table_caption(doc: Document, title: str) -> None:
+              global _TABLE_RENDER_COUNTER
+              _TABLE_RENDER_COUNTER += 1
+              p = doc.add_paragraph()
+              p.style = doc.styles["Caption"] if "Caption" in [s.name for s in doc.styles] else doc.styles["Normal"]
+              r = p.add_run(f"Table {_TABLE_RENDER_COUNTER}. {title}")
+              r.bold = True
+              r.italic = True
+              r.font.size = Pt(9)
+              p.paragraph_format.space_before = Pt(6)
+              p.paragraph_format.space_after = Pt(3)
+
+
+          def _set_repeat_table_header(row) -> None:
+              trPr = row._tr.get_or_add_trPr()
+              tblHeader = OxmlElement("w:tblHeader")
+              tblHeader.set(qn("w:val"), "true")
+              trPr.append(tblHeader)
+
+
+          def _set_no_wrap(cell) -> None:
+              tcPr = cell._tc.get_or_add_tcPr()
+              no_wrap = OxmlElement("w:noWrap")
+              tcPr.append(no_wrap)
+
+
+          def _format_cell(cell, font_size: float = 8.5, bold: bool = False, no_wrap: bool = False) -> None:
+              if no_wrap:
+                  _set_no_wrap(cell)
+              for p in cell.paragraphs:
+                  p.paragraph_format.space_after = Pt(0)
+                  p.paragraph_format.line_spacing = 1.0
+                  for run in p.runs:
+                      run.font.size = Pt(font_size)
+                      run.bold = bool(bold)
+
+
+          def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_rows: int | None = None, empty_message: str | None = None) -> bool:
+              """Render a readable, captioned Word table with stable header formatting."""
+              actual_rows = rows[:max_rows] if max_rows is not None else rows
+              actual_rows = [r for r in actual_rows if not _is_emptyish(r)]
+              if not actual_rows:
+                  if empty_message:
+                      _add_note(doc, empty_message)
+                  return False
+
+              _add_table_caption(doc, _table_caption_for_headers(headers))
+              tbl = doc.add_table(rows=1, cols=len(headers))
+              tbl.style = "Table Grid"
+              tbl.autofit = True
+              h = tbl.rows[0].cells
+              _set_repeat_table_header(tbl.rows[0])
+              for idx, txt in enumerate(headers):
+                  h[idx].text = _cell_text(txt)
+                  _set_cell_shading(h[idx], "D9E1F2")
+                  _format_cell(h[idx], font_size=8.5, bold=True, no_wrap=(idx == 0 and len(headers) >= 4))
+              for row_values in actual_rows:
+                  r = tbl.add_row().cells
+                  for idx in range(len(headers)):
+                      value = row_values[idx] if idx < len(row_values) else ""
+                      r[idx].text = _cell_text(value)
+                      _format_cell(r[idx], font_size=8.0, no_wrap=(idx == 0 and len(headers) >= 4))
+              doc.add_paragraph()
+              return True
+
+'''
+          src = re.sub(r"def _add_table\(doc: Document, headers: List\[str\], rows: List\[List\[Any\]\], max_rows: int \| None = None, empty_message: str \| None = None\) -> bool:\n.*?\n(?=def _app_report_title)", enhanced_table, src, flags=re.S)
+
+          trivy_section = r'''def _trivy_findings(trivy: Dict[str, Any]) -> List[Dict[str, Any]]:
+              for keys in (["detailed_findings"], ["vulnerabilities"], ["cve_table"], ["findings"], ["top_findings"]):
+                  items = _deep_list(trivy, keys)
+                  if items:
+                      return [x for x in items if isinstance(x, dict)]
+              return []
+
+
+          def _add_trivy_section(doc: Document, technical: Dict[str, Any]) -> None:
+              trivy = _as_dict(technical.get("trivy_sca"))
+              if not _block_available(trivy):
+                  doc.add_paragraph("Trivy SCA evidence was not available in the analysis pack.")
+                  return
+              total = _deep_int(trivy, ["total_vulnerabilities", "vulnerabilities_total", "total"])
+              packages = _deep_int(trivy, ["packages_detected", "package_count", "packages_total"])
+              fixable = _deep_int(trivy, ["fixable_total", "fixable_vulnerabilities", "fixable"])
+              licenses = _deep_int(trivy, ["license_entries_detected", "licenses_detected", "license_count"])
+              by_sev = _deep_dict(trivy, ["by_severity", "severity_counts"])
+              severity_text = ", ".join(f"{k}: {_safe_int(v)}" for k, v in by_sev.items()) if by_sev else "not reported"
+              high_components = _as_list(trivy.get("high_severity_components"))
+              high_note = f" High-severity findings affect: {', '.join(map(str, high_components))}." if high_components else ""
+
+              doc.add_paragraph(
+                  f"Trivy Software Composition Analysis reported {packages} detected package(s), {total} known dependency vulnerability finding(s), "
+                  f"{fixable} finding(s) with a fixed version available, and {licenses} license entr(y/ies). Severity distribution: {severity_text}.{high_note}"
+              )
+
+              rows = []
+              for finding in _trivy_findings(trivy)[:18]:
+                  cwe = ", ".join(map(str, _as_list(_first_present(finding, ["cwe_ids", "cwe", "CweIDs"], []))[:3]))
+                  cvss = _first_present(finding, ["cvss_v3_score", "cvss", "score"], "")
+                  published = _first_present(finding, ["published_at", "published", "PublishedDate"], "")
+                  modified = _first_present(finding, ["last_modified_at", "modified", "LastModifiedDate"], "")
+                  dates = "; ".join(x for x in [f"Published: {published}" if published else "", f"Modified: {modified}" if modified else ""] if x)
+                  rows.append([
+                      _first_present(finding, ["severity", "Severity"], ""),
+                      _first_present(finding, ["id", "VulnerabilityID", "cve", "rule_id"], ""),
+                      _first_present(finding, ["pkg", "PkgName", "package", "package_name", "component"], ""),
+                      f"{_first_present(finding, ['installed', 'InstalledVersion', 'installed_version'], '')} -> {_first_present(finding, ['fixed', 'FixedVersion', 'fixed_version'], '')}",
+                      "; ".join(x for x in [f"CWE: {cwe}" if cwe else "", f"CVSS: {cvss}" if cvss not in (None, "") else ""] if x),
+                      _short(" | ".join(x for x in [dates, _first_present(finding, ["target", "Target"], ""), _first_present(finding, ["title", "Title", "description", "Description"], "")] if x), 360),
+                  ])
+              _add_table(doc, ["Severity", "CVE / ID", "Component", "Installed -> fixed", "CWE / CVSS", "Dates / target / summary"], rows, max_rows=18)
+
+
+'''
+          src = re.sub(r"def _trivy_findings\(trivy: Dict\[str, Any\]\) -> List\[Dict\[str, Any\]\]:\n.*?\n(?=def _mobsf_signal_rows)", trivy_section, src, flags=re.S)
+
+          control_appendix = r'''def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
+              items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
+              max_rows = _max_control_treatment_rows()
+              if not items:
+                  _add_note(doc, "No SECM-CAT treatment items were available in the analysis pack.")
+                  return
+
+              def add_card_row(tbl, label: str, value: Any) -> None:
+                  cells = tbl.add_row().cells
+                  cells[0].text = label
+                  cells[1].text = _cell_text(value)
+                  _set_cell_shading(cells[0], "EDEDED")
+                  _format_cell(cells[0], font_size=8.5, bold=True, no_wrap=True)
+                  _format_cell(cells[1], font_size=8.2)
+
+              rendered = items[:max_rows]
+              for item in rendered:
+                  item_id = _clean_text(item.get("item_id"))
+                  writeup = _treatment_writeup(treatment_ai, item_id, technical=False)
+                  puid = _clean_text(item.get("puid"))
+                  title = doc.add_paragraph()
+                  title.paragraph_format.space_before = Pt(8)
+                  title.paragraph_format.space_after = Pt(3)
+                  run = title.add_run(f"{puid} | {item_id}")
+                  run.bold = True
+                  run.font.size = Pt(10)
+                  flags = ", ".join(_as_list(item.get("flags"))[:12]) or "No flags listed"
+                  evidence = _short(item.get("evidence_excerpt") or item.get("description"), 520)
+                  tbl = doc.add_table(rows=0, cols=2)
+                  tbl.style = "Table Grid"
+                  tbl.autofit = True
+                  add_card_row(tbl, "Pattern", item.get("weakness_pattern"))
+                  add_card_row(tbl, "Priority", f"{item.get('severity')} / {item.get('likelihood')}")
+                  add_card_row(tbl, "Owner", item.get("recommended_owner"))
+                  add_card_row(tbl, "Flags", flags)
+                  add_card_row(tbl, "Evidence basis", evidence)
+                  add_card_row(tbl, "Treatment action", _short(writeup.get("treatment_action"), 520))
+                  add_card_row(tbl, "Verification", _short(writeup.get("verification_method"), 520))
+                  add_card_row(tbl, "Closure evidence", _short(writeup.get("closure_evidence"), 520))
+                  add_card_row(tbl, "Residual risk", _short(writeup.get("residual_risk"), 360))
+              if len(items) > max_rows:
+                  _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
+
+
+'''
+          src = re.sub(r"def _render_control_treatment_appendix\(doc: Document, treatment_plan: Dict\[str, Any\], treatment_ai: Dict\[str, Any\]\) -> None:\n.*?\n(?=def _render_technical_treatment_appendix)", control_appendix, src, flags=re.S)
+
+          technical_appendix = r'''def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
+              items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
+              max_rows = _max_technical_treatment_rows()
+              if not items:
+                  _add_note(doc, "No technical treatment items were available in the analysis pack.")
+                  return
+
+              def add_card_row(tbl, label: str, value: Any) -> None:
+                  cells = tbl.add_row().cells
+                  cells[0].text = label
+                  cells[1].text = _cell_text(value)
+                  _set_cell_shading(cells[0], "EDEDED")
+                  _format_cell(cells[0], font_size=8.5, bold=True, no_wrap=True)
+                  _format_cell(cells[1], font_size=8.2)
+
+              for item in items[:max_rows]:
+                  item_id = _clean_text(item.get("item_id"))
+                  writeup = _treatment_writeup(treatment_ai, item_id, technical=True)
+                  title = doc.add_paragraph()
+                  title.paragraph_format.space_before = Pt(8)
+                  title.paragraph_format.space_after = Pt(3)
+                  run = title.add_run(f"{item_id} | {item.get('source')} | {item.get('finding_id')}")
+                  run.bold = True
+                  run.font.size = Pt(10)
+                  location_parts = []
+                  for k in ("affected_component", "file", "line", "location", "installed_version", "fixed_version", "fix_available"):
+                      val = _clean_text(item.get(k))
+                      if val:
+                          location_parts.append(f"{k}: {val}")
+                  linked = ", ".join(_as_list(item.get("linked_puids"))[:12]) or "No linked PUIDs normalized"
+                  tbl = doc.add_table(rows=0, cols=2)
+                  tbl.style = "Table Grid"
+                  tbl.autofit = True
+                  add_card_row(tbl, "Type", item.get("item_type"))
+                  add_card_row(tbl, "Severity", item.get("severity"))
+                  add_card_row(tbl, "Affected component", " | ".join(location_parts))
+                  add_card_row(tbl, "Observed issue", _short(item.get("observed_issue"), 620))
+                  add_card_row(tbl, "Treatment action", _short(writeup.get("treatment_action"), 520))
+                  add_card_row(tbl, "Verification", _short(writeup.get("verification_method"), 520))
+                  add_card_row(tbl, "Closure evidence", _short(writeup.get("closure_evidence"), 520))
+                  add_card_row(tbl, "Linked PUIDs", linked)
+                  add_card_row(tbl, "Residual risk", _short(writeup.get("residual_risk"), 360))
+              if len(items) > max_rows:
+                  _add_note(doc, f"Rendered {max_rows} of {len(items)} technical treatment items. Increase AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS to include more rows.")
+
+
+'''
+          src = re.sub(r"def _render_technical_treatment_appendix\(doc: Document, treatment_plan: Dict\[str, Any\], treatment_ai: Dict\[str, Any\]\) -> None:\n.*?\n(?=def _render_correlation_appendix)", technical_appendix, src, flags=re.S)
+
+          correlation_appendix = r'''def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) -> None:
+              items = [x for x in _as_list(treatment_plan.get("correlation_items")) if isinstance(x, dict)]
+              max_rows = _max_correlation_rows()
+              rows: List[List[Any]] = []
+              for item in items[:max_rows]:
+                  requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
+                  flags = ", ".join(_as_list(item.get("flags_sample"))[:8])
+                  scanner = f"{item.get('technical_source')}\n{item.get('technical_finding_id')}"
+                  evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 320)}"
+                  rows.append([requirement, flags, scanner, evidence])
+              if len(items) > max_rows:
+                  _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
+              _add_table(doc, ["Requirement / pattern", "Flags", "Scanner evidence", "Treatment / evidence summary"], rows, max_rows=max_rows, empty_message="No evidence correlation items were available in the analysis pack.")
+
+'''
+          src = re.sub(r"def _render_correlation_appendix\(doc: Document, treatment_plan: Dict\[str, Any\]\) -> None:\n.*?\n(?=def _call_llm_for_style)", correlation_appendix, src, flags=re.S)
+
+          src = src.replace('rt = doc.add_table(rows=1, cols=5)', '_add_table_caption(doc, "Risk triage summary")\n    rt = doc.add_table(rows=1, cols=5)')
+          src = src.replace('mp = doc.add_table(rows=1, cols=4)', '_add_table_caption(doc, "Management action plan")\n    mp = doc.add_table(rows=1, cols=4)')
+          src = src.replace('vb = doc.add_table(rows=1, cols=4)', '_add_table_caption(doc, "Positive control verification traceability")\n    vb = doc.add_table(rows=1, cols=4)')
+
+          renderer_path.write_text(src, encoding="utf-8")
+          print("[REFINE] Audit Summary renderer patched for richer SCA evidence and readable appendices")
+          '@
+          & $env:PYTHON_EXE -c $patch
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
       - name: Generate Audit Summary DOCX
         shell: powershell
         run: |
