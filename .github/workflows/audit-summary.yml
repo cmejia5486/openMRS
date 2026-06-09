@@ -17,19 +17,14 @@ jobs:
     timeout-minutes: 480
 
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       PYTHONUNBUFFERED: "1"
+      PYTHONNOUSERSITE: "1"
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PIP_NO_INPUT: "1"
-      PIP_DEFAULT_TIMEOUT: "720"
-      PIP_RETRIES: "10"
-      PYTHONNOUSERSITE: "1"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AI_TASK: ${{ vars.AUDIT_SUMMARY_AI_TASK || 'audit_summary_docx' }}
       AI_PROFILE: ${{ vars.AI_PROFILE || 'lm_studio_local' }}
       AI_PYTHON_VERSION: ${{ vars.AI_PYTHON_VERSION || '3.12' }}
-      AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG || '0' }}
-      AI_API_KEY_ENV_VAR: ${{ vars.AI_API_KEY_ENV_VAR || 'OPENAI_API_KEY' }}
 
     steps:
       - name: Checkout repository
@@ -40,14 +35,11 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
-          $transferDir = Join-Path $env:RUNNER_TEMP "audit-summary-docx-transfer"
           $technicalDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
           $auditConfigPath = Join-Path $PWD "scripts\audit_summary_literals.json"
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
-          New-Item -ItemType Directory -Force -Path $transferDir | Out-Null
           New-Item -ItemType Directory -Force -Path $technicalDir | Out-Null
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_TRANSFER_DIR=$transferDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_CONFIG_JSON_PATH=$auditConfigPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "VISION360_BUNDLE_DIR=$(Join-Path $technicalDir 'vision360')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
