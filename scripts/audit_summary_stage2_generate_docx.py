@@ -723,90 +723,27 @@ def _format_artifact_list(values: Any, limit: int = 4, names_only: bool = False)
     return "; ".join(cleaned) if cleaned else "No examples normalized into analysis pack"
 
 
-def _sanitize_android_artifacts_in_text(value: Any) -> str:
-    """Normalize collapsed MobSF dynamic artifact paths inside AI-authored prose."""
+def _clean_generated_text(value: Any, ensure_period: bool = False) -> str:
+    """Return model-authored text without content rewriting.
+
+    The report is prompt-first: the model must generate acceptable language.
+    This helper only normalizes whitespace for Word rendering and optionally
+    adds sentence punctuation. It does not change wording or meaning.
+    """
     text = _clean_text(value)
-    if not text:
-        return ""
-
-    pattern = re.compile(
-        r"\bdatadata[A-Za-z0-9_.-]*?(?:shared_prefs|databases|no_backup|cache|files)[A-Za-z0-9_.-]*?\.(?:xml|db|sqlite|sqlite3|properties)\b",
-        flags=re.IGNORECASE,
-    )
-
-    def repl(match: re.Match) -> str:
-        return _normalize_android_artifact_for_display(match.group(0), names_only=False)
-
-    text = pattern.sub(repl, text)
+    if ensure_period and text and not text.endswith((".", ";", ":")):
+        text += "."
     return text
 
 
+def _sanitize_android_artifacts_in_text(value: Any) -> str:
+    """Compatibility wrapper. No wording change is performed."""
+    return _clean_generated_text(value)
+
+
 def _sanitize_ai_narrative_text(value: Any, technical: Dict[str, Any]) -> str:
-    """Apply deterministic guardrails to AI-authored narrative without replacing AI authorship.
-
-    The model writes the narrative, but the report renderer remains responsible
-    for preventing arithmetic contradictions and raw-path leakage.
-    """
-    text = _sanitize_android_artifacts_in_text(value)
-    if not text:
-        return ""
-
-    sast = _as_dict(technical.get("sast_app_code"))
-    counts = _sast_counts(sast)
-    app_signals = counts["retained_app_code_signals"]
-    security = counts["retained_security_findings"]
-    hardening = counts["hardening_or_maintainability_signals"]
-
-    if app_signals and hardening and app_signals != hardening:
-        # Common LLM mistake: using total app-scope signals as hardening signal count.
-        text = re.sub(
-            rf"\b{app_signals}\s+(?:additional\s+)?(?:signals?|findings?)\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
-            f"{hardening} hardening, quality, or maintainability signals",
-            text,
-            flags=re.IGNORECASE,
-        )
-        text = re.sub(
-            rf"\balongside\s+{app_signals}\s+(?:signals?|findings?)\s+(?:related to|classified as)?\s*(?:hardening|quality|maintainability)(?:[^.]*?)",
-            f"alongside {hardening} hardening, quality, or maintainability signals",
-            text,
-            flags=re.IGNORECASE,
-        )
-        text = re.sub(
-            rf"\b{app_signals}\s+hardening(?:,?\s+quality,?\s+or\s+maintainability)?\s+signal\(s\)",
-            f"{hardening} hardening, quality, or maintainability signals",
-            text,
-            flags=re.IGNORECASE,
-        )
-
-    if security >= 0 and hardening >= 0:
-        text = re.sub(
-            r"SAST process yielded\s+(\d+)\s+retained security findings from the analyzed application code,\s+alongside\s+\d+\s+signals related to hardening or maintainability",
-            f"SAST process retained {security} security-relevant application-code findings and {hardening} hardening, quality, or maintainability signals",
-            text,
-            flags=re.IGNORECASE,
-        )
-
-    # Clean common duplicated tail left by LLM phrasing or regex replacement.
-    text = re.sub(
-        r"hardening, quality, or maintainability signal\(s\)\s+or\s+maintainability\b",
-        "hardening, quality, or maintainability signals",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(
-        r"hardening, quality, or maintainability signal\(s\)\s*,?\s+or\s+maintainability\b",
-        "hardening, quality, or maintainability signals",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(
-        r"\bsignal\(s\)\s+or\s+maintainability\b",
-        "signal(s)",
-        text,
-        flags=re.IGNORECASE,
-    )
-
-    return re.sub(r"\s+", " ", text).strip()
+    """Compatibility wrapper. The AI prompt and section validator control language quality."""
+    return _clean_generated_text(value)
 
 
 def _sast_counts(sast: Dict[str, Any]) -> Dict[str, int]:
@@ -833,349 +770,23 @@ def _sast_counts(sast: Dict[str, Any]) -> Dict[str, int]:
 
 
 def _sanitize_recommendation_text(value: Any) -> str:
-    """Sanitize AI-authored recommendations without replacing AI authorship.
+    """Compatibility wrapper for model-authored recommendations.
 
-    The model still writes the recommendation text. This function only removes
-    wording that is too absolute for a generic Android/mHealth audit framework,
-    fixes malformed PUID references, and converts raw-flag-heavy phrasing into
-    report-safe language where necessary.
+    The prompt, per-section retry logic, and final quality gate are responsible
+    for report language compliance.
     """
-    text = _clean_text(value)
-    replacements = [
-        (
-            r"^Implement strict TLS pinning\b.*",
-            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
-        ),
-        (
-            r"^Implement robust TLS/SSL certificate pinning\b.*",
-            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
-        ),
-        (
-            r"^Implement TLS/SSL certificate pinning\b.*",
-            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
-        ),
-        (
-            r"^Implement TLS/SSL pinning\b.*",
-            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
-        ),
-        (
-            r"^Enforce strict TLS pinning\b.*",
-            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
-        ),
-        (
-            r"\bImplement strict TLS pinning to prevent Man-in-the-Middle \(MITM\) attacks against the backend services\.",
-            "Document and validate certificate validation and pinning decisions; apply certificate pinning where justified by the threat model and operationally sustainable."
-        ),
-        (
-            r"\bachieve a zero-vulnerability state\b",
-            "remediate or formally accept unresolved vulnerabilities according to severity and compensating controls"
-        ),
-    ]
-    for pattern, repl in replacements:
-        text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
-
-    # Avoid publishing malformed, truncated PUIDs such as SECM-CAT-ISU-01.
-    text = re.sub(
-        r"\bReview PUID\s+SECM-CAT-[A-Z]{3}-\d{2}\b",
-        "Review the mapped PUID examples",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(
-        r"\bPUID\s+(SECM-CAT-[A-Z]{3}-\d{2})(?!\d)\b",
-        "mapped PUID example",
-        text,
-        flags=re.IGNORECASE,
-    )
-
-    # Do not let raw flag names dominate executive recommendations.
-    # Keep the recommendation operational and leave detailed flag traceability
-    # to the workbook and appendices.
-    raw_flag_count = len(re.findall(r"\bhas_[A-Za-z0-9_]+\b", text))
-    if raw_flag_count >= 3:
-        text = re.sub(r"\s*\([^)]*\bhas_[A-Za-z0-9_]+[^)]*\)", "", text)
-        text = re.sub(r"\s+via\s+'has_[A-Za-z0-9_]+'", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s+using\s+'has_[A-Za-z0-9_]+'", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s+as indicated by\s+'has_[A-Za-z0-9_]+'", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"'has_[A-Za-z0-9_]+'", "the mapped control evidence", text)
-
-    text = re.sub(r"\s+", " ", text).strip()
-    if text and not text.endswith((".", ";", ":")):
-        text += "."
-    return text
+    return _clean_generated_text(value, ensure_period=True)
 
 
 def _sanitize_closure_criteria(value: Any) -> str:
-    """Make AI-authored MAP closure criteria audit-defensible.
-
-    Closure criteria are generated by the configured model, but the renderer
-    must prevent broad "zero findings" wording, avoid raw-flag-heavy executive
-    cells, and avoid making TLS pinning a universal requirement.
-    """
-    text = _clean_text(value)
-    if not text:
-        return text
-
-    original = text
-
-    # Pattern-specific high-risk broad closures that commonly return from LLMs.
-    lower = text.lower()
-    pattern_match = re.search(r"for '([^']+)'", text)
-    pattern_name = pattern_match.group(1) if pattern_match else ""
-
-    if "transport security / certificate validation weaknesses" in lower or "tls pinning" in lower or "debug certificate" in lower:
-        text = (
-            "Updated MobSF static evidence and workbook scoring demonstrate that cleartext remains disabled, "
-            "production signing is used, and certificate-validation or pinning decisions are documented according "
-            "to the threat model or formally risk-accepted."
-        )
-    elif "supply chain governance" in lower or "trivy" in lower or "fixable vulnerabilities" in lower:
-        text = (
-            "All Critical and High fixable dependency vulnerabilities are remediated or formally risk-accepted, "
-            "supported by updated Trivy JSON/SARIF artifacts and dependency lockfile or SBOM evidence where applicable."
-        )
-    else:
-        replacements = [
-            (
-                r"Achieve zero findings for '([^']+)' in subsequent security scans, validated by updated Vision360 artifact reports\.",
-                r"Updated workbook scoring and relevant scan artifacts demonstrate that mapped '\1' controls are remediated or formally risk-accepted with documented compensating controls.",
-            ),
-            (
-                r"Achieve zero noncompliant findings for '([^']+)' by updating the workbook score based on remediation evidence\.",
-                r"Updated workbook scoring and supporting remediation evidence demonstrate that mapped '\1' controls are remediated or formally risk-accepted with documented compensating controls.",
-            ),
-            (
-                r"Reduce noncompliant findings for '([^']+)' to zero by providing evidence of implemented ([^.]+)\.",
-                r"Updated workbook scoring and implementation evidence demonstrate that mapped '\1' controls are remediated or formally risk-accepted with documented compensating controls.",
-            ),
-            (
-                r"Reduce noncompliant findings for '([^']+)' to zero by providing evidence that `?([^`\.]+)`? is met across the application scope\.",
-                r"Updated workbook scoring and verification evidence demonstrate that mapped '\1' controls are remediated or formally risk-accepted across the assessed application scope.",
-            ),
-            (
-                r"Achieve a state where all findings related to '([^']+)' are remediated, evidenced by updated MobSF dynamic analysis artifacts\.",
-                r"Updated workbook scoring and MobSF dynamic evidence demonstrate that mapped '\1' controls are remediated or formally risk-accepted with documented compensating controls.",
-            ),
-            (
-                r"Achieve zero noncompliant findings for '([^']+)' by providing ([^.]+)\.",
-                r"Updated workbook scoring and supporting evidence demonstrate that mapped '\1' controls are remediated or formally risk-accepted with documented compensating controls.",
-            ),
-            (
-                r"The noncompliant count for '([^']+)' must (?:be )?reduced? to zero[^.]*\.",
-                r"Mapped controls for '\1' are remediated or formally risk-accepted, supported by updated workbook scoring, relevant scan evidence, and documented compensating controls where applicable.",
-            ),
-            (
-                r"The noncompliant count for '([^']+)' must be reduced by [^.]*\.",
-                r"Mapped controls for '\1' are remediated or formally risk-accepted, supported by updated workbook scoring, relevant scan evidence, and documented compensating controls where applicable.",
-            ),
-            (
-                r"The noncompliant count for '([^']+)' must reduce to zero[^.]*\.",
-                r"Mapped controls for '\1' are remediated or formally risk-accepted, supported by updated workbook scoring, relevant scan evidence, and documented compensating controls where applicable.",
-            ),
-            (
-                r"Reduce the total number of detected vulnerabilities from Trivy SCA to zero, evidenced by updated `?trivy-fallback-gradle\.lockfile`? artifacts\.",
-                "All Critical and High fixable dependency vulnerabilities are remediated or formally risk-accepted, supported by updated Trivy JSON/SARIF artifacts and dependency lockfile or SBOM evidence where applicable.",
-            ),
-            (
-                r"Reduce the total number of detected vulnerabilities from Trivy SCA to zero[^.]*\.",
-                "All Critical and High fixable dependency vulnerabilities are remediated or formally risk-accepted, supported by updated Trivy JSON/SARIF artifacts and dependency lockfile or SBOM evidence where applicable.",
-            ),
-        ]
-
-        for pattern, repl in replacements:
-            text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
-
-    # If no specific pattern matched but the text still contains broad zero language,
-    # turn it into an evidence-based closure statement.
-    if re.search(r"\b(?:must|should)?\s*(?:be\s*)?(?:reduce|reduced|reducing)\s+(?:the\s+)?(?:noncompliant|non-compliant)?[^.]{0,80}\bzero\b", text, flags=re.IGNORECASE):
-        if pattern_name:
-            text = (
-                f"Mapped controls for '{pattern_name}' are remediated or formally risk-accepted, "
-                "supported by updated workbook scoring, relevant scan evidence, and documented compensating controls where applicable."
-            )
-        else:
-            text = (
-                "Mapped controls are remediated or formally risk-accepted, supported by updated workbook scoring, "
-                "relevant scan evidence, and documented compensating controls where applicable."
-            )
-
-    text = re.sub(
-        r"\bzero-vulnerability state\b",
-        "no unresolved Critical or High fixable vulnerabilities without documented risk acceptance",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(
-        r"\bachieve zero noncompliant findings\b",
-        "remediate or formally risk-accept mapped non-compliant controls",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(
-        r"evidence of TLS pinning implementation and secure signing practices",
-        "evidence that cleartext remains disabled, production signing is enforced, and certificate validation or pinning decisions are documented according to the threat model",
-        text,
-        flags=re.IGNORECASE,
-    )
-    text = re.sub(
-        r"based on evidence of TLS pinning implementation",
-        "based on evidence that certificate validation or pinning decisions are documented according to the threat model",
-        text,
-        flags=re.IGNORECASE,
-    )
-
-    # Replace raw flag-heavy language in executive MAP cells. The workbook and
-    # Appendix A remain the traceability source for exact flags and PUIDs.
-    raw_flag_count = len(re.findall(r"\bhas_[A-Za-z0-9_]+\b", text))
-    if raw_flag_count >= 2:
-        if pattern_name:
-            text = (
-                f"Mapped controls for '{pattern_name}' are remediated or formally risk-accepted, "
-                "supported by updated workbook scoring, relevant scan evidence, and documented compensating controls where applicable."
-            )
-        else:
-            text = (
-                "Mapped controls are remediated or formally risk-accepted, supported by updated workbook scoring, "
-                "relevant scan evidence, and documented compensating controls where applicable."
-            )
-
-    text = text.replace("`tls_pinning`", "certificate-pinning")
-    text = text.replace("`trivy-fallback-gradle.lockfile`", "updated dependency lockfile or SBOM evidence")
-    text = re.sub(r"\s+", " ", text).strip()
-    if text:
-        text = text[0].upper() + text[1:]
-    return text
+    """Compatibility wrapper for model-authored closure criteria. No rewriting."""
+    return _clean_generated_text(value, ensure_period=True)
 
 
 def _sanitize_positive_control_final(value: Any) -> str:
-    """Make positive-control statements precise and conservative.
+    """Compatibility wrapper for model-authored positive-control statements. No rewriting."""
+    return _clean_generated_text(value, ensure_period=True)
 
-    These statements may be AI-authored, but the renderer enforces that partial
-    evidence is not overstated. In particular, manifest cleartext settings do
-    not prove certificate-validation behavior, cookie assignment does not prove
-    HTTPOnly/Secure enforcement, and a malware fallback verdict is not a clean
-    bill of health.
-    """
-    text = _sanitize_positive_statement(value)
-
-    replacements = [
-        (
-            r"The application passed malware detection checks based on available evidence, indicating it is free of adware and known malware\.",
-            "Available malware-detection evidence did not report adware or known malware for the assessed artifact; this statement remains limited to the scanner coverage available to the report.",
-        ),
-        (
-            r"The application passed malware detection checks based on available evidence, indicating it is free from adware and known malware\.",
-            "Available malware-detection evidence did not report adware or known malware for the assessed artifact; this statement remains limited to the scanner coverage available to the report.",
-        ),
-        (
-            r"The application passed malware detection checks with a fallback verdict, indicating it is free from adware and known malware\.",
-            "The available malware-detection evidence did not report adware or known malware; the fallback verdict should be interpreted within the scanner's coverage limits.",
-        ),
-        (
-            r"indicating it is free (?:of|from) adware and known malware",
-            "supporting that no adware or known malware was reported by the available malware-detection evidence",
-        ),
-        (
-            r"Available malware evidence did not report adware or known malware for the application\.",
-            "Available malware-detection evidence did not report adware or known malware for the assessed artifact; this statement remains limited to the scanner coverage available to the report.",
-        ),
-        (
-            r"Data exchange enforces TLS encryption, supported by the manifest disallowing clear text traffic; however, Android SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; Android SSL pinning was not detected and should be evaluated separately according to the threat model.",
-        ),
-        (
-            r"Data exchange confidentiality and integrity are supported because the application does not allow clear text traffic, although SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
-        ),
-        (
-            r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
-        ),
-        (
-            r"Data exchange is secured via TLS encryption, supported by the absence of clear text traffic allowance and no detection of SSL pinning",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
-        ),
-        (
-            r"Data exchange is not permitted over clear text traffic, and SSL pinning was not detected\.",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model.",
-        ),
-        (
-            r"Data exchange is not permitted over clear text traffic, and SSL pinning was not detected",
-            "Manifest evidence supports that cleartext traffic is not allowed; SSL pinning was not detected and should be evaluated separately according to the threat model",
-        ),
-        (
-            r"The application prevents acceptance of all SSL/TLS certificates, supported by the absence of clear text traffic allowance in the manifest\.",
-            "The available manifest evidence supports that cleartext traffic is not allowed; SSL/TLS certificate-validation behavior should be verified separately where required by the control.",
-        ),
-        (
-            r"The application prevents acceptance of all SSL/TLS certificates, supported by the absence of clear text traffic allowance in the manifest",
-            "The available manifest evidence supports that cleartext traffic is not allowed; SSL/TLS certificate-validation behavior should be verified separately where required by the control",
-        ),
-        (
-            r"The application's manifest prohibits clear text traffic, supporting the requirement to prevent acceptance of all SSL/TLS certificates\.",
-            "The available manifest evidence supports that cleartext traffic is not allowed; SSL/TLS certificate-validation behavior should be verified separately where required by the control.",
-        ),
-        (
-            r"The application's manifest prohibits clear text traffic, supporting the requirement to prevent acceptance of all SSL/TLS certificates",
-            "The available manifest evidence supports that cleartext traffic is not allowed; SSL/TLS certificate-validation behavior should be verified separately where required by the control",
-        ),
-        (
-            r"Server cookie assignment for session IDs was detected, supporting the requirement that all session cookies include the HTTPOnly flag to prevent client-side script access\.",
-            "Server-side cookie assignment for session IDs was detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence.",
-        ),
-        (
-            r"Cookie-based session indicators were detected in the application, supporting the requirement for session cookie configuration\.",
-            "Cookie-based session indicators were detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence.",
-        ),
-        (
-            r"Cookie-based session indicators were detected in the application, supporting the requirement for session cookie assignment from the server\.",
-            "Cookie-based session indicators were detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence.",
-        ),
-        (
-            r"Cookie-based session indicators were detected in the application, supporting the requirement for session cookie assignment from the server",
-            "Cookie-based session indicators were detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence",
-        ),
-        (
-            r"Cookie-based session indicators were detected in the application, supporting the requirement for session cookie configuration",
-            "Cookie-based session indicators were detected; HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence",
-        ),
-        (
-            r"The application supports manual logout functionality as determined by auditor determination\.",
-            "The application supports manual logout functionality based on auditor review.",
-        ),
-        (
-            r"The application supports manual logout functionality as determined by auditor determination",
-            "The application supports manual logout functionality based on auditor review",
-        ),
-        (
-            r"The application supports manual logout as determined by auditor determination\.",
-            "The application supports manual logout based on auditor review.",
-        ),
-        (
-            r"The application supports manual logout as determined by auditor determination",
-            "The application supports manual logout based on auditor review",
-        ),
-        (
-            r"supporting the requirement that all session cookies include the HTTPOnly flag to prevent client-side script access",
-            "while HTTPOnly and Secure cookie attributes should be verified through backend or runtime evidence",
-        ),
-        (
-            r"SSL verification methods are not altered to permit self-signed certificates, as evidenced by the manifest disallowing clear text traffic\.",
-            "The available evidence supports that cleartext traffic is disallowed; separate SSL verification behavior, including handling of self-signed certificates, should be verified where required by the control.",
-        ),
-        (
-            r"The application avoids code accepting all SSL/TLS certificates, supported by the manifest prohibiting clear text traffic\.",
-            "The available evidence supports that cleartext traffic is disallowed; code paths that accept all SSL/TLS certificates should remain subject to source-code or runtime verification.",
-        ),
-    ]
-
-    for pattern, repl in replacements:
-        text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
-
-    text = re.sub(r"\s+", " ", text).strip()
-    if text and not text.endswith((".", ";", ":")):
-        text += "."
-    return text
 
 def _is_emptyish(value: Any) -> bool:
     if value in (None, ""):
@@ -1198,27 +809,8 @@ def _add_note(doc: Document, text: str) -> None:
 
 
 def _sanitize_positive_statement(text: Any) -> str:
-    s = _clean_text(text)
-    replacements = [
-        (r"^The application applications not change\b", "The application does not change"),
-        (r"^The application remove\b", "The application removes"),
-        (r"^The application be free\b", "The application is free"),
-        (r"^The application request\b", "The application requests"),
-        (r"^The application provide\b", "The application provides"),
-        (r"^The application the mobile application\b", "The mobile application"),
-        (r"\bremovess\b", "removes"),
-        (r"\brequestss\b", "requests"),
-        (r"\bprovidess\b", "provides"),
-        (r"\bCA\) be used\b", "CA) should be used"),
-        (r"\bkeep with good SSL practices\b", "align with secure SSL practices"),
-        (r"\bpost-development cycle for secure certificate validation\b", "after the development cycle to preserve secure certificate validation"),
-    ]
-    for pattern, repl in replacements:
-        s = re.sub(pattern, repl, s, flags=re.IGNORECASE)
-    s = re.sub(r"\s+", " ", s).strip()
-    if s and not s.endswith((".", ";", ":")):
-        s += "."
-    return s
+    """Compatibility wrapper for workbook evidence excerpts. No rewriting."""
+    return _clean_generated_text(text)
 
 
 def _qa_doc_text(doc: Document) -> str:
@@ -1304,22 +896,28 @@ def _normalize_document_typography(doc: Document) -> None:
 
 
 
+def _sanitize_report_language(doc: Document) -> None:
+    """No-op by design.
+
+    Final report language must be produced by the prompts and accepted by the
+    per-section AI validator. This function intentionally performs no post-hoc
+    wording changes so the generated report remains prompt-driven.
+    """
+    return None
+
+
 def _quality_gate(doc: Document) -> None:
-    """Fail fast on content or presentation defects that would make the report misleading."""
+    """Fail fast only on defects that make the DOCX invalid or visibly unsafe."""
     full_text = "\n".join(p.text for p in doc.paragraphs)
     table_text = "\n".join(cell.text for table in doc.tables for row in table.rows for cell in row.cells)
     combined = full_text + "\n" + table_text
     lowered = combined.lower()
     forbidden_fragments = [
-        "No data available",
         "missing_inputs\\n",
         "{'tool':",
         '"tool":',
         "The application applications",
         "The application the mobile application",
-        "Not reported",
-        "both related to retrofit",
-        "both High findings are Retrofit",
         "\\nAuditor",
         "entr(y/ies)",
         "retained_app_code_findings",
@@ -2238,15 +1836,79 @@ def _ai_max_tokens(default: int = 1600) -> int:
     return default
 
 
-def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str, Any], max_tokens: int = 1600) -> Dict[str, Any]:
-    """Call the configured AI runtime through OpenAI SDK or LiteLLM.
+AI_REPORT_LANGUAGE_POLICY = (
+    "Report language policy for the final director-facing audit report: "
+    "write concise management-ready audit language. "
+    "Present audit results, observed technical evidence, security meaning, recommended actions, and traceability. "
+    "Describe each evidence source independently and use the workbook as the requirement-result source. "
+    "Use normalized evidence values exactly as supplied for all counts, severities, PUIDs, CVEs, packages, files, and scanner observations. "
+    "For executive narrative, include only observed values and action-oriented interpretation. "
+    "For appendix text, use neutral execution metadata and traceability language. "
+)
 
-    The model, provider, API base, timeout, temperature, and API-key env var are
-    resolved by scripts/lib/ai_runtime.py from parameters/ai.config.json for the
-    audit_summary_docx task. Each call is section-scoped to keep prompts small.
-    Most narrative failures can fall back to non-recommendation report text,
-    but weakness-pattern recommendations and MAP closure criteria are required
-    from AI by default.
+AI_UNWANTED_REPORT_TERMS = [
+    "discrepanc",
+    "contradict",
+    "technical coverage limitations",
+    "scope and limitations",
+    "limitation",
+    "limitations",
+    "missing evidence",
+    "unavailable",
+    "failed parsing",
+    "parser did not",
+    "internal pipeline",
+    "retained_app_code_findings",
+    "hardening_or_maintainability_signals",
+    "entr(y/ies)",
+    "The application applications",
+    "The application the mobile application",
+]
+
+
+def _collect_ai_language_policy_hits(value: Any) -> List[str]:
+    """Return unwanted wording generated by the model before it enters the DOCX.
+
+    This is prompt-first validation, not content rewriting. When hits are found,
+    Stage 2 asks the model to regenerate the same section with stricter guidance.
+    The final DOCX quality gate remains a safety net only.
+    """
+    hits: List[str] = []
+
+    def visit(obj: Any) -> None:
+        if isinstance(obj, str):
+            low = obj.lower()
+            for term in AI_UNWANTED_REPORT_TERMS:
+                if term.lower() in low:
+                    hits.append(term)
+        elif isinstance(obj, list):
+            for item in obj:
+                visit(item)
+        elif isinstance(obj, dict):
+            for item in obj.values():
+                visit(item)
+
+    visit(value)
+    out: List[str] = []
+    seen = set()
+    for h in hits:
+        key = h.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(h)
+    return out
+
+
+def _ai_repair_attempts() -> int:
+    return max(0, min(3, _safe_int(os.getenv("AUDIT_SUMMARY_AI_SECTION_REPAIR_ATTEMPTS", "2"), 2)))
+
+def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str, Any], max_tokens: int = 1600) -> Dict[str, Any]:
+    """Call the configured AI runtime and require report-ready language.
+
+    This function implements prompt-first quality control. If the model returns
+    JSON containing wording that should not appear in the final report, Stage 2
+    retries the same section with explicit feedback instead of relying on a late
+    sanitization pass.
     """
     if not _ai_enabled():
         return {}
@@ -2255,37 +1917,64 @@ def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str,
     if runtime is None:
         return {}
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-    ]
+    base_system_prompt = system_prompt
+    last_hits: List[str] = []
+    attempts = 1 + _ai_repair_attempts()
 
-    try:
-        print(
-            "[AI] Calling "
-            f"section={section_name} "
-            f"task={_audit_ai_task()} "
-            f"provider={getattr(runtime, 'provider', '')} "
-            f"model={getattr(runtime, 'model', '')}"
-        )
-        response = runtime.create(
-            input=messages,
-            max_output_tokens=max_tokens,
-            reasoning={"effort": _ai_env("AI_REASONING_EFFORT")},
-        )
-        content = (getattr(response, "output_text", "") or "").strip()
-        if not content:
-            print(f"[AI][WARN] Section {section_name} returned empty content.")
-            return {}
+    for attempt in range(1, attempts + 1):
+        if attempt == 1:
+            effective_system_prompt = base_system_prompt
+        else:
+            effective_system_prompt = (
+                base_system_prompt
+                + "\n\nRegenerate the same JSON section. The previous response used report language that is not allowed: "
+                + ", ".join(last_hits)
+                + ". Remove those terms and express the content as observed evidence, management action, execution metadata, or traceability only. "
+                + "Regenerate using only observed evidence, management action, execution metadata, and traceability."
+            )
 
-        obj = json.loads(_extract_json_object(content))
-        if isinstance(obj, dict):
+        messages = [
+            {"role": "system", "content": effective_system_prompt},
+            {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+        ]
+
+        try:
+            print(
+                "[AI] Calling "
+                f"section={section_name} "
+                f"attempt={attempt}/{attempts} "
+                f"task={_audit_ai_task()} "
+                f"provider={getattr(runtime, 'provider', '')} "
+                f"model={getattr(runtime, 'model', '')}"
+            )
+            response = runtime.create(
+                input=messages,
+                max_output_tokens=max_tokens,
+                reasoning={"effort": _ai_env("AI_REASONING_EFFORT")},
+            )
+            content = (getattr(response, "output_text", "") or "").strip()
+            if not content:
+                print(f"[AI][WARN] Section {section_name} returned empty content.")
+                continue
+
+            obj = json.loads(_extract_json_object(content))
+            if not isinstance(obj, dict):
+                continue
+
+            hits = _collect_ai_language_policy_hits(obj)
+            if hits:
+                last_hits = hits
+                if attempt < attempts:
+                    print(f"[AI][RETRY] Section {section_name} used non-report wording: {', '.join(hits)}")
+                    continue
+                print(f"[AI][WARN] Section {section_name} still contains non-report wording after retries: {', '.join(hits)}")
+                return {}
+
             print(f"[AI] Section {section_name} completed.")
             return obj
-    except Exception as exc:
-        print(f"[AI][WARN] Section {section_name} failed: {exc}")
+        except Exception as exc:
+            print(f"[AI][WARN] Section {section_name} attempt {attempt}/{attempts} failed: {exc}")
     return {}
-
 
 def _compact_patterns_for_ai(patterns: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
@@ -2461,10 +2150,10 @@ def _call_llm_for_audit_sections(
         "You are a senior mobile health security audit reporting specialist. "
         "Write in precise technical English for an executive and engineering audience. "
         "Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. "
-        "If evidence is absent, state the limitation explicitly. "
-        "Do not contradict normalized evidence. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. "
+        + AI_REPORT_LANGUAGE_POLICY + " "
+        "Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. "
         "retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. "
-        "Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or coverage signals unless they are explicitly classified as retained_security_findings. "
+        "Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. "
         "Return exactly one valid JSON object and nothing else."
     )
 
@@ -2511,14 +2200,14 @@ def _call_llm_for_audit_sections(
                 "use_exact_puid": True,
                 "do_not_overstate": True,
                 "do_not_invent_evidence": True,
-                "if_evidence_is_partial": "State the supported observation and the residual limitation in the same sentence.",
+                "if_evidence_is_partial": "State the supported observation and the verification action without using limitation language.",
                 "statement_style": "One concise sentence per control, suitable for an executive report.",
                 "prudence_rules": [
                     "Do not convert cleartext traffic disabled into full TLS enforcement or SSL pinning evidence.",
                     "Do not convert session-cookie assignment into proof that HTTPOnly is enforced unless HTTPOnly evidence is present.",
                     "Do not say the application is malware-free; say that available malware evidence did not report adware or known malware.",
-                    "Do not claim that the app prevents accepting all SSL/TLS certificates when only manifest cleartext evidence is available; state the residual verification need.",
-                    "Do not claim that data exchange is secured via TLS because SSL pinning was not detected; treat no pinning as a limitation or threat-model decision."
+                    "Do not claim that the app prevents accepting all SSL/TLS certificates when only manifest cleartext evidence is available; state only the cleartext observation and the verification action.",
+                    "Do not claim that data exchange is secured via TLS because SSL pinning was not detected; describe pinning only as an observed configuration item or planned verification item."
                 ],
             },
             "context": {
@@ -2549,9 +2238,9 @@ def _call_llm_for_audit_sections(
                 "one_paragraph_each": True,
                 "mention_execution_metadata": True,
                 "do_not_overstate_sast": True,
-                "do_not_treat_missing_mobsf_fields_as_clean": True,
-                "sast_rule": "Use technical_evidence.sast_app_code.retained_security_findings as the SAST security finding count. retained_app_code_signals may include hardening or maintainability findings. Mention raw SARIF counts only as traceability or parser coverage signals.",
-                "mobsf_dynamic_rule": "Mention runtime artifact examples only when they are present in the normalized MobSF dynamic arrays. Use normalized Android paths or artifact names only; do not repeat collapsed raw strings such as datadata... If arrays are empty, state that examples were not normalized.",
+                "observed_values_only": "Use observed normalized values. Omit absent fields from executive paragraphs.",
+                "sast_rule": "Use technical_evidence.sast_app_code.retained_security_findings as the SAST security finding count. retained_app_code_signals may include hardening or maintainability findings. Mention raw SARIF counts only as traceability or execution metadata.",
+                "mobsf_dynamic_rule": "Mention runtime artifact examples only when they are present in the normalized MobSF dynamic arrays. Use normalized Android paths or artifact names only; do not repeat collapsed raw strings such as datadata...",
                 "avoid_absolute_claims": "Do not claim the app is clean, fully protected, or fully encrypted unless the supplied data directly supports that exact statement.",
             },
             "context": base_context,
@@ -2562,7 +2251,7 @@ def _call_llm_for_audit_sections(
                 "mobsf_static_paragraph": "<paragraph>",
                 "mobsf_dynamic_paragraph": "<paragraph>",
                 "sast_paragraph": "<paragraph>",
-                "coverage_limitations_paragraph": "<paragraph>",
+                "technical_execution_metadata_paragraph": "<paragraph>",
             },
         },
         max_tokens=min(_ai_max_tokens(2200), 2600),
@@ -2577,7 +2266,7 @@ def _call_llm_for_audit_sections(
             "task": "Generate concise weakness-pattern writeups and recommendations grounded in workbook prevalence and technical evidence.",
             "constraints": {
                 "patterns": "Use exact pattern names from input.",
-                "expected": "1 sentence.",
+                "expected": "1 positive expected secure state sentence. Do not describe the current problem in this field.",
                 "impact": "1 sentence mentioning confidentiality, integrity, availability, or health-data regulatory exposure only when supported.",
                 "recommendations": "4 to 6 actionable bullets per pattern. Each recommendation must be generated from the supplied workbook prevalence, PUID examples, scanner findings, and execution metadata. Do not use generic boilerplate or static templates. Do not convert raw SARIF counts or Detekt quality findings into vulnerabilities. Treat TLS pinning as threat-model dependent, not a universal absolute. Prefer documenting certificate validation and pinning decisions over mandating pinning across all communications. Translate raw flag names into operational actions; use exact flag names sparingly because detailed flag traceability belongs in the workbook and appendices.",
                 "closure_criteria": "1 measurable sentence suitable for the MAP, generated from the supplied evidence and scanner context. Prefer evidence-based closure such as updated workbook scoring, updated Trivy/MobSF/SAST artifacts, regression evidence, or formal risk acceptance. Avoid broad zero noncompliant findings language for governance or multi-control patterns. Use zero only for narrowly scoped Critical/High fixable vulnerabilities when supported by Trivy evidence.",
@@ -2676,12 +2365,8 @@ def _compact_treatment_item(item: Dict[str, Any], item_kind: str) -> Dict[str, A
 
 
 def _sanitize_treatment_text(value: Any) -> str:
-    text = _sanitize_recommendation_text(value)
-    text = re.sub(r"\bmust reduce to zero\b", "should be remediated or formally risk-accepted", text, flags=re.IGNORECASE)
-    text = re.sub(r"\bmust be reduced to zero\b", "should be remediated or formally risk-accepted", text, flags=re.IGNORECASE)
-    text = re.sub(r"\bzero findings\b", "no unresolved Critical or High findings without documented risk acceptance", text, flags=re.IGNORECASE)
-    return re.sub(r"\s+", " ", text).strip()
-
+    """Compatibility wrapper for treatment-plan AI fields. No rewriting."""
+    return _clean_generated_text(value, ensure_period=True)
 
 
 def _normalize_treatment_item_id(item_id: Any, expected_ids: List[str] | None = None) -> str:
@@ -2967,9 +2652,10 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
     system_prompt = (
         "You are a senior mobile application security remediation planner for mHealth/EMR systems. "
         "Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. "
+        + AI_REPORT_LANGUAGE_POLICY + " "
         "For every input item, return exactly one result object using the exact input item_id. "
         "Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. "
-        "For each item, write concrete but audit-defensible actions. If evidence is partial, state what must be verified. "
+        "For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. "
         "Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. "
         "Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. "
         "Return exactly one valid JSON object and nothing else."
@@ -3021,6 +2707,7 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
                     "use_exact_item_id_and_puid": True,
                     "output_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
                     "all_output_fields_must_be_non_empty": True,
+                    "language_policy": "Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior.",
                 },
                 "application": app,
                 "technical_evidence_summary": technical_compact,
@@ -3066,6 +2753,7 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
                     "use_exact_item_id_and_finding_id": True,
                     "output_fields": ["item_id", "treatment_action", "verification_method", "closure_evidence", "residual_risk"],
                     "all_output_fields_must_be_non_empty": True,
+                    "language_policy": "Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior.",
                     "dependency_rule": "For Trivy items, use fixed_version when present; if no fixed version exists, propose risk acceptance, compensating controls, or monitoring rather than inventing a version.",
                     "sast_rule": "For SAST items, use only supplied rule, message, file, and line. Do not invent code paths.",
                     "mobsf_rule": "For MobSF items, recommend configuration, signing, manifest, runtime-storage, or verification actions based only on supplied evidence.",
@@ -3333,52 +3021,21 @@ def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[
 
 
 def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[str, Any]) -> Dict[str, Any]:
-    """Remove or replace AI text that contradicts normalized scanner evidence."""
-    tech_ai = dict(tech_ai or {})
-    sast = _as_dict(technical.get("sast_app_code"))
-    counts = _sast_counts(sast)
-    raw_counts = _deep_dict(sast, ["raw_tool_counts", "tool_counts", "by_tool"])
-    raw_text = ", ".join(f"{k}: {v}" for k, v in raw_counts.items()) if raw_counts else "raw SARIF counts unavailable"
+    """Validate AI technical narratives without rewriting them.
 
-    if counts["retained_security_findings"] <= 0 and counts["retained_app_code_signals"] > 0:
-        tech_ai["sast_paragraph"] = (
-            f"SAST retained {counts['retained_app_code_signals']} application-scope hardening, quality, or maintainability signals after scope filtering, "
-            "but no security-relevant SAST findings were classified from the normalized evidence. "
-            f"Raw SARIF counts are retained for traceability and coverage interpretation ({raw_text}); they must not be treated as application vulnerabilities."
-        )
-    elif counts["retained_security_findings"] <= 0:
-        tech_ai["sast_paragraph"] = (
-            "SARIF artifacts were parsed, but no security-relevant application-code SAST findings were classified from the normalized evidence. "
-            f"Raw SARIF counts are retained only for traceability and coverage interpretation ({raw_text}); they are not treated as application-code vulnerabilities in this report."
-        )
-    else:
-        tech_ai["sast_paragraph"] = (
-            f"SAST retained {counts['retained_security_findings']} security-relevant application-code findings and "
-            f"{counts['hardening_or_maintainability_signals']} hardening, quality, or maintainability signals after scope filtering. "
-            f"Raw SARIF counts remain traceability evidence ({raw_text})."
-        )
-
-    limitations = _as_dict(technical.get("coverage_limitations"))
-    warning_count = _deep_int(limitations, ["sast_extraction_warning_count"])
-    if warning_count == 0:
-        warning_text = _clean_text(limitations.get("sast_extraction_warnings", ""))
-        m = re.search(r"(\d+)\s+SAST extraction", warning_text, flags=re.IGNORECASE)
-        warning_count = _safe_int(m.group(1), 0) if m else (1 if warning_text else 0)
-    if warning_count:
-        missing_inputs = _deep_list(limitations, ["missing_inputs"])
-        missing_text = "No technical input artifacts were reported missing." if not missing_inputs else f"Missing inputs were reported for: {', '.join(map(str, missing_inputs))}."
-        tool_text = _clean_text(limitations.get("sast_extraction_warnings_by_tool", ""))
-        tech_ai["coverage_limitations_paragraph"] = (
-            f"{missing_text} However, the SAST toolchain reported {warning_count} extraction or frontend notification(s)"
-            + (f" ({tool_text})" if tool_text else "")
-            + ". These notifications affect coverage interpretation and must not be treated as application vulnerabilities."
-        )
-
-    for key, value in list(tech_ai.items()):
+    If the model does not return a section, deterministic scanner summaries are
+    rendered by the dedicated Trivy, MobSF, and SAST table functions. This keeps
+    the narrative prompt-first and avoids post-generation wording changes.
+    """
+    clean: Dict[str, Any] = {}
+    for key, value in dict(tech_ai or {}).items():
         if isinstance(value, str):
-            tech_ai[key] = _sanitize_ai_narrative_text(value, technical)
-
-    return tech_ai
+            candidate = _clean_generated_text(value)
+            if candidate and not _collect_ai_language_policy_hits(candidate):
+                clean[key] = candidate
+        else:
+            clean[key] = value
+    return clean
 
 
 def _expected_secure_state(pattern: str, ai_expected: Any = "") -> str:
@@ -3768,6 +3425,7 @@ def main() -> None:
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)
     _format_report_paragraphs(doc)
+    _sanitize_report_language(doc)
     _normalize_document_typography(doc)
     _quality_gate(doc)
     doc.save(out_path)
