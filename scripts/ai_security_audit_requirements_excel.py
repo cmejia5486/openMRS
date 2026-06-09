@@ -575,7 +575,7 @@ def _llm_config_snapshot(batch_size: int | None = None) -> Dict[str, Any]:
         "AI_API_BASE", "AI_REASONING_EFFORT", "AI_MAX_OUTPUT_TOKENS", "AI_BATCH_SIZE",
         "OPENAI_MODEL", "OPENAI_REASONING_EFFORT", "OPENAI_MAX_OUTPUT_TOKENS",
         "OPENAI_BATCH_SIZE", "OPENAI_TIMEOUT_S", "USE_OPENAI_JUSTIFICATIONS",
-        "STRICT_ENGLISH_OUTPUT", "TRANSLATE_REQUIREMENT_DESCRIPTIONS",
+        "STRICT_ENGLISH_OUTPUT",
     ]
     snap: Dict[str, Any] = _env_snapshot(keys)
     if batch_size is not None:
@@ -751,7 +751,7 @@ def _write_run_metrics_raw_xlsx(
     total_requirements: int,
     strict_english: bool,
     use_openai_justifications: bool,
-    translations_requested: int,
+    non_english_requirements_detected: int,
 ) -> None:
     """Write per-execution raw telemetry for downstream repeated-run analysis.
 
@@ -804,7 +804,8 @@ def _write_run_metrics_raw_xlsx(
         ("num_batches", (total_requirements + batch_size - 1) // batch_size if batch_size else 0),
         ("use_openai_justifications", str(bool(use_openai_justifications))),
         ("strict_english_output", str(bool(strict_english))),
-        ("translations_requested", translations_requested),
+        ("requirements_language_gate", "strict_english_catalog" if strict_english else "advisory_english_catalog"),
+        ("non_english_requirements_detected", non_english_requirements_detected),
         ("llm_config_hash", llm_config_hash),
         ("compliance_matrix_hash", compliance_matrix_hash),
         ("output_xlsx_path", str(OUTPUT_XLSX_PATH)),
@@ -830,109 +831,6 @@ def _write_run_metrics_raw_xlsx(
     _style_run_metrics_workbook(wb)
     wb.save(RUN_METRICS_XLSX_PATH)
     print(f"[OK] Run metrics workbook generated: {RUN_METRICS_XLSX_PATH}", flush=True)
-
-def translate_texts_to_english_via_openai(items: List[Dict[str, str]]) -> Dict[str, str]:
-    client = openai_client()
-    if client is None or BaseModel is None:
-        return {}
-
-    model = os.getenv("OPENAI_MODEL", "gpt-5.4").strip() or "gpt-5.4"
-    effort = os.getenv("OPENAI_REASONING_EFFORT", "medium").strip() or "medium"
-    max_tokens = env_int("OPENAI_MAX_OUTPUT_TOKENS", 2000)
-    supports_parse = should_use_structured_parse(client)
-
-    class TranslationItem(BaseModel):
-        id: str
-        text_en: str
-
-    class TranslationBatch(BaseModel):
-        items: List[TranslationItem]
-
-    system = (
-        "You translate short requirement descriptions to English.\n"
-        "Strict rules:\n"
-        "- Output English only.\n"
-        "- Preserve meaning. Do not add new requirements.\n"
-        "- Keep the translation concise and professional.\n"
-        "- Do not use Markdown, code fences, prose, bullet points, comments, or tool calls.\n"
-        "- Return exactly one raw JSON object and nothing else.\n"
-        "- Return ONLY JSON in the form: {\"items\": [{\"id\": \"...\", \"text_en\": \"...\"}, ...]}.\n"
-    )
-    user_payload = {"items": items}
-    last_err: Optional[Exception] = None
-    call_started_at = time.time()
-    attempts_used = 0
-    for attempt in range(1, 4):
-        attempts_used = attempt
-        try:
-            if supports_parse:
-                resp = client.responses.parse(
-                    model=model,
-                    input=[{"role": "system", "content": system}, {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)}],
-                    text_format=TranslationBatch,
-                    max_output_tokens=max_tokens,
-                    reasoning={"effort": effort},
-                )
-                parsed = resp.output_parsed
-                out = {it.id: it.text_en.strip() for it in parsed.items}
-                _record_llm_call(
-                    call_type="translation",
-                    expected_items=len(items),
-                    received_items=len(out),
-                    json_valid=True,
-                    schema_valid=True,
-                    retry_count=max(0, attempts_used - 1),
-                    elapsed_s=time.time() - call_started_at,
-                    model=model,
-                    max_tokens=max_tokens,
-                    parse_route=True,
-                )
-                return out
-
-            resp = client.responses.create(
-                model=model,
-                input=[{"role": "system", "content": system}, {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)}],
-                max_output_tokens=max_tokens,
-                reasoning={"effort": effort},
-            )
-            txt = (getattr(resp, "output_text", "") or "").strip()
-            obj = extract_json_object_from_model_output(txt)
-            out: Dict[str, str] = {}
-            items_obj = obj.get("items", []) if isinstance(obj, dict) else []
-            for it in items_obj:
-                if isinstance(it, dict) and "id" in it and "text_en" in it:
-                    out[str(it["id"])] = str(it.get("text_en") or "").strip()
-            _record_llm_call(
-                call_type="translation",
-                expected_items=len(items),
-                received_items=len(out),
-                json_valid=True,
-                schema_valid=isinstance(items_obj, list),
-                retry_count=max(0, attempts_used - 1),
-                elapsed_s=time.time() - call_started_at,
-                model=model,
-                max_tokens=max_tokens,
-                parse_route=False,
-            )
-            return out
-        except Exception as e:
-            last_err = e
-            time.sleep(0.6 * attempt)
-    print(f"[WARN] AI translation failed after retries: {last_err}", file=sys.stderr)
-    _record_llm_call(
-        call_type="translation",
-        expected_items=len(items),
-        received_items=0,
-        json_valid=False,
-        schema_valid=False,
-        retry_count=max(0, attempts_used - 1),
-        elapsed_s=time.time() - call_started_at,
-        model=model,
-        max_tokens=max_tokens,
-        parse_route=supports_parse,
-        error=str(last_err or "translation failed"),
-    )
-    return {}
 
 
 def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[str, str]:
@@ -1174,7 +1072,7 @@ def main() -> None:
             flags_by_id[str(f["id"])] = f
 
     raw_desc_by_puid: Dict[str, str] = {}
-    to_translate: List[Dict[str, str]] = []
+    non_english_puids: List[str] = []
     for req_obj in requirements:
         if not isinstance(req_obj, dict):
             continue
@@ -1185,30 +1083,22 @@ def main() -> None:
             desc = "(missing description)"
         raw_desc_by_puid[puid] = desc
         if looks_non_english(desc):
-            to_translate.append({"id": puid, "text": desc})
+            non_english_puids.append(puid)
 
-    translations: Dict[str, str] = {}
-    if to_translate:
-        client = openai_client()
-        if client is None:
-            if strict_english:
-                raise SystemExit("STRICT_ENGLISH_OUTPUT is enabled, but non-English requirement descriptions were detected and the AI runtime is unavailable. Provide an English requisites.json or expose OPENAI_API_KEY.")
-            print("[WARN] Non-English descriptions detected; translation skipped because AI runtime is unavailable.", file=sys.stderr)
-        else:
-            print(f"[AI] Translating {len(to_translate)} requirement description(s) to English...", flush=True)
-            translations = translate_texts_to_english_via_openai(to_translate)
-            missing = [it["id"] for it in to_translate if it["id"] not in translations or not translations[it["id"]].strip()]
-            if missing and strict_english:
-                raise SystemExit("STRICT_ENGLISH_OUTPUT is enabled, but translation failed for one or more items: " + ", ".join(missing))
-            if missing:
-                print(f"[WARN] Translation missing for {len(missing)} item(s); originals may remain.", file=sys.stderr)
+    if non_english_puids:
+        preview = ", ".join(non_english_puids[:20])
+        if len(non_english_puids) > 20:
+            preview += f", ... (+{len(non_english_puids) - 20} more)"
+        message = (
+            "Requirement catalog language gate failed: requirement descriptions must be provided in English. "
+            "The workflow no longer translates requirements with an LLM, because the catalog is a controlled input. "
+            f"Non-English-like descriptions detected for PUID(s): {preview}"
+        )
+        if strict_english:
+            raise SystemExit(message)
+        print(f"[WARN] {message}", file=sys.stderr, flush=True)
 
-    desc_en_by_puid: Dict[str, str] = {}
-    for puid, desc in raw_desc_by_puid.items():
-        desc_en = translations.get(puid, "").strip() or desc
-        if strict_english and looks_non_english(desc_en):
-            raise SystemExit(f"STRICT_ENGLISH_OUTPUT is enabled, but the final description for PUID={puid} is not English.")
-        desc_en_by_puid[puid] = desc_en
+    desc_en_by_puid: Dict[str, str] = dict(raw_desc_by_puid)
 
     batch_size = env_int("OPENAI_BATCH_SIZE", 25)
     batch_size = 25 if batch_size <= 0 else batch_size
@@ -1348,7 +1238,7 @@ def main() -> None:
         total_requirements=total,
         strict_english=strict_english,
         use_openai_justifications=use_openai_just,
-        translations_requested=len(to_translate),
+        non_english_requirements_detected=len(non_english_puids),
     )
     print(f"[SUMMARY] total={len(audits)} yes={counts['yes']} no={counts['no']} n/a={counts['n/a']}", flush=True)
 
