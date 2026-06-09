@@ -52,6 +52,10 @@ jobs:
           "AUDIT_SUMMARY_DOCX_PATH=$(Join-Path $dataDir 'Audit Summary.docx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_SUMMARY_CHART_DIR=$(Join-Path $dataDir '_audit_summary_charts')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "MPLCONFIGDIR=$(Join-Path $dataDir '_matplotlib')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_RAW_DIR=$(Join-Path $dataDir 'run-metrics-raw')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_RAW_XLSX_PATH=$(Join-Path (Join-Path $dataDir 'run-metrics-raw') 'run-metrics-raw.xlsx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_PACKAGE_DIR=$(Join-Path $dataDir 'run-metrics-package')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_ZIP_PATH=$(Join-Path $dataDir 'run-metrics.zip')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Download security audit Excel
         uses: actions/download-artifact@v6
@@ -65,6 +69,19 @@ jobs:
           $ErrorActionPreference = "Stop"
           if (-not (Test-Path $env:AUDIT_EXCEL_PATH)) { throw "security_audit_requirements.xlsx was not found at $env:AUDIT_EXCEL_PATH" }
           Write-Host "[OK] Found Excel: $env:AUDIT_EXCEL_PATH"
+
+      - name: Download raw run metrics
+        uses: actions/download-artifact@v6
+        with:
+          name: run-metrics-raw
+          path: ${{ env.RUN_METRICS_RAW_DIR }}
+
+      - name: Validate raw run metrics
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Test-Path $env:RUN_METRICS_RAW_XLSX_PATH)) { throw "run-metrics-raw.xlsx was not found at $env:RUN_METRICS_RAW_XLSX_PATH" }
+          Write-Host "[OK] Found raw run metrics: $env:RUN_METRICS_RAW_XLSX_PATH"
 
       - name: Download Vision360 bundle
         continue-on-error: true
@@ -260,6 +277,58 @@ jobs:
           if (-not (Test-Path -LiteralPath $pdfPath)) { throw "PDF was not generated: $pdfPath" }
           Write-Host "[OK] PDF generated: $pdfPath"
 
+      - name: Build run metrics package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $auditPdfPath = Join-Path $env:VISION360_DATA_DIR "Audit Summary.pdf"
+          & $env:PYTHON_EXE scripts/build_run_metrics_package.py `
+            --raw-metrics $env:RUN_METRICS_RAW_XLSX_PATH `
+            --analysis-pack $env:AUDIT_ANALYSIS_JSON_PATH `
+            --audit-summary-docx $env:AUDIT_SUMMARY_DOCX_PATH `
+            --audit-summary-pdf $auditPdfPath `
+            --out-dir $env:RUN_METRICS_PACKAGE_DIR
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics.xlsx"))) { throw "run-metrics.xlsx was not generated." }
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-methodology.docx"))) { throw "run-metrics-methodology.docx was not generated." }
+
+      - name: Convert run metrics methodology DOCX to PDF
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $docxPath = [string](Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-methodology.docx")
+          $pdfPath = [string](Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-methodology.pdf")
+          if (-not (Test-Path -LiteralPath $docxPath)) { throw "Run metrics methodology DOCX not found: $docxPath" }
+          if (Test-Path -LiteralPath $pdfPath) { Remove-Item -LiteralPath $pdfPath -Force }
+          $word = $null
+          $doc = $null
+          try {
+            $word = New-Object -ComObject Word.Application
+            $word.Visible = $false
+            $word.DisplayAlerts = 0
+            $doc = $word.Documents.Open([string]$docxPath)
+            $doc.ExportAsFixedFormat([string]$pdfPath, 17)
+          }
+          finally {
+            if ($doc -ne $null) { $doc.Close([ref] $false) }
+            if ($word -ne $null) { $word.Quit() }
+          }
+          if (-not (Test-Path -LiteralPath $pdfPath)) { throw "Run metrics methodology PDF was not generated: $pdfPath" }
+          Write-Host "[OK] Run metrics methodology PDF generated: $pdfPath"
+
+      - name: Prepare run metrics ZIP
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $xlsxPath = Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics.xlsx"
+          $pdfPath = Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-methodology.pdf"
+          if (-not (Test-Path $xlsxPath)) { throw "Missing $xlsxPath" }
+          if (-not (Test-Path $pdfPath)) { throw "Missing $pdfPath" }
+          if (Test-Path $env:RUN_METRICS_ZIP_PATH) { Remove-Item -LiteralPath $env:RUN_METRICS_ZIP_PATH -Force }
+          Compress-Archive -Path @($xlsxPath, $pdfPath) -DestinationPath $env:RUN_METRICS_ZIP_PATH -Force
+          if (-not (Test-Path $env:RUN_METRICS_ZIP_PATH)) { throw "run-metrics.zip was not generated." }
+          Write-Host "[ARTIFACT] run-metrics.zip will publish: $env:RUN_METRICS_ZIP_PATH"
+
       - name: Prepare strict Audit Summary artifacts
         shell: powershell
         run: |
@@ -298,3 +367,11 @@ jobs:
           path: |
             ${{ env.VISION360_DATA_DIR }}\artifact_publish\audit-summary-zip\Audit Summary.docx
             ${{ env.VISION360_DATA_DIR }}\artifact_publish\audit-summary-zip\Audit Summary.pdf
+
+
+      - name: Upload run metrics ZIP
+        uses: actions/upload-artifact@v6
+        with:
+          name: run-metrics
+          if-no-files-found: error
+          path: ${{ env.RUN_METRICS_ZIP_PATH }}

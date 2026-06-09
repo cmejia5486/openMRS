@@ -8,6 +8,9 @@ import os
 import re
 import sys
 import time
+import hashlib
+import platform
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -73,6 +76,12 @@ DATA_DIR = _resolve_data_dir()
 FINGERPRINT_PATH = _resolve_path("VISION360_FINGERPRINT_PATH", "vision360_fingerprint.json")
 REQUISITES_PATH = _resolve_path("REQUISITES_PATH", "requisites.json")
 OUTPUT_XLSX_PATH = _resolve_path("SECURITY_AUDIT_XLSX_PATH", "security_audit_requirements.xlsx")
+RUN_METRICS_RAW_XLSX_PATH = _resolve_path("RUN_METRICS_RAW_XLSX_PATH", "run-metrics-raw.xlsx")
+
+RUN_METRICS: Dict[str, List[Dict[str, Any]]] = {
+    "llm_calls": [],
+    "llm_items": [],
+}
 
 NEGATIVE_RISK_TOKENS = [
     "insecure", "unsafe", "weak", "debug", "debuggable", "cleartext", "allow_clear_text",
@@ -526,6 +535,220 @@ def looks_non_english(text: str) -> bool:
     return any(m in s_low for m in spanish_markers)
 
 
+
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(str(value or "").encode("utf-8", errors="replace")).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    try:
+        if not path or not path.is_file():
+            return ""
+        h = hashlib.sha256()
+        with path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except Exception:
+        return ""
+
+
+def _stable_json_hash(value: Any) -> str:
+    try:
+        payload = json.dumps(value, sort_keys=True, ensure_ascii=False, default=str)
+    except Exception:
+        payload = str(value)
+    return _sha256_text(payload)
+
+
+def _now_utc_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _env_snapshot(keys: List[str]) -> Dict[str, str]:
+    return {key: os.getenv(key, "") for key in keys}
+
+
+def _llm_config_snapshot(batch_size: int | None = None) -> Dict[str, Any]:
+    keys = [
+        "AI_TASK", "AI_PROFILE", "AI_PROVIDER", "AI_MODEL", "AI_LITELLM_MODEL",
+        "AI_API_BASE", "AI_REASONING_EFFORT", "AI_MAX_OUTPUT_TOKENS", "AI_BATCH_SIZE",
+        "OPENAI_MODEL", "OPENAI_REASONING_EFFORT", "OPENAI_MAX_OUTPUT_TOKENS",
+        "OPENAI_BATCH_SIZE", "OPENAI_TIMEOUT_S", "USE_OPENAI_JUSTIFICATIONS",
+        "STRICT_ENGLISH_OUTPUT", "TRANSLATE_REQUIREMENT_DESCRIPTIONS",
+    ]
+    snap: Dict[str, Any] = _env_snapshot(keys)
+    if batch_size is not None:
+        snap["effective_batch_size"] = batch_size
+    return snap
+
+
+def _record_llm_call(
+    *,
+    call_type: str,
+    expected_items: int,
+    received_items: int,
+    json_valid: bool,
+    schema_valid: bool,
+    retry_count: int,
+    elapsed_s: float,
+    model: str,
+    max_tokens: int,
+    parse_route: bool,
+    error: str = "",
+) -> None:
+    call_id = f"LLM-{len(RUN_METRICS['llm_calls']) + 1:04d}"
+    RUN_METRICS["llm_calls"].append({
+        "llm_call_id": call_id,
+        "call_type": call_type,
+        "expected_items": int(expected_items),
+        "received_items": int(received_items),
+        "json_valid": bool(json_valid),
+        "schema_valid": bool(schema_valid),
+        "retry_count": int(max(0, retry_count)),
+        "elapsed_s": round(float(elapsed_s), 3),
+        "model": model,
+        "max_output_tokens": int(max_tokens),
+        "parse_route": bool(parse_route),
+        "error": str(error or "")[:500],
+    })
+
+
+def _append_llm_item(row: Dict[str, Any]) -> None:
+    RUN_METRICS["llm_items"].append(dict(row))
+
+
+def _row_hash_for_requirement(puid: str, result: str, flags_used: List[str]) -> str:
+    return _stable_json_hash({"puid": puid, "result": result, "flags_used": list(flags_used or [])})
+
+
+def _auto_width(ws: Any, max_width: int = 72) -> None:
+    for col in ws.columns:
+        max_len = 0
+        letter = col[0].column_letter
+        for cell in col:
+            try:
+                max_len = max(max_len, len(str(cell.value or "")))
+            except Exception:
+                pass
+        ws.column_dimensions[letter].width = min(max(max_len + 2, 10), max_width)
+
+
+def _append_kv_sheet(wb: Any, title: str, rows: List[Tuple[str, Any]]) -> Any:
+    ws = wb.create_sheet(title)
+    ws.append(["key", "value"])
+    for key, value in rows:
+        ws.append([key, value])
+    _auto_width(ws)
+    return ws
+
+
+def _append_dict_rows_sheet(wb: Any, title: str, rows: List[Dict[str, Any]], headers: List[str]) -> Any:
+    ws = wb.create_sheet(title)
+    ws.append(headers)
+    for row in rows:
+        ws.append([row.get(h, "") for h in headers])
+    _auto_width(ws)
+    return ws
+
+
+def _write_run_metrics_raw_xlsx(
+    *,
+    audits: List[RequirementAudit],
+    counts: Dict[str, int],
+    run_started_at: float,
+    batch_size: int,
+    total_requirements: int,
+    strict_english: bool,
+    use_openai_justifications: bool,
+    translations_requested: int,
+) -> None:
+    """Write per-execution raw telemetry for downstream repeated-run analysis.
+
+    This function is intentionally non-invasive: it does not change requirement
+    adjudication, workbook verdicts, or AI-generated justifications. It only
+    exports raw execution telemetry and requirement-level hashes.
+    """
+    RUN_METRICS_RAW_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    llm_snapshot = _llm_config_snapshot(batch_size=batch_size)
+    llm_config_hash = _stable_json_hash(llm_snapshot)
+    compliance_rows: List[Dict[str, Any]] = []
+    for a in audits:
+        flags_joined = ", ".join(a.flags_used)
+        row_hash = _row_hash_for_requirement(a.puid, a.result, a.flags_used)
+        compliance_rows.append({
+            "puid": a.puid,
+            "result": a.result,
+            "flags_used": flags_joined,
+            "flags_count": len(a.flags_used),
+            "justification_length_chars": len(a.justification_en or ""),
+            "row_hash": row_hash,
+        })
+    compliance_matrix_hash = _stable_json_hash([r["row_hash"] for r in compliance_rows])
+
+    input_hash_rows = [
+        {"input_name": "vision360_fingerprint", "path": str(FINGERPRINT_PATH), "sha256": _sha256_file(FINGERPRINT_PATH)},
+        {"input_name": "requisites", "path": str(REQUISITES_PATH), "sha256": _sha256_file(REQUISITES_PATH)},
+        {"input_name": "security_audit_requirements", "path": str(OUTPUT_XLSX_PATH), "sha256": _sha256_file(OUTPUT_XLSX_PATH)},
+    ]
+
+    elapsed_s = round(time.time() - run_started_at, 3)
+    run_summary_rows = [
+        ("run_id", os.getenv("GITHUB_RUN_ID", "") or f"local-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}") ,
+        ("run_attempt", os.getenv("GITHUB_RUN_ATTEMPT", "")),
+        ("workflow", os.getenv("GITHUB_WORKFLOW", "")),
+        ("job", os.getenv("GITHUB_JOB", "")),
+        ("commit_sha", os.getenv("GITHUB_SHA", "")),
+        ("ref", os.getenv("GITHUB_REF", "")),
+        ("repository", os.getenv("GITHUB_REPOSITORY", "")),
+        ("runner_os", os.getenv("RUNNER_OS", platform.system())),
+        ("python_version", platform.python_version()),
+        ("generated_at_utc", _now_utc_iso()),
+        ("elapsed_s", elapsed_s),
+        ("num_requirements", total_requirements),
+        ("num_yes", counts.get("yes", 0)),
+        ("num_no", counts.get("no", 0)),
+        ("num_na", counts.get("n/a", 0)),
+        ("batch_size", batch_size),
+        ("num_batches", (total_requirements + batch_size - 1) // batch_size if batch_size else 0),
+        ("use_openai_justifications", str(bool(use_openai_justifications))),
+        ("strict_english_output", str(bool(strict_english))),
+        ("translations_requested", translations_requested),
+        ("llm_config_hash", llm_config_hash),
+        ("compliance_matrix_hash", compliance_matrix_hash),
+        ("output_xlsx_path", str(OUTPUT_XLSX_PATH)),
+        ("run_metrics_raw_xlsx_path", str(RUN_METRICS_RAW_XLSX_PATH)),
+    ]
+    for key, value in llm_snapshot.items():
+        run_summary_rows.append((f"config.{key}", value))
+
+    wb = openpyxl.Workbook()
+    default = wb.active
+    wb.remove(default)
+    _append_kv_sheet(wb, "run_summary", run_summary_rows)
+    _append_dict_rows_sheet(wb, "input_hashes", input_hash_rows, ["input_name", "path", "sha256"])
+    _append_dict_rows_sheet(wb, "compliance_export", compliance_rows, ["puid", "result", "flags_used", "flags_count", "justification_length_chars", "row_hash"])
+    _append_dict_rows_sheet(wb, "llm_calls", RUN_METRICS["llm_calls"], [
+        "llm_call_id", "call_type", "expected_items", "received_items", "json_valid", "schema_valid",
+        "retry_count", "elapsed_s", "model", "max_output_tokens", "parse_route", "error",
+    ])
+    _append_dict_rows_sheet(wb, "llm_items", RUN_METRICS["llm_items"], [
+        "run_batch", "puid", "expected_by_llm", "received_from_llm", "field_complete",
+        "traceability_ok", "fallback_used", "justification_source", "result", "flags_count",
+    ])
+    metric_definition_rows = [
+        {"metric": "json_valid_rate", "formula": "json_valid_count / num_llm_calls", "level": "per execution"},
+        {"metric": "schema_valid_rate", "formula": "schema_valid_count / num_llm_calls", "level": "per execution"},
+        {"metric": "completion_rate", "formula": "received_items_count / expected_items_count", "level": "per execution"},
+        {"metric": "traceability_ok_rate", "formula": "traceability_ok_count / expected_items_count", "level": "per execution"},
+        {"metric": "fallback_rate", "formula": "fallback_count / num_requirements", "level": "per execution"},
+        {"metric": "retry_rate", "formula": "retry_count / num_llm_calls", "level": "per execution"},
+    ]
+    _append_dict_rows_sheet(wb, "metric_definitions", metric_definition_rows, ["metric", "formula", "level"])
+    wb.save(RUN_METRICS_RAW_XLSX_PATH)
+    print(f"[OK] Run metrics raw workbook generated: {RUN_METRICS_RAW_XLSX_PATH}", flush=True)
+
 def translate_texts_to_english_via_openai(items: List[Dict[str, str]]) -> Dict[str, str]:
     client = openai_client()
     if client is None or BaseModel is None:
@@ -555,7 +778,10 @@ def translate_texts_to_english_via_openai(items: List[Dict[str, str]]) -> Dict[s
     )
     user_payload = {"items": items}
     last_err: Optional[Exception] = None
+    call_started_at = time.time()
+    attempts_used = 0
     for attempt in range(1, 4):
+        attempts_used = attempt
         try:
             if supports_parse:
                 resp = client.responses.parse(
@@ -566,7 +792,20 @@ def translate_texts_to_english_via_openai(items: List[Dict[str, str]]) -> Dict[s
                     reasoning={"effort": effort},
                 )
                 parsed = resp.output_parsed
-                return {it.id: it.text_en.strip() for it in parsed.items}
+                out = {it.id: it.text_en.strip() for it in parsed.items}
+                _record_llm_call(
+                    call_type="translation",
+                    expected_items=len(items),
+                    received_items=len(out),
+                    json_valid=True,
+                    schema_valid=True,
+                    retry_count=max(0, attempts_used - 1),
+                    elapsed_s=time.time() - call_started_at,
+                    model=model,
+                    max_tokens=max_tokens,
+                    parse_route=True,
+                )
+                return out
 
             resp = client.responses.create(
                 model=model,
@@ -577,14 +816,40 @@ def translate_texts_to_english_via_openai(items: List[Dict[str, str]]) -> Dict[s
             txt = (getattr(resp, "output_text", "") or "").strip()
             obj = extract_json_object_from_model_output(txt)
             out: Dict[str, str] = {}
-            for it in obj.get("items", []):
+            items_obj = obj.get("items", []) if isinstance(obj, dict) else []
+            for it in items_obj:
                 if isinstance(it, dict) and "id" in it and "text_en" in it:
                     out[str(it["id"])] = str(it.get("text_en") or "").strip()
+            _record_llm_call(
+                call_type="translation",
+                expected_items=len(items),
+                received_items=len(out),
+                json_valid=True,
+                schema_valid=isinstance(items_obj, list),
+                retry_count=max(0, attempts_used - 1),
+                elapsed_s=time.time() - call_started_at,
+                model=model,
+                max_tokens=max_tokens,
+                parse_route=False,
+            )
             return out
         except Exception as e:
             last_err = e
             time.sleep(0.6 * attempt)
     print(f"[WARN] AI translation failed after retries: {last_err}", file=sys.stderr)
+    _record_llm_call(
+        call_type="translation",
+        expected_items=len(items),
+        received_items=0,
+        json_valid=False,
+        schema_valid=False,
+        retry_count=max(0, attempts_used - 1),
+        elapsed_s=time.time() - call_started_at,
+        model=model,
+        max_tokens=max_tokens,
+        parse_route=supports_parse,
+        error=str(last_err or "translation failed"),
+    )
     return {}
 
 
@@ -639,7 +904,10 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
     )
 
     last_err: Optional[Exception] = None
+    call_started_at = time.time()
+    attempts_used = 0
     for attempt in range(1, 4):
+        attempts_used = attempt
         attempt_started_at = time.time()
         print(
             f"[AI] Justification attempt {attempt}/3 started: items={len(batch_ctx)}",
@@ -666,6 +934,18 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                         f"| elapsed={time.time() - attempt_started_at:.1f}s",
                         flush=True,
                     )
+                    _record_llm_call(
+                        call_type="justification",
+                        expected_items=len(batch_ctx),
+                        received_items=len(out),
+                        json_valid=True,
+                        schema_valid=True,
+                        retry_count=max(0, attempts_used - 1),
+                        elapsed_s=time.time() - call_started_at,
+                        model=model,
+                        max_tokens=max_tokens,
+                        parse_route=True,
+                    )
                     return out
 
             resp = client.responses.create(
@@ -680,7 +960,8 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
             txt = (getattr(resp, "output_text", "") or "").strip()
             obj = extract_json_object_from_model_output(txt)
             out: Dict[str, str] = {}
-            for it in obj.get("items", []):
+            items_obj = obj.get("items", []) if isinstance(obj, dict) else []
+            for it in items_obj:
                 if isinstance(it, dict) and "id" in it and "justification" in it:
                     out[str(it["id"])] = str(it.get("justification") or "").strip()
             print(
@@ -688,6 +969,18 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                 f"received={len(out)}/{len(batch_ctx)} "
                 f"| elapsed={time.time() - attempt_started_at:.1f}s",
                 flush=True,
+            )
+            _record_llm_call(
+                call_type="justification",
+                expected_items=len(batch_ctx),
+                received_items=len(out),
+                json_valid=True,
+                schema_valid=isinstance(items_obj, list),
+                retry_count=max(0, attempts_used - 1),
+                elapsed_s=time.time() - call_started_at,
+                model=model,
+                max_tokens=max_tokens,
+                parse_route=False,
             )
             return out
         except Exception as e:
@@ -705,6 +998,19 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
         "deterministic fallback will be used for this batch.",
         file=sys.stderr,
         flush=True,
+    )
+    _record_llm_call(
+        call_type="justification",
+        expected_items=len(batch_ctx),
+        received_items=0,
+        json_valid=False,
+        schema_valid=False,
+        retry_count=max(0, attempts_used - 1),
+        elapsed_s=time.time() - call_started_at,
+        model=model,
+        max_tokens=max_tokens,
+        parse_route=supports_parse,
+        error=str(last_err or "justification generation failed"),
     )
     return {}
 
@@ -755,15 +1061,20 @@ def deterministic_justification(req: RequirementAudit, flag_evidences: List[Flag
 
 
 def main() -> None:
+    run_started_at = time.time()
+    RUN_METRICS["llm_calls"] = []
+    RUN_METRICS["llm_items"] = []
     strict_english = env_bool("STRICT_ENGLISH_OUTPUT", True)
 
     print(f"[PATH] DATA_DIR={DATA_DIR}", flush=True)
     print(f"[PATH] FINGERPRINT_PATH={FINGERPRINT_PATH}", flush=True)
     print(f"[PATH] REQUISITES_PATH={REQUISITES_PATH}", flush=True)
     print(f"[PATH] OUTPUT_XLSX_PATH={OUTPUT_XLSX_PATH}", flush=True)
+    print(f"[PATH] RUN_METRICS_RAW_XLSX_PATH={RUN_METRICS_RAW_XLSX_PATH}", flush=True)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    RUN_METRICS_RAW_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     if not FINGERPRINT_PATH.exists():
         raise SystemExit(f"Missing required file: {FINGERPRINT_PATH}.")
@@ -821,6 +1132,7 @@ def main() -> None:
     batch_size = 25 if batch_size <= 0 else batch_size
     audits: List[RequirementAudit] = []
     counts = {"yes": 0, "no": 0, "n/a": 0}
+    use_openai_just = env_bool("USE_OPENAI_JUSTIFICATIONS", False)
     total = len(requirements)
     n_batches = (total + batch_size - 1) // batch_size if total else 0
 
@@ -866,7 +1178,6 @@ def main() -> None:
                 })
             batch_ctx.append({"id": puid, "description_en": desc_en, "result": result, "flags_used": flag_ids, "meta": meta, "flags": flags_ctx})
 
-        use_openai_just = env_bool("USE_OPENAI_JUSTIFICATIONS", False)
         if use_openai_just:
             print(
                 f"[AI] Calling local/cloud AI for batch {b + 1}/{n_batches}: "
@@ -904,12 +1215,27 @@ def main() -> None:
         )
 
         for req_audit, flag_evs, meta in batch_results:
-            just = (just_map.get(req_audit.puid, "") or "").strip() or deterministic_justification(req_audit, flag_evs, meta)
+            ai_justification = (just_map.get(req_audit.puid, "") or "").strip()
+            used_fallback = not bool(ai_justification)
+            just = ai_justification or deterministic_justification(req_audit, flag_evs, meta)
             if strict_english and looks_non_english(just):
+                used_fallback = True
                 just = deterministic_justification(req_audit, flag_evs, meta)
                 if strict_english and looks_non_english(just):
                     raise SystemExit(f"STRICT_ENGLISH_OUTPUT is enabled, but the generated justification for PUID={req_audit.puid} is not English.")
             req_audit.justification_en = just
+            _append_llm_item({
+                "run_batch": b + 1,
+                "puid": req_audit.puid,
+                "expected_by_llm": bool(use_openai_just),
+                "received_from_llm": bool(ai_justification),
+                "field_complete": bool(ai_justification),
+                "traceability_ok": bool(ai_justification and req_audit.puid in just_map),
+                "fallback_used": bool(used_fallback),
+                "justification_source": "ai" if ai_justification and not used_fallback else "deterministic_fallback",
+                "result": req_audit.result,
+                "flags_count": len(req_audit.flags_used),
+            })
             audits.append(req_audit)
             counts[req_audit.result] += 1
 
@@ -932,6 +1258,16 @@ def main() -> None:
     OUTPUT_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUTPUT_XLSX_PATH)
     print(f"[OK] Excel generated: {OUTPUT_XLSX_PATH}", flush=True)
+    _write_run_metrics_raw_xlsx(
+        audits=audits,
+        counts=counts,
+        run_started_at=run_started_at,
+        batch_size=batch_size,
+        total_requirements=total,
+        strict_english=strict_english,
+        use_openai_justifications=use_openai_just,
+        translations_requested=len(to_translate),
+    )
     print(f"[SUMMARY] total={len(audits)} yes={counts['yes']} no={counts['no']} n/a={counts['n/a']}", flush=True)
 
 

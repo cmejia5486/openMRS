@@ -48,6 +48,7 @@ jobs:
           $requisitesPath = Join-Path $dataDir "requisites.json"
           $requirementsSourcePath = Join-Path $PWD "scripts\requirements.json"
           $xlsxPath = Join-Path $dataDir "security_audit_requirements.xlsx"
+          $runMetricsRawPath = Join-Path $dataDir "run-metrics-raw.xlsx"
 
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
           New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
@@ -58,15 +59,20 @@ jobs:
           "REQUISITES_PATH=$requisitesPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "REQUISITES_SOURCE_PATH=$requirementsSourcePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SECURITY_AUDIT_XLSX_PATH=$xlsxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_RAW_XLSX_PATH=$runMetricsRawPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
           if (Test-Path $xlsxPath) {
             Remove-Item -LiteralPath $xlsxPath -Force
+          }
+          if (Test-Path $runMetricsRawPath) {
+            Remove-Item -LiteralPath $runMetricsRawPath -Force
           }
 
           Write-Host "[PATH] VISION360_DATA_DIR=$dataDir"
           Write-Host "[PATH] VISION360_BUNDLE_DIR=$bundleDir"
           Write-Host "[PATH] REQUISITES_SOURCE_PATH=$requirementsSourcePath"
           Write-Host "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsxPath"
+          Write-Host "[PATH] RUN_METRICS_RAW_XLSX_PATH=$runMetricsRawPath"
 
       - name: Configure portable runtime paths on Unix
         if: runner.os != 'Windows'
@@ -80,9 +86,10 @@ jobs:
           requisites_path="$data_dir/requisites.json"
           requirements_source_path="$PWD/scripts/requirements.json"
           xlsx_path="$data_dir/security_audit_requirements.xlsx"
+          run_metrics_raw_path="$data_dir/run-metrics-raw.xlsx"
 
           mkdir -p "$data_dir" "$bundle_dir"
-          rm -f "$xlsx_path"
+          rm -f "$xlsx_path" "$run_metrics_raw_path"
 
           {
             echo "VISION360_DATA_DIR=$data_dir"
@@ -91,12 +98,14 @@ jobs:
             echo "REQUISITES_PATH=$requisites_path"
             echo "REQUISITES_SOURCE_PATH=$requirements_source_path"
             echo "SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
+            echo "RUN_METRICS_RAW_XLSX_PATH=$run_metrics_raw_path"
           } >> "$GITHUB_ENV"
 
           echo "[PATH] VISION360_DATA_DIR=$data_dir"
           echo "[PATH] VISION360_BUNDLE_DIR=$bundle_dir"
           echo "[PATH] REQUISITES_SOURCE_PATH=$requirements_source_path"
           echo "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
+          echo "[PATH] RUN_METRICS_RAW_XLSX_PATH=$run_metrics_raw_path"
 
       - name: Set up shared Python environment on Windows
         if: runner.os == 'Windows'
@@ -719,6 +728,9 @@ jobs:
           if (-not (Test-Path $env:SECURITY_AUDIT_XLSX_PATH)) {
             throw "security_audit_requirements.xlsx was not created at $env:SECURITY_AUDIT_XLSX_PATH"
           }
+          if (-not (Test-Path $env:RUN_METRICS_RAW_XLSX_PATH)) {
+            throw "run-metrics-raw.xlsx was not created at $env:RUN_METRICS_RAW_XLSX_PATH"
+          }
 
       - name: Run AI audit on Unix
         if: runner.os != 'Windows'
@@ -735,6 +747,7 @@ jobs:
 
           "$PYTHON_EXE" scripts/ai_security_audit_requirements_excel.py
           test -f "$SECURITY_AUDIT_XLSX_PATH"
+          test -f "$RUN_METRICS_RAW_XLSX_PATH"
 
       - name: Upload Excel output
         uses: actions/upload-artifact@v6
@@ -742,3 +755,10 @@ jobs:
           name: security-audit-excel
           if-no-files-found: error
           path: ${{ runner.temp }}/vision360-data/security_audit_requirements.xlsx
+
+      - name: Upload run metrics raw output
+        uses: actions/upload-artifact@v6
+        with:
+          name: run-metrics-raw
+          if-no-files-found: error
+          path: ${{ runner.temp }}/vision360-data/run-metrics-raw.xlsx
