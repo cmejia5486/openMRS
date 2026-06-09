@@ -2355,15 +2355,15 @@ def _treatment_batch_size() -> int:
 
 
 def _max_control_treatment_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", "500"), 500))
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", "250"), 250))
 
 
 def _max_technical_treatment_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", "200"), 200))
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", "160"), 160))
 
 
 def _max_correlation_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", "500"), 500))
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", "300"), 300))
 
 
 def _chunks(items: List[Any], size: int) -> List[List[Any]]:
@@ -2913,7 +2913,14 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
         },
     }
 
-    missing = _incomplete_treatment_items(treatment_plan, treatment_ai)
+    requested_treatment_plan = dict(treatment_plan or {})
+    requested_treatment_plan["control_items"] = control_source
+    requested_treatment_plan["technical_items"] = technical_source
+
+    # In priority mode, only validate the item-level AI rows that were actually
+    # requested from the model. The large control appendix is rendered from
+    # structured traceability data and must not trigger treatment repair noise.
+    missing = _incomplete_treatment_items(requested_treatment_plan, treatment_ai)
     missing_count = len(missing["control_items"]) + len(missing["technical_items"])
     max_repair_attempts = _treatment_repair_attempts()
 
@@ -2937,7 +2944,7 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
             max_attempts=max_repair_attempts,
         )
         treatment_ai = _merge_treatment_ai_maps(treatment_ai, repair_patch)
-        missing = _incomplete_treatment_items(treatment_plan, treatment_ai)
+        missing = _incomplete_treatment_items(requested_treatment_plan, treatment_ai)
         missing_count = len(missing["control_items"]) + len(missing["technical_items"])
         print(
             f"[AI][TREATMENT][REPAIR] Completed repair attempt {attempt}/{max_repair_attempts}. "
@@ -2945,7 +2952,7 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
             + (f" ({_treatment_missing_id_list(missing, limit=30)})" if missing_count else "")
         )
 
-    final_missing = _incomplete_treatment_items(treatment_plan, treatment_ai)
+    final_missing = _incomplete_treatment_items(requested_treatment_plan, treatment_ai)
     final_missing_count = len(final_missing["control_items"]) + len(final_missing["technical_items"])
     metadata = dict(_as_dict(treatment_ai.get("metadata")))
     metadata["repair_attempts_allowed"] = max_repair_attempts
@@ -3224,25 +3231,36 @@ def _expected_secure_state(pattern: str, ai_expected: Any = "") -> str:
 
     Prompt-first policy: this function validates model output only. It does not
     contain pattern templates, replacement rules, or deterministic narrative
-    templates. If the model does not produce an acceptable expected-state
-    sentence, the run must stop so the prompt or model response can be fixed.
+    templates. In full treatment mode the field is mandatory. In priority mode,
+    a missing or weak expected-state sentence is omitted instead of failing the
+    full report, because the MAP and appendices are rendered from structured
+    evidence and priority AI output.
     """
     pat = _clean_text(pattern)
     ai = _clean_text(ai_expected)
+    # Keep the validator focused on clear current-problem wording. Do not block
+    # broad security nouns such as weakness, gap, or vulnerability when they are
+    # used in a positive expected-state sentence such as "prevents credential
+    # exposure vulnerabilities".
     forbidden_problem_language = [
         "contains numerous", "exhibits deficiencies", "demonstrates instances",
         "lacks robust", "exhibits vulnerabilities", "is missing",
-        "insufficient", "not evidenced", "fails to", "weakness",
-        "gap", "deficienc", "vulnerab", "non-compliant",
+        "not evidenced", "fails to", "non-compliant",
     ]
-    has_problem_language = any(token in ai.lower() for token in forbidden_problem_language)
+    lowered = ai.lower()
+    has_problem_language = any(token in lowered for token in forbidden_problem_language)
     has_expected_language = bool(re.search(r"\b(should|must|is expected to|requires|implements|enforces|protects|prevents|uses|maintains)\b", ai, re.IGNORECASE))
     if ai and not has_problem_language and has_expected_language:
         return ai
-    raise SystemExit(
-        "[ERROR] AI-generated expected secure state is missing or not report-ready "
-        f"for weakness pattern: {pat}. Regenerate pattern_writeups with a positive expected-state sentence."
+
+    message = (
+        "AI-generated expected secure state is missing or not report-ready "
+        f"for weakness pattern: {pat}."
     )
+    if _treatment_full_mode():
+        raise SystemExit("[ERROR] " + message + " Regenerate pattern_writeups with a positive expected-state sentence.")
+    print("[AI][WARN] " + message + " Omitting that optional line in priority mode.")
+    return ""
 
 
 def main() -> None:
@@ -3477,7 +3495,8 @@ def main() -> None:
         doc.add_paragraph(f"Workbook basis: {cnt} related non-compliant controls mapped to this pattern.")
         expected = _expected_secure_state(pat, _ai_field_for_pattern(pat, writeups, "expected"))
         impact = _ai_field_for_pattern(pat, writeups, "impact") or "This pattern increases security and privacy exposure for the assessed application and should be prioritized according to severity, prevalence, and implementation dependency."
-        doc.add_paragraph(f"Expected secure state: {expected}")
+        if expected:
+            doc.add_paragraph(f"Expected secure state: {expected}")
         doc.add_paragraph("Observed condition: The audit workbook records the mapped controls as non-compliant for the assessed scope.")
         doc.add_paragraph(f"Impact: {impact}")
         doc.add_paragraph(f"Recommended owner: {owner}")
