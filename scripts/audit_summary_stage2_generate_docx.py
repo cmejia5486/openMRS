@@ -2355,15 +2355,15 @@ def _treatment_batch_size() -> int:
 
 
 def _max_control_treatment_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", "250"), 250))
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", "500"), 500))
 
 
 def _max_technical_treatment_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", "160"), 160))
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", "200"), 200))
 
 
 def _max_correlation_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", "300"), 300))
+    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", "500"), 500))
 
 
 def _chunks(items: List[Any], size: int) -> List[List[Any]]:
