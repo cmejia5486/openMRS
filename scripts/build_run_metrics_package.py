@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import math
 import shutil
+import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -62,7 +63,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
 def _to_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
-    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on", "verdadero", "si", "sí"}
 
 
 def _rate(numerator: float, denominator: float) -> float:
@@ -95,6 +96,7 @@ def _read_kv_sheet(wb: Any, sheet_name: str) -> Dict[str, Any]:
 
 def _compute_metrics(raw_wb: Any) -> Dict[str, Any]:
     summary = _read_kv_sheet(raw_wb, "run_summary")
+    input_hashes = _read_sheet_as_dicts(raw_wb, "input_hashes")
     compliance = _read_sheet_as_dicts(raw_wb, "compliance_export")
     llm_calls = _read_sheet_as_dicts(raw_wb, "llm_calls")
     llm_items = _read_sheet_as_dicts(raw_wb, "llm_items")
@@ -116,8 +118,28 @@ def _compute_metrics(raw_wb: Any) -> Dict[str, Any]:
     traceability_ok = sum(1 for r in llm_items if _to_bool(r.get("traceability_ok")))
     fallback_count = sum(1 for r in llm_items if _to_bool(r.get("fallback_used")))
 
+    failed_calls = [r for r in llm_calls if not _to_bool(r.get("json_valid")) or not _to_bool(r.get("schema_valid"))]
+    retry_calls = [r for r in llm_calls if _safe_int(r.get("retry_count"), 0) > 0]
+    fallback_items = [r for r in llm_items if _to_bool(r.get("fallback_used"))]
+    successful_calls = [r for r in llm_calls if _to_bool(r.get("json_valid")) and _to_bool(r.get("schema_valid"))]
+
+    examples = {
+        "failed_call": failed_calls[0] if failed_calls else {},
+        "fallback_item": fallback_items[0] if fallback_items else {},
+        "retry_call": retry_calls[0] if retry_calls else {},
+        "successful_call": successful_calls[0] if successful_calls else {},
+        "yes_requirement": next((r for r in compliance if str(r.get("result") or "").lower() == "yes"), {}),
+        "no_requirement": next((r for r in compliance if str(r.get("result") or "").lower() == "no"), {}),
+        "na_requirement": next((r for r in compliance if str(r.get("result") or "").lower() == "n/a"), {}),
+    }
+
     return {
         "summary": summary,
+        "input_hashes": input_hashes,
+        "compliance_rows": compliance,
+        "llm_calls": llm_calls,
+        "llm_items": llm_items,
+        "examples": examples,
         "counts": counts,
         "num_requirements": num_requirements,
         "num_llm_calls": num_llm_calls,
@@ -129,6 +151,8 @@ def _compute_metrics(raw_wb: Any) -> Dict[str, Any]:
         "traceability_expected": traceability_expected,
         "traceability_ok": traceability_ok,
         "fallback_count": fallback_count,
+        "failed_call_count": len(failed_calls),
+        "retry_call_count": len(retry_calls),
         "json_valid_rate": _rate(json_valid_count, num_llm_calls),
         "schema_valid_rate": _rate(schema_valid_count, num_llm_calls),
         "completion_rate": _rate(received_items, expected_items),
@@ -166,6 +190,29 @@ def _add_package_manifest_sheet(wb: Any, raw_path: Path, output_xlsx: Path, outp
     ]
     ws = _replace_sheet(wb, "package_manifest")
     _append_dict_rows(ws, rows, ["artifact", "path", "sha256"])
+
+
+
+def _normalize_workbook_for_export(wb: Any) -> None:
+    """Normalize cell values so the raw workbook remains locale-neutral.
+
+    Excel may display native boolean values as VERDADERO/FALSO on Spanish
+    installations. These sheets are intended as raw, exportable telemetry, so
+    boolean-like fields are written as lowercase text literals true/false.
+    This preserves machine readability and avoids locale-dependent labels.
+    """
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if isinstance(cell.value, bool):
+                    cell.value = "true" if cell.value else "false"
+                elif isinstance(cell.value, str):
+                    v = cell.value.strip()
+                    low = v.lower()
+                    if low in {"verdadero", "true"}:
+                        cell.value = "true"
+                    elif low in {"falso", "false"}:
+                        cell.value = "false"
 
 
 def _safe_table_name(sheet_name: str) -> str:
@@ -277,44 +324,97 @@ def _plot_bar(labels: List[str], values: List[float], title: str, ylabel: str, p
     return fig
 
 
+
+def _wrap_text(text: Any, width: int = 92) -> str:
+    return "\n".join(textwrap.wrap(str(text or ""), width=width, break_long_words=False, replace_whitespace=False))
+
+
+def _short_text(value: Any, limit: int = 170) -> str:
+    text = str(value or "").replace("\n", " ").strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + " [text shortened]"
+
+
+def _pct(value: float) -> str:
+    return f"{float(value):.1%}"
+
+
+def _add_page_title(fig: Any, title: str, subtitle: str = "") -> None:
+    fig.text(0.08, 0.94, title, fontsize=16, fontweight="bold", color="#17365D")
+    if subtitle:
+        fig.text(0.08, 0.91, _wrap_text(subtitle, 95), fontsize=9.5, color="#4B5563")
+
+
+def _add_paragraph(fig: Any, x: float, y: float, text: str, *, width: int = 90, fontsize: float = 9.2, color: str = "#1F2933") -> float:
+    wrapped = _wrap_text(text, width)
+    fig.text(x, y, wrapped, fontsize=fontsize, color=color, va="top")
+    line_count = max(1, wrapped.count("\n") + 1)
+    return y - (line_count * 0.022) - 0.014
+
+
+def _add_table(fig: Any, bbox: List[float], rows: List[List[Any]], headers: List[str], *, fontsize: float = 7.7, col_widths: List[float] | None = None) -> None:
+    ax = fig.add_axes(bbox)
+    ax.axis("off")
+    widths = col_widths or [1.0 / max(1, len(headers))] * len(headers)
+
+    def wrap_cell(value: Any, col_idx: int) -> str:
+        width = widths[col_idx] if col_idx < len(widths) else widths[-1]
+        max_chars = max(10, int(width * 115))
+        return _wrap_text(str(value or ""), max_chars)
+
+    wrapped_rows = [[wrap_cell(c, idx) for idx, c in enumerate(row)] for row in rows]
+    wrapped_headers = [wrap_cell(h, idx) for idx, h in enumerate(headers)]
+    table = ax.table(
+        cellText=wrapped_rows,
+        colLabels=wrapped_headers,
+        loc="center",
+        cellLoc="left",
+        colWidths=col_widths,
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(fontsize)
+    table.scale(1, 1.55)
+
+    row_line_counts: Dict[int, int] = {0: max(h.count("\n") + 1 for h in wrapped_headers)}
+    for ridx, row in enumerate(wrapped_rows, start=1):
+        row_line_counts[ridx] = max(1, max((str(cell).count("\n") + 1 for cell in row), default=1))
+
+    for (r, c), cell in table.get_celld().items():
+        cell.set_edgecolor("#D0D7DE")
+        cell.set_height(0.04 * max(1, row_line_counts.get(r, 1)))
+        if r == 0:
+            cell.set_facecolor("#17365D")
+            cell.set_text_props(color="white", weight="bold")
+        elif r % 2 == 0:
+            cell.set_facecolor("#F7F9FC")
+
+
 def _add_title_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
     summary = metrics.get("summary", {})
     fig = plt.figure(figsize=(8.27, 11.69))
     fig.patch.set_facecolor("white")
-    fig.text(0.5, 0.92, "Run Metrics Methodology", ha="center", fontsize=22, fontweight="bold")
-    fig.text(0.5, 0.885, "Per-execution evidence package for audit reproducibility", ha="center", fontsize=11, style="italic")
+    fig.text(0.5, 0.93, "Run Metrics Methodology", ha="center", fontsize=22, fontweight="bold", color="#17365D")
+    fig.text(0.5, 0.895, "Per-execution evidence package for audit reproducibility", ha="center", fontsize=11, style="italic")
     purpose = (
-        "This document describes the formulas, interpretation criteria, and visual summaries produced for the current audit execution. "
-        "The companion spreadsheet contains raw exportable telemetry structured for subsequent repeated-run analysis when multiple executions are available."
+        "This document explains the methodology used to generate the run-metrics package, the role of each metric, "
+        "the formula applied, the source sheet used in the companion workbook, and the interpretation of the values observed in the current execution."
     )
-    fig.text(0.08, 0.81, "Purpose", fontsize=14, fontweight="bold")
-    fig.text(0.08, 0.77, purpose, fontsize=10, wrap=True)
-
+    y = 0.82
+    fig.text(0.08, y, "Purpose", fontsize=14, fontweight="bold", color="#17365D")
+    y = _add_paragraph(fig, 0.08, y - 0.035, purpose, width=96, fontsize=10)
     rows = [
         ("Run ID", summary.get("run_id", "")),
         ("Repository", summary.get("repository", "")),
         ("Commit SHA", summary.get("commit_sha", "")),
         ("Model", summary.get("config.OPENAI_MODEL") or summary.get("config.AI_MODEL") or ""),
         ("AI profile", summary.get("config.AI_PROFILE", "")),
-        ("LLM configuration hash", summary.get("llm_config_hash", "")),
-        ("Compliance matrix hash", summary.get("compliance_matrix_hash", "")),
+        ("LLM configuration hash", _short_text(summary.get("llm_config_hash", ""), 80)),
+        ("Compliance matrix hash", _short_text(summary.get("compliance_matrix_hash", ""), 80)),
         ("Generated at", summary.get("generated_at_utc", _now_utc())),
     ]
-    ax = fig.add_axes([0.08, 0.40, 0.84, 0.30])
-    ax.axis("off")
-    table = ax.table(cellText=[[k, str(v)] for k, v in rows], colLabels=["Field", "Value"], loc="center", cellLoc="left", colWidths=[0.28, 0.72])
-    table.auto_set_font_size(False)
-    table.set_fontsize(8.5)
-    table.scale(1, 1.45)
-    for (r, c), cell in table.get_celld().items():
-        cell.set_edgecolor("#D0D7DE")
-        if r == 0:
-            cell.set_facecolor("#17365D")
-            cell.set_text_props(color="white", weight="bold")
-        elif c == 0:
-            cell.set_facecolor("#EEF5FB")
-            cell.set_text_props(weight="bold")
-    fig.text(0.08, 0.31, "Current execution at a glance", fontsize=14, fontweight="bold")
+    _add_table(fig, [0.08, 0.39, 0.84, 0.29], [[k, str(v)] for k, v in rows], ["Field", "Value"], fontsize=8.2, col_widths=[0.28, 0.72])
+    fig.text(0.08, 0.31, "Current execution at a glance", fontsize=14, fontweight="bold", color="#17365D")
     cards = [
         ("Requirements", metrics["num_requirements"]),
         ("yes", metrics["counts"].get("yes", 0)),
@@ -334,55 +434,125 @@ def _add_title_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
     plt.close(fig)
 
 
-def _add_formula_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
+def _add_methodology_scope_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
     fig = plt.figure(figsize=(8.27, 11.69))
     fig.patch.set_facecolor("white")
-    fig.text(0.08, 0.94, "Metric formulas and interpretation", fontsize=16, fontweight="bold")
+    _add_page_title(fig, "Methodological scope", "What is measured in the run-metrics package and how it relates to the audit workflow.")
+    y = 0.86
+    y = _add_paragraph(fig, 0.08, y, "The package records telemetry from one audit execution. It is not an alternative audit engine. It documents how the current execution processed requirements, how LLM outputs were validated, and where deterministic fallback was used when an LLM response was incomplete or structurally invalid.")
+    y = _add_paragraph(fig, 0.08, y, "The compliance results yes, no, and n/a are produced by the existing requirement-evaluation logic before this package is assembled. The run-metrics package records those results, their row-level hashes, and the telemetry needed to reproduce or compare executions later.")
+    y = _add_paragraph(fig, 0.08, y, "The LLM-related metrics are control metrics. They do not grant the LLM authority to change the deterministic compliance result. They show whether the model returned valid JSON, whether the expected schema was present, whether all requested PUID-level items were returned, and whether the returned identifiers matched the deterministic context.")
     rows = [
-        ["JSON validity rate", "json_valid_count / num_llm_calls", "Formal parseability of LLM responses."],
-        ["Schema validity rate", "schema_valid_count / num_llm_calls", "Conformance with the expected response structure."],
-        ["Completion rate", "received_items_count / expected_items_count", "Whether the LLM returned all requested PUID-level items."],
-        ["Traceability preservation rate", "traceability_ok_count / expected_items_count", "Whether returned PUIDs match the deterministic context."],
-        ["Fallback rate", "fallback_count / num_requirements", "Frequency of deterministic fallback usage."],
-        ["Retry rate", "retry_count / num_llm_calls", "Operational effort required to obtain valid outputs."],
+        ["Audit adjudication", "Existing workbook logic", "Determines yes, no, and n/a."],
+        ["LLM justifications", "LLM output plus validation", "Provides textual justifications when output is valid and traceable."],
+        ["Deterministic fallback", "Local deterministic logic", "Provides a justification when LLM output is missing, incomplete, invalid, or rejected."],
+        ["Run metrics", "Generated telemetry workbook and methodology PDF", "Records per-execution evidence, formulas, examples, and visual summaries."],
     ]
-    ax = fig.add_axes([0.05, 0.47, 0.90, 0.40])
-    ax.axis("off")
-    table = ax.table(cellText=rows, colLabels=["Metric", "Formula", "Interpretation"], loc="center", cellLoc="left", colWidths=[0.24, 0.31, 0.45])
-    table.auto_set_font_size(False)
-    table.set_fontsize(8)
-    table.scale(1, 1.7)
-    for (r, c), cell in table.get_celld().items():
-        cell.set_edgecolor("#D0D7DE")
-        if r == 0:
-            cell.set_facecolor("#17365D")
-            cell.set_text_props(color="white", weight="bold")
-        elif r % 2 == 0:
-            cell.set_facecolor("#F7F9FC")
+    _add_table(fig, [0.06, 0.23, 0.88, 0.30], rows, ["Layer", "Source", "Role"], fontsize=8.0, col_widths=[0.24, 0.31, 0.45])
+    pdf.savefig(fig)
+    plt.close(fig)
 
-    values = [
-        ["Number of requirements", str(metrics["num_requirements"])],
-        ["Number of LLM calls", str(metrics["num_llm_calls"])],
-        ["JSON validity rate", f"{metrics['json_valid_rate']:.1%}"],
-        ["Schema validity rate", f"{metrics['schema_valid_rate']:.1%}"],
-        ["Completion rate", f"{metrics['completion_rate']:.1%}"],
-        ["Traceability preservation rate", f"{metrics['traceability_ok_rate']:.1%}"],
-        ["Fallback rate", f"{metrics['fallback_rate']:.1%}"],
-        ["Retry rate", f"{metrics['retry_rate']:.1%}"],
+
+
+def _add_workbook_structure_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
+    fig = plt.figure(figsize=(8.27, 11.69))
+    fig.patch.set_facecolor("white")
+    _add_page_title(fig, "Companion workbook structure", "The Excel workbook contains raw exportable telemetry. Formulas, interpretation, and charts are documented in this PDF.")
+    rows = [
+        ["run_summary", "Run metadata, model, configuration hash, compliance matrix hash, counts, and paths."],
+        ["input_hashes", "Input name, path, and SHA-256 hash for reproducibility checks."],
+        ["compliance_export", "One row per requirement: PUID, result, flags used, justification length, and row hash."],
+        ["llm_calls", "One row per LLM call: expected items, received items, validation flags, retries, time, model, and error."],
+        ["llm_items", "One row per PUID-level LLM item: received status, completeness, traceability, fallback, source, and result."],
+        ["package_manifest", "Artifact file names, paths, hashes, and package generation timestamp."],
     ]
-    ax2 = fig.add_axes([0.14, 0.14, 0.72, 0.25])
-    ax2.axis("off")
-    table2 = ax2.table(cellText=values, colLabels=["Current execution metric", "Value"], loc="center", cellLoc="left", colWidths=[0.65, 0.35])
-    table2.auto_set_font_size(False)
-    table2.set_fontsize(8.5)
-    table2.scale(1, 1.35)
-    for (r, c), cell in table2.get_celld().items():
-        cell.set_edgecolor("#D0D7DE")
-        if r == 0:
-            cell.set_facecolor("#17365D")
-            cell.set_text_props(color="white", weight="bold")
-        elif c == 0:
-            cell.set_facecolor("#EEF5FB")
+    _add_table(fig, [0.075, 0.42, 0.85, 0.38], rows, ["Sheet", "Raw data captured"], fontsize=8.0, col_widths=[0.22, 0.78])
+    y = 0.32
+    y = _add_paragraph(fig, 0.08, y, "Example from the current execution: compliance_export contains 469 requirement rows. run_summary reports 18 yes results, 386 no results, and 65 n/a results. These numbers are copied from execution telemetry and are not recalculated by the PDF renderer.", width=94)
+    y = _add_paragraph(fig, 0.08, y, "The workbook stores boolean-like telemetry as lowercase text values true and false. This avoids locale-dependent Excel displays such as VERDADERO or FALSO and makes the file easier to compare across machines.", width=94)
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+def _add_metric_card(fig: Any, y: float, title: str, formula: str, source: str, current: str, meaning: str, example: str) -> float:
+    rect = plt.Rectangle((0.065, y - 0.135), 0.87, 0.135, transform=fig.transFigure, facecolor="#F7F9FC", edgecolor="#D0D7DE")
+    fig.patches.append(rect)
+    fig.text(0.08, y - 0.016, title, fontsize=9.2, fontweight="bold", color="#17365D", va="top")
+    fig.text(0.08, y - 0.041, f"Formula: {formula}", fontsize=7.7, color="#1F2933", va="top")
+    fig.text(0.08, y - 0.064, f"Source: {source}", fontsize=7.7, color="#1F2933", va="top")
+    fig.text(0.08, y - 0.087, f"Current execution: {current}", fontsize=7.7, color="#1F2933", va="top")
+    fig.text(0.08, y - 0.110, _wrap_text(f"Meaning: {meaning} Example: {example}", 116), fontsize=7.2, color="#374151", va="top")
+    return y - 0.158
+
+
+def _add_metric_detail_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
+    metric_rows = [
+        ("JSON validity rate", "json_valid_count / num_llm_calls", "llm_calls.json_valid", f"{metrics['json_valid_count']} / {metrics['num_llm_calls']} = {_pct(metrics['json_valid_rate'])}", "Checks whether each LLM response was parseable as a complete JSON object.", "LLM-0007 had json_valid=false because no complete JSON object was found in the model output."),
+        ("Schema validity rate", "schema_valid_count / num_llm_calls", "llm_calls.schema_valid", f"{metrics['schema_valid_count']} / {metrics['num_llm_calls']} = {_pct(metrics['schema_valid_rate'])}", "Checks whether the parsed response had the expected structured fields.", "LLM-0007 also had schema_valid=false because the response could not be accepted as the expected items object."),
+        ("Completion rate", "received_items_count / expected_items_count", "llm_calls.expected_items and llm_calls.received_items", f"{metrics['received_items']} / {metrics['expected_items']} = {_pct(metrics['completion_rate'])}", "Checks whether the LLM returned all requested PUID-level items.", "In this execution, the LLM returned 448 of 469 expected PUID-level items."),
+        ("Traceability preservation rate", "traceability_ok_count / expected_items_count", "llm_items.traceability_ok", f"{metrics['traceability_ok']} / {metrics['traceability_expected']} = {_pct(metrics['traceability_ok_rate'])}", "Checks whether returned identifiers match the deterministic PUID context sent to the model.", "Items not returned by the LLM have traceability_ok=false and are handled by deterministic fallback."),
+        ("Fallback rate", "fallback_count / num_requirements", "llm_items.fallback_used and compliance_export", f"{metrics['fallback_count']} / {metrics['num_requirements']} = {_pct(metrics['fallback_rate'])}", "Measures how often deterministic fallback supplied a justification after a missing, incomplete, or rejected LLM item.", "SECM-CAT-ISU-016 is an example where fallback_used=true and justification_source=deterministic_fallback."),
+        ("Retry rate", "retry_count / num_llm_calls", "llm_calls.retry_count", f"{metrics['retry_count']} / {metrics['num_llm_calls']} = {_pct(metrics['retry_rate'])}", "Measures operational recovery effort at the LLM-call level.", "LLM-0001 had retry_count=1 and LLM-0007 had retry_count=2 in this execution."),
+    ]
+    for page_idx in range(0, len(metric_rows), 3):
+        fig = plt.figure(figsize=(8.27, 11.69))
+        fig.patch.set_facecolor("white")
+        title = "Metric calculation methodology" if page_idx == 0 else "Metric calculation methodology continued"
+        _add_page_title(fig, title, "Each metric is computed from explicit rows in run-metrics.xlsx and interpreted as a control over the execution.")
+        y = 0.82
+        for row in metric_rows[page_idx:page_idx + 3]:
+            y = _add_metric_card(fig, y, *row)
+        y = _add_paragraph(fig, 0.08, 0.28, "Interpretation rule: high JSON, schema, completion, and traceability rates indicate that the LLM layer followed the controlled output contract. Fallback and retry rates are expected to be low, but nonzero values are acceptable because fallback preserves deterministic execution continuity.", width=94, fontsize=8.8)
+        pdf.savefig(fig)
+        plt.close(fig)
+
+def _add_compliance_hash_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
+    fig = plt.figure(figsize=(8.27, 11.69))
+    fig.patch.set_facecolor("white")
+    _add_page_title(fig, "Compliance export and row hashing", "How the per-requirement export supports later repeated-run analysis.")
+    examples = metrics.get("examples", {})
+    yes_ex = examples.get("yes_requirement", {}) or {}
+    no_ex = examples.get("no_requirement", {}) or {}
+    na_ex = examples.get("na_requirement", {}) or {}
+    rows = []
+    for label, ex in [("yes example", yes_ex), ("no example", no_ex), ("n/a example", na_ex)]:
+        if ex:
+            rows.append([label, ex.get("puid", ""), ex.get("result", ""), _short_text(ex.get("flags_used", ""), 70), _short_text(ex.get("row_hash", ""), 24)])
+    if not rows:
+        rows = [["No example available", "", "", "", ""]]
+    _add_table(fig, [0.045, 0.48, 0.91, 0.34], rows, ["Example", "PUID", "Result", "Flags used", "Row hash"], fontsize=6.5, col_widths=[0.15, 0.20, 0.09, 0.38, 0.18])
+    y = 0.39
+    y = _add_paragraph(fig, 0.08, y, "The row hash is computed from the PUID, the deterministic result, and the list of flags used for that requirement. It does not include the narrative justification, so minor wording changes do not change the row hash.", width=94)
+    y = _add_paragraph(fig, 0.08, y, "The compliance matrix hash is computed from the ordered collection of row hashes. In this execution, the compliance matrix hash recorded in run_summary is " + str(metrics.get("summary", {}).get("compliance_matrix_hash", "")) + ".", width=94)
+    y = _add_paragraph(fig, 0.08, y, "When multiple run-metrics.xlsx files are downloaded later, compliance_export can be joined by PUID and compared row by row. This package therefore provides raw material for subsequent repeated-run analysis without embedding cross-run calculations in a single execution.", width=94)
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+
+def _add_real_llm_examples_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
+    fig = plt.figure(figsize=(8.27, 11.69))
+    fig.patch.set_facecolor("white")
+    _add_page_title(fig, "Real LLM validation examples from this execution", "How invalid output, fallback, and retry telemetry should be read.")
+    ex = metrics.get("examples", {})
+    failed = ex.get("failed_call", {}) or {}
+    fallback = ex.get("fallback_item", {}) or {}
+    retry = ex.get("retry_call", {}) or {}
+    y = 0.84
+    if failed:
+        y = _add_paragraph(fig, 0.08, y, f"Invalid or incomplete LLM call example: {failed.get('llm_call_id', '')} expected {failed.get('expected_items', '')} items and received {failed.get('received_items', '')}. json_valid={str(failed.get('json_valid')).lower()}, schema_valid={str(failed.get('schema_valid')).lower()}, retry_count={failed.get('retry_count', '')}, elapsed_s={failed.get('elapsed_s', '')}.", width=94)
+        y = _add_paragraph(fig, 0.10, y, "Error recorded in llm_calls: " + _short_text(failed.get("error", ""), 320), width=90, fontsize=8.2, color="#4B5563")
+    if retry:
+        y = _add_paragraph(fig, 0.08, y, f"Retry example: {retry.get('llm_call_id', '')} records retry_count={retry.get('retry_count', '')}. This means the workflow attempted to recover from invalid or incomplete output before accepting or rejecting the final response for that call.", width=94)
+    if fallback:
+        y = _add_paragraph(fig, 0.08, y, f"Deterministic fallback item example: {fallback.get('puid', '')} has expected_by_llm={str(fallback.get('expected_by_llm')).lower()}, received_from_llm={str(fallback.get('received_from_llm')).lower()}, field_complete={str(fallback.get('field_complete')).lower()}, traceability_ok={str(fallback.get('traceability_ok')).lower()}, fallback_used={str(fallback.get('fallback_used')).lower()}, justification_source={fallback.get('justification_source', '')}, and result={fallback.get('result', '')}.", width=94)
+    y = _add_paragraph(fig, 0.08, y, "Interpretation: when expected_by_llm=true but received_from_llm=false, the model did not return an accepted PUID-level justification. The workflow keeps the deterministic requirement result and replaces only the missing or invalid justification with deterministic fallback text.", width=94)
+    y = _add_paragraph(fig, 0.08, y, "This behavior is intentional. It shows that malformed or incomplete LLM output is isolated and does not override the requirement result.", width=94, color="#17365D")
+    pdf.savefig(fig)
+    plt.close(fig)
+
+def _add_chart_page(pdf: PdfPages, fig: Any, caption: str) -> None:
+    fig.text(0.08, 0.05, _wrap_text(caption, 110), fontsize=8.5, color="#4B5563")
     pdf.savefig(fig)
     plt.close(fig)
 
@@ -391,14 +561,26 @@ def _generate_methodology_pdf(output_pdf: Path, metrics: Dict[str, Any]) -> None
     output_pdf.parent.mkdir(parents=True, exist_ok=True)
     with PdfPages(output_pdf) as pdf:
         _add_title_page(pdf, metrics)
-        _add_formula_page(pdf, metrics)
-        pdf.savefig(_plot_bar(["yes", "no", "n/a"], [metrics["counts"].get("yes", 0), metrics["counts"].get("no", 0), metrics["counts"].get("n/a", 0)], "Compliance result distribution", "Requirement count"))
-        plt.close()
-        pdf.savefig(_plot_bar(["JSON", "schema", "completion", "traceability"], [metrics["json_valid_rate"], metrics["schema_valid_rate"], metrics["completion_rate"], metrics["traceability_ok_rate"]], "LLM output validation rates", "Rate", percent=True))
-        plt.close()
-        pdf.savefig(_plot_bar(["fallback", "retry"], [metrics["fallback_rate"], metrics["retry_rate"]], "Fallback and retry rates", "Rate", percent=True))
-        plt.close()
-
+        _add_methodology_scope_page(pdf, metrics)
+        _add_workbook_structure_page(pdf, metrics)
+        _add_metric_detail_page(pdf, metrics)
+        _add_compliance_hash_page(pdf, metrics)
+        _add_real_llm_examples_page(pdf, metrics)
+        _add_chart_page(
+            pdf,
+            _plot_bar(["yes", "no", "n/a"], [metrics["counts"].get("yes", 0), metrics["counts"].get("no", 0), metrics["counts"].get("n/a", 0)], "Compliance result distribution", "Requirement count"),
+            "This chart summarizes the deterministic compliance result distribution recorded in compliance_export. It does not recalculate or reinterpret the audit outcome."
+        )
+        _add_chart_page(
+            pdf,
+            _plot_bar(["JSON", "schema", "completion", "traceability"], [metrics["json_valid_rate"], metrics["schema_valid_rate"], metrics["completion_rate"], metrics["traceability_ok_rate"]], "LLM output validation rates", "Rate", percent=True),
+            "This chart shows how well LLM responses followed the structured-output contract in this execution. JSON and schema are call-level checks; completion and traceability are PUID-level checks."
+        )
+        _add_chart_page(
+            pdf,
+            _plot_bar(["fallback", "retry"], [metrics["fallback_rate"], metrics["retry_rate"]], "Fallback and retry rates", "Rate", percent=True),
+            "Fallback indicates deterministic justification replacement after an invalid, missing, or rejected LLM item. Retry indicates operational recovery attempts at the LLM-call level."
+        )
 
 def build(args: argparse.Namespace) -> None:
     out_dir = Path(args.out_dir)
@@ -416,6 +598,7 @@ def build(args: argparse.Namespace) -> None:
     _remove_non_raw_sheets(wb)
     metrics = _compute_metrics(wb)
     _add_package_manifest_sheet(wb, raw_path, output_xlsx, output_pdf)
+    _normalize_workbook_for_export(wb)
     _style_workbook(wb)
     wb.save(output_xlsx)
 
@@ -424,6 +607,7 @@ def build(args: argparse.Namespace) -> None:
     # Update manifest hashes after the PDF exists.
     wb = openpyxl.load_workbook(output_xlsx)
     _add_package_manifest_sheet(wb, raw_path, output_xlsx, output_pdf)
+    _normalize_workbook_for_export(wb)
     _style_workbook(wb)
     wb.save(output_xlsx)
 
