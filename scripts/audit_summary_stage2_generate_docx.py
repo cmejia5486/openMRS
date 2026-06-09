@@ -933,7 +933,7 @@ def _quality_gate(doc: Document) -> None:
     if doc.tables and "Table 1." not in full_text:
         hits.append("missing table captions")
     if "java/android/backup-enabled" in lowered and "backup enabled\nnot available in parsed evidence" in lowered:
-        hits.append("backup fallback not applied")
+        hits.append("backup evidence not applied")
     if hits:
         raise SystemExit("[ERROR] Audit Summary quality gate failed. Forbidden text found: " + ", ".join(hits))
 
@@ -1335,11 +1335,11 @@ def _sast_has_rule(technical: Dict[str, Any], rule_substring: str) -> bool:
     return False
 
 
-def _indicator_with_fallback(label: str, value: Any, technical: Dict[str, Any]) -> str:
+def _indicator_with_supporting_evidence(label: str, value: Any, technical: Dict[str, Any]) -> str:
     formatted = _format_bool(value)
     if label.lower() == "backup enabled" and formatted == "Not available in parsed evidence":
         if _sast_has_rule(technical, "java/android/backup-enabled") or _sast_has_rule(technical, "backup-enabled"):
-            return "Detected (SAST CodeQL fallback)"
+            return "Detected (SAST CodeQL evidence)"
     return formatted
 
 
@@ -1359,7 +1359,7 @@ def _mobsf_signal_rows(mobsf: Dict[str, Any], technical: Dict[str, Any] | None =
     rows = []
     for label, keys in checks:
         value = _deep_find_first(mobsf, keys)
-        rows.append([label, _indicator_with_fallback(label, value, technical or {})])
+        rows.append([label, _indicator_with_supporting_evidence(label, value, technical or {})])
     return rows
 
 
@@ -1616,7 +1616,7 @@ def _ai_pattern_writeups_required() -> bool:
     """Require AI-generated pattern narratives by default.
 
     Recommendations and MAP closure criteria are not authored from static
-    fallback text. They must be returned by the configured AI task using the
+    preauthored text. They must be returned by the configured AI task using the
     workbook metrics and scanner context. Set
     AUDIT_SUMMARY_AI_PATTERN_WRITEUPS_REQUIRED=0 only for local debugging.
     """
@@ -1772,7 +1772,7 @@ def _get_ai_runtime():
         return _AI_RUNTIME_CACHE
 
     if AIRuntime is None:
-        print(f"[AI] AIRuntime is not available; deterministic fallback will be used. Import error: {AI_RUNTIME_IMPORT_ERROR}")
+        print(f"[AI] AIRuntime is not available; AI-authored prose is unavailable. Import error: {AI_RUNTIME_IMPORT_ERROR}")
         return None
 
     try:
@@ -2024,7 +2024,12 @@ def _group_positive_controls(pos_controls: List[Dict[str, Any]], positive_contro
     }
     for pc in pos_controls:
         puid = _clean_text(pc.get("puid"))
-        statement = _sanitize_positive_control_final(positive_control_writeups.get(puid) or pc.get("declarative_statement", ""))
+        statement = _sanitize_positive_control_final(positive_control_writeups.get(puid, ""))
+        if not statement:
+            # Prompt-first policy: Stage 2 does not build a positive-control
+            # narrative from deterministic wording. Missing model output is
+            # handled by validation and by Appendix D source traceability.
+            continue
         bucket = _classify_positive_control_statement(statement, _clean_text(pc.get("evidence_excerpt")), _clean_text(pc.get("flags_used")))
         enriched = dict(pc)
         enriched["reported_statement"] = statement
@@ -2037,9 +2042,10 @@ def _group_positive_controls(pos_controls: List[Dict[str, Any]], positive_contro
 def _compact_positive_controls_for_ai(pos_controls: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for pc in pos_controls[:limit]:
+        requirement_text = _clean_text(pc.get("requirement_text", "")) or _clean_text(pc.get("description", ""))
         out.append({
             "puid": pc.get("puid"),
-            "original_statement": _clean_text(pc.get("declarative_statement", "")),
+            "requirement_text": requirement_text,
             "flags_used": _clean_text(pc.get("flags_used", "")),
             "evidence_excerpt": _clean_text(pc.get("evidence_excerpt", "")),
         })
@@ -2126,11 +2132,11 @@ def _compact_technical_for_ai(technical: Dict[str, Any]) -> Dict[str, Any]:
             "hardening_signals_sample": _deep_list(sast, ["hardening_signals_sample"])[:12],
             "sast_notifications_sample": _deep_list(_as_dict(technical.get("coverage_limitations")), ["sast_notifications_sample", "sast_extraction_warnings_summary"])[:8],
         },
-        "coverage_limitations": {
-            "missing_inputs": _deep_list(limitations, ["missing_inputs"]),
-            "sast_warning_count": warning_count,
-            "sast_warnings_by_tool": _clean_text(limitations.get("sast_extraction_warnings_by_tool", "")),
-            "sast_warnings_by_level": _clean_text(limitations.get("sast_extraction_warnings_by_level", "")),
+        "technical_execution_metadata": {
+            "all_expected_input_categories_present": len(_deep_list(limitations, ["missing_inputs"])) == 0,
+            "sast_execution_notification_count": warning_count,
+            "sast_execution_notifications_by_tool": _clean_text(limitations.get("sast_extraction_warnings_by_tool", "")),
+            "sast_execution_notifications_by_level": _clean_text(limitations.get("sast_extraction_warnings_by_level", "")),
         },
     }
 
@@ -2424,7 +2430,7 @@ def _merge_treatment_ai_maps(base: Dict[str, Any], patch: Dict[str, Any]) -> Dic
 
     Non-empty repaired fields replace empty fields and may also overwrite prior
     values from malformed batches. This remains AI-authored text, not static
-    fallback remediation.
+    preauthored remediation.
     """
     out = dict(base or {})
     for map_key in ("control_treatments", "technical_treatments"):
@@ -3039,37 +3045,29 @@ def _sanitize_ai_technical_narratives(tech_ai: Dict[str, Any], technical: Dict[s
 
 
 def _expected_secure_state(pattern: str, ai_expected: Any = "") -> str:
-    pat = _clean_text(pattern).lower()
+    """Return the AI-authored expected secure state for a weakness pattern.
+
+    Prompt-first policy: this function validates model output only. It does not
+    contain pattern templates, replacement rules, or deterministic narrative
+    templates. If the model does not produce an acceptable expected-state
+    sentence, the run must stop so the prompt or model response can be fixed.
+    """
+    pat = _clean_text(pattern)
     ai = _clean_text(ai_expected)
-    unsafe_ai = any(token in ai.lower() for token in [
-        "contains numerous", "exhibits deficiencies", "demonstrates instances", "lacks robust",
-        "exhibits vulnerabilities", "is missing", "insufficient", "not evidenced", "fails to",
-        "weakness", "gap", "deficienc", "vulnerab",
-    ])
-    if ai and not unsafe_ai and re.search(r"\b(should|must|is expected to|requires|implements|enforces|protects|prevents)\b", ai, re.IGNORECASE):
-        return ai
-    templates = [
-        ("hardcoded", "The application should keep credentials, API keys, tokens, passwords, signing material, and environment-specific secrets outside the source code, binary, and version control, using approved secure storage and injection mechanisms."),
-        ("authorization", "The application should enforce approved authorization, RBAC, least privilege, and separation of duties for sensitive workflows, privileged actions, and backend API access."),
-        ("rbac", "The application should enforce approved authorization, RBAC, least privilege, and separation of duties for sensitive workflows, privileged actions, and backend API access."),
-        ("local storage", "The application should protect sensitive local data with approved encryption, secure key storage, minimal retention, and controlled cleanup during logout, user switching, and uninstall workflows."),
-        ("key management", "The application should protect cryptographic keys and sensitive local data using OS-backed secure storage, approved key lifecycle controls, and encrypted local persistence where client-side storage is required."),
-        ("authentication", "The application should implement strong authentication lifecycle controls, including session timeout, lockout, reauthentication, logout, and brute-force protection aligned with the assessed risk profile."),
-        ("brute", "The application should implement strong authentication lifecycle controls, including session timeout, lockout, reauthentication, logout, and brute-force protection aligned with the assessed risk profile."),
-        ("transport", "The application should enforce secure transport, approved certificate validation, cleartext traffic prevention, and documented TLS handling for all sensitive data exchanges."),
-        ("certificate", "The application should enforce secure transport, approved certificate validation, cleartext traffic prevention, and documented TLS handling for all sensitive data exchanges."),
-        ("supply chain", "The application should maintain an approved dependency inventory, remediate vulnerable or outdated components, protect build and signing processes, and document supply-chain security controls."),
-        ("input validation", "The application should validate, sanitize, encode, and constrain untrusted input and output across client, backend, logging, file path, and data exchange flows."),
-        ("injection", "The application should validate, sanitize, encode, and constrain untrusted input and output across client, backend, logging, file path, and data exchange flows."),
-        ("audit logging", "The application and supporting services should record security-relevant events, protect audit data, retain records according to policy, and support review and alerting workflows."),
-        ("tampering", "The production application should use release signing, disable debug behavior, apply binary hardening controls, and protect against tampering or unauthorized modification."),
-        ("reverse engineering", "The production application should use release signing, disable debug behavior, apply binary hardening controls, and protect against tampering or unauthorized modification."),
-        ("privacy", "The application should implement privacy notice, consent, data minimization, masking, retention, and user-data handling controls aligned with the assessed health-data context."),
+    forbidden_problem_language = [
+        "contains numerous", "exhibits deficiencies", "demonstrates instances",
+        "lacks robust", "exhibits vulnerabilities", "is missing",
+        "insufficient", "not evidenced", "fails to", "weakness",
+        "gap", "deficienc", "vulnerab", "non-compliant",
     ]
-    for needle, text in templates:
-        if needle in pat:
-            return text
-    return "The application should implement the control objective recorded in the workbook and retain evidence sufficient to support the requirement-level result."
+    has_problem_language = any(token in ai.lower() for token in forbidden_problem_language)
+    has_expected_language = bool(re.search(r"\b(should|must|is expected to|requires|implements|enforces|protects|prevents|uses|maintains)\b", ai, re.IGNORECASE))
+    if ai and not has_problem_language and has_expected_language:
+        return ai
+    raise SystemExit(
+        "[ERROR] AI-generated expected secure state is missing or not report-ready "
+        f"for weakness pattern: {pat}. Regenerate pattern_writeups with a positive expected-state sentence."
+    )
 
 
 def main() -> None:
@@ -3136,7 +3134,7 @@ def main() -> None:
                 json.dump(prose, f, ensure_ascii=False, indent=2)
             print(f"[AI] Section outputs saved -> {ai_sections_path}")
     except Exception as exc:
-        print(f"[AI][WARN] Sectioned AI generation failed; deterministic fallback will be used: {exc}")
+        print(f"[AI][WARN] Sectioned AI generation failed; AI-authored prose is unavailable: {exc}")
         prose = {}
 
     treatment_ai: Dict[str, Any] = {}
@@ -3169,6 +3167,8 @@ def main() -> None:
     writeups = {w["pattern"]: w for w in prose.get("pattern_writeups", []) if isinstance(w, dict) and "pattern" in w}
     _validate_ai_pattern_writeups(patterns, writeups)
     if not key_takeaways:
+        if _ai_pattern_writeups_required():
+            raise SystemExit("[ERROR] AI-generated key takeaways were not returned. Regenerate executive_summary with 5 to 7 report-ready bullets.")
         key_takeaways = [f"{p['pattern']} - {p['severity']} severity; {int(p['mapped_noncompliant_count'])} related non-compliant controls in the workbook." for p in patterns[:7]]
     technical_takeaways = _technical_takeaways(technical)
     if technical_takeaways:
@@ -3233,7 +3233,7 @@ def main() -> None:
             doc.add_paragraph(pc.get("reported_statement", ""), style="List Bullet")
             rendered_positive = True
     if not rendered_positive:
-        doc.add_paragraph("No compliant controls with supporting evidence/flags were available for verification in the workbook.", style="List Bullet")
+        doc.add_paragraph("Positive-control statements were not rendered in the body because no AI-authored statement passed section validation. See Appendix D for source traceability.", style="List Bullet")
 
     add_nav_heading("5.3 Risk scoring approach", 2)
     doc.add_paragraph("Severity and likelihood ratings in this report follow a qualitative rubric grounded in the audit workbook:\n- Severity reflects potential impact on confidentiality, integrity, and availability of health information, including regulatory exposure.\n- Likelihood is derived from workbook prevalence: the count of non-compliant controls mapped to a weakness pattern as a proxy for exposure.\nLikelihood mapping: High (>=50), Medium-High (20-49), Medium (10-19), Low-Medium (<10).")

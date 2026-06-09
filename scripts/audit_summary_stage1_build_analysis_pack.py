@@ -284,79 +284,14 @@ def _excerpt(s: Any, limit: int = 260) -> str:
     return candidate.rstrip(" ,;:-")
 
 
-def _present_tense_after_subject(text: str) -> str:
-    replacements = [
-        (r"^(The (?:mobile )?application) not ([a-zA-Z]+)", r"\1 does not \2"),
-        (r"^(The (?:mobile )?application) ensure\b", r"\1 ensures"),
-        (r"^(The (?:mobile )?application) configure\b", r"\1 configures"),
-        (r"^(The (?:mobile )?application) request\b", r"\1 requests"),
-        (r"^(The (?:mobile )?application) minimize\b", r"\1 minimizes"),
-        (r"^(The (?:mobile )?application) securely handle\b", r"\1 securely handles"),
-        (r"^(The (?:mobile )?application) provide\b", r"\1 provides"),
-        (r"^(The (?:mobile )?application) implement\b", r"\1 implements"),
-        (r"^(The (?:mobile )?application) maintain\b", r"\1 maintains"),
-        (r"^(The (?:mobile )?application) remove\b", r"\1 removes"),
-        (r"^(The (?:mobile )?application) use\b", r"\1 uses"),
-        (r"^(The (?:mobile )?application) validate\b", r"\1 validates"),
-        (r"^(The (?:mobile )?application) prevent\b", r"\1 prevents"),
-        (r"^(The (?:mobile )?application) disallow\b", r"\1 disallows"),
-        (r"^(The (?:mobile )?application) retain\b", r"\1 retains"),
-        (r"^(The (?:mobile )?application) store\b", r"\1 stores"),
-    ]
-    out = text
-    for pattern, repl in replacements:
-        out = re.sub(pattern, repl, out, flags=re.IGNORECASE)
-    return out
+def _requirement_text_for_ai(desc: str) -> str:
+    """Return the workbook requirement text as source material for Stage 2.
 
-
-def _to_declarative(desc: str) -> str:
-    """Convert a requirement sentence into a concise positive-control statement.
-
-    The statement is used as a candidate only; Stage 2 may ask the configured AI
-    model to rewrite it. This helper therefore keeps the sentence conservative,
-    grammatical, and grounded in the workbook text.
+    Stage 1 is evidence-only. It must not convert requirement language into
+    positive-control prose or perform grammar-based wording rewrites.
+    The configured AI prompt in Stage 2 authors the final report statement.
     """
-    t = _clean_text(desc)
-    if not t:
-        return "The application implements the control described in the workbook."
-
-    t = re.sub(r"^\d+[\.\)]\s*", "", t)
-    t = re.sub(r"\(e\.g\.,.*?\)", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\b(is|are) required to\b", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\b(needs? to|must|shall|should)\b", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\bwould\s+", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"\s+", " ", t).strip()
-
-    if not t:
-        return "The application implements the control described in the workbook."
-
-    if not re.match(r"^the\s+(mobile\s+)?application\b", t, flags=re.IGNORECASE):
-        t = "The application " + (t[0].lower() + t[1:] if t else "implements security controls")
-    else:
-        t = re.sub(r"^the mobile application\b", "The mobile application", t, flags=re.IGNORECASE)
-        t = re.sub(r"^the application\b", "The application", t, flags=re.IGNORECASE)
-
-    t = _present_tense_after_subject(t)
-
-    grammar_fixes = [
-        (r"\bremovess\b", "removes"),
-        (r"\brequestss\b", "requests"),
-        (r"\bprovidess\b", "provides"),
-        (r"\bensuress\b", "ensures"),
-        (r"\bconfiguress\b", "configures"),
-        (r"\bminimize its usage\b", "minimizes its usage"),
-        (r"\bsecurely handle\b", "securely handles"),
-        (r"\band prevent\b", "and prevents"),
-        (r"\bas well as disallow the\b", "as well as disallowing the"),
-        (r"\bCertificate Authority \(CA\) be used\b", "Certificate Authority (CA) is used"),
-        (r"\bSelf-signed certificates or a local Certificate Authority \(CA\) be used\b", "Self-signed certificates or a local Certificate Authority (CA) are used"),
-    ]
-    for pattern, repl in grammar_fixes:
-        t = re.sub(pattern, repl, t, flags=re.IGNORECASE)
-
-    t = re.sub(r"\s+", " ", t).strip()
-    t = _excerpt(t, 340).strip().rstrip(".;:") + "."
-    return t
+    return _clean_text(desc)
 
 
 def _match_pattern(desc: str, flags: str) -> str:
@@ -2764,10 +2699,10 @@ def _apply_cross_source_static_evidence(technical: Dict[str, Any]) -> Dict[str, 
     if not mobsf or not sast:
         return technical
 
-    cross = mobsf.setdefault("cross_source_fallbacks", [])
+    cross = mobsf.setdefault("cross_source_support", [])
     backup_from_sast = _sast_rule_present(sast, "java/android/backup-enabled") or _sast_rule_present(sast, "backup-enabled")
     if backup_from_sast and str(mobsf.get("allow_backup", "")).lower() == "not available in parsed evidence":
-        mobsf["allow_backup"] = "Detected (SAST CodeQL fallback)"
+        mobsf["allow_backup"] = "Detected (SAST CodeQL evidence)"
         flags = mobsf.setdefault("flags", {})
         if isinstance(flags, dict):
             flags["allow_backup_detected"] = True
@@ -2776,15 +2711,15 @@ def _apply_cross_source_static_evidence(technical: Dict[str, Any]) -> Dict[str, 
             "value": "Detected",
             "source": "SAST CodeQL",
             "rule_id": "java/android/backup-enabled",
-            "note": "MobSF static parser did not normalize allowBackup, but SAST reported backups are allowed in AndroidManifest.xml.",
+            "note": "SAST reported Android backup enabled in AndroidManifest.xml for the analyzed application code.",
         })
 
     indicators = mobsf.get("normalized_indicators")
     if isinstance(indicators, list):
         for item in indicators:
             if isinstance(item, dict) and str(item.get("indicator", "")).lower() == "backup enabled" and backup_from_sast:
-                item["value"] = mobsf.get("allow_backup", "Detected (SAST CodeQL fallback)")
-                item["source"] = "SAST CodeQL fallback"
+                item["value"] = mobsf.get("allow_backup", "Detected (SAST CodeQL evidence)")
+                item["source"] = "SAST CodeQL evidence"
 
     technical["mobsf_static"] = mobsf
     return technical
@@ -2840,7 +2775,7 @@ def build_technical_evidence() -> Dict[str, Any]:
     technical = _apply_cross_source_static_evidence(technical)
     technical["report_quality"] = {
         "sca_enriched_from_fingerprint": bool(technical.get("trivy_sca", {}).get("technical_details_source")),
-        "mobsf_static_cross_source_fallbacks": len(technical.get("mobsf_static", {}).get("cross_source_fallbacks", [])) if isinstance(technical.get("mobsf_static"), dict) else 0,
+        "mobsf_static_cross_source_support": len(technical.get("mobsf_static", {}).get("cross_source_support", [])) if isinstance(technical.get("mobsf_static"), dict) else 0,
         "evidence_classes": [
             "observed_technical_finding",
             "evidence_gap",
@@ -2961,7 +2896,7 @@ def main() -> None:
     comp = df[df["Status"] == "Compliant"].copy()
     comp["HasSupport"] = comp["Flags"].astype(str).str.strip().ne("") | comp["Evidence"].astype(str).str.strip().ne("")
     comp = comp[comp["HasSupport"]].copy()
-    comp["Declarative"] = comp["Description"].apply(_to_declarative)
+    comp["RequirementTextForAI"] = comp["Description"].apply(_requirement_text_for_ai)
     comp["EvidenceExcerpt"] = comp["Evidence"].apply(lambda x: _excerpt(x, 180))
 
     positive_controls = []
@@ -2970,9 +2905,10 @@ def main() -> None:
             "puid": r["PUID"],
             "category_code": r["CategoryCode"],
             "category_name": r["CategoryName"],
-            "declarative_statement": r["Declarative"],
+            "requirement_text": r["RequirementTextForAI"],
             "flags_used": r["Flags"],
             "evidence_excerpt": r["EvidenceExcerpt"],
+            "ai_instruction": "Stage 2 must write the final positive-control statement from the requirement text, flags, and observed evidence. Stage 1 does not author report prose.",
         })
 
     # Non-compliance mapping to weakness patterns
@@ -3069,7 +3005,6 @@ def main() -> None:
         "ai_reporting_context": ai_reporting_context,
         "treatment_plan": treatment_plan,
         "notes": {
-            "global_replacement": {"SEC-AM": "mSEC-AM"},
             "method_sentence": "The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).",
             "prohibitions": [
                 "No category-level bullet dumps in narrative.",
