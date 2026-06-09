@@ -1851,10 +1851,7 @@ AI_UNWANTED_REPORT_TERMS = [
     "contradict",
     "technical coverage limitations",
     "scope and limitations",
-    "limitation",
-    "limitations",
     "missing evidence",
-    "unavailable",
     "failed parsing",
     "parser did not",
     "internal pipeline",
@@ -1900,7 +1897,7 @@ def _collect_ai_language_policy_hits(value: Any) -> List[str]:
 
 
 def _ai_repair_attempts() -> int:
-    return max(0, min(3, _safe_int(os.getenv("AUDIT_SUMMARY_AI_SECTION_REPAIR_ATTEMPTS", "2"), 2)))
+    return max(0, min(3, _safe_int(os.getenv("AUDIT_SUMMARY_AI_SECTION_REPAIR_ATTEMPTS", "0"), 0)))
 
 def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str, Any], max_tokens: int = 1600) -> Dict[str, Any]:
     """Call the configured AI runtime and require report-ready language.
@@ -2311,8 +2308,46 @@ def _treatment_plan(pack: Dict[str, Any]) -> Dict[str, Any]:
     return _as_dict(pack.get("treatment_plan"))
 
 
+def _treatment_mode() -> str:
+    """Return treatment generation mode.
+
+    full: ask the AI model to generate treatment fields for every rendered
+    control and technical item. This is slow and strict.
+    priority: ask the AI model only for priority technical treatment items.
+    The large control appendix is rendered as structured traceability data.
+    off: do not ask the AI model for item-level treatment writeups.
+    """
+    raw = os.getenv("AUDIT_SUMMARY_TREATMENT_MODE", "priority").strip().lower()
+    aliases = {
+        "prioritized": "priority",
+        "prio": "priority",
+        "fast": "priority",
+        "0": "off",
+        "false": "off",
+        "no": "off",
+        "1": "priority",
+        "true": "priority",
+        "yes": "priority",
+    }
+    raw = aliases.get(raw, raw)
+    if raw not in {"full", "priority", "off"}:
+        print(f"[AI][TREATMENT][WARN] Unknown AUDIT_SUMMARY_TREATMENT_MODE={raw!r}; using priority.")
+        return "priority"
+    return raw
+
+
+def _treatment_full_mode() -> bool:
+    return _treatment_mode() == "full"
+
+
+def _treatment_priority_mode() -> bool:
+    return _treatment_mode() == "priority"
+
+
 def _treatment_ai_required() -> bool:
-    return _env_bool("AUDIT_SUMMARY_AI_TREATMENT_REQUIRED", True)
+    if "AUDIT_SUMMARY_AI_TREATMENT_REQUIRED" in os.environ:
+        return _env_bool("AUDIT_SUMMARY_AI_TREATMENT_REQUIRED", False)
+    return _treatment_full_mode()
 
 
 def _treatment_batch_size() -> int:
@@ -2493,7 +2528,7 @@ def _incomplete_treatment_items(treatment_plan: Dict[str, Any], treatment_ai: Di
 
 
 def _treatment_repair_attempts() -> int:
-    return max(0, min(5, _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_REPAIR_ATTEMPTS", "2"), 2)))
+    return max(0, min(5, _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_REPAIR_ATTEMPTS", "0"), 0)))
 
 
 def _treatment_missing_id_list(missing: Dict[str, List[Dict[str, Any]]], limit: int = 20) -> str:
@@ -2645,6 +2680,58 @@ def _call_llm_for_treatment_repair(
     return patch
 
 
+def _priority_control_treatment_limit() -> int:
+    return max(0, _safe_int(os.getenv("AUDIT_SUMMARY_PRIORITY_CONTROL_TREATMENT_ITEMS", "0"), 0))
+
+
+def _priority_technical_treatment_limit() -> int:
+    return max(0, _safe_int(os.getenv("AUDIT_SUMMARY_PRIORITY_TECHNICAL_TREATMENT_ITEMS", "24"), 24))
+
+
+def _technical_priority_rank(item: Dict[str, Any]) -> int:
+    sev = _clean_text(item.get("severity")).upper()
+    return {"CRITICAL": 5, "HIGH": 4, "ERROR": 3, "MEDIUM": 2, "WARNING": 1, "LOW": 1}.get(sev, 0)
+
+
+def _select_priority_control_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    limit = _priority_control_treatment_limit()
+    if limit <= 0:
+        return []
+    ranked = sorted(
+        items,
+        key=lambda x: (
+            {"High": 3, "Medium": 2, "Low": 1}.get(_clean_text(x.get("severity")), 0),
+            {"High": 4, "Medium-High": 3, "Medium–High": 3, "Medium": 2, "Low-Medium": 1, "Low–Medium": 1}.get(_clean_text(x.get("likelihood")), 0),
+            _clean_text(x.get("item_id")),
+        ),
+        reverse=True,
+    )
+    return ranked[:limit]
+
+
+def _select_priority_technical_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    limit = _priority_technical_treatment_limit()
+    if limit <= 0:
+        return []
+    ranked = sorted(items, key=lambda x: (_technical_priority_rank(x), _clean_text(x.get("item_id"))), reverse=True)
+    critical_high = [x for x in ranked if _technical_priority_rank(x) >= 4]
+    source = critical_high if critical_high else ranked
+    return source[:limit]
+
+
+def _treatment_ai_mode_metadata(mode: str, control_source: List[Dict[str, Any]], technical_source: List[Dict[str, Any]], batch_size: int) -> Dict[str, Any]:
+    return {
+        "mode": mode,
+        "control_items_requested": len(control_source),
+        "technical_items_requested": len(technical_source),
+        "control_batches": 0,
+        "technical_batches": 0,
+        "total_batches": 0,
+        "batch_size": batch_size,
+        "ai_authored": bool(control_source or technical_source),
+    }
+
+
 def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, Any], technical: Dict[str, Any]) -> Dict[str, Any]:
     """Generate treatment actions with the configured AI model.
 
@@ -2652,7 +2739,13 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
     treatment actions, verification methods, closure evidence, and residual-risk
     notes for each item. No static remediation content is authored here.
     """
-    if not treatment_plan or not _ai_enabled():
+    mode = _treatment_mode()
+    if not treatment_plan:
+        return {}
+    if mode == "off":
+        print("[AI][TREATMENT] AUDIT_SUMMARY_TREATMENT_MODE=off; item-level treatment AI generation is skipped.")
+        return {"control_treatments": {}, "technical_treatments": {}, "metadata": {"mode": mode, "ai_authored": False}}
+    if not _ai_enabled():
         return {}
 
     system_prompt = (
@@ -2675,10 +2768,25 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
     control_results: List[Dict[str, Any]] = []
     technical_results: List[Dict[str, Any]] = []
 
-    max_control_items = _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_CONTROL_ITEM_LIMIT", "0"), 0)
-    max_technical_items = _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_TECHNICAL_ITEM_LIMIT", "0"), 0)
-    control_source = control_items[:max_control_items] if max_control_items > 0 else control_items
-    technical_source = technical_items[:max_technical_items] if max_technical_items > 0 else technical_items
+    if mode == "priority":
+        control_source = _select_priority_control_items(control_items)
+        technical_source = _select_priority_technical_items(technical_items)
+    else:
+        max_control_items = _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_CONTROL_ITEM_LIMIT", "0"), 0)
+        max_technical_items = _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_TECHNICAL_ITEM_LIMIT", "0"), 0)
+        control_source = control_items[:max_control_items] if max_control_items > 0 else control_items
+        technical_source = technical_items[:max_technical_items] if max_technical_items > 0 else technical_items
+
+    if not control_source and not technical_source:
+        print(
+            f"[AI][TREATMENT] mode={mode}: no item-level treatment batches requested. "
+            "Appendix treatment sections will be rendered from structured traceability data."
+        )
+        return {
+            "control_treatments": {},
+            "technical_treatments": {},
+            "metadata": _treatment_ai_mode_metadata(mode, control_source, technical_source, batch_size),
+        }
 
     control_batches = _chunks(control_source, batch_size)
     technical_batches = _chunks(technical_source, batch_size)
@@ -2794,6 +2902,7 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
         "control_treatments": _merge_treatment_results(control_results, expected_control_ids),
         "technical_treatments": _merge_treatment_results(technical_results, expected_technical_ids),
         "metadata": {
+            "mode": mode,
             "control_items_requested": len(control_source),
             "technical_items_requested": len(technical_source),
             "control_batches": total_control_batches,
@@ -2858,6 +2967,8 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
 def _validate_ai_treatment_writeups(treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     if not treatment_plan or not _treatment_ai_required():
         return
+    if not _treatment_full_mode():
+        return
     missing_by_kind = _incomplete_treatment_items(treatment_plan, treatment_ai)
     missing: List[str] = []
     for key in ("control_items", "technical_items"):
@@ -2880,10 +2991,14 @@ def _treatment_writeup(treatment_ai: Dict[str, Any], item_id: str, technical: bo
 
 def _render_treatment_overview(doc: Document, treatment_plan: Dict[str, Any], fig5: str, fig6: str, fig7: str) -> None:
     summary = _as_dict(treatment_plan.get("summary"))
-    _add_body_paragraph(
-        doc,
-        "This section bridges the executive MAP and the technical annexes. Treatment content is generated from the current run's non-compliant SECM-CAT controls and scanner findings; the evidence model is deterministic, while treatment actions and verification wording are generated by the configured AI model."
-    )
+    mode = _treatment_mode()
+    if mode == "full":
+        intro = "This section bridges the executive MAP and the technical annexes. Treatment content is generated from the current run's non-compliant SECM-CAT controls and scanner findings; the evidence model is deterministic, while treatment actions and verification wording are generated by the configured AI model."
+    elif mode == "priority":
+        intro = "This section bridges the executive MAP and the technical annexes. The evidence model is deterministic. AI is used for executive sections, weakness-pattern narratives, and priority technical treatment items, while large appendices are rendered as structured traceability data."
+    else:
+        intro = "This section bridges the executive MAP and the technical annexes. The evidence model is deterministic and large appendices are rendered as structured traceability data without item-level AI treatment generation."
+    _add_body_paragraph(doc, intro)
     rows = [
         ["SECM-CAT control treatment items", summary.get("control_items_total", 0)],
         ["Technical scanner treatment items", summary.get("technical_items_total", 0)],
@@ -2901,6 +3016,31 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
     max_rows = _max_control_treatment_rows()
     if not items:
         _add_note(doc, "No SECM-CAT treatment items were available in the analysis pack.")
+        return
+
+    mode = _treatment_mode()
+    if mode != "full":
+        rows: List[List[Any]] = []
+        for item in items[:max_rows]:
+            flags = ", ".join(_as_list(item.get("flags"))[:12])
+            priority = f"{item.get('severity')} / {item.get('likelihood')}"
+            timeline = _target_timeline(_clean_text(item.get("severity")))
+            rows.append([
+                f"{item.get('puid')}\n{item.get('item_id')}",
+                f"{item.get('category_code')} - {item.get('category_name')}",
+                f"{item.get('weakness_pattern')}\nPriority: {priority}",
+                f"{item.get('recommended_owner')}\nTarget: {timeline}",
+                flags,
+                _short(item.get("evidence_excerpt") or item.get("description"), 360),
+            ])
+        _add_table(
+            doc,
+            ["Requirement", "Category", "Pattern / priority", "Owner / target", "Flags", "Evidence basis"],
+            rows,
+            max_rows=max_rows,
+        )
+        if len(items) > max_rows:
+            _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
         return
 
     def add_card_row(tbl, label: str, value: Any) -> None:
@@ -2939,12 +3079,48 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
 
-
 def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
     max_rows = _max_technical_treatment_rows()
     if not items:
         _add_note(doc, "No technical treatment items were available in the analysis pack.")
+        return
+
+    mode = _treatment_mode()
+    if mode != "full":
+        rows: List[List[Any]] = []
+        for item in items[:max_rows]:
+            item_id = _clean_text(item.get("item_id"))
+            writeup = _treatment_writeup(treatment_ai, item_id, technical=True)
+            affected = []
+            for key, label in [
+                ("affected_component", "component"),
+                ("installed_version", "installed"),
+                ("fixed_version", "fixed"),
+                ("file", "file"),
+                ("line", "line"),
+            ]:
+                value = item.get(key)
+                if value not in (None, "", [], {}):
+                    affected.append(f"{label}: {_clean_text(value)}")
+            linked = ", ".join(_as_list(item.get("linked_puids"))[:10])
+            priority_action = _short(writeup.get("treatment_action"), 360) if writeup else ""
+            rows.append([
+                f"{item_id}\n{item.get('source')}",
+                f"{item.get('item_type')}\nSeverity: {item.get('severity')}",
+                _short(" | ".join(affected), 260),
+                _short(item.get("observed_issue"), 360),
+                linked,
+                priority_action,
+            ])
+        _add_table(
+            doc,
+            ["Technical item", "Type / severity", "Affected component", "Observed issue", "Linked PUIDs", "Priority AI action"],
+            rows,
+            max_rows=max_rows,
+        )
+        if len(items) > max_rows:
+            _add_note(doc, f"Rendered {max_rows} of {len(items)} technical treatment items. Increase AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS to include more rows.")
         return
 
     def add_card_row(tbl, label: str, value: Any) -> None:
@@ -2997,7 +3173,6 @@ def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str
         add_card_row(tbl, "Residual risk", _short(writeup.get("residual_risk"), 420))
     if len(items) > max_rows:
         _add_note(doc, f"Rendered {max_rows} of {len(items)} technical treatment items. Increase AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS to include more rows.")
-
 
 def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("correlation_items")) if isinstance(x, dict)]
@@ -3372,12 +3547,18 @@ def main() -> None:
 
     doc.add_page_break()
     add_nav_heading("Appendix A - SECM-CAT treatment plan", 1)
-    _add_body_paragraph(doc, "This appendix lists non-compliant SECM-CAT controls as treatment items. It preserves PUIDs, categories, flags, workbook evidence, weakness patterns, owners, timelines, treatment actions, and expected closure evidence.")
+    if _treatment_full_mode():
+        _add_body_paragraph(doc, "This appendix lists non-compliant SECM-CAT controls as treatment items. It preserves PUIDs, categories, flags, workbook evidence, weakness patterns, owners, timelines, treatment actions, and expected closure evidence.")
+    else:
+        _add_body_paragraph(doc, "This appendix lists non-compliant SECM-CAT controls as structured treatment traceability items. It preserves PUIDs, categories, flags, workbook evidence, weakness patterns, owners, and target timelines. Item-level narrative actions are intentionally not generated for every control in priority mode.")
     _render_control_treatment_appendix(doc, treatment_plan, treatment_ai)
 
     doc.add_page_break()
     add_nav_heading("Appendix B - Technical vulnerability treatment plan", 1)
-    _add_body_paragraph(doc, "This appendix lists technical treatment items derived from Trivy, SAST, MobSF static, and MobSF dynamic evidence. It strengthens the body of the report with scanner-specific findings, affected components, source files, observed issues, linked PUIDs, and treatment evidence.")
+    if _treatment_full_mode():
+        _add_body_paragraph(doc, "This appendix lists technical treatment items derived from Trivy, SAST, MobSF static, and MobSF dynamic evidence. It strengthens the body of the report with scanner-specific findings, affected components, source files, observed issues, linked PUIDs, and treatment evidence.")
+    else:
+        _add_body_paragraph(doc, "This appendix lists technical treatment items derived from Trivy, SAST, MobSF static, and MobSF dynamic evidence. In priority mode, AI-authored treatment actions are generated only for selected priority technical items; the remaining rows preserve scanner traceability.")
     _render_technical_treatment_appendix(doc, treatment_plan, treatment_ai)
 
     doc.add_page_break()
