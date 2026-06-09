@@ -4,17 +4,18 @@
 import json
 import os
 import re
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Dict, Any, List
 
 import matplotlib.pyplot as plt
 from docx import Document
-from docx.shared import Inches, Pt
+from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 
 try:
     from lib.ai_runtime import AIRuntime  # type: ignore
@@ -109,6 +110,77 @@ def _set_cell_shading(cell, fill: str) -> None:
     tcPr.append(shd)
 
 
+
+
+def _set_cell_margins(cell, top: int = 80, start: int = 80, bottom: int = 80, end: int = 80) -> None:
+    """Set Word table-cell margins in twentieths of a point."""
+    try:
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        tcMar = tcPr.first_child_found_in("w:tcMar")
+        if tcMar is None:
+            tcMar = OxmlElement("w:tcMar")
+            tcPr.append(tcMar)
+        for m, v in {"top": top, "start": start, "bottom": bottom, "end": end}.items():
+            node = tcMar.find(qn(f"w:{m}"))
+            if node is None:
+                node = OxmlElement(f"w:{m}")
+                tcMar.append(node)
+            node.set(qn("w:w"), str(v))
+            node.set(qn("w:type"), "dxa")
+    except Exception:
+        pass
+
+
+def _set_cell_vertical_alignment(cell, align=WD_CELL_VERTICAL_ALIGNMENT.CENTER) -> None:
+    try:
+        cell.vertical_alignment = align
+    except Exception:
+        pass
+
+
+def _set_table_alignment(table, align=WD_TABLE_ALIGNMENT.CENTER) -> None:
+    try:
+        table.alignment = align
+    except Exception:
+        pass
+
+
+def _style_cell_text(cell, size_pt: float = REPORT_TABLE_BODY_PT, bold: bool | None = None, italic: bool | None = None, color_hex: str | None = None) -> None:
+    for paragraph in cell.paragraphs:
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.line_spacing = 1.0
+        for run in paragraph.runs:
+            _set_run_font(run, size_pt=size_pt, bold=bold, italic=italic, color_hex=color_hex)
+
+
+def _add_section_callout(doc: Document, title: str, text: str, fill: str = THEME_LIGHT_BLUE) -> None:
+    tbl = doc.add_table(rows=1, cols=1)
+    tbl.style = "Table Grid"
+    _set_table_alignment(tbl)
+    cell = tbl.cell(0, 0)
+    _set_cell_shading(cell, fill)
+    _set_cell_margins(cell, top=100, start=120, bottom=100, end=120)
+    _set_cell_vertical_alignment(cell)
+    p = cell.paragraphs[0]
+    r = p.add_run(_report_display_text(title))
+    _set_run_font(r, size_pt=REPORT_BODY_PT, bold=True, color_hex=THEME_NAVY)
+    if text:
+        p2 = cell.add_paragraph(_report_display_text(text))
+        for run in p2.runs:
+            _set_run_font(run, size_pt=REPORT_BODY_PT)
+    doc.add_paragraph()
+
+
+def _style_heading_paragraph(paragraph, level: int) -> None:
+    try:
+        paragraph.paragraph_format.space_before = Pt(10 if level == 1 else 6)
+        paragraph.paragraph_format.space_after = Pt(5 if level == 1 else 3)
+        for run in paragraph.runs:
+            _set_run_font(run, bold=True, color_hex=THEME_NAVY)
+    except Exception:
+        pass
+
 def _add_field_run(paragraph, field_instr: str) -> None:
     run = paragraph.add_run()
     fldChar1 = OxmlElement("w:fldChar")
@@ -126,7 +198,14 @@ def _add_field_run(paragraph, field_instr: str) -> None:
     run._r.append(fldChar3)
 
 
-def _set_run_font(run, name: str = REPORT_FONT_NAME, size_pt: float | None = None, bold: bool | None = None, italic: bool | None = None) -> None:
+def _set_run_font(
+    run,
+    name: str = REPORT_FONT_NAME,
+    size_pt: float | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    color_hex: str | None = None,
+) -> None:
     """Apply a single Word font consistently across latin/complex/east-Asian slots."""
     try:
         run.font.name = name
@@ -143,6 +222,8 @@ def _set_run_font(run, name: str = REPORT_FONT_NAME, size_pt: float | None = Non
             run.bold = bold
         if italic is not None:
             run.italic = italic
+        if color_hex:
+            run.font.color.rgb = RGBColor.from_string(str(color_hex).strip().lstrip("#")[:6])
     except Exception:
         pass
 
@@ -268,45 +349,61 @@ def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile
 
 
 def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: str = "Mobile Application") -> None:
-    """Render a polished cover page using native Word elements only."""
-    doc.add_paragraph()
+    """Render an executive-grade native Word cover page."""
+    for _ in range(2):
+        doc.add_paragraph()
+
     banner = doc.add_table(rows=1, cols=1)
     banner.style = "Table Grid"
+    _set_table_alignment(banner)
     cell = banner.cell(0, 0)
     _set_cell_shading(cell, THEME_NAVY)
+    _set_cell_margins(cell, top=260, start=180, bottom=260, end=180)
+    _set_cell_vertical_alignment(cell)
+
     p = cell.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run("mSEC-AM Audit Summary")
-    _set_run_font(r, size_pt=22, bold=True)
-    s = cell.add_paragraph(report_title)
-    s.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if s.runs:
-        _set_run_font(s.runs[0], size_pt=13, bold=True)
+    r = p.add_run("mSEC-AM")
+    _set_run_font(r, size_pt=28, bold=True, color_hex="FFFFFF")
+    p2 = cell.add_paragraph("Mobile Security Audit Summary")
+    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _set_run_font(p2.runs[0], size_pt=16, bold=True, color_hex="FFFFFF")
+    p3 = cell.add_paragraph(report_title)
+    p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _set_run_font(p3.runs[0], size_pt=12, italic=True, color_hex="FFFFFF")
 
     doc.add_paragraph()
     card = doc.add_table(rows=0, cols=2)
     card.style = "Table Grid"
+    _set_table_alignment(card)
     cover_rows = [
-        ("Audit Date", audit_date_str),
+        ("Audit date", audit_date_str),
         ("Auditor", auditor),
-        ("Method", "mSEC-AM (mobile SECurity Audit Method)"),
+        ("Method", "mSEC-AM - mobile SECurity Audit Method"),
         ("Classification", "Confidential / Internal Use"),
+        ("Evidence model", "Audit workbook, Vision360, Trivy, MobSF, SAST, and treatment traceability"),
     ]
     for label, value in cover_rows:
         cells = card.add_row().cells
         cells[0].text = label
         cells[1].text = value
         _set_cell_shading(cells[0], THEME_BLUE)
+        _set_cell_margins(cells[0], top=90, start=110, bottom=90, end=110)
+        _set_cell_margins(cells[1], top=90, start=110, bottom=90, end=110)
         _format_table_cell(cells[0], font_size=REPORT_BODY_PT, bold=True, no_wrap=True)
         _format_table_cell(cells[1], font_size=REPORT_BODY_PT)
 
     doc.add_paragraph()
-    note = doc.add_paragraph()
-    note.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = note.add_run("Evidence-grounded executive report with requirement, scanner, and treatment traceability")
-    _set_run_font(r, size_pt=REPORT_BODY_PT, italic=True)
+    note = doc.add_table(rows=1, cols=1)
+    note.style = "Table Grid"
+    note_cell = note.cell(0, 0)
+    _set_cell_shading(note_cell, THEME_LIGHT_BLUE)
+    _set_cell_margins(note_cell, top=130, start=130, bottom=130, end=130)
+    np = note_cell.paragraphs[0]
+    np.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    nr = np.add_run("Evidence-grounded executive report with full requirement, scanner, Vision360, and remediation traceability.")
+    _set_run_font(nr, size_pt=REPORT_BODY_PT, italic=True, color_hex=THEME_NAVY)
     doc.add_page_break()
-
 
 def _enable_update_fields_on_open(doc: Document) -> None:
     settings = doc.settings._element
@@ -399,24 +496,31 @@ def _add_toc(doc: Document):
 def _add_two_col_table(doc: Document, rows: List[List[str]]) -> None:
     tbl = doc.add_table(rows=0, cols=2)
     tbl.style = "Table Grid"
+    _set_table_alignment(tbl)
     for k, v in rows:
         cells = tbl.add_row().cells
-        cells[0].text = str(k)
-        cells[1].text = str(v)
-        for run in cells[0].paragraphs[0].runs:
-            run.bold = True
+        cells[0].text = _report_display_text(k)
+        cells[1].text = _report_display_text(v)
+        _set_cell_shading(cells[0], THEME_BLUE)
+        _set_cell_margins(cells[0], top=70, start=90, bottom=70, end=90)
+        _set_cell_margins(cells[1], top=70, start=90, bottom=70, end=90)
+        _format_table_cell(cells[0], font_size=REPORT_TABLE_BODY_PT, bold=True, no_wrap=True)
+        _format_table_cell(cells[1], font_size=REPORT_TABLE_BODY_PT)
     doc.add_paragraph()
 
 
 def _add_callout(doc: Document, title: str, bullets: List[str]) -> None:
     tbl = doc.add_table(rows=1, cols=1)
+    tbl.style = "Table Grid"
+    _set_table_alignment(tbl)
     cell = tbl.cell(0, 0)
-    _set_cell_shading(cell, "EDEDED")
+    _set_cell_shading(cell, THEME_LIGHT_BLUE)
+    _set_cell_margins(cell, top=110, start=130, bottom=110, end=130)
     p = cell.paragraphs[0]
-    r = p.add_run(title)
-    _set_run_font(r, size_pt=REPORT_BODY_PT, bold=True)
+    r = p.add_run(_report_display_text(title))
+    _set_run_font(r, size_pt=REPORT_BODY_PT, bold=True, color_hex=THEME_NAVY)
     for b in bullets:
-        bp = cell.add_paragraph(b, style="List Bullet")
+        bp = cell.add_paragraph(_report_display_text(b), style="List Bullet")
         for run in bp.runs:
             _set_run_font(run, size_pt=REPORT_BODY_PT)
     doc.add_paragraph()
@@ -430,17 +534,20 @@ def _add_metric_cards(doc: Document, cards: List[tuple[str, Any, str]]) -> None:
     cols = min(4, max(1, len(cards)))
     tbl = doc.add_table(rows=1, cols=cols)
     tbl.style = "Table Grid"
+    _set_table_alignment(tbl)
     for idx, (label, value, note) in enumerate(cards[:cols]):
         cell = tbl.cell(0, idx)
-        _set_cell_shading(cell, THEME_LIGHT_BLUE)
+        fill = THEME_LIGHT_BLUE if idx % 2 == 0 else THEME_LIGHT
+        _set_cell_shading(cell, fill)
+        _set_cell_margins(cell, top=120, start=90, bottom=120, end=90)
         p = cell.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         r = p.add_run(str(value))
-        _set_run_font(r, size_pt=14, bold=True)
+        _set_run_font(r, size_pt=16, bold=True, color_hex=THEME_NAVY)
         p2 = cell.add_paragraph(str(label))
         p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
         if p2.runs:
-            _set_run_font(p2.runs[0], size_pt=8.5, bold=True)
+            _set_run_font(p2.runs[0], size_pt=8.5, bold=True, color_hex=THEME_NAVY)
         if note:
             p3 = cell.add_paragraph(str(note))
             p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -944,6 +1051,24 @@ def _normalize_document_typography(doc: Document) -> None:
 
 
 REPORT_DISPLAY_REPLACEMENTS = [
+    (re.compile(r"\bResult:\s*no\s+for\s+requirement\b", re.IGNORECASE), "Non-compliant requirement"),
+    (re.compile(r"\bResult:\s*yes\s+for\s+requirement\b", re.IGNORECASE), "Compliant requirement"),
+    (re.compile(r"\bnot aligned signals:\b", re.IGNORECASE), "Relevant mapped signals:"),
+    (re.compile(r"\bfallback verdict note hint\b", re.IGNORECASE), "computed evidence note"),
+    (re.compile(r"\bwith a fallback verdict\b", re.IGNORECASE), "based on mapped evidence"),
+    (re.compile(r"\bfallback verdicts\b", re.IGNORECASE), "computed evidence results"),
+    (re.compile(r"\bfallback verdict\b", re.IGNORECASE), "computed evidence result"),
+    (re.compile(r"\bdoes not align with the requirement\b", re.IGNORECASE), "does not satisfy the requirement"),
+    (re.compile(r"\bdoes not align with the expected outcome\b", re.IGNORECASE), "does not satisfy the expected control outcome"),
+    (re.compile(r"\bdoes not align with\b", re.IGNORECASE), "does not satisfy"),
+    (re.compile(r"\bnot aligned signals\b", re.IGNORECASE), "mapped signals requiring review"),
+    (re.compile(r"\bnot aligned signal\b", re.IGNORECASE), "mapped signal requiring review"),
+    (re.compile(r"\bnot aligned\b", re.IGNORECASE), "not satisfied"),
+    (re.compile(r"\balignment issues\b", re.IGNORECASE), "mapped evidence requiring review"),
+    (re.compile(r"\balignment issue\b", re.IGNORECASE), "mapped evidence requiring review"),
+    (re.compile(r"\bobserved summaries of its flags\b", re.IGNORECASE), "mapped flag evidence"),
+    (re.compile(r"\bobserved summaries of related flags\b", re.IGNORECASE), "mapped flag evidence"),
+    (re.compile(r"\bobserved summary for\b", re.IGNORECASE), "mapped evidence for"),
     (re.compile(r"\bretained_app_code_findings\b", re.IGNORECASE), "application-scope SAST signals"),
     (re.compile(r"\bretained_security_findings\b", re.IGNORECASE), "security-relevant SAST findings"),
     (re.compile(r"\bhardening_or_maintainability_signals\b", re.IGNORECASE), "hardening, quality, or maintainability signals"),
@@ -1227,6 +1352,7 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
     tbl = doc.add_table(rows=1, cols=len(headers))
     tbl.style = "Table Grid"
     tbl.autofit = True
+    _set_table_alignment(tbl)
     h = tbl.rows[0].cells
     _repeat_table_header(tbl.rows[0])
     for idx, txt in enumerate(headers):
@@ -1235,6 +1361,8 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
             header_text = "Requirement"
         h[idx].text = header_text
         _set_cell_shading(h[idx], THEME_BLUE)
+        _set_cell_margins(h[idx], top=70, start=70, bottom=70, end=70)
+        _set_cell_vertical_alignment(h[idx])
         _format_table_cell(h[idx], font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
     for row_values in actual_rows:
         r = tbl.add_row().cells
@@ -1245,8 +1373,10 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
             r[idx].text = value
             if len(tbl.rows) % 2 == 1:
                 _set_cell_shading(r[idx], THEME_LIGHT)
+            _set_cell_margins(r[idx], top=55, start=65, bottom=55, end=65)
+            _set_cell_vertical_alignment(r[idx], WD_CELL_VERTICAL_ALIGNMENT.TOP)
             keep_together = idx == 0 and len(headers) >= 4
-            _format_table_cell(r[idx], font_size=7.3 if len(value) > 180 else REPORT_TABLE_BODY_PT, no_wrap=keep_together)
+            _format_table_cell(r[idx], font_size=7.2 if len(value) > 180 else REPORT_TABLE_BODY_PT, no_wrap=keep_together)
     doc.add_paragraph()
     return True
 
@@ -3140,27 +3270,50 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
 
     mode = _treatment_mode()
     if mode != "full":
-        rows: List[List[Any]] = []
-        for item in items[:max_rows]:
-            flags = ", ".join(_as_list(item.get("flags")))
-            priority = f"{item.get('severity')} / {item.get('likelihood')}"
-            timeline = _target_timeline(_clean_text(item.get("severity")))
-            rows.append([
-                f"{item.get('puid')}\n{item.get('item_id')}",
-                f"{item.get('category_code')} - {item.get('category_name')}",
-                f"{item.get('weakness_pattern')}\nPriority: {priority}",
-                f"{item.get('recommended_owner')}\nTarget: {timeline}",
-                flags,
-                _short(item.get("evidence_excerpt") or item.get("description"), 520),
-            ])
-        _add_table(
+        _add_section_callout(
             doc,
-            ["Requirement", "Category", "Pattern / priority", "Owner / target", "Flags", "Evidence basis"],
-            rows,
-            max_rows=None,
+            "Appendix A coverage",
+            f"This register renders {len(items[:max_rows])} of {len(items)} non-compliant SECM-CAT controls. Rows are grouped by framework category and preserve PUID, flags, evidence basis, weakness pattern, owner, and target timeline.",
+            fill=THEME_LIGHT_BLUE,
         )
-        if len(rows) != len(items):
-            raise SystemExit(f"[ERROR] Appendix A coverage gate failed: rendered {len(rows)} of {len(items)} SECM-CAT controls.")
+
+        category_counts: Dict[str, int] = {}
+        for item in items:
+            key = f"{_clean_text(item.get('category_code'))} - {_clean_text(item.get('category_name'))}"
+            category_counts[key] = category_counts.get(key, 0) + 1
+        summary_rows = [[cat, count] for cat, count in category_counts.items()]
+        _add_table(doc, ["SECM-CAT category", "Non-compliant controls"], summary_rows, max_rows=None)
+
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
+        for item in items[:max_rows]:
+            key = f"{_clean_text(item.get('category_code'))} - {_clean_text(item.get('category_name'))}"
+            grouped.setdefault(key, []).append(item)
+
+        rendered = 0
+        for idx, (category, group_items) in enumerate(grouped.items(), start=1):
+            heading = doc.add_paragraph(f"A.{idx} {category} ({len(group_items)} controls)", style="Heading 2")
+            _style_heading_paragraph(heading, 2)
+            rows: List[List[Any]] = []
+            for item in group_items:
+                flags = ", ".join(_as_list(item.get("flags")))
+                priority = f"{item.get('severity')} / {item.get('likelihood')}"
+                timeline = _target_timeline(_clean_text(item.get("severity")))
+                rows.append([
+                    f"{item.get('puid')}\n{item.get('item_id')}",
+                    f"{item.get('weakness_pattern')}\nPriority: {priority}",
+                    f"{item.get('recommended_owner')}\nTarget: {timeline}",
+                    flags,
+                    _short(item.get("evidence_excerpt") or item.get("description"), 520),
+                ])
+                rendered += 1
+            _add_table(
+                doc,
+                ["Requirement", "Pattern / priority", "Owner / target", "Flags", "Evidence basis"],
+                rows,
+                max_rows=None,
+            )
+        if rendered != len(items):
+            raise SystemExit(f"[ERROR] Appendix A coverage gate failed: rendered {rendered} of {len(items)} SECM-CAT controls.")
         return
 
     def add_card_row(tbl, label: str, value: Any) -> None:
@@ -3168,6 +3321,8 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
         cells[0].text = _cell_text(label)
         cells[1].text = _cell_text(value)
         _set_cell_shading(cells[0], THEME_GRAY)
+        _set_cell_margins(cells[0], top=65, start=80, bottom=65, end=80)
+        _set_cell_margins(cells[1], top=65, start=80, bottom=65, end=80)
         _format_table_cell(cells[0], font_size=8.5, bold=True, no_wrap=True)
         _format_table_cell(cells[1], font_size=8.0)
 
@@ -3180,13 +3335,14 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
         heading.paragraph_format.space_before = Pt(8)
         heading.paragraph_format.space_after = Pt(3)
         run = heading.add_run(f"{puid} | {item_id}")
-        _set_run_font(run, size_pt=10, bold=True)
+        _set_run_font(run, size_pt=10, bold=True, color_hex=THEME_NAVY)
 
         flags = ", ".join(_as_list(item.get("flags"))) or "No flags listed"
         evidence = _short(item.get("evidence_excerpt") or item.get("description"), 720)
         tbl = doc.add_table(rows=0, cols=2)
         tbl.style = "Table Grid"
         tbl.autofit = True
+        _set_table_alignment(tbl)
         add_card_row(tbl, "Pattern", item.get("weakness_pattern"))
         add_card_row(tbl, "Priority", f"{item.get('severity')} / {item.get('likelihood')}")
         add_card_row(tbl, "Owner", item.get("recommended_owner"))
@@ -3299,23 +3455,49 @@ def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str
 def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("correlation_items")) if isinstance(x, dict)]
     max_rows = _max_correlation_rows(len(items))
-    rows: List[List[Any]] = []
-    for item in items[:max_rows]:
-        requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
-        flags = ", ".join(_as_list(item.get("flags_sample")))
-        scanner = f"{item.get('technical_source')}\n{item.get('technical_finding_id')}"
-        fit = f"{_clean_text(item.get('evidence_fit'))}\n{_clean_text(item.get('correlation_strength'))}"
-        evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 420)}"
-        rows.append([requirement, flags, scanner, fit, evidence])
-    _add_table(
+    if not items:
+        _add_note(doc, "No evidence correlation items were available in the analysis pack.")
+        return
+
+    _add_section_callout(
         doc,
-        ["Requirement / pattern", "Flags", "Scanner evidence", "Evidence fit / strength", "Treatment / evidence summary"],
-        rows,
-        max_rows=None,
-        empty_message="No evidence correlation items were available in the analysis pack.",
+        "Appendix C coverage",
+        f"This matrix renders {len(items[:max_rows])} of {len(items)} evidence correlation links. Rows are grouped by scanner source to improve traceability and readability.",
+        fill=THEME_LIGHT_BLUE,
     )
-    if len(rows) != len(items):
-        raise SystemExit(f"[ERROR] Appendix C coverage gate failed: rendered {len(rows)} of {len(items)} correlation rows.")
+
+    source_counts: Dict[str, int] = {}
+    for item in items:
+        source = _clean_text(item.get("technical_source")) or "Workbook / normalized evidence"
+        source_counts[source] = source_counts.get(source, 0) + 1
+    _add_table(doc, ["Evidence source", "Correlation links"], [[k, v] for k, v in source_counts.items()], max_rows=None)
+
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for item in items[:max_rows]:
+        source = _clean_text(item.get("technical_source")) or "Workbook / normalized evidence"
+        grouped.setdefault(source, []).append(item)
+
+    rendered = 0
+    for idx, (source, group_items) in enumerate(grouped.items(), start=1):
+        heading = doc.add_paragraph(f"C.{idx} {source} correlations ({len(group_items)} links)", style="Heading 2")
+        _style_heading_paragraph(heading, 2)
+        rows: List[List[Any]] = []
+        for item in group_items:
+            requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
+            flags = ", ".join(_as_list(item.get("flags_sample")))
+            finding = f"{item.get('technical_finding_id')}\nTreatment: {item.get('technical_item_id')}"
+            fit = f"{_clean_text(item.get('evidence_fit'))}\n{_clean_text(item.get('correlation_strength'))}"
+            evidence = _short(item.get('evidence_summary'), 420)
+            rows.append([requirement, flags, finding, fit, evidence])
+            rendered += 1
+        _add_table(
+            doc,
+            ["Requirement / pattern", "Flags", "Finding / treatment", "Evidence fit / strength", "Evidence summary"],
+            rows,
+            max_rows=None,
+        )
+    if rendered != len(items):
+        raise SystemExit(f"[ERROR] Appendix C coverage gate failed: rendered {rendered} of {len(items)} correlation rows.")
 
 
 def _render_vision360_appendix(doc: Document, technical: Dict[str, Any]) -> None:
@@ -3328,9 +3510,11 @@ def _render_vision360_appendix(doc: Document, technical: Dict[str, Any]) -> None
     flag_rows = [x for x in _as_list(vision.get("full_flags")) if isinstance(x, dict)]
     evidence_rows = [x for x in _as_list(vision.get("flag_evidence_details")) if isinstance(x, dict)]
 
-    _add_body_paragraph(
+    _add_section_callout(
         doc,
-        f"Vision360 produced {vision.get('flags_count', len(flag_rows))} flag verdicts. This appendix preserves the full flag matrix dynamically from the current framework output and does not assume a fixed number of flags or groups."
+        "Vision360 evidence register",
+        f"Vision360 produced {vision.get('flags_count', len(flag_rows))} flag verdicts. This appendix preserves the complete dynamic flag matrix, grouped by framework family, plus per-flag evidence details where available.",
+        fill=THEME_LIGHT_BLUE,
     )
 
     rows = []
@@ -3345,20 +3529,28 @@ def _render_vision360_appendix(doc: Document, technical: Dict[str, Any]) -> None
         ])
     _add_table(doc, ["Group", "Total flags", "Pass", "Fail", "Unknown", "Evidence count"], rows, max_rows=None, empty_message="No Vision360 group summary was available.")
 
-    rows = []
+    grouped_flags: Dict[str, List[Dict[str, Any]]] = {}
     for item in flag_rows:
-        rows.append([
-            item.get("group"),
-            item.get("id"),
-            item.get("title"),
-            item.get("state"),
-            _short(item.get("summary"), 280),
-            item.get("evidence_count"),
-            ", ".join(_as_list(item.get("primary_sources"))),
-        ])
-    _add_table(doc, ["Group", "Flag ID", "Title", "State", "Summary", "Evidence count", "Primary sources"], rows, max_rows=None, empty_message="No Vision360 flag matrix was available.")
-    if flag_rows and len(rows) != len(flag_rows):
-        raise SystemExit(f"[ERROR] Vision360 appendix coverage gate failed: rendered {len(rows)} of {len(flag_rows)} flags.")
+        grouped_flags.setdefault(_clean_text(item.get("group")) or "Ungrouped", []).append(item)
+
+    rendered = 0
+    for idx, (group, group_items) in enumerate(grouped_flags.items(), start=1):
+        heading = doc.add_paragraph(f"F.{idx} {group} flags ({len(group_items)})", style="Heading 2")
+        _style_heading_paragraph(heading, 2)
+        rows = []
+        for item in group_items:
+            rows.append([
+                item.get("id"),
+                item.get("state"),
+                f"{_clean_text(item.get('title'))}\n{_short(item.get('summary'), 320)}",
+                item.get("evidence_count"),
+                ", ".join(_as_list(item.get("primary_sources"))),
+            ])
+            rendered += 1
+        _add_table(doc, ["Flag ID", "State", "Title / summary", "Evidence count", "Primary sources"], rows, max_rows=None, empty_message="No Vision360 flag rows were available for this group.")
+
+    if flag_rows and rendered != len(flag_rows):
+        raise SystemExit(f"[ERROR] Vision360 appendix coverage gate failed: rendered {rendered} of {len(flag_rows)} flags.")
 
     detail_rows = []
     for item in evidence_rows:
@@ -3378,7 +3570,7 @@ def _render_mobsf_static_inventory_appendix(doc: Document, technical: Dict[str, 
         _add_note(doc, "MobSF static inventory was not available in the analysis pack.")
         return
 
-    _add_body_paragraph(doc, "This appendix expands MobSF static analysis beyond the executive snapshot and preserves APK identity, signing, manifest, permission, component, URL/domain, email, tracker, and library evidence parsed for this run.")
+    _add_section_callout(doc, "MobSF static inventory", "This appendix expands MobSF static analysis beyond the executive snapshot and preserves APK identity, signing, manifest, permission, component, URL/domain, email, tracker, and library evidence parsed for this run.", fill=THEME_LIGHT_BLUE)
     trace = _as_dict(mobsf.get("apk_traceability"))
     trace_rows = [[k, v] for k, v in trace.items()]
     _add_table(doc, ["APK traceability item", "Observed value"], trace_rows, max_rows=None)
@@ -3436,7 +3628,7 @@ def _render_sca_inventory_appendix(doc: Document, technical: Dict[str, Any]) -> 
         _add_note(doc, "SCA evidence was not available in the analysis pack.")
         return
 
-    _add_body_paragraph(doc, "This appendix preserves the Software Composition Analysis inventory: vulnerabilities, package versions, detected licenses, and remediation status. Counts and rows are generated dynamically from the Trivy and Vision360 SCA evidence available for this run.")
+    _add_section_callout(doc, "SCA inventory", "This appendix preserves the Software Composition Analysis inventory: vulnerabilities, package versions, detected licenses, and remediation status. Counts and rows are generated dynamically from the Trivy and Vision360 SCA evidence available for this run.", fill=THEME_LIGHT_BLUE)
 
     vuln_rows = []
     for item in _trivy_findings(trivy):
@@ -3580,7 +3772,7 @@ def main() -> None:
     treatment_plan = _treatment_plan(pack)
     report_title = _app_report_title(app)
 
-    audit_dt = datetime.utcnow().date()
+    audit_dt = datetime.now(timezone.utc).date()
     audit_date_str = audit_dt.strftime("%d %b %Y")
 
     plt.rcParams.update({"font.size": 10, "figure.titlesize": 12, "axes.titlesize": 12, "axes.labelsize": 10})
@@ -3671,6 +3863,7 @@ def main() -> None:
         nonlocal bookmark_id
         style = f"Heading {level}"
         p = doc.add_paragraph(text, style=style)
+        _style_heading_paragraph(p, level)
         anchor = _make_bookmark_name(text, used_bookmarks)
         _add_bookmark(p, anchor, bookmark_id)
         toc_entries.append((level, text, anchor))
@@ -3836,7 +4029,7 @@ def main() -> None:
     headers = ["Finding", "Owner / priority", "Target date", "Closure evidence"]
     for idx, txt in enumerate(headers):
         mh[idx].text = txt
-        _set_cell_shading(mh[idx], "D9E1F2")
+        _set_cell_shading(mh[idx], THEME_BLUE)
         for run in mh[idx].paragraphs[0].runs:
             run.bold = True
     for p in patterns[:10]:
@@ -3892,7 +4085,7 @@ def main() -> None:
     vh = vb.rows[0].cells
     for idx, txt in enumerate(["Positive control statement (as reported)", "Evidence class", "Workbook PUID", "Flags used", "Evidence / justification (excerpt)"]):
         vh[idx].text = txt
-        _set_cell_shading(vh[idx], "D9E1F2")
+        _set_cell_shading(vh[idx], THEME_BLUE)
         _format_table_cell(vh[idx], font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
     if pos_controls:
         for group_title in ["Observed positive controls", "Observed supporting signals", "Observed controls with additional technical context"]:
