@@ -76,7 +76,7 @@ DATA_DIR = _resolve_data_dir()
 FINGERPRINT_PATH = _resolve_path("VISION360_FINGERPRINT_PATH", "vision360_fingerprint.json")
 REQUISITES_PATH = _resolve_path("REQUISITES_PATH", "requisites.json")
 OUTPUT_XLSX_PATH = _resolve_path("SECURITY_AUDIT_XLSX_PATH", "security_audit_requirements.xlsx")
-RUN_METRICS_RAW_XLSX_PATH = _resolve_path("RUN_METRICS_RAW_XLSX_PATH", "run-metrics-raw.xlsx")
+RUN_METRICS_XLSX_PATH = _resolve_path("RUN_METRICS_XLSX_PATH", "run-metrics.xlsx")
 
 RUN_METRICS: Dict[str, List[Dict[str, Any]]] = {
     "llm_calls": [],
@@ -652,6 +652,96 @@ def _append_dict_rows_sheet(wb: Any, title: str, rows: List[Dict[str, Any]], hea
     return ws
 
 
+def _style_run_metrics_workbook(wb: Any) -> None:
+    """Apply a light professional style to the raw per-run metrics workbook.
+
+    Styling is presentation-only. It does not add formulas, alter result values,
+    or change the requirement-level yes/no/n/a adjudication.
+    """
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.worksheet.table import Table, TableStyleInfo
+    from openpyxl.utils import get_column_letter
+
+    theme_navy = "17365D"
+    theme_light_blue = "EEF5FB"
+    theme_light = "F7F9FC"
+    theme_text = "1F2933"
+    header_fill = PatternFill("solid", fgColor=theme_navy)
+    header_font = Font(name="Arial", bold=True, color="FFFFFF", size=10)
+    body_font = Font(name="Arial", color=theme_text, size=9)
+    key_fill = PatternFill("solid", fgColor=theme_light_blue)
+    alt_fill = PatternFill("solid", fgColor=theme_light)
+    side = Side(style="thin", color="D0D7DE")
+    border = Border(left=side, right=side, top=side, bottom=side)
+    tab_colors = {
+        "run_summary": theme_navy,
+        "input_hashes": "5B9BD5",
+        "compliance_export": "70AD47",
+        "llm_calls": "ED7D31",
+        "llm_items": "A5A5A5",
+    }
+
+    wb.properties.title = "Run Metrics"
+    wb.properties.subject = "Per-execution audit telemetry"
+    wb.properties.creator = "mSEC-AM workflow"
+
+    for ws in wb.worksheets:
+        ws.sheet_view.showGridLines = False
+        ws.freeze_panes = "A2"
+        ws.sheet_properties.tabColor = tab_colors.get(ws.title, theme_navy)
+        max_row = ws.max_row
+        max_col = ws.max_column
+        if max_row < 1 or max_col < 1:
+            continue
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = border
+        ws.row_dimensions[1].height = 24
+        for row_idx in range(2, max_row + 1):
+            for col_idx in range(1, max_col + 1):
+                cell = ws.cell(row_idx, col_idx)
+                cell.font = body_font
+                cell.alignment = Alignment(vertical="top", wrap_text=True)
+                cell.border = border
+                if ws.title == "run_summary" and col_idx == 1:
+                    cell.fill = key_fill
+                    cell.font = Font(name="Arial", bold=True, color=theme_text, size=9)
+                elif row_idx % 2 == 0:
+                    cell.fill = alt_fill
+                if isinstance(cell.value, bool):
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                if isinstance(cell.value, (int, float)) and not isinstance(cell.value, bool):
+                    cell.number_format = "#,##0.000" if isinstance(cell.value, float) and abs(cell.value - round(cell.value)) > 1e-9 else "#,##0"
+        ws.auto_filter.ref = ws.dimensions
+        try:
+            ref = f"A1:{get_column_letter(max_col)}{max_row}"
+            table_name = "tbl_" + "".join(ch if ch.isalnum() else "_" for ch in ws.title.lower())[:230]
+            table = Table(displayName=table_name, ref=ref)
+            table.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False, showRowStripes=True, showColumnStripes=False)
+            ws.add_table(table)
+        except Exception:
+            pass
+        for col_idx in range(1, max_col + 1):
+            letter = get_column_letter(col_idx)
+            header = str(ws.cell(1, col_idx).value or "").lower()
+            max_len = len(str(ws.cell(1, col_idx).value or ""))
+            for row_idx in range(2, min(max_row, 200) + 1):
+                max_len = max(max_len, len(str(ws.cell(row_idx, col_idx).value or "")))
+            if "hash" in header or "sha" in header:
+                width = 34
+            elif "path" in header or "flags" in header or "error" in header:
+                width = 42
+            elif "justification" in header:
+                width = 36
+            elif "puid" in header or "id" in header:
+                width = 22
+            else:
+                width = min(max(max_len + 2, 12), 30)
+            ws.column_dimensions[letter].width = width
+
+
 def _write_run_metrics_raw_xlsx(
     *,
     audits: List[RequirementAudit],
@@ -669,7 +759,7 @@ def _write_run_metrics_raw_xlsx(
     adjudication, workbook verdicts, or AI-generated justifications. It only
     exports raw execution telemetry and requirement-level hashes.
     """
-    RUN_METRICS_RAW_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    RUN_METRICS_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     llm_snapshot = _llm_config_snapshot(batch_size=batch_size)
     llm_config_hash = _stable_json_hash(llm_snapshot)
@@ -718,7 +808,7 @@ def _write_run_metrics_raw_xlsx(
         ("llm_config_hash", llm_config_hash),
         ("compliance_matrix_hash", compliance_matrix_hash),
         ("output_xlsx_path", str(OUTPUT_XLSX_PATH)),
-        ("run_metrics_raw_xlsx_path", str(RUN_METRICS_RAW_XLSX_PATH)),
+        ("run_metrics_xlsx_path", str(RUN_METRICS_XLSX_PATH)),
     ]
     for key, value in llm_snapshot.items():
         run_summary_rows.append((f"config.{key}", value))
@@ -737,17 +827,9 @@ def _write_run_metrics_raw_xlsx(
         "run_batch", "puid", "expected_by_llm", "received_from_llm", "field_complete",
         "traceability_ok", "fallback_used", "justification_source", "result", "flags_count",
     ])
-    metric_definition_rows = [
-        {"metric": "json_valid_rate", "formula": "json_valid_count / num_llm_calls", "level": "per execution"},
-        {"metric": "schema_valid_rate", "formula": "schema_valid_count / num_llm_calls", "level": "per execution"},
-        {"metric": "completion_rate", "formula": "received_items_count / expected_items_count", "level": "per execution"},
-        {"metric": "traceability_ok_rate", "formula": "traceability_ok_count / expected_items_count", "level": "per execution"},
-        {"metric": "fallback_rate", "formula": "fallback_count / num_requirements", "level": "per execution"},
-        {"metric": "retry_rate", "formula": "retry_count / num_llm_calls", "level": "per execution"},
-    ]
-    _append_dict_rows_sheet(wb, "metric_definitions", metric_definition_rows, ["metric", "formula", "level"])
-    wb.save(RUN_METRICS_RAW_XLSX_PATH)
-    print(f"[OK] Run metrics raw workbook generated: {RUN_METRICS_RAW_XLSX_PATH}", flush=True)
+    _style_run_metrics_workbook(wb)
+    wb.save(RUN_METRICS_XLSX_PATH)
+    print(f"[OK] Run metrics workbook generated: {RUN_METRICS_XLSX_PATH}", flush=True)
 
 def translate_texts_to_english_via_openai(items: List[Dict[str, str]]) -> Dict[str, str]:
     client = openai_client()
@@ -1070,11 +1152,11 @@ def main() -> None:
     print(f"[PATH] FINGERPRINT_PATH={FINGERPRINT_PATH}", flush=True)
     print(f"[PATH] REQUISITES_PATH={REQUISITES_PATH}", flush=True)
     print(f"[PATH] OUTPUT_XLSX_PATH={OUTPUT_XLSX_PATH}", flush=True)
-    print(f"[PATH] RUN_METRICS_RAW_XLSX_PATH={RUN_METRICS_RAW_XLSX_PATH}", flush=True)
+    print(f"[PATH] RUN_METRICS_XLSX_PATH={RUN_METRICS_XLSX_PATH}", flush=True)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
-    RUN_METRICS_RAW_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    RUN_METRICS_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     if not FINGERPRINT_PATH.exists():
         raise SystemExit(f"Missing required file: {FINGERPRINT_PATH}.")
