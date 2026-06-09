@@ -312,14 +312,32 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+          cache: "pip"
+          cache-dependency-path: .github/workflows/codeql-analysis.yml
+
+      - name: Cache Semgrep virtual environment
+        uses: actions/cache@v5
+        with:
+          path: .cache/semgrep-venv
+          key: ${{ runner.os }}-semgrep-venv-v1-${{ hashFiles('.github/workflows/codeql-analysis.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-semgrep-venv-v1-
 
       - name: Install Semgrep
         shell: bash
         continue-on-error: true
         run: |
           set -euo pipefail
-          python -m pip install --upgrade pip
-          pip install --upgrade semgrep
+          venv=".cache/semgrep-venv"
+          python -m venv "$venv"
+          semgrep_bin="$venv/bin/semgrep"
+          if [ -x "$semgrep_bin" ]; then
+            "$semgrep_bin" --version
+          else
+            "$venv/bin/python" -m pip install --upgrade pip
+            "$venv/bin/python" -m pip install --upgrade --prefer-binary semgrep
+          fi
+          echo "$PWD/$venv/bin" >> "$GITHUB_PATH"
 
       - name: Run Semgrep to SARIF
         shell: bash

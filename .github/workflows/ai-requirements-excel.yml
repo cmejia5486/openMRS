@@ -98,160 +98,214 @@ jobs:
           echo "[PATH] REQUISITES_SOURCE_PATH=$requirements_source_path"
           echo "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
 
-      - name: Create clean venv on Windows
+      - name: Set up shared Python environment on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
 
-          $venvDir = Join-Path $env:RUNNER_TEMP "ai-requirements-venv"
-          if (Test-Path $venvDir) {
-            Remove-Item -Recurse -Force $venvDir
-          }
-
-          $pythonVersion = ($env:AI_PYTHON_VERSION + "").Trim()
-          if (-not [string]::IsNullOrWhiteSpace($pythonVersion) -and (Get-Command py -ErrorAction SilentlyContinue)) {
-            py -$pythonVersion -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            if ($LASTEXITCODE -ne 0) {
-              throw "Python launcher check failed for version $pythonVersion."
+          $versions = @("$env:AI_PYTHON_VERSION", "3.12", "3.11", "3.10") | Where-Object { $_ -and $_.Trim() -ne "" } | Select-Object -Unique
+          $selected = $null
+          foreach ($version in $versions) {
+            Write-Host "[PY] Trying py -$version"
+            & py -$version -c "import sys, venv; print(sys.executable); print(sys.version); print('venv module OK')"
+            if ($LASTEXITCODE -eq 0) {
+              $selected = (& py -$version -c "import sys; print(sys.executable)").Trim().Split("`n")[-1]
+              break
             }
-            py -$pythonVersion -m venv $venvDir
-          } else {
-            python -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            if ($LASTEXITCODE -ne 0) {
-              throw "Default python check failed."
+          }
+          if (-not $selected) {
+            Write-Host "[PY] Trying python"
+            & python -c "import sys, venv; print(sys.executable); print(sys.version); print('venv module OK')"
+            if ($LASTEXITCODE -eq 0) { $selected = (& python -c "import sys; print(sys.executable)").Trim().Split("`n")[-1] }
+          }
+          if (-not $selected) { throw "No usable Python interpreter was found." }
+
+          $pyKey = (& $selected -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')").Trim()
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pyKey)) { throw "Could not determine Python version key." }
+          Write-Host "[PY] Selected Python: $selected"
+          Write-Host "[PY] Python cache key: $pyKey"
+
+          $requirementsList = @(
+            "openai==1.109.1",
+            "litellm==1.80.0",
+            "pydantic>=2.7.0",
+            "openpyxl>=3.1.0",
+            "pandas",
+            "python-docx",
+            "matplotlib",
+            "requests",
+            "pyyaml",
+            "jsonschema"
+          )
+          $requirements = $requirementsList -join "`n"
+
+          $venvRoot = "C:\mosfScan\venvs"
+          New-Item -ItemType Directory -Force -Path $venvRoot | Out-Null
+          $venv = Join-Path $venvRoot "security-audit-py$pyKey"
+          $pythonExe = Join-Path $venv "Scripts\python.exe"
+          $hashPath = Join-Path $venv ".requirements.hash"
+          $reqFile = Join-Path $venvRoot "security-audit-requirements-py$pyKey.txt"
+          $lockDir = Join-Path $venvRoot "security-audit-py$pyKey.lock"
+
+          $manifest = "python=$pyKey`n$requirements`n"
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes($manifest)
+          $currentHash = ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") }) -join ""
+
+          $lockAcquired = $false
+          for ($i = 1; $i -le 120; $i++) {
+            try {
+              New-Item -ItemType Directory -Path $lockDir -ErrorAction Stop | Out-Null
+              $lockAcquired = $true
+              break
+            } catch {
+              Write-Host "[PY] Waiting for shared venv lock: $lockDir"
+              Start-Sleep -Seconds 5
             }
-            python -m venv $venvDir
           }
+          if (-not $lockAcquired) { throw "Timed out waiting for shared Python environment lock: $lockDir" }
 
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+          try {
+            $needsRebuild = $true
+            if ((Test-Path $pythonExe) -and (Test-Path $hashPath)) {
+              $existingHash = (Get-Content -LiteralPath $hashPath -Raw).Trim()
+              if ($existingHash -eq $currentHash) {
+                $needsRebuild = $false
+                Write-Host "[PY] Reusing shared Python environment: $venv"
+              }
+            }
+
+            if (-not $needsRebuild) {
+              & $pythonExe -m pip check
+              if ($LASTEXITCODE -ne 0) {
+                Write-Host "[PY] Existing shared environment failed pip check. Rebuilding."
+                $needsRebuild = $true
+              }
+            }
+
+            if ($needsRebuild) {
+              Write-Host "[PY] Building shared Python environment: $venv"
+              if (Test-Path $venv) { Remove-Item -Recurse -Force $venv }
+              & $selected -m venv $venv
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              if (-not (Test-Path $pythonExe)) { throw "Virtualenv Python not found at $pythonExe" }
+              Set-Content -LiteralPath $reqFile -Value $requirements -Encoding UTF8
+              & $pythonExe -m pip install --upgrade pip
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $pythonExe -m pip install --retries 10 --timeout 720 --prefer-binary -r $reqFile
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $pythonExe -m pip check
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              Set-Content -LiteralPath $hashPath -Value $currentHash -Encoding UTF8
+              Write-Host "[PY] Shared Python environment ready: $venv"
+            }
+          } finally {
+            if (Test-Path $lockDir) { Remove-Item -Recurse -Force $lockDir -ErrorAction SilentlyContinue }
           }
-
-          $pythonExe = Join-Path $venvDir "Scripts\python.exe"
-          if (-not (Test-Path $pythonExe)) {
-            throw "Virtual environment Python executable was not created: $pythonExe"
-          }
-
-          & $pythonExe --version
-          & $pythonExe -c "import sys; print(sys.executable)"
 
           "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AI_VENV_DIR=$venvDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AI_VENV_DIR=$venv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "[PY] Using Python: $pythonExe"
 
-      - name: Create clean venv on Unix
+      - name: Set up shared Python environment on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
 
-          venv_dir="$RUNNER_TEMP/ai-requirements-venv"
-          rm -rf "$venv_dir"
-
           python_version="${AI_PYTHON_VERSION:-}"
+          selected=""
           if [ -n "$python_version" ] && command -v "python$python_version" >/dev/null 2>&1; then
-            "python$python_version" -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            "python$python_version" -m venv "$venv_dir"
+            selected="python$python_version"
           elif command -v python3 >/dev/null 2>&1; then
-            python3 -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            python3 -m venv "$venv_dir"
+            selected="python3"
+          elif command -v python >/dev/null 2>&1; then
+            selected="python"
           else
-            python -c "import sys, venv; print(sys.version); print(sys.executable); print('venv module OK')"
-            python -m venv "$venv_dir"
+            echo "No usable Python interpreter was found."
+            exit 1
           fi
 
+          "$selected" -c "import sys, venv; print(sys.executable); print(sys.version); print('venv module OK')"
+          py_key="$("$selected" -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
+          echo "[PY] Selected Python: $selected"
+          echo "[PY] Python cache key: $py_key"
+
+          requirements="$(printf '%s\n' \
+            "openai==1.109.1" \
+            "litellm==1.80.0" \
+            "pydantic>=2.7.0" \
+            "openpyxl>=3.1.0" \
+            "pandas" \
+            "python-docx" \
+            "matplotlib" \
+            "requests" \
+            "pyyaml" \
+            "jsonschema" \
+          )"
+
+          venv_root="${SECURITY_AUDIT_VENV_ROOT:-$HOME/.cache/security-audit-venvs}"
+          mkdir -p "$venv_root"
+          venv_dir="$venv_root/security-audit-py$py_key"
           python_exe="$venv_dir/bin/python"
-          if [ ! -f "$python_exe" ]; then
-            echo "Virtual environment Python executable was not created: $python_exe"
+          hash_path="$venv_dir/.requirements.hash"
+          req_file="$venv_root/security-audit-requirements-py$py_key.txt"
+          lock_dir="$venv_root/security-audit-py$py_key.lock"
+          current_hash="$(printf 'python=%s\n%s\n' "$py_key" "$requirements" | sha256sum | awk '{print $1}')"
+
+          lock_acquired="false"
+          for attempt in $(seq 1 120); do
+            if mkdir "$lock_dir" 2>/dev/null; then
+              lock_acquired="true"
+              break
+            fi
+            echo "[PY] Waiting for shared venv lock: $lock_dir"
+            sleep 5
+          done
+          if [ "$lock_acquired" != "true" ]; then
+            echo "Timed out waiting for shared Python environment lock: $lock_dir"
             exit 1
+          fi
+
+          cleanup_lock() {
+            rmdir "$lock_dir" 2>/dev/null || true
+          }
+          trap cleanup_lock EXIT
+
+          needs_rebuild="true"
+          if [ -x "$python_exe" ] && [ -f "$hash_path" ] && [ "$(cat "$hash_path" | tr -d '\r\n')" = "$current_hash" ]; then
+            needs_rebuild="false"
+            echo "[PY] Reusing shared Python environment: $venv_dir"
+          fi
+
+          if [ "$needs_rebuild" = "false" ]; then
+            if ! "$python_exe" -m pip check; then
+              echo "[PY] Existing shared environment failed pip check. Rebuilding."
+              needs_rebuild="true"
+            fi
+          fi
+
+          if [ "$needs_rebuild" = "true" ]; then
+            echo "[PY] Building shared Python environment: $venv_dir"
+            rm -rf "$venv_dir"
+            "$selected" -m venv "$venv_dir"
+            if [ ! -x "$python_exe" ]; then
+              echo "Virtual environment Python executable was not created: $python_exe"
+              exit 1
+            fi
+            printf '%s\n' "$requirements" > "$req_file"
+            "$python_exe" -m pip install --upgrade pip
+            "$python_exe" -m pip install --retries 10 --timeout 720 --prefer-binary -r "$req_file"
+            "$python_exe" -m pip check
+            printf '%s\n' "$current_hash" > "$hash_path"
+            echo "[PY] Shared Python environment ready: $venv_dir"
           fi
 
           "$python_exe" --version
           "$python_exe" -c "import sys; print(sys.executable)"
-
           echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
           echo "AI_VENV_DIR=$venv_dir" >> "$GITHUB_ENV"
-
-      - name: Install dependencies on Windows
-        if: runner.os == 'Windows'
-        shell: powershell
-        env:
-          PYTHONNOUSERSITE: "1"
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          function Invoke-Pip {
-            param(
-              [Parameter(Mandatory = $true)]
-              [string[]] $ArgsToPass,
-              [int] $MaxAttempts = 3
-            )
-
-            for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-              Write-Host ("[PIP] Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($ArgsToPass -join ' '))
-              & $env:PYTHON_EXE -m pip @ArgsToPass
-
-              if ($LASTEXITCODE -eq 0) {
-                return
-              }
-
-              if ($attempt -lt $MaxAttempts) {
-                $sleepSeconds = 10 * $attempt
-                Write-Host "[PIP] Attempt failed. Retrying in $sleepSeconds seconds."
-                Start-Sleep -Seconds $sleepSeconds
-              }
-            }
-
-            throw ("pip failed after {0} attempts: {1}" -f $MaxAttempts, ($ArgsToPass -join ' '))
-          }
-
-          Invoke-Pip -ArgsToPass @("--retries", "10", "--timeout", "120", "install", "--upgrade", "pip")
-          Invoke-Pip -ArgsToPass @(
-            "--retries", "10",
-            "--timeout", "120",
-            "install",
-            "--prefer-binary",
-            "openai==1.109.1",
-            "litellm==1.80.0",
-            "pydantic>=2.7.0",
-            "openpyxl>=3.1.0"
-          )
-
-          & $env:PYTHON_EXE -m pip check
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-      - name: Install dependencies on Unix
-        if: runner.os != 'Windows'
-        shell: bash
-        env:
-          PYTHONNOUSERSITE: "1"
-        run: |
-          set -euo pipefail
-
-          pip_retry() {
-            max_attempts=3
-            attempt=1
-            until "$PYTHON_EXE" -m pip "$@"; do
-              if [ "$attempt" -ge "$max_attempts" ]; then
-                echo "pip failed after $max_attempts attempts: $*"
-                return 1
-              fi
-              sleep_seconds=$((10 * attempt))
-              echo "[PIP] Attempt $attempt failed. Retrying in $sleep_seconds seconds."
-              sleep "$sleep_seconds"
-              attempt=$((attempt + 1))
-            done
-          }
-
-          pip_retry --retries 10 --timeout 120 install --upgrade pip
-          pip_retry --retries 10 --timeout 120 install --prefer-binary \
-            "openai==1.109.1" \
-            "litellm==1.80.0" \
-            "pydantic>=2.7.0" \
-            "openpyxl>=3.1.0"
-          "$PYTHON_EXE" -m pip check
 
       - name: Verify AI imports on Windows
         if: runner.os == 'Windows'

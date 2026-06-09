@@ -110,10 +110,11 @@ jobs:
             Get-ChildItem -Recurse -File $env:AUDIT_TECHNICAL_INPUTS_DIR | ForEach-Object { Write-Host ("[TECHNICAL] {0}" -f $_.FullName) }
           }
 
-      - name: Set up Python
+      - name: Set up shared Python environment
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
+
           $versions = @("$env:AI_PYTHON_VERSION", "3.12", "3.11", "3.10") | Where-Object { $_ -and $_.Trim() -ne "" } | Select-Object -Unique
           $selected = $null
           foreach ($version in $versions) {
@@ -130,35 +131,93 @@ jobs:
             if ($LASTEXITCODE -eq 0) { $selected = (& python -c "import sys; print(sys.executable)").Trim().Split("`n")[-1] }
           }
           if (-not $selected) { throw "No usable Python interpreter was found." }
-          Write-Host "[PY] Selected Python: $selected"
-          $venv = Join-Path $env:RUNNER_TEMP "audit-summary-venv"
-          if (Test-Path $venv) { Remove-Item -Recurse -Force $venv }
-          & $selected -m venv $venv
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $pythonExe = Join-Path $venv "Scripts\python.exe"
-          if (-not (Test-Path $pythonExe)) { throw "Virtualenv Python not found at $pythonExe" }
-          "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "[PY] Virtualenv Python: $pythonExe"
 
-      - name: Install dependencies
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          function Invoke-PipInstall {
-            param([Parameter(Mandatory = $true)][string[]] $PipArgs, [int] $MaxAttempts = 3)
-            for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
-              Write-Host ("[PIP] Attempt {0}/{1}: python -m pip {2}" -f $attempt, $MaxAttempts, ($PipArgs -join ' '))
-              & $env:PYTHON_EXE -m pip @PipArgs
-              if ($LASTEXITCODE -eq 0) { return }
-              if ($attempt -lt $MaxAttempts) { Start-Sleep -Seconds (15 * $attempt) }
+          $pyKey = (& $selected -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')").Trim()
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pyKey)) { throw "Could not determine Python version key." }
+          Write-Host "[PY] Selected Python: $selected"
+          Write-Host "[PY] Python cache key: $pyKey"
+
+          $requirementsList = @(
+            "openai==1.109.1",
+            "litellm==1.80.0",
+            "pydantic>=2.7.0",
+            "openpyxl>=3.1.0",
+            "pandas",
+            "python-docx",
+            "matplotlib",
+            "requests",
+            "pyyaml",
+            "jsonschema"
+          )
+          $requirements = $requirementsList -join "`n"
+
+          $venvRoot = "C:\mosfScan\venvs"
+          New-Item -ItemType Directory -Force -Path $venvRoot | Out-Null
+          $venv = Join-Path $venvRoot "security-audit-py$pyKey"
+          $pythonExe = Join-Path $venv "Scripts\python.exe"
+          $hashPath = Join-Path $venv ".requirements.hash"
+          $reqFile = Join-Path $venvRoot "security-audit-requirements-py$pyKey.txt"
+          $lockDir = Join-Path $venvRoot "security-audit-py$pyKey.lock"
+
+          $manifest = "python=$pyKey`n$requirements`n"
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes($manifest)
+          $currentHash = ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") }) -join ""
+
+          $lockAcquired = $false
+          for ($i = 1; $i -le 120; $i++) {
+            try {
+              New-Item -ItemType Directory -Path $lockDir -ErrorAction Stop | Out-Null
+              $lockAcquired = $true
+              break
+            } catch {
+              Write-Host "[PY] Waiting for shared venv lock: $lockDir"
+              Start-Sleep -Seconds 5
             }
-            throw ("pip install failed after {0} attempts: {1}" -f $MaxAttempts, ($PipArgs -join ' '))
           }
-          & $env:PYTHON_EXE -m pip --version
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Invoke-PipInstall -PipArgs @("install", "--retries", "10", "--timeout", "720", "--prefer-binary", "openai==1.109.1", "litellm==1.80.0", "pydantic>=2.7.0", "openpyxl>=3.1.0", "pandas", "python-docx", "matplotlib", "requests")
-          & $env:PYTHON_EXE -m pip check
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not $lockAcquired) { throw "Timed out waiting for shared Python environment lock: $lockDir" }
+
+          try {
+            $needsRebuild = $true
+            if ((Test-Path $pythonExe) -and (Test-Path $hashPath)) {
+              $existingHash = (Get-Content -LiteralPath $hashPath -Raw).Trim()
+              if ($existingHash -eq $currentHash) {
+                $needsRebuild = $false
+                Write-Host "[PY] Reusing shared Python environment: $venv"
+              }
+            }
+
+            if (-not $needsRebuild) {
+              & $pythonExe -m pip check
+              if ($LASTEXITCODE -ne 0) {
+                Write-Host "[PY] Existing shared environment failed pip check. Rebuilding."
+                $needsRebuild = $true
+              }
+            }
+
+            if ($needsRebuild) {
+              Write-Host "[PY] Building shared Python environment: $venv"
+              if (Test-Path $venv) { Remove-Item -Recurse -Force $venv }
+              & $selected -m venv $venv
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              if (-not (Test-Path $pythonExe)) { throw "Virtualenv Python not found at $pythonExe" }
+              Set-Content -LiteralPath $reqFile -Value $requirements -Encoding UTF8
+              & $pythonExe -m pip install --upgrade pip
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $pythonExe -m pip install --retries 10 --timeout 720 --prefer-binary -r $reqFile
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $pythonExe -m pip check
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              Set-Content -LiteralPath $hashPath -Value $currentHash -Encoding UTF8
+              Write-Host "[PY] Shared Python environment ready: $venv"
+            }
+          } finally {
+            if (Test-Path $lockDir) { Remove-Item -Recurse -Force $lockDir -ErrorAction SilentlyContinue }
+          }
+
+          "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AI_VENV_DIR=$venv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "[PY] Using Python: $pythonExe"
 
       - name: Build Audit Summary analysis pack
         shell: powershell
