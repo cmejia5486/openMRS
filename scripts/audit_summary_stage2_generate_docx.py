@@ -73,6 +73,14 @@ REPORT_TABLE_HEADER_PT = 8.0
 REPORT_TABLE_BODY_PT = 7.6
 REPORT_HEADER_FOOTER_PT = 7.5
 
+THEME_NAVY = "17365D"
+THEME_BLUE = "D9EAF7"
+THEME_LIGHT_BLUE = "EEF5FB"
+THEME_LIGHT = "F7F9FC"
+THEME_GRAY = "EDEDED"
+THEME_GREEN = "E2F0D9"
+THEME_RED = "FCE4D6"
+
 
 
 def _wrap_label(s: str, width: int = 30) -> str:
@@ -260,23 +268,43 @@ def _add_header_footer(section, audit_date_str: str, report_title: str = "Mobile
 
 
 def _add_cover(doc: Document, audit_date_str: str, auditor: str, report_title: str = "Mobile Application") -> None:
+    """Render a polished cover page using native Word elements only."""
     doc.add_paragraph()
-    t = doc.add_paragraph("mSEC-AM Audit Summary")
-    t.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _set_run_font(t.runs[0], size_pt=22, bold=True)
-    s = doc.add_paragraph(report_title)
+    banner = doc.add_table(rows=1, cols=1)
+    banner.style = "Table Grid"
+    cell = banner.cell(0, 0)
+    _set_cell_shading(cell, THEME_NAVY)
+    p = cell.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run("mSEC-AM Audit Summary")
+    _set_run_font(r, size_pt=22, bold=True)
+    s = cell.add_paragraph(report_title)
     s.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _set_run_font(s.runs[0], size_pt=13, bold=True)
+    if s.runs:
+        _set_run_font(s.runs[0], size_pt=13, bold=True)
+
     doc.add_paragraph()
-    for line in [
-        f"Audit Date: {audit_date_str}",
-        f"Auditor: {auditor}",
-        "Classification: Confidential / Internal Use",
-    ]:
-        info = doc.add_paragraph()
-        info.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = info.add_run(line)
-        _set_run_font(r, size_pt=REPORT_BODY_PT)
+    card = doc.add_table(rows=0, cols=2)
+    card.style = "Table Grid"
+    cover_rows = [
+        ("Audit Date", audit_date_str),
+        ("Auditor", auditor),
+        ("Method", "mSEC-AM (mobile SECurity Audit Method)"),
+        ("Classification", "Confidential / Internal Use"),
+    ]
+    for label, value in cover_rows:
+        cells = card.add_row().cells
+        cells[0].text = label
+        cells[1].text = value
+        _set_cell_shading(cells[0], THEME_BLUE)
+        _format_table_cell(cells[0], font_size=REPORT_BODY_PT, bold=True, no_wrap=True)
+        _format_table_cell(cells[1], font_size=REPORT_BODY_PT)
+
+    doc.add_paragraph()
+    note = doc.add_paragraph()
+    note.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = note.add_run("Evidence-grounded executive report with requirement, scanner, and treatment traceability")
+    _set_run_font(r, size_pt=REPORT_BODY_PT, italic=True)
     doc.add_page_break()
 
 
@@ -393,6 +421,32 @@ def _add_callout(doc: Document, title: str, bullets: List[str]) -> None:
             _set_run_font(run, size_pt=REPORT_BODY_PT)
     doc.add_paragraph()
 
+
+
+def _add_metric_cards(doc: Document, cards: List[tuple[str, Any, str]]) -> None:
+    """Render compact executive metric cards."""
+    if not cards:
+        return
+    cols = min(4, max(1, len(cards)))
+    tbl = doc.add_table(rows=1, cols=cols)
+    tbl.style = "Table Grid"
+    for idx, (label, value, note) in enumerate(cards[:cols]):
+        cell = tbl.cell(0, idx)
+        _set_cell_shading(cell, THEME_LIGHT_BLUE)
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p.add_run(str(value))
+        _set_run_font(r, size_pt=14, bold=True)
+        p2 = cell.add_paragraph(str(label))
+        p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if p2.runs:
+            _set_run_font(p2.runs[0], size_pt=8.5, bold=True)
+        if note:
+            p3 = cell.add_paragraph(str(note))
+            p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            if p3.runs:
+                _set_run_font(p3.runs[0], size_pt=7.2, italic=True)
+    doc.add_paragraph()
 
 def _add_figure(doc: Document, img_path: str, caption: str) -> None:
     doc.add_picture(img_path, width=Inches(6.5))
@@ -877,22 +931,15 @@ def _normalize_document_typography(doc: Document) -> None:
         for run in paragraph.runs:
             _set_run_font(run, size_pt=target, bold=bold, italic=italic)
 
+    # Tables are formatted when they are created. Re-walking every table cell in
+    # large appendices is very expensive with python-docx, so this final pass
+    # only reinforces header styling and repeating headers.
     for table in doc.tables:
         if table.rows:
             _repeat_table_header(table.rows[0])
             for cell in table.rows[0].cells:
-                _set_cell_shading(cell, "D9E1F2")
+                _set_cell_shading(cell, THEME_BLUE)
                 _format_table_cell(cell, font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
-        for row_idx, row in enumerate(table.rows):
-            for col_idx, cell in enumerate(row.cells):
-                if row_idx == 0:
-                    continue
-                text = _clean_text(cell.text)
-                if text == "PUID / item":
-                    cell.text = "Requirement"
-                    text = "Requirement"
-                keep_together = col_idx == 0 or bool(re.match(r"^(SECM-|CVE-|TECH-|CTRL-)", text))
-                _format_table_cell(cell, font_size=7.2 if len(text) > 220 else REPORT_TABLE_BODY_PT, no_wrap=keep_together)
 
 
 
@@ -906,6 +953,7 @@ REPORT_DISPLAY_REPLACEMENTS = [
     (re.compile(r"\bcontradictions\b", re.IGNORECASE), "alignment issues"),
     (re.compile(r"\bcontradiction\b", re.IGNORECASE), "alignment issue"),
     (re.compile(r"\bcontradictory\b", re.IGNORECASE), "not aligned"),
+    (re.compile(r"\bcontradicted\b", re.IGNORECASE), "not aligned"),
     (re.compile(r"\bcontradicts\b", re.IGNORECASE), "does not align with"),
     (re.compile(r"\bcontradicting\b", re.IGNORECASE), "not aligned"),
     (re.compile(r"\bcontradict\b", re.IGNORECASE), "does not align with"),
@@ -966,7 +1014,7 @@ def _quality_gate(doc: Document) -> None:
     """Fail fast only on defects that make the DOCX invalid or visibly unsafe."""
     full_text = "\n".join(p.text for p in doc.paragraphs)
     table_text = "\n".join(cell.text for table in doc.tables for row in table.rows for cell in row.cells)
-    combined = full_text + "\n" + table_text
+    combined = _report_display_text(full_text + "\n" + table_text)
     lowered = combined.lower()
     forbidden_fragments = [
         "missing_inputs\\n",
@@ -1186,7 +1234,7 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
         if header_text == "PUID / item":
             header_text = "Requirement"
         h[idx].text = header_text
-        _set_cell_shading(h[idx], "D9E1F2")
+        _set_cell_shading(h[idx], THEME_BLUE)
         _format_table_cell(h[idx], font_size=REPORT_TABLE_HEADER_PT, bold=True, no_wrap=True)
     for row_values in actual_rows:
         r = tbl.add_row().cells
@@ -1195,6 +1243,8 @@ def _add_table(doc: Document, headers: List[str], rows: List[List[Any]], max_row
             if value == "PUID / item":
                 value = "Requirement"
             r[idx].text = value
+            if len(tbl.rows) % 2 == 1:
+                _set_cell_shading(r[idx], THEME_LIGHT)
             keep_together = idx == 0 and len(headers) >= 4
             _format_table_cell(r[idx], font_size=7.3 if len(value) > 180 else REPORT_TABLE_BODY_PT, no_wrap=keep_together)
     doc.add_paragraph()
@@ -2410,16 +2460,23 @@ def _treatment_batch_size() -> int:
     return max(4, min(25, _safe_int(os.getenv("AUDIT_SUMMARY_AI_TREATMENT_BATCH_SIZE", "12"), 12)))
 
 
-def _max_control_treatment_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", "250"), 250))
+def _max_rows_from_env(name: str, total: int) -> int:
+    raw = os.getenv(name, "").strip().lower()
+    if raw in {"", "0", "all", "full", "none", "unlimited"}:
+        return max(0, total)
+    return max(1, min(_safe_int(raw, total), total))
 
 
-def _max_technical_treatment_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", "160"), 160))
+def _max_control_treatment_rows(total: int = 0) -> int:
+    return _max_rows_from_env("AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS", total)
 
 
-def _max_correlation_rows() -> int:
-    return max(1, _safe_int(os.getenv("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", "300"), 300))
+def _max_technical_treatment_rows(total: int = 0) -> int:
+    return _max_rows_from_env("AUDIT_SUMMARY_MAX_TECHNICAL_TREATMENT_ROWS", total)
+
+
+def _max_correlation_rows(total: int = 0) -> int:
+    return _max_rows_from_env("AUDIT_SUMMARY_MAX_CORRELATION_ROWS", total)
 
 
 def _chunks(items: List[Any], size: int) -> List[List[Any]]:
@@ -3076,7 +3133,7 @@ def _render_treatment_overview(doc: Document, treatment_plan: Dict[str, Any], fi
 
 def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]
-    max_rows = _max_control_treatment_rows()
+    max_rows = _max_control_treatment_rows(len(items))
     if not items:
         _add_note(doc, "No SECM-CAT treatment items were available in the analysis pack.")
         return
@@ -3085,7 +3142,7 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
     if mode != "full":
         rows: List[List[Any]] = []
         for item in items[:max_rows]:
-            flags = ", ".join(_as_list(item.get("flags"))[:12])
+            flags = ", ".join(_as_list(item.get("flags")))
             priority = f"{item.get('severity')} / {item.get('likelihood')}"
             timeline = _target_timeline(_clean_text(item.get("severity")))
             rows.append([
@@ -3094,26 +3151,27 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
                 f"{item.get('weakness_pattern')}\nPriority: {priority}",
                 f"{item.get('recommended_owner')}\nTarget: {timeline}",
                 flags,
-                _short(item.get("evidence_excerpt") or item.get("description"), 360),
+                _short(item.get("evidence_excerpt") or item.get("description"), 520),
             ])
         _add_table(
             doc,
             ["Requirement", "Category", "Pattern / priority", "Owner / target", "Flags", "Evidence basis"],
             rows,
-            max_rows=max_rows,
+            max_rows=None,
         )
-        if len(items) > max_rows:
-            _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
+        if len(rows) != len(items):
+            raise SystemExit(f"[ERROR] Appendix A coverage gate failed: rendered {len(rows)} of {len(items)} SECM-CAT controls.")
         return
 
     def add_card_row(tbl, label: str, value: Any) -> None:
         cells = tbl.add_row().cells
         cells[0].text = _cell_text(label)
         cells[1].text = _cell_text(value)
-        _set_cell_shading(cells[0], "EDEDED")
+        _set_cell_shading(cells[0], THEME_GRAY)
         _format_table_cell(cells[0], font_size=8.5, bold=True, no_wrap=True)
         _format_table_cell(cells[1], font_size=8.0)
 
+    rendered = 0
     for item in items[:max_rows]:
         item_id = _clean_text(item.get("item_id"))
         writeup = _treatment_writeup(treatment_ai, item_id, technical=False)
@@ -3122,11 +3180,10 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
         heading.paragraph_format.space_before = Pt(8)
         heading.paragraph_format.space_after = Pt(3)
         run = heading.add_run(f"{puid} | {item_id}")
-        run.bold = True
-        run.font.size = Pt(10)
+        _set_run_font(run, size_pt=10, bold=True)
 
-        flags = ", ".join(_as_list(item.get("flags"))[:16]) or "No flags listed"
-        evidence = _short(item.get("evidence_excerpt") or item.get("description"), 620)
+        flags = ", ".join(_as_list(item.get("flags"))) or "No flags listed"
+        evidence = _short(item.get("evidence_excerpt") or item.get("description"), 720)
         tbl = doc.add_table(rows=0, cols=2)
         tbl.style = "Table Grid"
         tbl.autofit = True
@@ -3139,12 +3196,14 @@ def _render_control_treatment_appendix(doc: Document, treatment_plan: Dict[str, 
         add_card_row(tbl, "Verification", _short(writeup.get("verification_method"), 620))
         add_card_row(tbl, "Closure evidence", _short(writeup.get("closure_evidence"), 620))
         add_card_row(tbl, "Residual risk", _short(writeup.get("residual_risk"), 420))
-    if len(items) > max_rows:
-        _add_note(doc, f"Rendered {max_rows} of {len(items)} control treatment items. Increase AUDIT_SUMMARY_MAX_CONTROL_TREATMENT_ROWS to include more rows.")
+        rendered += 1
+    if rendered != len(items):
+        raise SystemExit(f"[ERROR] Appendix A coverage gate failed: rendered {rendered} of {len(items)} SECM-CAT controls.")
+
 
 def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str, Any], treatment_ai: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("technical_items")) if isinstance(x, dict)]
-    max_rows = _max_technical_treatment_rows()
+    max_rows = _max_technical_treatment_rows(len(items))
     if not items:
         _add_note(doc, "No technical treatment items were available in the analysis pack.")
         return
@@ -3239,24 +3298,201 @@ def _render_technical_treatment_appendix(doc: Document, treatment_plan: Dict[str
 
 def _render_correlation_appendix(doc: Document, treatment_plan: Dict[str, Any]) -> None:
     items = [x for x in _as_list(treatment_plan.get("correlation_items")) if isinstance(x, dict)]
-    max_rows = _max_correlation_rows()
+    max_rows = _max_correlation_rows(len(items))
     rows: List[List[Any]] = []
     for item in items[:max_rows]:
         requirement = f"{item.get('puid')}\n{item.get('weakness_pattern')}"
-        flags = ", ".join(_as_list(item.get("flags_sample"))[:8])
+        flags = ", ".join(_as_list(item.get("flags_sample")))
         scanner = f"{item.get('technical_source')}\n{item.get('technical_finding_id')}"
         fit = f"{_clean_text(item.get('evidence_fit'))}\n{_clean_text(item.get('correlation_strength'))}"
-        evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 300)}"
+        evidence = f"Treatment item: {item.get('technical_item_id')}\n{_short(item.get('evidence_summary'), 420)}"
         rows.append([requirement, flags, scanner, fit, evidence])
-    if len(items) > max_rows:
-        _add_note(doc, f"Rendered {max_rows} of {len(items)} correlation rows. Increase AUDIT_SUMMARY_MAX_CORRELATION_ROWS to include more rows.")
     _add_table(
         doc,
         ["Requirement / pattern", "Flags", "Scanner evidence", "Evidence fit / strength", "Treatment / evidence summary"],
         rows,
-        max_rows=max_rows,
+        max_rows=None,
         empty_message="No evidence correlation items were available in the analysis pack.",
     )
+    if len(rows) != len(items):
+        raise SystemExit(f"[ERROR] Appendix C coverage gate failed: rendered {len(rows)} of {len(items)} correlation rows.")
+
+
+def _render_vision360_appendix(doc: Document, technical: Dict[str, Any]) -> None:
+    vision = _as_dict(technical.get("vision360"))
+    if not _block_available(vision):
+        _add_note(doc, "Vision360 evidence was not available in the analysis pack.")
+        return
+
+    group_summary = [x for x in _as_list(vision.get("group_summary")) if isinstance(x, dict)]
+    flag_rows = [x for x in _as_list(vision.get("full_flags")) if isinstance(x, dict)]
+    evidence_rows = [x for x in _as_list(vision.get("flag_evidence_details")) if isinstance(x, dict)]
+
+    _add_body_paragraph(
+        doc,
+        f"Vision360 produced {vision.get('flags_count', len(flag_rows))} flag verdicts. This appendix preserves the full flag matrix dynamically from the current framework output and does not assume a fixed number of flags or groups."
+    )
+
+    rows = []
+    for item in group_summary:
+        rows.append([
+            item.get("group"),
+            item.get("total_flags"),
+            item.get("pass"),
+            item.get("fail"),
+            item.get("unknown"),
+            item.get("evidence_count"),
+        ])
+    _add_table(doc, ["Group", "Total flags", "Pass", "Fail", "Unknown", "Evidence count"], rows, max_rows=None, empty_message="No Vision360 group summary was available.")
+
+    rows = []
+    for item in flag_rows:
+        rows.append([
+            item.get("group"),
+            item.get("id"),
+            item.get("title"),
+            item.get("state"),
+            _short(item.get("summary"), 280),
+            item.get("evidence_count"),
+            ", ".join(_as_list(item.get("primary_sources"))),
+        ])
+    _add_table(doc, ["Group", "Flag ID", "Title", "State", "Summary", "Evidence count", "Primary sources"], rows, max_rows=None, empty_message="No Vision360 flag matrix was available.")
+    if flag_rows and len(rows) != len(flag_rows):
+        raise SystemExit(f"[ERROR] Vision360 appendix coverage gate failed: rendered {len(rows)} of {len(flag_rows)} flags.")
+
+    detail_rows = []
+    for item in evidence_rows:
+        detail_rows.append([
+            item.get("flag_id"),
+            item.get("source"),
+            item.get("path"),
+            item.get("rule_id"),
+            _short(item.get("excerpt"), 360),
+        ])
+    _add_table(doc, ["Flag ID", "Source", "Path", "Rule ID", "Evidence excerpt"], detail_rows, max_rows=None, empty_message="No per-flag Vision360 evidence details were available.")
+
+
+def _render_mobsf_static_inventory_appendix(doc: Document, technical: Dict[str, Any]) -> None:
+    mobsf = _as_dict(technical.get("mobsf_static"))
+    if not _block_available(mobsf):
+        _add_note(doc, "MobSF static inventory was not available in the analysis pack.")
+        return
+
+    _add_body_paragraph(doc, "This appendix expands MobSF static analysis beyond the executive snapshot and preserves APK identity, signing, manifest, permission, component, URL/domain, email, tracker, and library evidence parsed for this run.")
+    trace = _as_dict(mobsf.get("apk_traceability"))
+    trace_rows = [[k, v] for k, v in trace.items()]
+    _add_table(doc, ["APK traceability item", "Observed value"], trace_rows, max_rows=None)
+
+    cert_rows = []
+    for item in _as_list(mobsf.get("certificate_findings")):
+        if isinstance(item, dict):
+            cert_rows.append([item.get("severity"), item.get("title"), item.get("description"), item.get("component")])
+    _add_table(doc, ["Severity", "Certificate finding", "Description", "Component"], cert_rows, max_rows=None, empty_message="No MobSF certificate finding rows were available.")
+
+    manifest_rows = []
+    for item in _as_list(mobsf.get("manifest_findings")):
+        if isinstance(item, dict):
+            manifest_rows.append([item.get("severity"), item.get("title"), item.get("description"), item.get("component")])
+    _add_table(doc, ["Severity", "Manifest finding", "Description", "Component"], manifest_rows, max_rows=None, empty_message="No MobSF manifest finding rows were available.")
+
+    perm_rows = []
+    for item in _as_list(mobsf.get("permissions_full") or mobsf.get("permissions_sample")):
+        if isinstance(item, dict):
+            perm_rows.append([item.get("name"), item.get("level"), item.get("description")])
+    _add_table(doc, ["Permission", "Protection level", "Description"], perm_rows, max_rows=None, empty_message="No Android permission inventory was available.")
+
+    component_rows = []
+    for item in _as_list(mobsf.get("components_inventory")):
+        if isinstance(item, dict):
+            component_rows.append([item.get("type"), item.get("component"), item.get("exported"), item.get("permission"), item.get("risk_note")])
+    _add_table(doc, ["Type", "Component", "Exported", "Permission", "Risk note"], component_rows, max_rows=None, empty_message="No Android component inventory was available.")
+
+    external_rows = []
+    for item in _as_list(mobsf.get("external_references")):
+        if isinstance(item, dict):
+            external_rows.append([item.get("type"), item.get("value"), item.get("path"), item.get("risk_note")])
+    _add_table(doc, ["Type", "Value", "Path / source", "Risk note"], external_rows, max_rows=None, empty_message="No MobSF URL, domain, or email inventory was available.")
+
+    library_rows = [[x] for x in _as_list(mobsf.get("libraries")) if _clean_text(x)]
+    _add_table(doc, ["Library"], library_rows, max_rows=None, empty_message="No MobSF library inventory was available.")
+
+
+def _license_risk_class(license_name: Any) -> str:
+    s = _clean_text(license_name).lower()
+    if not s:
+        return "Unknown"
+    if any(tok in s for tok in ["agpl", "gpl"]):
+        return "Strong copyleft review"
+    if any(tok in s for tok in ["lgpl", "mpl", "epl", "cddl"]):
+        return "File-level or weak copyleft review"
+    if any(tok in s for tok in ["apache", "mit", "bsd", "isc", "zlib"]):
+        return "Permissive"
+    return "Review required"
+
+
+def _render_sca_inventory_appendix(doc: Document, technical: Dict[str, Any]) -> None:
+    trivy = _as_dict(technical.get("trivy_sca"))
+    if not _block_available(trivy):
+        _add_note(doc, "SCA evidence was not available in the analysis pack.")
+        return
+
+    _add_body_paragraph(doc, "This appendix preserves the Software Composition Analysis inventory: vulnerabilities, package versions, detected licenses, and remediation status. Counts and rows are generated dynamically from the Trivy and Vision360 SCA evidence available for this run.")
+
+    vuln_rows = []
+    for item in _trivy_findings(trivy):
+        vuln_rows.append([
+            item.get("severity"),
+            item.get("id") or item.get("cve"),
+            item.get("package") or item.get("pkg"),
+            item.get("installed"),
+            item.get("fixed"),
+            "Yes" if item.get("fix_available") or item.get("fixed") else "No",
+            item.get("status"),
+            item.get("cvss_v3_score"),
+            ", ".join(_as_list(item.get("cwe_ids") or item.get("cwe"))),
+        ])
+    _add_table(doc, ["Severity", "CVE", "Package", "Installed", "Fixed", "Fix available", "Status", "CVSS", "CWE"], vuln_rows, max_rows=None, empty_message="No SCA vulnerability rows were available.")
+
+    package_rows = []
+    license_map = _as_dict(trivy.get("package_license_map"))
+    vulnerable_packages = {_clean_text(item.get("package") or item.get("pkg")) for item in _trivy_findings(trivy)}
+    for item in _as_list(trivy.get("package_inventory") or trivy.get("packages")):
+        if isinstance(item, dict):
+            name = _clean_text(item.get("name") or item.get("package") or item.get("pkg") or item.get("id"))
+            licenses = _as_list(item.get("licenses") or license_map.get(name))
+            package_rows.append([
+                name,
+                item.get("version"),
+                item.get("ecosystem"),
+                item.get("target"),
+                ", ".join(_clean_text(x) for x in licenses if _clean_text(x)),
+                "Yes" if name in vulnerable_packages else "No",
+            ])
+    _add_table(doc, ["Package", "Version", "Ecosystem", "Target", "Licenses", "Known vulnerable"], package_rows, max_rows=None, empty_message="No SCA package inventory was available.")
+
+    license_rows = []
+    for item in _as_list(trivy.get("license_inventory") or trivy.get("license_entries")):
+        if isinstance(item, dict):
+            lic = item.get("license") or item.get("name") or item.get("License")
+            license_rows.append([
+                item.get("package"),
+                item.get("version"),
+                lic,
+                _license_risk_class(lic),
+                item.get("target") or item.get("file"),
+            ])
+    _add_table(doc, ["Package", "Version", "License", "License class", "Target / file"], license_rows, max_rows=None, empty_message="No SCA license inventory was available.")
+
+    remediation_rows = []
+    for item in _trivy_findings(trivy):
+        remediation_rows.append([
+            item.get("package") or item.get("pkg"),
+            item.get("installed"),
+            item.get("fixed"),
+            item.get("severity"),
+            "Upgrade to the fixed version and rerun SCA validation." if item.get("fixed") else "Review vendor advisory and document accepted risk or compensating control.",
+        ])
+    _add_table(doc, ["Package", "Current version", "Recommended fixed version", "Highest severity", "Action"], remediation_rows, max_rows=None, empty_message="No SCA remediation rows were available.")
 
 
 def _call_llm_for_style(patterns: List[Dict[str, Any]], likelihood_rubric: Dict[str, str], max_takeaways: int = 7) -> Dict[str, Any]:
@@ -3457,7 +3693,13 @@ def main() -> None:
 
     add_nav_heading("5. Audit summary", 1)
     doc.add_paragraph("The audit was carried out using the mSEC-AM (mobile SECurity Audit Method).")
-    doc.add_paragraph(f"Overall, {int(metrics['total_assessed'])} requirements were assessed. {applicable} were applicable controls and {not_applicable} were recorded as not applicable. Of the applicable controls, {compliant} were compliant and {non_compliant} were non-compliant, resulting in an overall compliance rate of {overall_pct:.2f}% (applicable controls only).")
+    _add_body_paragraph(doc, f"Overall, {int(metrics['total_assessed'])} requirements were assessed. {applicable} were applicable controls and {not_applicable} were recorded as not applicable. Of the applicable controls, {compliant} were compliant and {non_compliant} were non-compliant, resulting in an overall compliance rate of {overall_pct:.2f}% (applicable controls only).")
+    _add_metric_cards(doc, [
+        ("Total assessed", int(metrics['total_assessed']), "Workbook scope"),
+        ("Applicable", applicable, "Controls in scope"),
+        ("Non-compliant", non_compliant, "Treatment backlog"),
+        ("Compliance rate", f"{overall_pct:.2f}%", "Applicable only"),
+    ])
     ai_audit_summary = _clean_text(prose.get("audit_summary_paragraph", ""))
     if ai_audit_summary:
         doc.add_paragraph(ai_audit_summary)
@@ -3495,7 +3737,7 @@ def main() -> None:
     h = rt.rows[0].cells
     for idx, txt in enumerate(["Weakness pattern", "Severity / likelihood", "Workbook basis", "Recommended owner", "Target timeline"]):
         h[idx].text = txt
-        _set_cell_shading(h[idx], "D9E1F2")
+        _set_cell_shading(h[idx], THEME_BLUE)
         for run in h[idx].paragraphs[0].runs:
             run.bold = True
     for p in patterns[:10]:
@@ -3677,6 +3919,18 @@ def main() -> None:
     doc.add_paragraph("This appendix provides a compact index of the technical evidence parsed from scan artifacts. Detailed raw JSON, SARIF, and tool reports remain in their original pipeline artifacts and are not embedded in the report package.")
     _add_table(doc, ["Evidence source", "Status", "Summary"], _source_status_rows(technical), max_rows=10)
     _add_technical_execution_metadata(doc, technical)
+
+    doc.add_page_break()
+    add_nav_heading("Appendix F - Vision360 flag evidence matrix", 1)
+    _render_vision360_appendix(doc, technical)
+
+    doc.add_page_break()
+    add_nav_heading("Appendix G - MobSF static technical inventory", 1)
+    _render_mobsf_static_inventory_appendix(doc, technical)
+
+    doc.add_page_break()
+    add_nav_heading("Appendix H - Software Composition Analysis inventory", 1)
+    _render_sca_inventory_appendix(doc, technical)
 
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)

@@ -1450,9 +1450,9 @@ def _merge_vision360_sca_into_trivy(trivy: Dict[str, Any], vision: Dict[str, Any
             trivy["summary"]["unfixed_total"] = _safe_int(summary.get("unfixed_total"), 0)
 
     if isinstance(sca.get("packages"), list):
-        trivy["packages"] = sca.get("packages")[:100]
+        trivy["packages"] = sca.get("packages")
     if isinstance(sca.get("licenses"), list):
-        trivy["license_entries"] = sca.get("licenses")[:100]
+        trivy["license_entries"] = sca.get("licenses")
 
     trivy["technical_details_source"] = "vision360_fingerprint.technical_details.sca"
     trivy["evidence_confidence"] = "observed_technical_finding"
@@ -1460,6 +1460,12 @@ def _merge_vision360_sca_into_trivy(trivy: Dict[str, Any], vision: Dict[str, Any
     return trivy
 
 def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
+    """Summarize Vision360 and preserve a complete flag matrix.
+
+    The audit framework must not assume a fixed number of flags or groups. This
+    function keeps all flags found in vision360_fingerprint.json and builds
+    dynamic group, state, and evidence indexes for Stage 2 appendices.
+    """
     fingerprint = _safe_read_json(files.get("vision360_fingerprint") or Path(), {})
     output = _safe_read_json(files.get("vision360_output") or Path(), {})
     trace = _safe_read_json(files.get("vision360_trace") or Path(), {})
@@ -1469,42 +1475,136 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
     if not isinstance(flags, list):
         flags = []
 
+    def _state_norm(value: Any) -> str:
+        raw = str(value or "unknown").strip().lower()
+        aliases = {
+            "true": "pass", "present": "pass", "detected": "pass", "yes": "pass", "positive": "pass",
+            "false": "fail", "absent": "fail", "not_detected": "fail", "not detected": "fail", "no": "fail", "negative": "fail",
+        }
+        return aliases.get(raw, raw or "unknown")
+
+    def _sources_for_flag(flag: Dict[str, Any], evidence_items: List[Any]) -> List[str]:
+        sources: List[str] = []
+        for key in ("source", "source_tool", "evidence_source", "origin"):
+            value = flag.get(key)
+            if value not in (None, "", [], {}):
+                sources.append(str(value))
+        for item in evidence_items:
+            if isinstance(item, dict):
+                for key in ("source", "tool", "source_tool", "origin", "scanner"):
+                    value = item.get(key)
+                    if value not in (None, "", [], {}):
+                        sources.append(str(value))
+            elif isinstance(item, str):
+                # Keep the flag matrix compact. String evidence is recorded as an
+                # excerpt; it is not a reliable source name by itself.
+                continue
+        return _unique_keep_order(sources, limit=20)
+
+    def _evidence_items(flag: Dict[str, Any], verdict: Dict[str, Any]) -> List[Any]:
+        values: List[Any] = []
+        for container in (flag, verdict):
+            if not isinstance(container, dict):
+                continue
+            for key in ("evidence", "evidence_items", "evidences", "matches", "findings", "proof"):
+                value = container.get(key)
+                if isinstance(value, list):
+                    values.extend(value)
+                elif value not in (None, "", {}, []):
+                    values.append(value)
+        return values
+
+    def _evidence_excerpt(item: Any) -> str:
+        if isinstance(item, dict):
+            parts = []
+            for key in ("summary", "message", "title", "description", "rule_id", "rule", "path", "file", "source"):
+                value = item.get(key)
+                if value not in (None, "", [], {}):
+                    parts.append(f"{key}: {_clean_text(value)}")
+            return _excerpt("; ".join(parts) if parts else item, 260)
+        return _excerpt(item, 260)
+
     state_counts: Dict[str, int] = {}
     group_counts: Dict[str, int] = {}
+    group_state_counts: Dict[str, Dict[str, int]] = {}
+    group_evidence_counts: Dict[str, int] = {}
     evidence_source_counts: Dict[str, int] = {}
     active_flags: List[str] = []
     negative_flags: List[str] = []
     active_flags_by_group: Dict[str, List[str]] = {}
     negative_flags_by_group: Dict[str, List[str]] = {}
     flag_state_index: List[Dict[str, str]] = []
+    full_flags: List[Dict[str, Any]] = []
+    flag_evidence_details: List[Dict[str, Any]] = []
 
     for flag in flags:
         if not isinstance(flag, dict):
             continue
         flag_id = str(flag.get("id") or flag.get("flag") or flag.get("name") or "").strip()
+        title = _clean_text(flag.get("title") or flag.get("name") or flag_id)
+        group = str(flag.get("group") or flag.get("category") or "UNKNOWN").strip() or "UNKNOWN"
         verdict = flag.get("app_verdict") or flag.get("verdict") or {}
         if not isinstance(verdict, dict):
             verdict = {}
-        state = str(verdict.get("state") or flag.get("state") or "unknown").lower()
-        group = str(flag.get("group") or flag.get("category") or "UNKNOWN")
+        state = _state_norm(verdict.get("state") or flag.get("state"))
+        summary = _clean_text(verdict.get("summary") or flag.get("summary") or "")
+        notes = _excerpt(verdict.get("notes") or flag.get("notes") or "", 220)
+        evidence_count = _safe_int(verdict.get("evidence_count") or flag.get("evidence_count"), 0)
+        evidence_items = _evidence_items(flag, verdict)
+        if evidence_count <= 0 and evidence_items:
+            evidence_count = len(evidence_items)
+        sources = _sources_for_flag(flag, evidence_items)
+
         state_counts[state] = state_counts.get(state, 0) + 1
         group_counts[group] = group_counts.get(group, 0) + 1
+        group_state_counts.setdefault(group, {})[state] = group_state_counts.setdefault(group, {}).get(state, 0) + 1
+        group_evidence_counts[group] = group_evidence_counts.get(group, 0) + evidence_count
 
         if flag_id:
             flag_state_index.append({"id": flag_id, "group": group, "state": state})
 
-        if state in {"true", "present", "detected", "yes", "positive"} and flag_id:
+        if state in {"pass", "true", "present", "detected", "yes", "positive"} and flag_id:
             active_flags.append(flag_id)
             active_flags_by_group.setdefault(group, []).append(flag_id)
-        if state in {"false", "absent", "not_detected", "no", "negative"} and flag_id:
+        if state in {"fail", "false", "absent", "not_detected", "no", "negative"} and flag_id:
             negative_flags.append(flag_id)
             negative_flags_by_group.setdefault(group, []).append(flag_id)
 
-        for source_key in ("source", "source_tool", "evidence_source", "origin"):
-            src = flag.get(source_key)
-            if src:
-                src_s = str(src)
-                evidence_source_counts[src_s] = evidence_source_counts.get(src_s, 0) + 1
+        for src in sources:
+            evidence_source_counts[src] = evidence_source_counts.get(src, 0) + 1
+
+        full_flags.append({
+            "id": flag_id,
+            "group": group,
+            "title": title,
+            "state": state,
+            "summary": summary,
+            "notes": notes,
+            "evidence_count": evidence_count,
+            "primary_sources": sources,
+            "expected_state": flag.get("expected_state") or flag.get("expected") or "",
+            "severity": flag.get("severity") or "",
+            "description": _excerpt(flag.get("description") or "", 260),
+        })
+
+        for idx, evidence in enumerate(evidence_items, start=1):
+            if isinstance(evidence, dict):
+                src = _clean_text(evidence.get("source") or evidence.get("tool") or evidence.get("source_tool") or evidence.get("origin") or "")
+                path = _clean_text(evidence.get("path") or evidence.get("file") or evidence.get("uri") or evidence.get("location") or "")
+                rule = _clean_text(evidence.get("rule_id") or evidence.get("rule") or evidence.get("id") or "")
+            else:
+                src = ""
+                path = ""
+                rule = ""
+            flag_evidence_details.append({
+                "flag_id": flag_id,
+                "group": group,
+                "evidence_index": idx,
+                "source": src,
+                "path": path,
+                "rule_id": rule,
+                "excerpt": _evidence_excerpt(evidence),
+            })
 
     effective_features = trace.get("effective_features") if isinstance(trace, dict) else {}
     if not isinstance(effective_features, dict):
@@ -1528,6 +1628,18 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
         for group, values in sorted(active_flags_by_group.items(), key=lambda x: len(x[1]), reverse=True)[:12]
     ]
 
+    group_summary = []
+    for group, total in sorted(group_counts.items(), key=lambda x: x[0]):
+        states = group_state_counts.get(group, {})
+        group_summary.append({
+            "group": group,
+            "total_flags": total,
+            "pass": _safe_int(states.get("pass"), 0),
+            "fail": _safe_int(states.get("fail"), 0),
+            "unknown": sum(v for k, v in states.items() if k not in {"pass", "fail"}),
+            "evidence_count": group_evidence_counts.get(group, 0),
+        })
+
     return {
         "available": bool(fingerprint or output or trace or effective),
         "source_dir": str(vision360_dir),
@@ -1539,6 +1651,10 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
         "flags_count": len(flags),
         "state_counts": state_counts,
         "group_counts": group_counts,
+        "group_state_counts": group_state_counts,
+        "group_summary": group_summary,
+        "full_flags": full_flags,
+        "flag_evidence_details": flag_evidence_details,
         "top_groups": [
             {"group": group, "count": count}
             for group, count in sorted(group_counts.items(), key=lambda x: x[1], reverse=True)[:12]
@@ -1563,6 +1679,7 @@ def _summarize_vision360(vision360_dir: Path, files: Dict[str, Optional[Path]]) 
             "active_flags_total": len(active_flags),
             "negative_flags_total": len(negative_flags),
             "evidence_sources_total": len(evidence_source_counts),
+            "flag_evidence_rows_total": len(flag_evidence_details),
         },
         "ai_summary": {
             "instruction": "Use Vision360 as traceability and feature-coverage evidence. Do not treat a flag as a vulnerability unless it is mapped to a non-compliant requirement or corroborated by scanner evidence.",
@@ -1643,6 +1760,7 @@ def _trivy_findings_from_raw(trivy: Dict[str, Any]) -> Tuple[List[Dict[str, Any]
 
 
 def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
+    """Summarize Trivy and preserve complete package and license inventories."""
     agent_payload = _safe_read_json(files.get("agent_payload") or Path(), {})
     trivy = _safe_read_json(files.get("trivy_json") or Path(), {})
 
@@ -1654,22 +1772,26 @@ def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[
     if isinstance(agent_payload, dict):
         raw_findings = agent_payload.get("findings") or []
         if isinstance(raw_findings, list):
-            findings = [x for x in raw_findings if isinstance(x, dict)]
-
-        raw_licenses = agent_payload.get("licenses") or []
-        if isinstance(raw_licenses, list):
-            licenses = [x for x in raw_licenses if isinstance(x, dict)]
-
+            for finding in raw_findings:
+                if isinstance(finding, dict):
+                    findings.append(finding)
         coverage = agent_payload.get("coverage") or {}
         if isinstance(coverage, dict):
             raw_targets = coverage.get("targets") or []
             if isinstance(raw_targets, list):
                 targets = [x for x in raw_targets if isinstance(x, dict)]
+        raw_packages = agent_payload.get("packages") or agent_payload.get("package_inventory") or []
+        if isinstance(raw_packages, list):
+            packages = [x for x in raw_packages if isinstance(x, dict)]
+        raw_licenses = agent_payload.get("licenses") or agent_payload.get("license_inventory") or []
+        if isinstance(raw_licenses, list):
+            licenses = [x for x in raw_licenses if isinstance(x, dict)]
 
     raw_findings, raw_packages, raw_licenses, raw_targets = _trivy_findings_from_raw(trivy if isinstance(trivy, dict) else {})
     if not findings:
         findings = raw_findings
-    packages = raw_packages
+    if not packages:
+        packages = raw_packages
     if not licenses:
         licenses = raw_licenses
     if not targets:
@@ -1689,7 +1811,7 @@ def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[
 
     by_severity = _severity_counter()
     for finding in findings:
-        sev = _severity_norm(finding.get("severity"))
+        sev = _severity_norm(finding.get("severity") or finding.get("Severity"))
         if sev in by_severity:
             by_severity[sev] += 1
 
@@ -1701,56 +1823,95 @@ def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[
         })
 
     fixable_summary = summary.get("fixable") if isinstance(summary.get("fixable"), dict) else {}
-    fixable_total = _safe_int(fixable_summary.get("total"), sum(1 for f in findings if f.get("fix_available") or f.get("fixed")))
+    fixable_total = _safe_int(fixable_summary.get("total"), sum(1 for f in findings if f.get("fix_available") or f.get("fixed") or f.get("FixedVersion")))
     unfixed_total = max(0, total - fixable_total)
 
     affected_packages = {}
     for finding in findings:
-        pkg = str(finding.get("pkg") or finding.get("PkgName") or "unknown")
+        pkg = str(finding.get("pkg") or finding.get("PkgName") or finding.get("package") or "unknown")
         affected_packages.setdefault(pkg, 0)
         affected_packages[pkg] += 1
 
     def sort_key(f: Dict[str, Any]) -> Tuple[int, str]:
         rank = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "UNKNOWN": 0}
-        return (rank.get(_severity_norm(f.get("severity")), 0), str(f.get("id") or ""))
+        return (rank.get(_severity_norm(f.get("severity") or f.get("Severity")), 0), str(f.get("id") or f.get("VulnerabilityID") or ""))
 
-    top_findings = []
-    for finding in sorted(findings, key=sort_key, reverse=True)[:25]:
-        best_cvss = finding.get("best_cvss") if isinstance(finding.get("best_cvss"), dict) else {}
-        top_findings.append({
-            "id": finding.get("id"),
-            "cve": finding.get("id"),
-            "severity": _severity_norm(finding.get("severity")),
-            "package": finding.get("pkg"),
-            "pkg": finding.get("pkg"),
-            "package_id": finding.get("pkg_id"),
-            "installed": finding.get("installed"),
-            "fixed": finding.get("fixed"),
-            "fix_available": bool(finding.get("fix_available") or finding.get("fixed")),
-            "status": finding.get("status"),
-            "severity_source": finding.get("severity_source"),
-            "cwe_ids": finding.get("cwe") or [],
-            "cvss_v3_score": best_cvss.get("v3_score"),
+    detailed_findings = []
+    for finding in sorted(findings, key=sort_key, reverse=True):
+        best_cvss = finding.get("best_cvss") if isinstance(finding.get("best_cvss"), dict) else _best_cvss_from_any(finding.get("CVSS") or {})
+        vuln_id = finding.get("id") or finding.get("VulnerabilityID") or finding.get("cve")
+        pkg = finding.get("pkg") or finding.get("PkgName") or finding.get("package")
+        detailed_findings.append({
+            "id": vuln_id,
+            "cve": vuln_id,
+            "severity": _severity_norm(finding.get("severity") or finding.get("Severity")),
+            "package": pkg,
+            "pkg": pkg,
+            "package_id": finding.get("pkg_id") or finding.get("PkgID") or finding.get("package_id"),
+            "installed": finding.get("installed") or finding.get("InstalledVersion") or finding.get("installed_version"),
+            "fixed": finding.get("fixed") or finding.get("FixedVersion") or finding.get("fixed_version"),
+            "fix_available": bool(finding.get("fix_available") or finding.get("fixed") or finding.get("FixedVersion") or finding.get("fixed_version")),
+            "status": finding.get("status") or finding.get("Status"),
+            "severity_source": finding.get("severity_source") or finding.get("SeveritySource"),
+            "cwe_ids": finding.get("cwe") or finding.get("cwe_ids") or finding.get("CweIDs") or [],
+            "cvss_v3_score": best_cvss.get("v3_score") or best_cvss.get("v3"),
             "cvss_v3_vector": best_cvss.get("v3_vector"),
-            "title": _excerpt(finding.get("title") or finding.get("description"), 260),
-            "description": _excerpt(finding.get("description") or finding.get("title"), 420),
-            "primary_url": finding.get("primary_url"),
-            "references": finding.get("references") or [],
-            "published_at": finding.get("published"),
-            "last_modified_at": finding.get("modified"),
-            "target": finding.get("target"),
+            "title": _excerpt(finding.get("title") or finding.get("Title") or finding.get("description") or finding.get("Description"), 260),
+            "description": _excerpt(finding.get("description") or finding.get("Description") or finding.get("title") or finding.get("Title"), 420),
+            "primary_url": finding.get("primary_url") or finding.get("PrimaryURL"),
+            "references": finding.get("references") or finding.get("References") or [],
+            "published_at": finding.get("published") or finding.get("PublishedDate") or finding.get("published_at"),
+            "last_modified_at": finding.get("modified") or finding.get("LastModifiedDate") or finding.get("last_modified_at"),
+            "target": finding.get("target") or finding.get("Target"),
             "source": finding.get("source") or "TRIVY",
-            "artifact_source": finding.get("artifact_source"),
+            "artifact_source": finding.get("artifact_source") or "trivy/agent_payload",
             "evidence_confidence": finding.get("evidence_confidence") or "observed_technical_finding",
         })
 
-    license_names = []
-    for item in licenses:
-        if not isinstance(item, dict):
-            continue
-        name = item.get("name") or item.get("Name") or item.get("License") or item.get("Category")
-        if name:
-            license_names.append(str(name))
+    def _package_row(pkg: Dict[str, Any]) -> Dict[str, Any]:
+        licenses_value = pkg.get("Licenses") or pkg.get("licenses") or pkg.get("License") or pkg.get("license") or []
+        if not isinstance(licenses_value, list):
+            licenses_value = [licenses_value] if licenses_value else []
+        depends = pkg.get("DependsOn") or pkg.get("depends_on") or []
+        return {
+            "name": pkg.get("Name") or pkg.get("name") or pkg.get("ID") or pkg.get("id") or pkg.get("PkgName") or "",
+            "id": pkg.get("ID") or pkg.get("id") or pkg.get("PkgID") or "",
+            "version": pkg.get("Version") or pkg.get("version") or pkg.get("InstalledVersion") or "",
+            "ecosystem": pkg.get("Type") or pkg.get("type") or pkg.get("Class") or pkg.get("class") or "gradle",
+            "target": pkg.get("Target") or pkg.get("target") or "",
+            "licenses": _unique_keep_order(licenses_value, limit=20),
+            "depends_on_count": len(depends) if isinstance(depends, list) else 0,
+            "purl": ((pkg.get("Identifier") or {}) if isinstance(pkg.get("Identifier"), dict) else {}).get("PURL") or pkg.get("PURL") or "",
+        }
+
+    package_inventory = [_package_row(x) for x in packages if isinstance(x, dict)]
+
+    def _license_row(item: Dict[str, Any]) -> Dict[str, Any]:
+        pkg_name = item.get("PkgName") or item.get("package") or item.get("Name") or item.get("name") or item.get("ID") or ""
+        license_name = item.get("Name") or item.get("License") or item.get("license") or item.get("Category") or item.get("Value") or ""
+        return {
+            "package": pkg_name,
+            "version": item.get("InstalledVersion") or item.get("Version") or item.get("version") or "",
+            "license": license_name,
+            "category": item.get("Category") or item.get("category") or "",
+            "severity": item.get("Severity") or item.get("severity") or "",
+            "target": item.get("Target") or item.get("target") or "",
+            "file": item.get("File") or item.get("file") or "",
+        }
+
+    license_inventory = [_license_row(x) for x in licenses if isinstance(x, dict)]
+    license_names = [x.get("license") for x in license_inventory if x.get("license")]
+    package_license_map: Dict[str, List[str]] = {}
+    for pkg in package_inventory:
+        if pkg.get("name"):
+            package_license_map[str(pkg.get("name"))] = _as_list(pkg.get("licenses"))
+    for lic in license_inventory:
+        package = _clean_text(lic.get("package"))
+        license_name = _clean_text(lic.get("license"))
+        if package and license_name:
+            package_license_map.setdefault(package, [])
+            if license_name not in package_license_map[package]:
+                package_license_map[package].append(license_name)
 
     return {
         "available": bool(agent_payload or trivy),
@@ -1760,26 +1921,31 @@ def _summarize_trivy(trivy_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[
         "coverage": {
             "packages_detected": packages_detected,
             "license_entries_detected": license_entries,
-            "targets": targets[:20],
+            "targets": targets,
         },
         "summary": {
             "total_vulnerabilities": total,
             "by_severity": by_severity,
             "fixable_total": fixable_total,
             "unfixed_total": unfixed_total,
-            "unique_vulns": len(set(str(f.get("id")) for f in findings if f.get("id"))),
+            "unique_vulns": len(set(str(f.get("id")) for f in detailed_findings if f.get("id"))),
             "packages_affected": len(affected_packages),
         },
         "affected_packages_top": [
             {"package": pkg, "count": count}
             for pkg, count in sorted(affected_packages.items(), key=lambda x: x[1], reverse=True)[:15]
         ],
-        "top_findings": top_findings,
-        "detailed_findings": top_findings,
-        "vulnerabilities": top_findings,
+        "top_findings": detailed_findings[:25],
+        "detailed_findings": detailed_findings,
+        "vulnerabilities": detailed_findings,
+        "packages": package_inventory,
+        "package_inventory": package_inventory,
+        "license_entries": license_inventory,
+        "license_inventory": license_inventory,
+        "package_license_map": package_license_map,
         "licenses": {
             "total": license_entries,
-            "unique_names": _unique_keep_order(license_names, limit=50),
+            "unique_names": _unique_keep_order(license_names, limit=100),
         },
     }
 
@@ -1876,6 +2042,7 @@ def _mobsf_permissions(mobsf: Dict[str, Any]) -> Tuple[List[Dict[str, str]], Lis
 
 
 def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -> Dict[str, Any]:
+    """Summarize MobSF static analysis and preserve full technical inventory."""
     mobsf = _safe_read_json(files.get("mobsf_results") or Path(), {})
     flat = _flatten_text(mobsf)
 
@@ -1883,22 +2050,27 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
     if not isinstance(manifest, dict):
         manifest = {}
 
-    manifest_findings = _collect_mobsf_findings(manifest.get("manifest_findings") or manifest.get("findings") or [], limit=80)
+    manifest_findings = _collect_mobsf_findings(manifest.get("manifest_findings") or manifest.get("findings") or [], limit=10000)
 
     cert = mobsf.get("certificate_analysis") if isinstance(mobsf, dict) else {}
     if not isinstance(cert, dict):
         cert = {}
-    cert_findings = _collect_mobsf_findings(cert.get("certificate_findings") or cert.get("findings") or [], limit=40)
+    cert_findings = _collect_mobsf_findings(cert.get("certificate_findings") or cert.get("findings") or [], limit=10000)
     cert_info = str(cert.get("certificate_info") or "")
 
     permissions, dangerous_permissions = _mobsf_permissions(mobsf if isinstance(mobsf, dict) else {})
 
     trackers = mobsf.get("trackers") if isinstance(mobsf, dict) else None
     detected_trackers = 0
+    trackers_inventory: List[Dict[str, Any]] = []
     if isinstance(trackers, dict):
         detected_trackers = _safe_int(trackers.get("detected_trackers"), 0)
+        raw_trackers = trackers.get("trackers") or []
+        if isinstance(raw_trackers, list):
+            trackers_inventory = [x for x in raw_trackers if isinstance(x, dict)]
     elif isinstance(trackers, list):
-        detected_trackers = len(trackers)
+        trackers_inventory = [x for x in trackers if isinstance(x, dict)]
+        detected_trackers = len(trackers_inventory)
     elif isinstance(mobsf, dict) and "detected_trackers" in mobsf:
         detected_trackers = _safe_int(mobsf.get("detected_trackers"), 0)
 
@@ -1934,7 +2106,7 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         exported_names = [_clean_text(x) for x in exported_activities_raw if _clean_text(x)]
     elif isinstance(exported_activities_raw, str):
         exported_names = re.findall(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+", exported_activities_raw)
-        exported_names = _unique_keep_order(exported_names, limit=80)
+        exported_names = _unique_keep_order(exported_names, limit=10000)
 
     if isinstance(exported_value, list):
         exported_count: Any = len(exported_value)
@@ -1972,13 +2144,14 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
     ) else "release/unknown"
 
     apk_traceability = {
-        "file_name": app_info.get("file_name") or mobsf.get("file_name") if isinstance(mobsf, dict) else "",
-        "app_name": app_info.get("app_name") or mobsf.get("app_name") if isinstance(mobsf, dict) else "",
-        "package_name": app_info.get("package_name") or mobsf.get("package_name") if isinstance(mobsf, dict) else "",
-        "version_name": app_info.get("version_name") or mobsf.get("version_name") if isinstance(mobsf, dict) else "",
-        "version_code": app_info.get("version_code") or mobsf.get("version_code") if isinstance(mobsf, dict) else "",
+        "file_name": app_info.get("file_name") or (mobsf.get("file_name") if isinstance(mobsf, dict) else ""),
+        "app_name": app_info.get("app_name") or (mobsf.get("app_name") if isinstance(mobsf, dict) else ""),
+        "package_name": app_info.get("package_name") or (mobsf.get("package_name") if isinstance(mobsf, dict) else ""),
+        "version_name": app_info.get("version_name") or (mobsf.get("version_name") if isinstance(mobsf, dict) else ""),
+        "version_code": app_info.get("version_code") or (mobsf.get("version_code") if isinstance(mobsf, dict) else ""),
         "sha256": mobsf.get("sha256") if isinstance(mobsf, dict) else "",
         "md5": mobsf.get("md5") if isinstance(mobsf, dict) else "",
+        "sha1": mobsf.get("sha1") if isinstance(mobsf, dict) else "",
         "min_sdk": indicators["min_sdk"],
         "target_sdk": indicators["target_sdk"],
         "inferred_build_type": inferred_build_type,
@@ -2011,26 +2184,85 @@ def _summarize_mobsf_static(mobsf_dir: Path, files: Dict[str, Optional[Path]]) -
         {"indicator": "Trackers detected", "value": indicators["trackers_detected"]},
     ]
 
+    def _component_rows(kind: str, values: Any) -> List[Dict[str, str]]:
+        out: List[Dict[str, str]] = []
+        for value in _as_list(values):
+            text = _clean_text(value)
+            if text:
+                out.append({"type": kind, "component": text, "exported": "", "permission": "", "risk_note": "Inventory item parsed from MobSF static analysis."})
+        return out
+
+    components_inventory: List[Dict[str, str]] = []
+    if isinstance(mobsf, dict):
+        components_inventory.extend(_component_rows("Activity", mobsf.get("activities")))
+        components_inventory.extend(_component_rows("Service", mobsf.get("services")))
+        components_inventory.extend(_component_rows("Receiver", mobsf.get("receivers")))
+        components_inventory.extend(_component_rows("Provider", mobsf.get("providers")))
+    for name in exported_names:
+        components_inventory.append({"type": "Exported activity", "component": name, "exported": "true", "permission": "", "risk_note": "Exported component reported by MobSF."})
+
+    external_refs: List[Dict[str, str]] = []
+    if isinstance(mobsf, dict):
+        for item in _as_list(mobsf.get("urls")):
+            if isinstance(item, dict):
+                for url in _as_list(item.get("urls")):
+                    if _clean_text(url):
+                        external_refs.append({"type": "URL", "value": _clean_text(url), "path": _clean_text(item.get("path")), "risk_note": "External URL extracted from APK resources."})
+            elif _clean_text(item):
+                external_refs.append({"type": "URL", "value": _clean_text(item), "path": "", "risk_note": "External URL extracted from APK resources."})
+        domains = mobsf.get("domains") if isinstance(mobsf.get("domains"), dict) else {}
+        for domain, meta in domains.items():
+            note = ""
+            if isinstance(meta, dict):
+                note = f"bad={meta.get('bad', '')}; ofac={meta.get('ofac', '')}"
+            external_refs.append({"type": "Domain", "value": str(domain), "path": "MobSF domains", "risk_note": _excerpt(note, 160)})
+        for item in _as_list(mobsf.get("emails")):
+            if isinstance(item, dict):
+                for email in _as_list(item.get("emails")):
+                    if _clean_text(email):
+                        external_refs.append({"type": "Email", "value": _clean_text(email), "path": _clean_text(item.get("path")), "risk_note": "Email address extracted from APK resources."})
+            elif _clean_text(item):
+                external_refs.append({"type": "Email", "value": _clean_text(item), "path": "", "risk_note": "Email address extracted from APK resources."})
+
+    libraries = _unique_keep_order(mobsf.get("libraries") if isinstance(mobsf, dict) else [], limit=10000)
+
     return {
         "available": bool(mobsf),
         "source_dir": str(mobsf_dir),
         "files": {k: str(v) for k, v in files.items() if v},
         "app_info": app_info,
         "apk_traceability": apk_traceability,
-        "exported_components": exported_names[:80],
+        "exported_components": exported_names,
         "flags": flags,
         **indicators,
         "normalized_indicators": normalized_indicators,
         "dangerous_permissions": dangerous_permissions,
         "permissions_count": len(permissions),
         "permissions_sample": permissions[:25],
+        "permissions_full": permissions,
         "manifest_findings_count": len(manifest_findings),
         "manifest_findings_sample": manifest_findings[:20],
+        "manifest_findings": manifest_findings,
         "certificate_findings_count": len(cert_findings),
         "certificate_findings_sample": cert_findings[:15],
+        "certificate_findings": cert_findings,
         "certificate_info_excerpt": _excerpt(cert_info, 500),
         "detected_trackers": detected_trackers,
+        "trackers_inventory": trackers_inventory,
+        "components_inventory": components_inventory,
+        "external_references": external_refs,
+        "libraries": libraries,
+        "technical_inventory_summary": {
+            "permissions_total": len(permissions),
+            "dangerous_permissions_total": len(dangerous_permissions),
+            "manifest_findings_total": len(manifest_findings),
+            "certificate_findings_total": len(cert_findings),
+            "components_total": len(components_inventory),
+            "external_references_total": len(external_refs),
+            "libraries_total": len(libraries),
+        },
     }
+
 
 def _normalize_android_storage_artifact(item: Any) -> str:
     """Normalize MobSF dynamic storage artifacts for report readability.
