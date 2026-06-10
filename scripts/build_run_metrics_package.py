@@ -807,6 +807,83 @@ def _build_llm_validation_summary(metrics: Dict[str, Any], prompt_run_results: L
     return [{"metric": m, "numerator": n, "denominator": d, "value": v, "plain_language_interpretation": interp} for m, n, d, v, interp in rows]
 
 
+
+def _formula_value(value: Any) -> str:
+    if value in (None, ""):
+        return "not_available"
+    if isinstance(value, float):
+        return f"{value:.6f}".rstrip("0").rstrip(".") if not value.is_integer() else str(int(value))
+    return str(value)
+
+
+def _division_formula(metric: str, numerator_label: str, denominator_label: str, row: Dict[str, Any]) -> str:
+    n = _formula_value(row.get("numerator"))
+    d = _formula_value(row.get("denominator"))
+    v = _formula_value(row.get("value"))
+    return f"{metric} = {numerator_label} / {denominator_label} = {n} / {d} = {v}"
+
+
+def _current_run_formula_rows(llm_summary: List[Dict[str, Any]]) -> List[List[Any]]:
+    labels = {
+        "json_valid_rate": ("json_valid_count", "num_llm_calls"),
+        "schema_valid_rate": ("schema_valid_count", "num_llm_calls"),
+        "completion_rate": ("received_items", "expected_items"),
+        "traceability_ok_rate": ("traceability_ok_items", "traceability_expected_items"),
+        "fallback_rate": ("fallback_items", "num_requirements"),
+        "retry_rate": ("retry_count", "num_llm_calls"),
+        "prompt_success_rate": ("successful_prompt_calls", "executed_prompt_calls"),
+    }
+    rows: List[List[Any]] = []
+    for r in llm_summary:
+        metric = str(r.get("metric") or "")
+        if metric == "failed_prompt_call_count":
+            rows.append([
+                metric,
+                f"failed_prompt_call_count = failed_prompt_calls = {_formula_value(r.get('numerator'))}",
+                "Counts prompt calls rejected by validation or requiring deterministic fallback.",
+            ])
+            continue
+        if metric in labels:
+            num_label, den_label = labels[metric]
+            rows.append([metric, _division_formula(metric, num_label, den_label, r), r.get("plain_language_interpretation", "")])
+    return rows
+
+
+def _prompt_level_formula_rows() -> List[List[str]]:
+    return [
+        ["prompt_success_rate", "prompt_success_rate = successful_call_count / call_count", "successful_call_count counts prompt calls that passed JSON, schema, traceability when applicable, and fallback checks."],
+        ["json_valid_rate", "json_valid_rate = json_valid_call_count / call_count", "json_valid_call_count counts prompt calls whose output was parseable as JSON."],
+        ["schema_valid_rate", "schema_valid_rate = schema_valid_call_count / call_count", "schema_valid_call_count counts prompt calls satisfying the expected output fields."],
+        ["traceability_ok_rate", "traceability_ok_rate = traceability_ok_call_count / traceability_applicable_call_count", "Traceability applies when the prompt must preserve PUID, item_id, finding_id, or another supplied identifier."],
+        ["completion_rate", "completion_rate = received_items / expected_items", "Used when a prompt returns multiple items, for example one item per PUID or treatment item."],
+        ["run_conclusion", "run_conclusion = accepted if failed_call_count = 0; otherwise review/retry/fallback noted", "A prompt can be registered and not executed in a run; in that case rates are not_applicable."],
+    ]
+
+
+def _prompt_scope_definition_rows() -> List[List[str]]:
+    return [
+        ["audit_matrix", "Requirement-level audit matrix stage. It drafts English justifications for precomputed PUID results and does not adjudicate yes/no/n/a."],
+        ["audit_summary", "Audit Summary report-generation stage. It drafts executive, technical, pattern, and treatment-plan narrative sections from supplied evidence."],
+        ["audit_summary_repair", "Auxiliary repair stage. It runs only when validation detects missing structured fields in a treatment-plan response."],
+    ]
+
+
+def _stability_formula_rows() -> List[List[str]]:
+    return [
+        ["comparable_run_count", "comparable_run_count = count(runs where repository, commit_sha, input_fingerprint, prompt_inventory_hash, llm_config_hash, num_requirements and PUID set match)", "Number of repeated executions accepted for stability calculations."],
+        ["exact_matrix_agreement_rate", "exact_matrix_agreement_rate = mode_count(compliance_matrix_hash) / comparable_run_count", "Share of comparable runs with the most frequent complete result matrix."],
+        ["requirement_result_agreement_rate", "requirement_result_agreement_rate = pairwise_matching_results / pairwise_total_comparisons", "pairwise_matching_results = count of run pairs where result(run_i,puid) = result(run_j,puid), summed across all PUIDs."],
+        ["changed_requirement_count", "changed_requirement_count = count(PUID where count(unique_results_across_comparable_runs) > 1)", "Number of requirements whose yes/no/n/a result changed across comparable runs."],
+        ["yes_count_mean", "yes_count_mean = sum(yes_count_i) / n", "Mean number of yes results across n comparable runs."],
+        ["yes_count_sd", "yes_count_sd = sqrt(sum((yes_count_i - yes_count_mean)^2) / (n - 1))", "Sample standard deviation of yes counts across comparable runs. Same formula applies to no_count_sd and na_count_sd."],
+        ["prompt_inventory_stability", "prompt_inventory_stability = mode_count(prompt_inventory_hash) / comparable_run_count", "Confirms whether all comparable runs used the same centralized prompt registry and observed prompt hashes."],
+        ["llm_config_stability", "llm_config_stability = mode_count(llm_config_hash) / comparable_run_count", "Confirms whether all comparable runs used the same LLM runtime configuration."],
+        ["validation_rate_mean", "validation_rate_mean = sum(validation_rate_i) / n", "Mean of a per-run validation rate such as json_valid_rate, schema_valid_rate, completion_rate, traceability_ok_rate, fallback_rate, retry_rate, or prompt_success_rate."],
+        ["validation_rate_sd", "validation_rate_sd = sqrt(sum((validation_rate_i - validation_rate_mean)^2) / (n - 1))", "Sample standard deviation of the selected validation rate across comparable runs."],
+        ["Fleiss kappa", "kappa = (P_bar - P_e) / (1 - P_e)", "P_bar is observed categorical agreement across PUID results; P_e is expected agreement from category proportions."],
+    ]
+
+
 def _package_contents_rows(telemetry_components: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     included = {c["component"] for c in PACKAGE_COMPONENTS}
     rows = []
@@ -1033,6 +1110,12 @@ class PdfBuilder:
         self.table_no = 0
         self.figure_no = 0
         self.styles.add(ParagraphStyle("Small", parent=self.styles["BodyText"], fontName="Helvetica", fontSize=7.3, leading=9, textColor=colors.HexColor("#1F2933")))
+        # ReportLab TableStyle TEXTCOLOR does not reliably override the text color
+        # of Paragraph objects already placed in table cells. Table headers are
+        # therefore rendered with their own white, bold Paragraph style. This
+        # keeps header text legible on the dark-blue header background in the
+        # generated PDF.
+        self.styles.add(ParagraphStyle("TableHeaderSmall", parent=self.styles["BodyText"], fontName="Helvetica-Bold", fontSize=7.3, leading=9, textColor=colors.white))
         self.styles.add(ParagraphStyle("Caption", parent=self.styles["BodyText"], fontName="Helvetica-Oblique", fontSize=8, leading=10, textColor=colors.HexColor("#4B5563")))
         self.styles.add(ParagraphStyle("TitleCenter", parent=self.styles["Title"], alignment=TA_CENTER, textColor=colors.HexColor("#17365D")))
         self.styles.add(ParagraphStyle("H1", parent=self.styles["Heading1"], textColor=colors.HexColor("#17365D")))
@@ -1049,7 +1132,7 @@ class PdfBuilder:
         self.table_no += 1
         self.story.append(Paragraph(f"Table {self.table_no}. {title}", self.styles["Caption"]))
         rows = rows[:max_rows]
-        data = [[Paragraph(str(h), self.styles["Small"]) for h in headers]]
+        data = [[Paragraph(str(h), self.styles["TableHeaderSmall"]) for h in headers]]
         for row in rows:
             data.append([Paragraph(str(c or ""), self.styles["Small"]) for c in row])
         page_width = A4[0] - 0.8 * inch
@@ -1058,6 +1141,7 @@ class PdfBuilder:
         table.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#17365D")),
             ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
             ("GRID", (0,0), (-1,-1), 0.35, colors.HexColor("#D0D7DE")),
             ("VALIGN", (0,0), (-1,-1), "TOP"),
             ("FONTSIZE", (0,0), (-1,-1), 7),
@@ -1129,16 +1213,20 @@ def _generate_pdf(path: Path, metrics: Dict[str, Any], rows: Dict[str, List[Dict
     b.table("Prompt roles and execution in this run", ["Prompt", "Scope", "Calls", "Role"], [[r.get("prompt_id"), r.get("prompt_scope"), r.get("call_count"), r.get("role_in_workflow")] for r in rows["prompt_contracts"]], widths=[0.14,0.18,0.10,0.58], max_rows=12)
     b.table("Prompt output-control summary", ["Prompt", "JSON", "Schema", "Identifier", "Grounding", "No invention", "No result change"], [[r.get("prompt_id"), r.get("json_required"), r.get("schema_required"), r.get("identifier_preservation_required"), r.get("grounding_required"), r.get("no_invent_evidence_required"), r.get("no_result_change_required")] for r in rows["prompt_controls"]], widths=[0.15,0.10,0.12,0.15,0.15,0.17,0.16], max_rows=12)
     b.h1("6. Prompt validation results in this execution")
+    b.para("This section reports the formulas used for the current run. Rates are calculated directly from the runtime telemetry rows, not estimated from the narrative text.")
     b.table("Prompt-level success summary", ["Prompt", "Executed", "Calls", "Success", "JSON", "Schema", "Traceability", "Conclusion"], [[r.get("prompt_id"), r.get("executed_in_this_run"), r.get("call_count"), r.get("prompt_success_rate"), r.get("json_valid_rate"), r.get("schema_valid_rate"), r.get("traceability_ok_rate"), r.get("run_conclusion")] for r in rows["prompt_run_results"]], widths=[0.13,0.10,0.08,0.10,0.10,0.10,0.13,0.26], max_rows=12)
+    b.table("Prompt-level formulas", ["Metric", "Formula", "How to read it"], _prompt_level_formula_rows(), widths=[0.20,0.40,0.40], max_rows=12)
     b.table("Aggregated LLM validation metrics", ["Metric", "Numerator", "Denominator", "Value", "Interpretation"], [[r.get("metric"), r.get("numerator"), r.get("denominator"), r.get("value"), r.get("plain_language_interpretation")] for r in rows["llm_validation_summary"]], widths=[0.20,0.13,0.13,0.12,0.42], max_rows=12)
+    b.table("Current-run formulas with applied values", ["Metric", "Formula applied in this run", "Interpretation"], _current_run_formula_rows(rows["llm_validation_summary"]), widths=[0.20,0.47,0.33], max_rows=12)
     scope_chart = chart_dir / "prompt_scope.png"
     scope_counts = Counter(r.get("prompt_scope") for r in rows["prompt_calls"])
     _make_bar_chart(scope_chart, list(scope_counts.keys()) or ["none"], [float(v) for v in (scope_counts.values() or [0])], "Prompt calls by scope", "Prompt calls")
-    b.fig(scope_chart, "Prompt calls by scope", "This figure shows which prompt scopes were actually executed. Registered prompts that were not invoked remain documented in prompt_contracts.")
+    b.table("Prompt scope definitions", ["Scope", "Meaning"], _prompt_scope_definition_rows(), widths=[0.25,0.75], max_rows=6)
+    b.fig(scope_chart, "Prompt calls by scope", "The chart counts executed prompt calls by scope. audit_matrix is the requirement-level justification stage. audit_summary is the report narrative stage. audit_summary_repair is an auxiliary repair scope and appears only when a repair prompt is invoked.")
     b.h1("7. How stability-analysis.xlsx is generated")
     b.para("The package includes tools/build_stability_analysis.py. The user extracts each run-metrics.zip into a folder such as runs/run_01, runs/run_02, ..., runs/run_n. Then the user runs: python tools/build_stability_analysis.py --input-dir runs --output stability-analysis.xlsx. The script reads each run-metrics.xlsx, verifies comparability and produces metrics, tables and Appendix evidence for n repeated executions.")
     b.table("Inputs consumed by build_stability_analysis.py", ["Input", "Required", "Purpose"], [["runs/run_*/run-metrics.xlsx", "yes", "Primary source for run identity, matrix hash, prompt inventory hash, validation rates and requirement rows."], ["run-metrics-manifest.json", "optional", "File integrity reference when present."], ["telemetry/*.jsonl", "optional", "Raw prompt-call reconstruction when a future version chooses to re-derive prompt rows." ]], widths=[0.34,0.13,0.53], max_rows=10)
-    b.table("Stability-analysis formulas", ["Metric", "Formula", "Interpretation"], [["exact_matrix_agreement_rate", "Most frequent compliance_matrix_hash count / comparable_run_count", "Share of comparable runs with the same complete matrix."], ["requirement_result_agreement_rate", "Matching pairwise PUID results / all pairwise PUID comparisons", "Requirement-level yes/no/n/a stability."], ["changed_requirement_count", "COUNT(PUIDs with more than one observed result)", "Number of unstable requirements."], ["yes/no/n/a count SD", "STDEV.S(counts per run)", "Aggregate result-count variation."], ["prompt_inventory_stability", "Most frequent prompt_inventory_hash count / comparable_run_count", "Whether the same prompts were used."], ["llm_config_stability", "Most frequent llm_config_hash count / comparable_run_count", "Whether the same LLM configuration was used."], ["validation rate mean and SD", "MEAN and STDEV.S across runs", "Stability of LLM-control behavior."], ["Fleiss kappa", "Fleiss kappa over PUID categorical results", "Statistical categorical agreement when applicable."]], widths=[0.24,0.38,0.38], max_rows=12)
+    b.table("Stability-analysis detailed formulas", ["Metric", "Formula", "Interpretation"], _stability_formula_rows(), widths=[0.22,0.48,0.30], max_rows=20)
     b.h1("8. Interpretation limits")
     b.para("The package records what the workflow observed. Missing technical artifacts are marked as missing rather than inferred. Prompts not executed are documented as registered but not executed. Stability statistics are generated by tools/build_stability_analysis.py from n repeated run-metrics workbooks; they are not invented from a single execution.")
     b.build()
