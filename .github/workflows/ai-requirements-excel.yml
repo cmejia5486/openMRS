@@ -49,7 +49,7 @@ jobs:
           $requirementsSourcePath = Join-Path $PWD "scripts\requirements.json"
           $xlsxPath = Join-Path $dataDir "security_audit_requirements.xlsx"
           $runMetricsPath = Join-Path $dataDir "run-metrics.xlsx"
-          $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry.jsonl"
+          $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry-ai-requirements.jsonl"
           $runMetricsPackageDir = Join-Path $dataDir "run-metrics"
 
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
@@ -101,7 +101,7 @@ jobs:
           requirements_source_path="$PWD/scripts/requirements.json"
           xlsx_path="$data_dir/security_audit_requirements.xlsx"
           run_metrics_path="$data_dir/run-metrics.xlsx"
-          prompt_telemetry_path="$data_dir/prompt-telemetry.jsonl"
+          prompt_telemetry_path="$data_dir/prompt-telemetry-ai-requirements.jsonl"
           run_metrics_package_dir="$data_dir/run-metrics"
 
           mkdir -p "$data_dir" "$bundle_dir" "$run_metrics_package_dir"
@@ -168,6 +168,7 @@ jobs:
             "requests",
             "pyyaml",
             "jsonschema"
+            "reportlab>=4.0.0"
           )
           $requirements = $requirementsList -join "`n"
 
@@ -274,6 +275,7 @@ jobs:
             "requests" \
             "pyyaml" \
             "jsonschema" \
+            "reportlab>=4.0.0" \
           )"
 
           venv_root="${SECURITY_AUDIT_VENV_ROOT:-$HOME/.cache/security-audit-venvs}"
@@ -778,7 +780,8 @@ jobs:
           & $env:PYTHON_EXE scripts/build_run_metrics_package.py `
             --raw-metrics $env:RUN_METRICS_XLSX_PATH `
             --out-dir $env:RUN_METRICS_PACKAGE_DIR `
-            --prompt-telemetry $env:PROMPT_TELEMETRY_PATH
+            --prompt-telemetry $env:PROMPT_TELEMETRY_PATH `
+            --vision360-bundle $env:VISION360_BUNDLE_DIR
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
@@ -799,7 +802,8 @@ jobs:
           "$PYTHON_EXE" scripts/build_run_metrics_package.py \
             --raw-metrics "$RUN_METRICS_XLSX_PATH" \
             --out-dir "$RUN_METRICS_PACKAGE_DIR" \
-            --prompt-telemetry "$PROMPT_TELEMETRY_PATH"
+            --prompt-telemetry "$PROMPT_TELEMETRY_PATH" \
+            --vision360-bundle "$VISION360_BUNDLE_DIR"
           test -f "$RUN_METRICS_PACKAGE_DIR/run-metrics.xlsx"
           test -f "$RUN_METRICS_PACKAGE_DIR/run-metrics-methodology.pdf"
 
@@ -815,7 +819,4 @@ jobs:
         with:
           name: run-metrics
           if-no-files-found: error
-          path: |
-            ${{ runner.temp }}/vision360-data/run-metrics/run-metrics.xlsx
-            ${{ runner.temp }}/vision360-data/run-metrics/run-metrics-methodology.pdf
-            ${{ runner.temp }}/vision360-data/prompt-telemetry.jsonl
+          path: ${{ runner.temp }}/vision360-data/run-metrics/**

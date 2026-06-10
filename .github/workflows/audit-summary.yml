@@ -37,14 +37,20 @@ jobs:
           $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
           $technicalDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
           $runMetricsInputDir = Join-Path $dataDir "run-metrics-input"
-          $runMetricsPackageDir = Join-Path $dataDir "run-metrics-audit-summary"
+          $runMetricsPackageDir = Join-Path $dataDir "run-metrics"
           $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry-audit-summary.jsonl"
           $auditConfigPath = Join-Path $PWD "scripts\audit_summary_literals.json"
+
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
           New-Item -ItemType Directory -Force -Path $technicalDir | Out-Null
           New-Item -ItemType Directory -Force -Path $runMetricsInputDir | Out-Null
           New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
           if (Test-Path $promptTelemetryPath) { Remove-Item -LiteralPath $promptTelemetryPath -Force }
+          if (Test-Path $runMetricsPackageDir) {
+            Remove-Item -LiteralPath $runMetricsPackageDir -Recurse -Force
+          }
+          New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
+
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_CONFIG_JSON_PATH=$auditConfigPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
@@ -61,6 +67,12 @@ jobs:
           "RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "PROMPT_TELEMETRY_PATH=$promptTelemetryPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "MPLCONFIGDIR=$(Join-Path $dataDir '_matplotlib')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+          Write-Host "[PATH] VISION360_DATA_DIR=$dataDir"
+          Write-Host "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir"
+          Write-Host "[PATH] RUN_METRICS_INPUT_DIR=$runMetricsInputDir"
+          Write-Host "[PATH] RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir"
+          Write-Host "[PATH] PROMPT_TELEMETRY_PATH=$promptTelemetryPath"
 
       - name: Download security audit Excel
         uses: actions/download-artifact@v6
@@ -164,6 +176,7 @@ jobs:
             "requests",
             "pyyaml",
             "jsonschema"
+            "reportlab>=4.0.0"
           )
           $requirements = $requirementsList -join "`n"
 
@@ -249,23 +262,6 @@ jobs:
           & $env:PYTHON_EXE scripts/audit_summary_stage2_generate_docx.py --in $env:AUDIT_ANALYSIS_JSON_PATH --out $env:AUDIT_SUMMARY_DOCX_PATH
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Build Audit Summary prompt metrics package
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          $rawMetrics = Join-Path $env:RUN_METRICS_INPUT_DIR "run-metrics.xlsx"
-          if (-not (Test-Path -LiteralPath $rawMetrics)) {
-            Write-Host "[WARN] Base run-metrics.xlsx not found at $rawMetrics. Skipping Audit Summary prompt metrics package."
-            exit 0
-          }
-          & $env:PYTHON_EXE scripts/build_run_metrics_package.py `
-            --raw-metrics $rawMetrics `
-            --out-dir $env:RUN_METRICS_PACKAGE_DIR `
-            --prompt-telemetry $env:PROMPT_TELEMETRY_PATH `
-            --analysis-pack $env:AUDIT_ANALYSIS_JSON_PATH `
-            --audit-summary-docx $env:AUDIT_SUMMARY_DOCX_PATH
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
       - name: Convert DOCX to PDF
         shell: powershell
         run: |
@@ -293,6 +289,54 @@ jobs:
           if (-not (Test-Path -LiteralPath $pdfPath)) { throw "PDF was not generated: $pdfPath" }
           Write-Host "[OK] PDF generated: $pdfPath"
 
+      - name: Build consolidated run metrics package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $rawMetrics = Join-Path $env:RUN_METRICS_INPUT_DIR "run-metrics.xlsx"
+          if (-not (Test-Path -LiteralPath $rawMetrics)) {
+            throw "Base run-metrics.xlsx not found at $rawMetrics. The final consolidated package requires the AI requirements run-metrics artifact."
+          }
+
+          $aiPromptTelemetry = Join-Path $env:RUN_METRICS_INPUT_DIR "telemetry\prompt-telemetry-ai-requirements.jsonl"
+          if (-not (Test-Path -LiteralPath $aiPromptTelemetry)) {
+            $candidate = Join-Path $env:RUN_METRICS_INPUT_DIR "prompt-telemetry-ai-requirements.jsonl"
+            if (Test-Path -LiteralPath $candidate) { $aiPromptTelemetry = $candidate }
+          }
+          $auditSummaryPdf = Join-Path $env:VISION360_DATA_DIR "Audit Summary.pdf"
+
+          $cmd = @(
+            "scripts/build_run_metrics_package.py",
+            "--raw-metrics", $rawMetrics,
+            "--out-dir", $env:RUN_METRICS_PACKAGE_DIR,
+            "--analysis-pack", $env:AUDIT_ANALYSIS_JSON_PATH,
+            "--audit-config", $env:AUDIT_CONFIG_JSON_PATH,
+            "--audit-summary-docx", $env:AUDIT_SUMMARY_DOCX_PATH,
+            "--audit-summary-pdf", $auditSummaryPdf,
+            "--technical-root", $env:AUDIT_TECHNICAL_INPUTS_DIR,
+            "--vision360-bundle", $env:VISION360_BUNDLE_DIR,
+            "--trivy-payload", $env:TRIVY_PAYLOAD_DIR,
+            "--mobsf-report", $env:MOBSF_REPORT_DIR,
+            "--mobsf-dynamic-report", $env:MOBSF_DYNAMIC_REPORT_DIR,
+            "--sast-findings", $env:SAST_FINDINGS_DIR
+          )
+          if (Test-Path -LiteralPath $aiPromptTelemetry) {
+            $cmd += @("--prompt-telemetry", $aiPromptTelemetry)
+          } else {
+            Write-Host "[WARN] AI requirements prompt telemetry not found; prompt data will fall back to workbook sheets where available."
+          }
+          if (Test-Path -LiteralPath $env:PROMPT_TELEMETRY_PATH) {
+            $cmd += @("--prompt-telemetry", $env:PROMPT_TELEMETRY_PATH)
+          } else {
+            Write-Host "[WARN] Audit Summary prompt telemetry not found; no Audit Summary prompt calls will be recorded for this run."
+          }
+
+          & $env:PYTHON_EXE @cmd
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics.xlsx"))) { throw "Missing consolidated run-metrics.xlsx" }
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-methodology.pdf"))) { throw "Missing run-metrics-methodology.pdf" }
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-manifest.json"))) { throw "Missing run-metrics-manifest.json" }
+
       - name: Prepare strict Audit Summary artifacts
         shell: powershell
         run: |
@@ -316,15 +360,13 @@ jobs:
           Write-Host "[ARTIFACT] audit-summary-zip will publish only:"
           Get-ChildItem -File $reportDir | ForEach-Object { Write-Host ("  - {0}" -f $_.Name) }
 
-      - name: Upload Audit Summary run metrics package
+      - name: Upload consolidated run metrics package
         uses: actions/upload-artifact@v6
         with:
-          name: run-metrics-audit-summary
-          if-no-files-found: warn
-          path: |
-            ${{ env.RUN_METRICS_PACKAGE_DIR }}\run-metrics.xlsx
-            ${{ env.RUN_METRICS_PACKAGE_DIR }}\run-metrics-methodology.pdf
-            ${{ env.PROMPT_TELEMETRY_PATH }}
+          name: run-metrics
+          overwrite: true
+          if-no-files-found: error
+          path: ${{ env.RUN_METRICS_PACKAGE_DIR }}/**
 
       - name: Upload Audit Summary analysis pack
         uses: actions/upload-artifact@v6
