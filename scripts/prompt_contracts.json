@@ -1,0 +1,748 @@
+{
+  "registry_version": "1.0",
+  "description": "Central prompt-contract registry for mSEC-AM audit workflows. This file is the single source of truth for LLM prompt transcripts, expected schemas, controls, and validation metadata.",
+  "contracts": [
+    {
+      "prompt_id": "P-AIX-001",
+      "script_id": "S-AIX-001",
+      "prompt_name": "Requirement justification",
+      "prompt_scope": "audit_matrix",
+      "prompt_category": "primary_audit_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/ai_security_audit_requirements_excel.py",
+      "source_function": "generate_justifications_via_openai",
+      "section_match": "justification",
+      "role_in_workflow": "Drafts one short English justification for each deterministic requirement result already computed by the audit logic. It does not adjudicate or change yes/no/n/a outcomes.",
+      "system_prompt": "/no_think\nYou draft very short audit justifications in English for security requirement outcomes.\nStrict rules:\n- Do not reason step by step.\n- Do not produce hidden reasoning.\n- Return the final JSON immediately.\n- Output English only.\n- If any provided notes contain non-English text, paraphrase them into English and do not quote them verbatim.\n- Do not invent evidence or flags.\n- Use only the provided context.\n- Keep exactly 1 short sentence per requirement.\n- Mention state, normalized summary (YES/NO/NA), relevant note hint, and evidence_count when available.\n- If a flag is not present in the fingerprint, state: 'flag not present in fingerprint'.\n- Do not change the precomputed result.\n- Do not use Markdown, code fences, prose, bullet points, comments, or tool calls.\n- Return exactly one raw JSON object and nothing else.\n- Return ONLY JSON in the form: {\"items\": [{\"id\": \"...\", \"justification\": \"...\"}, ...]}.\n",
+      "user_payload_contract": {
+        "batch": [
+          "requirement context objects with id, result, flags and evidence summaries"
+        ]
+      },
+      "required_output_schema": {
+        "items": [
+          {
+            "id": "<exact requirement PUID>",
+            "justification": "<one short English sentence>"
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AIX-001-C01",
+          "control_name": "JSON-only output",
+          "clause": "Return exactly one raw JSON object and nothing else.",
+          "validation_mechanism": "JSON parser / structured parser",
+          "metric": "json_valid_rate"
+        },
+        {
+          "control_id": "P-AIX-001-C02",
+          "control_name": "English-only output",
+          "clause": "Output English only.",
+          "validation_mechanism": "Language quality gate and report validation",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AIX-001-C03",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent evidence or flags.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AIX-001-C04",
+          "control_name": "Evidence grounding",
+          "clause": "Use only the provided context.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AIX-001-C05",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Keep exactly one short sentence per requirement.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AIX-001-C06",
+          "control_name": "No result modification",
+          "clause": "Do not change the precomputed result.",
+          "validation_mechanism": "Deterministic compliance matrix and row hashes are computed outside the LLM",
+          "metric": "compliance_matrix_hash"
+        },
+        {
+          "control_id": "P-AIX-001-C07",
+          "control_name": "Identifier preservation",
+          "clause": "Return items with exact requirement PUID identifiers.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON parsing or structured parse, schema check for items/id/justification, PUID traceability comparison against the requested batch, retry on call failure, deterministic fallback for missing or rejected items.",
+        "JSON parser / structured parser",
+        "Language quality gate and report validation",
+        "Grounding and evidence-bound validation checks",
+        "Prompt-call validation and reviewer inspection",
+        "Deterministic compliance matrix and row hashes are computed outside the LLM",
+        "Expected PUID or item_id compared against returned id values"
+      ],
+      "metrics": [
+        "json_valid_rate",
+        "prompt_success_rate",
+        "compliance_matrix_hash",
+        "traceability_ok_rate"
+      ],
+      "fallback_available": true,
+      "retry_available": true,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "P-AS2-001",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Executive summary",
+      "prompt_scope": "audit_summary",
+      "prompt_category": "primary_audit_summary_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_ai_json_chat",
+      "section_match": "executive_summary",
+      "role_in_workflow": "Generates the executive summary paragraph and key takeaways from supplied workbook metrics and technical evidence.",
+      "system_prompt": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "do_not_claim": [
+            "full codebase is clean",
+            "MobSF absence equals no risk",
+            "SAST raw findings are app findings"
+          ],
+          "key_takeaways_count": "5 to 7",
+          "must_reference": [
+            "overall compliance rate",
+            "applicable controls",
+            "non-compliant controls",
+            "top weakness patterns",
+            "technical scanner evidence where available"
+          ]
+        },
+        "context": "application, metrics, likelihood rubric, weakness patterns, technical evidence, positive controls",
+        "task": "Generate executive summary components"
+      },
+      "required_output_schema": {
+        "audit_summary_paragraph": "<one concise paragraph>",
+        "key_takeaways": [
+          "<bullet text>"
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AS2-001-C01",
+          "control_name": "JSON-only output",
+          "clause": "Use only the provided JSON data.",
+          "validation_mechanism": "JSON parser / structured parser",
+          "metric": "json_valid_rate"
+        },
+        {
+          "control_id": "P-AS2-001-C02",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent controls, metrics, vulnerabilities, or evidence.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-001-C03",
+          "control_name": "JSON-only output",
+          "clause": "Return exactly one valid JSON object and nothing else.",
+          "validation_mechanism": "JSON parser / structured parser",
+          "metric": "json_valid_rate"
+        },
+        {
+          "control_id": "P-AS2-001-C04",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Do not make claims listed in do_not_claim.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON extraction, required field validation, report-language quality guard, retry when output is invalid or rejected.",
+        "JSON parser / structured parser",
+        "Grounding and evidence-bound validation checks",
+        "Prompt-call validation and reviewer inspection"
+      ],
+      "metrics": [
+        "json_valid_rate",
+        "prompt_success_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": true,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "P-AS2-002",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Positive controls",
+      "prompt_scope": "audit_summary",
+      "prompt_category": "primary_audit_summary_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_ai_json_chat",
+      "section_match": "positive_controls",
+      "role_in_workflow": "Rewrites verified positive-control statements into report-ready English while preserving exact PUIDs and supplied evidence boundaries.",
+      "system_prompt": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "do_not_invent_evidence": true,
+          "do_not_overstate": true,
+          "statement_style": "One concise sentence per control",
+          "use_exact_puid": true
+        },
+        "context": "application, positive controls, technical evidence",
+        "task": "Rewrite verified positive control statements"
+      },
+      "required_output_schema": {
+        "positive_controls": [
+          {
+            "puid": "<exact PUID>",
+            "statement": "<rewritten statement grounded only in flags and evidence>"
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AS2-002-C01",
+          "control_name": "Identifier preservation",
+          "clause": "Use exact PUID.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "P-AS2-002-C02",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Do not overstate the evidence.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-002-C03",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent evidence.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-002-C04",
+          "control_name": "JSON-only output",
+          "clause": "Return JSON output grounded in supplied positive-control evidence.",
+          "validation_mechanism": "JSON parser / structured parser",
+          "metric": "json_valid_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON extraction, schema validation, PUID preservation check, exclusion of missing or unacceptable statements rather than invented replacement.",
+        "Expected PUID or item_id compared against returned id values",
+        "Prompt-call validation and reviewer inspection",
+        "Grounding and evidence-bound validation checks",
+        "JSON parser / structured parser"
+      ],
+      "metrics": [
+        "traceability_ok_rate",
+        "prompt_success_rate",
+        "json_valid_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": true,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "P-AS2-003",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Technical narratives",
+      "prompt_scope": "audit_summary",
+      "prompt_category": "primary_audit_summary_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_ai_json_chat",
+      "section_match": "technical_narratives",
+      "role_in_workflow": "Generates technical narrative paragraphs from normalized Trivy, MobSF, SAST, Vision360 and workbook context.",
+      "system_prompt": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "do_not_overstate_sast": true,
+          "mention_execution_metadata": true,
+          "observed_values_only": "Use observed normalized values",
+          "one_paragraph_each": true
+        },
+        "context": "application, metrics, technical evidence, weakness patterns",
+        "task": "Generate report-ready technical narrative paragraphs"
+      },
+      "required_output_schema": {
+        "mobsf_dynamic_paragraph": "<paragraph>",
+        "mobsf_static_paragraph": "<paragraph>",
+        "sast_paragraph": "<paragraph>",
+        "technical_coverage_paragraph": "<paragraph>",
+        "technical_evidence_intro": "<paragraph>",
+        "technical_execution_metadata_paragraph": "<paragraph>",
+        "trivy_paragraph": "<paragraph>"
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AS2-003-C01",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Use observed normalized values.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-003-C02",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Do not overstate SAST results.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-003-C03",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent scanner findings, files, CVEs, packages, or metrics.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-003-C04",
+          "control_name": "JSON-only output",
+          "clause": "Return exactly one valid JSON object.",
+          "validation_mechanism": "JSON parser / structured parser",
+          "metric": "json_valid_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON extraction, schema validation for expected paragraphs, technical-language quality guard, retry when invalid or rejected.",
+        "Prompt-call validation and reviewer inspection",
+        "Grounding and evidence-bound validation checks",
+        "JSON parser / structured parser"
+      ],
+      "metrics": [
+        "prompt_success_rate",
+        "json_valid_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": true,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "P-AS2-004",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Pattern writeups",
+      "prompt_scope": "audit_summary",
+      "prompt_category": "primary_audit_summary_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_ai_json_chat",
+      "section_match": "pattern_writeups",
+      "role_in_workflow": "Generates weakness-pattern expected states, impacts, recommendations and closure criteria from supplied prevalence, PUID examples and scanner context.",
+      "system_prompt": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "no_static_recommendations": true,
+          "no_unprovided_metrics": true,
+          "patterns": "Use exact pattern names from input",
+          "recommendations": "4 to 6 actionable bullets grounded in evidence"
+        },
+        "context": "application, likelihood rubric, top weakness patterns, technical evidence",
+        "task": "Generate weakness-pattern writeups and recommendations"
+      },
+      "required_output_schema": {
+        "pattern_writeups": [
+          {
+            "closure_criteria": "<measurable closure criterion grounded in evidence>",
+            "expected": "<sentence>",
+            "impact": "<sentence>",
+            "pattern": "<exact pattern name>",
+            "recommendations": [
+              "<AI-generated action grounded in evidence>"
+            ]
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AS2-004-C01",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Use exact pattern names from input.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-004-C02",
+          "control_name": "Identifier preservation",
+          "clause": "Generate recommendations from supplied workbook prevalence, PUID examples and scanner context.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "P-AS2-004-C03",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Do not use generic boilerplate or static templates.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-004-C04",
+          "control_name": "Registered prompt-control clause",
+          "clause": "Do not use unprovided metrics.",
+          "validation_mechanism": "Prompt-call validation and reviewer inspection",
+          "metric": "prompt_success_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON extraction, schema validation, exact pattern-name checks, report-language quality guard and retry when invalid or rejected.",
+        "Prompt-call validation and reviewer inspection",
+        "Expected PUID or item_id compared against returned id values"
+      ],
+      "metrics": [
+        "prompt_success_rate",
+        "traceability_ok_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": true,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "P-AS2-005",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Control treatment plan",
+      "prompt_scope": "audit_summary",
+      "prompt_category": "primary_audit_summary_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_call_llm_for_treatment_plan",
+      "section_match": "control_treatment_",
+      "role_in_workflow": "Generates treatment actions, verification methods, closure evidence and residual-risk notes for non-compliant requirement-level control items.",
+      "system_prompt": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "all_output_fields_must_be_non_empty": true,
+          "do_not_invent_evidence": true,
+          "one_result_per_input_item": true,
+          "use_exact_item_id_and_puid": true
+        },
+        "items": "control treatment items with item_id, PUID, flags and evidence excerpt",
+        "task": "Generate treatment-plan actions for non-compliant SECM-CAT controls"
+      },
+      "required_output_schema": {
+        "control_treatments": [
+          {
+            "closure_evidence": "<non-empty closure evidence>",
+            "item_id": "<exact input item_id>",
+            "residual_risk": "<residual risk or risk acceptance note>",
+            "treatment_action": "<non-empty action>",
+            "verification_method": "<non-empty verification method>"
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AS2-005-C01",
+          "control_name": "Identifier preservation",
+          "clause": "Return exactly one result object using the exact input item_id.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "P-AS2-005-C02",
+          "control_name": "Identifier preservation",
+          "clause": "Do not invent PUIDs, flags, files, CVEs, scanner findings, or package versions.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "P-AS2-005-C03",
+          "control_name": "Required non-empty fields",
+          "clause": "Every result object must contain non-empty treatment fields.",
+          "validation_mechanism": "Required field validation",
+          "metric": "schema_valid_rate"
+        },
+        {
+          "control_id": "P-AS2-005-C04",
+          "control_name": "Evidence grounding",
+          "clause": "Use supplied evidence only.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON extraction, schema validation, exact item_id matching, required non-empty field checks, repair prompt if fields are missing.",
+        "Expected PUID or item_id compared against returned id values",
+        "Required field validation",
+        "Grounding and evidence-bound validation checks"
+      ],
+      "metrics": [
+        "traceability_ok_rate",
+        "schema_valid_rate",
+        "prompt_success_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": true,
+      "repair_available": true,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "P-AS2-006",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Technical treatment plan",
+      "prompt_scope": "audit_summary",
+      "prompt_category": "primary_audit_summary_prompt",
+      "is_primary": true,
+      "is_auxiliary": false,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_call_llm_for_treatment_plan",
+      "section_match": "technical_treatment_",
+      "role_in_workflow": "Generates treatment actions, verification methods, closure evidence and residual-risk notes for technical findings such as dependencies, SAST and MobSF-derived items.",
+      "system_prompt": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "dependency_rule": "Use fixed_version when present; otherwise do not invent a version",
+          "do_not_invent_evidence": true,
+          "one_result_per_input_item": true,
+          "use_exact_item_id_and_finding_id": true
+        },
+        "items": "technical finding items with item_id, finding_id, source and evidence",
+        "task": "Generate treatment-plan actions for technical scanner findings"
+      },
+      "required_output_schema": {
+        "technical_treatments": [
+          {
+            "closure_evidence": "<non-empty closure evidence>",
+            "item_id": "<exact input item_id>",
+            "residual_risk": "<residual risk or risk acceptance note>",
+            "treatment_action": "<non-empty action>",
+            "verification_method": "<non-empty verification method>"
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "P-AS2-006-C01",
+          "control_name": "Identifier preservation",
+          "clause": "Use exact technical item_id values.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "P-AS2-006-C02",
+          "control_name": "Evidence grounding",
+          "clause": "Use only supplied finding metadata.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-006-C03",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent additional files, line numbers, packages, or versions.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        },
+        {
+          "control_id": "P-AS2-006-C04",
+          "control_name": "Required non-empty fields",
+          "clause": "Every result object must contain non-empty treatment fields.",
+          "validation_mechanism": "Required field validation",
+          "metric": "schema_valid_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "JSON extraction, schema validation, exact item_id matching, required non-empty field checks, repair prompt if fields are missing.",
+        "Expected PUID or item_id compared against returned id values",
+        "Grounding and evidence-bound validation checks",
+        "Required field validation"
+      ],
+      "metrics": [
+        "traceability_ok_rate",
+        "prompt_success_rate",
+        "schema_valid_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": true,
+      "repair_available": true,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "A-AS2-001",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Control treatment repair",
+      "prompt_scope": "audit_summary_repair",
+      "prompt_category": "auxiliary_repair_prompt",
+      "is_primary": false,
+      "is_auxiliary": true,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_call_llm_for_treatment_repair",
+      "section_match": "control_treatment_repair_",
+      "role_in_workflow": "Auxiliary prompt used only when validation detects missing treatment fields for control-treatment items.",
+      "system_prompt": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "complete_only_missing_or_empty_fields": true,
+          "missing_fields_are_listed_per_item": true,
+          "use_exact_item_id_and_puid": true
+        },
+        "items": "only incomplete items with missing_ai_fields",
+        "task": "Repair missing or incomplete treatment-plan fields for non-compliant SECM-CAT controls"
+      },
+      "required_output_schema": {
+        "control_treatments": [
+          {
+            "closure_evidence": "<non-empty closure evidence>",
+            "item_id": "<exact input item_id>",
+            "residual_risk": "<residual risk or risk acceptance note>",
+            "treatment_action": "<non-empty action>",
+            "verification_method": "<non-empty verification method>"
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "A-AS2-001-C01",
+          "control_name": "Repair gating",
+          "clause": "Runs only after validation detects missing required fields.",
+          "validation_mechanism": "Repair prompt is invoked only after missing required fields are detected",
+          "metric": "repair_success_rate"
+        },
+        {
+          "control_id": "A-AS2-001-C02",
+          "control_name": "Repair gating",
+          "clause": "Complete only missing or empty fields.",
+          "validation_mechanism": "Repair prompt is invoked only after missing required fields are detected",
+          "metric": "repair_success_rate"
+        },
+        {
+          "control_id": "A-AS2-001-C03",
+          "control_name": "Identifier preservation",
+          "clause": "Use exact item_id and PUID.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "A-AS2-001-C04",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent evidence.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "Same schema and item_id validation as the treatment plan prompt; merged only into missing fields after validation.",
+        "Repair prompt is invoked only after missing required fields are detected",
+        "Expected PUID or item_id compared against returned id values",
+        "Grounding and evidence-bound validation checks"
+      ],
+      "metrics": [
+        "repair_success_rate",
+        "traceability_ok_rate",
+        "prompt_success_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": false,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    },
+    {
+      "prompt_id": "A-AS2-002",
+      "script_id": "S-AS2-001",
+      "prompt_name": "Technical treatment repair",
+      "prompt_scope": "audit_summary_repair",
+      "prompt_category": "auxiliary_repair_prompt",
+      "is_primary": false,
+      "is_auxiliary": true,
+      "is_active": true,
+      "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+      "source_function": "_call_llm_for_treatment_repair",
+      "section_match": "technical_treatment_repair_",
+      "role_in_workflow": "Auxiliary prompt used only when validation detects missing treatment fields for technical-treatment items.",
+      "system_prompt": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",
+      "user_payload_contract": {
+        "constraints": {
+          "complete_only_missing_or_empty_fields": true,
+          "missing_fields_are_listed_per_item": true,
+          "use_exact_item_id_and_finding_id": true
+        },
+        "items": "only incomplete technical items with missing_ai_fields",
+        "task": "Repair missing or incomplete treatment-plan fields for technical scanner findings"
+      },
+      "required_output_schema": {
+        "technical_treatments": [
+          {
+            "closure_evidence": "<non-empty closure evidence>",
+            "item_id": "<exact input item_id>",
+            "residual_risk": "<residual risk or risk acceptance note>",
+            "treatment_action": "<non-empty action>",
+            "verification_method": "<non-empty verification method>"
+          }
+        ]
+      },
+      "control_clauses": [
+        {
+          "control_id": "A-AS2-002-C01",
+          "control_name": "Repair gating",
+          "clause": "Runs only after validation detects missing required fields.",
+          "validation_mechanism": "Repair prompt is invoked only after missing required fields are detected",
+          "metric": "repair_success_rate"
+        },
+        {
+          "control_id": "A-AS2-002-C02",
+          "control_name": "Repair gating",
+          "clause": "Complete only missing or empty fields.",
+          "validation_mechanism": "Repair prompt is invoked only after missing required fields are detected",
+          "metric": "repair_success_rate"
+        },
+        {
+          "control_id": "A-AS2-002-C03",
+          "control_name": "Identifier preservation",
+          "clause": "Use exact item_id and finding_id.",
+          "validation_mechanism": "Expected PUID or item_id compared against returned id values",
+          "metric": "traceability_ok_rate"
+        },
+        {
+          "control_id": "A-AS2-002-C04",
+          "control_name": "No invented evidence",
+          "clause": "Do not invent evidence, files, CVEs, versions or line numbers.",
+          "validation_mechanism": "Grounding and evidence-bound validation checks",
+          "metric": "prompt_success_rate"
+        }
+      ],
+      "validation_mechanisms": [
+        "Same schema and item_id validation as the treatment plan prompt; merged only into missing fields after validation.",
+        "Repair prompt is invoked only after missing required fields are detected",
+        "Expected PUID or item_id compared against returned id values",
+        "Grounding and evidence-bound validation checks"
+      ],
+      "metrics": [
+        "repair_success_rate",
+        "traceability_ok_rate",
+        "prompt_success_rate"
+      ],
+      "fallback_available": false,
+      "retry_available": false,
+      "repair_available": false,
+      "notes": "Centralized prompt contract. Dynamic payload values are not duplicated here and are tracked by payload_hash in runtime telemetry."
+    }
+  ]
+}

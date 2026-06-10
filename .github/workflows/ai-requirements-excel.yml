@@ -580,6 +580,21 @@ jobs:
               raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
           PY
 
+      - name: Validate prompt registry on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          & $env:PYTHON_EXE scripts/validate_prompt_registry.py --repo-root . --strict
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate prompt registry on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PYTHON_EXE" scripts/validate_prompt_registry.py --repo-root . --strict
+
       - name: Download VISION360 bundle artifact
         uses: actions/download-artifact@v6
         with:

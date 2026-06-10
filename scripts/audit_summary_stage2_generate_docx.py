@@ -2225,12 +2225,12 @@ def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str,
     if runtime is None:
         return {}
 
-    base_system_prompt = system_prompt
     last_hits: List[str] = []
     attempts = 1 + _ai_repair_attempts()
     call_started_at = time.time()
     last_error = ""
     contract = contract_for_section(section_name, fallback_source_function="_ai_json_chat")
+    base_system_prompt = str(contract.get("system_prompt_transcript") or contract.get("system_prompt") or system_prompt)
     expected_schema = user_payload.get("required_output_schema") if isinstance(user_payload, dict) else {}
     expected_items = _prompt_expected_items(user_payload)
 
@@ -2548,16 +2548,9 @@ def _call_llm_for_audit_sections(
     if not _ai_enabled():
         return {}
 
-    common_system = (
-        "You are a senior mobile health security audit reporting specialist. "
-        "Write in precise technical English for an executive and engineering audience. "
-        "Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. "
-        + AI_REPORT_LANGUAGE_POLICY + " "
-        "Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. "
-        "retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. "
-        "Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. "
-        "Return exactly one valid JSON object and nothing else."
-    )
+    common_system = str(contract_for_section("executive_summary", fallback_source_function="_ai_json_chat").get("system_prompt_transcript") or "")
+    if not common_system:
+        raise RuntimeError("Audit Summary common system prompt is empty in scripts/prompt_contracts.json")
 
     compact_patterns = _compact_patterns_for_ai(patterns)
     compact_technical = _compact_technical_for_ai(technical)
@@ -3154,17 +3147,9 @@ def _call_llm_for_treatment_plan(app: Dict[str, Any], treatment_plan: Dict[str, 
     if not _ai_enabled():
         return {}
 
-    system_prompt = (
-        "You are a senior mobile application security remediation planner for mHealth/EMR systems. "
-        "Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. "
-        + AI_REPORT_LANGUAGE_POLICY + " "
-        "For every input item, return exactly one result object using the exact input item_id. "
-        "Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. "
-        "For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. "
-        "Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. "
-        "Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. "
-        "Return exactly one valid JSON object and nothing else."
-    )
+    system_prompt = str(contract_for_section("control_treatment_", fallback_source_function="_call_llm_for_treatment_plan").get("system_prompt_transcript") or "")
+    if not system_prompt:
+        raise RuntimeError("P-AS2-005 treatment system prompt is empty in scripts/prompt_contracts.json")
 
     technical_compact = _compact_technical_for_ai(technical)
     control_items = [x for x in _as_list(treatment_plan.get("control_items")) if isinstance(x, dict)]

@@ -38,10 +38,14 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table as RLTable, TableStyle
 
 try:
-    from lib.prompt_telemetry import PROMPT_CONTRACTS, registered_prompt_inventory, stable_json_hash
+    from lib.prompt_registry import (
+        prompt_contracts_map,
+        registered_prompt_inventory,
+        registry_path,
+        registry_sha256,
+        stable_json_hash,
+    )
 except Exception:
-    PROMPT_CONTRACTS = {}
-
     def stable_json_hash(value: Any) -> str:
         try:
             payload = json.dumps(value, sort_keys=True, ensure_ascii=False, default=str)
@@ -52,27 +56,38 @@ except Exception:
     def registered_prompt_inventory() -> List[Dict[str, Any]]:
         return []
 
+    def prompt_contracts_map(active_only: bool = False) -> Dict[str, Dict[str, Any]]:
+        return {}
+
+    def registry_path() -> Path:
+        return Path(__file__).resolve().parent / "prompt_contracts.json"
+
+    def registry_sha256() -> str:
+        return ""
+
 RUN_METRICS_XLSX = "run-metrics.xlsx"
 RUN_METRICS_PDF = "run-metrics-methodology.pdf"
 RUN_METRICS_MANIFEST = "run-metrics-manifest.json"
 
-# Embedded prompt contracts make the run-metrics package self-contained.
-# They are used when scripts/lib/prompt_telemetry.py is unavailable or when an
-# imported contract row omits transcript, schema, or control-clause fields.
-EMBEDDED_PROMPT_CONTRACTS: Dict[str, Dict[str, Any]] = json.loads('{\n  "A-AS2-001": {\n    "control_clauses": "- Runs only after validation detects missing required fields.\\n- Complete only missing or empty fields.\\n- Use exact item_id and PUID.\\n- Do not invent evidence.",\n    "is_auxiliary": true,\n    "is_primary": false,\n    "prompt_category": "auxiliary_repair_prompt",\n    "prompt_contract_hash": "5c8f535727b2ff45214e2fe2df737f46b7bb9aa72ddcd9d4e328d6848984d4f5",\n    "prompt_name": "Control treatment repair",\n    "prompt_scope": "audit_summary_repair",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"control_treatments\\": [\\n    {\\n      \\"closure_evidence\\": \\"<non-empty closure evidence>\\",\\n      \\"item_id\\": \\"<exact input item_id>\\",\\n      \\"residual_risk\\": \\"<residual risk or risk acceptance note>\\",\\n      \\"treatment_action\\": \\"<non-empty action>\\",\\n      \\"verification_method\\": \\"<non-empty verification method>\\"\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Auxiliary prompt used only when validation detects missing treatment fields for control-treatment items.",\n    "section_match": "control_treatment_repair_",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_call_llm_for_treatment_repair",\n    "system_prompt_transcript": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"complete_only_missing_or_empty_fields\\": true,\\n    \\"missing_fields_are_listed_per_item\\": true,\\n    \\"use_exact_item_id_and_puid\\": true\\n  },\\n  \\"items\\": \\"only incomplete items with missing_ai_fields\\",\\n  \\"task\\": \\"Repair missing or incomplete treatment-plan fields for non-compliant SECM-CAT controls\\"\\n}",\n    "validation_mechanism": "Same schema and item_id validation as the treatment plan prompt; merged only into missing fields after validation."\n  },\n  "A-AS2-002": {\n    "control_clauses": "- Runs only after validation detects missing required fields.\\n- Complete only missing or empty fields.\\n- Use exact item_id and finding_id.\\n- Do not invent evidence, files, CVEs, versions or line numbers.",\n    "is_auxiliary": true,\n    "is_primary": false,\n    "prompt_category": "auxiliary_repair_prompt",\n    "prompt_contract_hash": "968afbe85ce6d86ee396bc9e2e054dd2b0b53dcc63a17061f4cf152d8e427f54",\n    "prompt_name": "Technical treatment repair",\n    "prompt_scope": "audit_summary_repair",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"technical_treatments\\": [\\n    {\\n      \\"closure_evidence\\": \\"<non-empty closure evidence>\\",\\n      \\"item_id\\": \\"<exact input item_id>\\",\\n      \\"residual_risk\\": \\"<residual risk or risk acceptance note>\\",\\n      \\"treatment_action\\": \\"<non-empty action>\\",\\n      \\"verification_method\\": \\"<non-empty verification method>\\"\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Auxiliary prompt used only when validation detects missing treatment fields for technical-treatment items.",\n    "section_match": "technical_treatment_repair_",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_call_llm_for_treatment_repair",\n    "system_prompt_transcript": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"complete_only_missing_or_empty_fields\\": true,\\n    \\"missing_fields_are_listed_per_item\\": true,\\n    \\"use_exact_item_id_and_finding_id\\": true\\n  },\\n  \\"items\\": \\"only incomplete technical items with missing_ai_fields\\",\\n  \\"task\\": \\"Repair missing or incomplete treatment-plan fields for technical scanner findings\\"\\n}",\n    "validation_mechanism": "Same schema and item_id validation as the treatment plan prompt; merged only into missing fields after validation."\n  },\n  "P-AIX-001": {\n    "control_clauses": "- Return exactly one raw JSON object and nothing else.\\n- Output English only.\\n- Do not invent evidence or flags.\\n- Use only the provided context.\\n- Keep exactly one short sentence per requirement.\\n- Do not change the precomputed result.\\n- Return items with exact requirement PUID identifiers.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_prompt",\n    "prompt_contract_hash": "8b3c584c47c67481c511c868b50e24d8736e4788cf39a54dfc35098d987b9860",\n    "prompt_name": "Requirement justification",\n    "prompt_scope": "audit_matrix",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"items\\": [\\n    {\\n      \\"id\\": \\"<exact requirement PUID>\\",\\n      \\"justification\\": \\"<one short English sentence>\\"\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Drafts one short English justification for each deterministic requirement result already computed by the audit logic. It does not adjudicate or change yes/no/n/a outcomes.",\n    "section_match": "justification",\n    "source_file": "scripts/ai_security_audit_requirements_excel.py",\n    "source_function": "generate_justifications_via_openai",\n    "system_prompt_transcript": "/no_think\\nYou draft very short audit justifications in English for security requirement outcomes.\\nStrict rules:\\n- Do not reason step by step.\\n- Do not produce hidden reasoning.\\n- Return the final JSON immediately.\\n- Output English only.\\n- If any provided notes contain non-English text, paraphrase them into English and do not quote them verbatim.\\n- Do not invent evidence or flags.\\n- Use only the provided context.\\n- Keep exactly 1 short sentence per requirement.\\n- Mention state, normalized summary (YES/NO/NA), relevant note hint, and evidence_count when available.\\n- If a flag is not present in the fingerprint, state: \'flag not present in fingerprint\'.\\n- Do not change the precomputed result.\\n- Do not use Markdown, code fences, prose, bullet points, comments, or tool calls.\\n- Return exactly one raw JSON object and nothing else.\\n- Return ONLY JSON in the form: {\\"items\\": [{\\"id\\": \\"...\\", \\"justification\\": \\"...\\"}, ...]}.\\n",\n    "user_payload_contract": "{\\n  \\"batch\\": [\\n    \\"requirement context objects with id, result, flags and evidence summaries\\"\\n  ]\\n}",\n    "validation_mechanism": "JSON parsing or structured parse, schema check for items/id/justification, PUID traceability comparison against the requested batch, retry on call failure, deterministic fallback for missing or rejected items."\n  },\n  "P-AS2-001": {\n    "control_clauses": "- Use only the provided JSON data.\\n- Do not invent controls, metrics, vulnerabilities, or evidence.\\n- Return exactly one valid JSON object and nothing else.\\n- Do not make claims listed in do_not_claim.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_summary_prompt",\n    "prompt_contract_hash": "03816411cb07cba1d896fc7730652ded120d5b18b66902d102418f537d3e6a1e",\n    "prompt_name": "Executive summary",\n    "prompt_scope": "audit_summary",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"audit_summary_paragraph\\": \\"<one concise paragraph>\\",\\n  \\"key_takeaways\\": [\\n    \\"<bullet text>\\"\\n  ]\\n}",\n    "role_in_workflow": "Generates the executive summary paragraph and key takeaways from supplied workbook metrics and technical evidence.",\n    "section_match": "executive_summary",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_ai_json_chat",\n    "system_prompt_transcript": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"do_not_claim\\": [\\n      \\"full codebase is clean\\",\\n      \\"MobSF absence equals no risk\\",\\n      \\"SAST raw findings are app findings\\"\\n    ],\\n    \\"key_takeaways_count\\": \\"5 to 7\\",\\n    \\"must_reference\\": [\\n      \\"overall compliance rate\\",\\n      \\"applicable controls\\",\\n      \\"non-compliant controls\\",\\n      \\"top weakness patterns\\",\\n      \\"technical scanner evidence where available\\"\\n    ]\\n  },\\n  \\"context\\": \\"application, metrics, likelihood rubric, weakness patterns, technical evidence, positive controls\\",\\n  \\"task\\": \\"Generate executive summary components\\"\\n}",\n    "validation_mechanism": "JSON extraction, required field validation, report-language quality guard, retry when output is invalid or rejected."\n  },\n  "P-AS2-002": {\n    "control_clauses": "- Use exact PUID.\\n- Do not overstate the evidence.\\n- Do not invent evidence.\\n- Return JSON output grounded in supplied positive-control evidence.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_summary_prompt",\n    "prompt_contract_hash": "e853d94eed39fb6ef3420a75b8f9cb6bf35719bdb94a722e50b9400f6fcba009",\n    "prompt_name": "Positive controls",\n    "prompt_scope": "audit_summary",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"positive_controls\\": [\\n    {\\n      \\"puid\\": \\"<exact PUID>\\",\\n      \\"statement\\": \\"<rewritten statement grounded only in flags and evidence>\\"\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Rewrites verified positive-control statements into report-ready English while preserving exact PUIDs and supplied evidence boundaries.",\n    "section_match": "positive_controls",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_ai_json_chat",\n    "system_prompt_transcript": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"do_not_invent_evidence\\": true,\\n    \\"do_not_overstate\\": true,\\n    \\"statement_style\\": \\"One concise sentence per control\\",\\n    \\"use_exact_puid\\": true\\n  },\\n  \\"context\\": \\"application, positive controls, technical evidence\\",\\n  \\"task\\": \\"Rewrite verified positive control statements\\"\\n}",\n    "validation_mechanism": "JSON extraction, schema validation, PUID preservation check, exclusion of missing or unacceptable statements rather than invented replacement."\n  },\n  "P-AS2-003": {\n    "control_clauses": "- Use observed normalized values.\\n- Do not overstate SAST results.\\n- Do not invent scanner findings, files, CVEs, packages, or metrics.\\n- Return exactly one valid JSON object.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_summary_prompt",\n    "prompt_contract_hash": "ce6f5408e2a1372fd0183083f60876360bbbec7eb799659fd5ef2a1718f14fcf",\n    "prompt_name": "Technical narratives",\n    "prompt_scope": "audit_summary",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"mobsf_dynamic_paragraph\\": \\"<paragraph>\\",\\n  \\"mobsf_static_paragraph\\": \\"<paragraph>\\",\\n  \\"sast_paragraph\\": \\"<paragraph>\\",\\n  \\"technical_coverage_paragraph\\": \\"<paragraph>\\",\\n  \\"technical_evidence_intro\\": \\"<paragraph>\\",\\n  \\"technical_execution_metadata_paragraph\\": \\"<paragraph>\\",\\n  \\"trivy_paragraph\\": \\"<paragraph>\\"\\n}",\n    "role_in_workflow": "Generates technical narrative paragraphs from normalized Trivy, MobSF, SAST, Vision360 and workbook context.",\n    "section_match": "technical_narratives",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_ai_json_chat",\n    "system_prompt_transcript": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"do_not_overstate_sast\\": true,\\n    \\"mention_execution_metadata\\": true,\\n    \\"observed_values_only\\": \\"Use observed normalized values\\",\\n    \\"one_paragraph_each\\": true\\n  },\\n  \\"context\\": \\"application, metrics, technical evidence, weakness patterns\\",\\n  \\"task\\": \\"Generate report-ready technical narrative paragraphs\\"\\n}",\n    "validation_mechanism": "JSON extraction, schema validation for expected paragraphs, technical-language quality guard, retry when invalid or rejected."\n  },\n  "P-AS2-004": {\n    "control_clauses": "- Use exact pattern names from input.\\n- Generate recommendations from supplied workbook prevalence, PUID examples and scanner context.\\n- Do not use generic boilerplate or static templates.\\n- Do not use unprovided metrics.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_summary_prompt",\n    "prompt_contract_hash": "fe2d1aa18177b8b8fb18a1fd01379a4544c31545b99fb6a8f22da11559704600",\n    "prompt_name": "Pattern writeups",\n    "prompt_scope": "audit_summary",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"pattern_writeups\\": [\\n    {\\n      \\"closure_criteria\\": \\"<measurable closure criterion grounded in evidence>\\",\\n      \\"expected\\": \\"<sentence>\\",\\n      \\"impact\\": \\"<sentence>\\",\\n      \\"pattern\\": \\"<exact pattern name>\\",\\n      \\"recommendations\\": [\\n        \\"<AI-generated action grounded in evidence>\\"\\n      ]\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Generates weakness-pattern expected states, impacts, recommendations and closure criteria from supplied prevalence, PUID examples and scanner context.",\n    "section_match": "pattern_writeups",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_ai_json_chat",\n    "system_prompt_transcript": "You are a senior mobile health security audit reporting specialist. Write in precise technical English for an executive and engineering audience. Use only the provided JSON data. Do not invent controls, metrics, vulnerabilities, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. Use normalized evidence as authoritative. For SAST, retained_security_findings is authoritative for security-relevant application-code findings. retained_app_code_signals may include hardening, quality, or maintainability findings and must not be described as vulnerabilities unless also counted in retained_security_findings. Raw SARIF counts, CodeQL notifications, Detekt warnings, and Semgrep counts must be described as traceability, quality, or execution metadata unless they are explicitly classified as retained_security_findings. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"no_static_recommendations\\": true,\\n    \\"no_unprovided_metrics\\": true,\\n    \\"patterns\\": \\"Use exact pattern names from input\\",\\n    \\"recommendations\\": \\"4 to 6 actionable bullets grounded in evidence\\"\\n  },\\n  \\"context\\": \\"application, likelihood rubric, top weakness patterns, technical evidence\\",\\n  \\"task\\": \\"Generate weakness-pattern writeups and recommendations\\"\\n}",\n    "validation_mechanism": "JSON extraction, schema validation, exact pattern-name checks, report-language quality guard and retry when invalid or rejected."\n  },\n  "P-AS2-005": {\n    "control_clauses": "- Return exactly one result object using the exact input item_id.\\n- Do not invent PUIDs, flags, files, CVEs, scanner findings, or package versions.\\n- Every result object must contain non-empty treatment fields.\\n- Use supplied evidence only.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_summary_prompt",\n    "prompt_contract_hash": "40290124f72e91db858ed4e0719e811000783dd6c89a971f592bd3816d6ce0e5",\n    "prompt_name": "Control treatment plan",\n    "prompt_scope": "audit_summary",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"control_treatments\\": [\\n    {\\n      \\"closure_evidence\\": \\"<non-empty closure evidence>\\",\\n      \\"item_id\\": \\"<exact input item_id>\\",\\n      \\"residual_risk\\": \\"<residual risk or risk acceptance note>\\",\\n      \\"treatment_action\\": \\"<non-empty action>\\",\\n      \\"verification_method\\": \\"<non-empty verification method>\\"\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Generates treatment actions, verification methods, closure evidence and residual-risk notes for non-compliant requirement-level control items.",\n    "section_match": "control_treatment_",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_call_llm_for_treatment_plan",\n    "system_prompt_transcript": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"all_output_fields_must_be_non_empty\\": true,\\n    \\"do_not_invent_evidence\\": true,\\n    \\"one_result_per_input_item\\": true,\\n    \\"use_exact_item_id_and_puid\\": true\\n  },\\n  \\"items\\": \\"control treatment items with item_id, PUID, flags and evidence excerpt\\",\\n  \\"task\\": \\"Generate treatment-plan actions for non-compliant SECM-CAT controls\\"\\n}",\n    "validation_mechanism": "JSON extraction, schema validation, exact item_id matching, required non-empty field checks, repair prompt if fields are missing."\n  },\n  "P-AS2-006": {\n    "control_clauses": "- Use exact technical item_id values.\\n- Use only supplied finding metadata.\\n- Do not invent additional files, line numbers, packages, or versions.\\n- Every result object must contain non-empty treatment fields.",\n    "is_auxiliary": false,\n    "is_primary": true,\n    "prompt_category": "primary_audit_summary_prompt",\n    "prompt_contract_hash": "c7f2c313c037be9a8e4868ace05948b63f8eb8fb5b1d4ad54c025d00c1a532bc",\n    "prompt_name": "Technical treatment plan",\n    "prompt_scope": "audit_summary",\n    "registration_status": "registered",\n    "required_output_schema": "{\\n  \\"technical_treatments\\": [\\n    {\\n      \\"closure_evidence\\": \\"<non-empty closure evidence>\\",\\n      \\"item_id\\": \\"<exact input item_id>\\",\\n      \\"residual_risk\\": \\"<residual risk or risk acceptance note>\\",\\n      \\"treatment_action\\": \\"<non-empty action>\\",\\n      \\"verification_method\\": \\"<non-empty verification method>\\"\\n    }\\n  ]\\n}",\n    "role_in_workflow": "Generates treatment actions, verification methods, closure evidence and residual-risk notes for technical findings such as dependencies, SAST and MobSF-derived items.",\n    "section_match": "technical_treatment_",\n    "source_file": "scripts/audit_summary_stage2_generate_docx.py",\n    "source_function": "_call_llm_for_treatment_plan",\n    "system_prompt_transcript": "You are a senior mobile application security remediation planner for mHealth/EMR systems. Generate treatment-plan text from the supplied JSON only. Do not invent CVEs, packages, versions, files, lines, PUIDs, flags, scanner tools, or evidence. Use director-facing audit language. Do not discuss discrepancies, contradictions, limitations, missing evidence, unavailable values, failed parsing, or internal pipeline behavior. For every input item, return exactly one result object using the exact input item_id. Every result object must contain non-empty treatment_action, verification_method, closure_evidence, and residual_risk fields. For each item, write concrete but audit-defensible actions and verification steps based on observed evidence. Keep treatment_action, verification_method, closure_evidence, and residual_risk concise. Do not use static boilerplate. Do not claim that raw SARIF counts are vulnerabilities. Treat certificate pinning as threat-model dependent, not mandatory for every application. Return exactly one valid JSON object and nothing else.",\n    "user_payload_contract": "{\\n  \\"constraints\\": {\\n    \\"dependency_rule\\": \\"Use fixed_version when present; otherwise do not invent a version\\",\\n    \\"do_not_invent_evidence\\": true,\\n    \\"one_result_per_input_item\\": true,\\n    \\"use_exact_item_id_and_finding_id\\": true\\n  },\\n  \\"items\\": \\"technical finding items with item_id, finding_id, source and evidence\\",\\n  \\"task\\": \\"Generate treatment-plan actions for technical scanner findings\\"\\n}",\n    "validation_mechanism": "JSON extraction, schema validation, exact item_id matching, required non-empty field checks, repair prompt if fields are missing."\n  }\n}')
+# Prompt contracts are centralized in scripts/prompt_contracts.json.
+PROMPT_CONTRACTS_FILE_SRC = registry_path()
+PROMPT_CONTRACTS_PACKAGE_PATH = "contracts/prompt_contracts.json"
 
 
-def _contract_with_embedded_defaults(prompt_id: str, row: Dict[str, Any]) -> Dict[str, Any]:
-    base = dict(EMBEDDED_PROMPT_CONTRACTS.get(str(prompt_id or ""), {}))
+def _contract_with_registry_defaults(prompt_id: str, row: Dict[str, Any]) -> Dict[str, Any]:
     out = dict(row or {})
-    for key, value in base.items():
-        if out.get(key) in (None, "", [], {}):
-            out[key] = value
     if prompt_id:
         out["prompt_id"] = prompt_id
-    out.setdefault("registration_status", "registered" if str(prompt_id or "") in EMBEDDED_PROMPT_CONTRACTS else "unregistered")
+    out.setdefault("registration_status", "registered")
+    out.setdefault("system_prompt_transcript", out.get("system_prompt", ""))
+    out.setdefault("user_payload_contract", "")
+    out.setdefault("required_output_schema", "")
+    out.setdefault("control_clauses", "")
+    out.setdefault("validation_mechanism", "")
     if out.get("prompt_contract_hash") in (None, ""):
         out["prompt_contract_hash"] = stable_json_hash({
+            "prompt_id": out.get("prompt_id", ""),
+            "script_id": out.get("script_id", ""),
             "system_prompt_transcript": out.get("system_prompt_transcript", ""),
             "user_payload_contract": out.get("user_payload_contract", ""),
             "required_output_schema": out.get("required_output_schema", ""),
@@ -84,37 +99,32 @@ def _contract_with_embedded_defaults(prompt_id: str, row: Dict[str, Any]) -> Dic
 
 def _combined_registered_prompt_contracts() -> Dict[str, Dict[str, Any]]:
     combined: Dict[str, Dict[str, Any]] = {}
-    for pid, contract in EMBEDDED_PROMPT_CONTRACTS.items():
-        row = dict(contract)
-        row["prompt_id"] = pid
-        row.setdefault("registration_status", "registered")
-        combined[pid] = _contract_with_embedded_defaults(pid, row)
     try:
-        for row in registered_prompt_inventory():
+        for row in registered_prompt_inventory(active_only=False):
             pid = str(row.get("prompt_id") or "")
             if not pid:
                 continue
-            merged = dict(combined.get(pid, {}))
-            merged.update({k: v for k, v in dict(row).items() if v not in (None, "", [], {})})
-            combined[pid] = _contract_with_embedded_defaults(pid, merged)
+            combined[pid] = _contract_with_registry_defaults(pid, dict(row))
+    except TypeError:
+        for row in registered_prompt_inventory():
+            pid = str(row.get("prompt_id") or "")
+            if pid:
+                combined[pid] = _contract_with_registry_defaults(pid, dict(row))
     except Exception:
         pass
     try:
-        for pid, contract in PROMPT_CONTRACTS.items():
-            pid = str(pid or "")
-            if not pid:
-                continue
-            merged = dict(combined.get(pid, {}))
-            merged.update({k: v for k, v in dict(contract).items() if v not in (None, "", [], {})})
-            merged["prompt_id"] = pid
-            merged.setdefault("registration_status", "registered")
-            combined[pid] = _contract_with_embedded_defaults(pid, merged)
+        for pid, row in prompt_contracts_map(active_only=False).items():
+            if pid and pid not in combined:
+                combined[pid] = _contract_with_registry_defaults(pid, dict(row))
     except Exception:
         pass
     return combined
 
+
 STABILITY_TOOL_SRC = Path(__file__).resolve().parent / "tools" / "build_stability_analysis.py"
 STABILITY_TOOL_PACKAGE_PATH = "tools/build_stability_analysis.py"
+PROMPT_REGISTRY_VALIDATOR_SRC = Path(__file__).resolve().parent / "validate_prompt_registry.py"
+PROMPT_REGISTRY_VALIDATOR_PACKAGE_PATH = "tools/validate_prompt_registry.py"
 
 THEME_NAVY = "17365D"
 THEME_BLUE = "D9EAF7"
@@ -325,6 +335,20 @@ PACKAGE_COMPONENTS = [
         "purpose": "Machine-readable list of packaged files with SHA-256 hashes, sizes, repository, commit and run identifiers.",
         "reader_priority": "supporting",
         "duplication_policy": "Only file integrity metadata is duplicated into Appendix_Package_Manifest.",
+    },
+    {
+        "component": "contracts/prompt_contracts.json",
+        "type": "prompt_contract_registry",
+        "purpose": "Central JSON registry containing the exact LLM prompt transcripts, unique prompt IDs, script IDs, auxiliary flags, expected output schemas, control clauses and validation mechanisms used by the workflow.",
+        "reader_priority": "supporting",
+        "duplication_policy": "Transcribed into prompt_contracts and prompt_control_breakdown; this JSON remains the authoritative source.",
+    },
+    {
+        "component": "tools/validate_prompt_registry.py",
+        "type": "prompt_registry_validator",
+        "purpose": "Standalone Python validator that checks the prompt registry for complete transcripts, schemas, controls, validation mechanisms, and LLM-call coverage.",
+        "reader_priority": "supporting",
+        "duplication_policy": "Validator logic is documented in the PDF and workflow; it does not duplicate runtime data.",
     },
     {
         "component": "tools/build_stability_analysis.py",
@@ -669,14 +693,14 @@ def _build_prompt_sections(prompt_calls: List[Dict[str, Any]]) -> Tuple[List[Dic
         by_prompt[pid].append(c)
         if pid and pid not in registered:
             runtime_row = {"prompt_id": pid, "prompt_name": c.get("prompt_name", "Unregistered prompt"), "prompt_scope": c.get("prompt_scope", "unregistered"), "prompt_category": "unregistered_candidate", "registration_status": "unregistered", "source_file": c.get("source_file", ""), "source_function": c.get("source_function", "")}
-            registered[pid] = _contract_with_embedded_defaults(pid, runtime_row)
+            registered[pid] = _contract_with_registry_defaults(pid, runtime_row)
     contracts = []
     control_breakdown = []
     run_results = []
     controls_summary = []
     discovery = []
     for pid in sorted(registered):
-        contract = _contract_with_embedded_defaults(pid, registered[pid])
+        contract = _contract_with_registry_defaults(pid, registered[pid])
         calls = by_prompt.get(pid, [])
         call_count = len(calls)
         success_count = sum(1 for c in calls if _to_bool(c.get("prompt_success")))
@@ -834,6 +858,10 @@ def _input_evidence_rows(wb: Any, args: argparse.Namespace, telemetry_components
     add("run_metrics_workbook", "run_metrics", "package_component", str(output_xlsx), "Generated run-metrics workbook.", "no")
     add("run_metrics_methodology_pdf", "run_metrics", "package_component", str(output_pdf), "Generated methodology PDF.", "no")
     add("run_metrics_manifest", "run_metrics", "package_component", str(manifest_path), "Generated package manifest.", "no")
+    contracts_path = output_xlsx.parent / PROMPT_CONTRACTS_PACKAGE_PATH
+    add("prompt_contracts_registry", "run_metrics", "prompt_contract_registry", str(contracts_path), "Central JSON registry with prompt transcripts, schemas, controls and validation mechanisms.", "yes")
+    validator_path = output_xlsx.parent / PROMPT_REGISTRY_VALIDATOR_PACKAGE_PATH
+    add("prompt_registry_validator", "run_metrics", "package_tool", str(validator_path), "Tool that validates prompt registry completeness and LLM-call coverage.", "no")
     tool_path = output_xlsx.parent / STABILITY_TOOL_PACKAGE_PATH
     add("build_stability_analysis_tool", "run_metrics", "package_tool", str(tool_path), "Tool that generates stability-analysis.xlsx from n run-metrics packages.", "no")
     # de-duplicate by input_name/path/sha
@@ -938,7 +966,7 @@ def _style_workbook(wb: Any) -> None:
 
 def _manifest_rows(out_dir: Path, raw_path: Path) -> List[Dict[str, Any]]:
     rows = []
-    for rel in [RUN_METRICS_XLSX, RUN_METRICS_PDF, RUN_METRICS_MANIFEST, STABILITY_TOOL_PACKAGE_PATH, "telemetry/prompt-telemetry-ai-requirements.jsonl", "telemetry/prompt-telemetry-audit-summary.jsonl"]:
+    for rel in [RUN_METRICS_XLSX, RUN_METRICS_PDF, RUN_METRICS_MANIFEST, PROMPT_CONTRACTS_PACKAGE_PATH, PROMPT_REGISTRY_VALIDATOR_PACKAGE_PATH, STABILITY_TOOL_PACKAGE_PATH, "telemetry/prompt-telemetry-ai-requirements.jsonl", "telemetry/prompt-telemetry-audit-summary.jsonl"]:
         p = out_dir / rel
         if p.is_file():
             rows.append({"artifact": rel, "path": str(p), "sha256": _sha256_file(p), "size_bytes": p.stat().st_size})
@@ -1136,6 +1164,18 @@ def build(args: argparse.Namespace) -> None:
         shutil.copy2(STABILITY_TOOL_SRC, tool_dst)
     else:
         tool_dst.write_text("# build_stability_analysis.py was not found in the repository at package build time.\n", encoding="utf-8")
+    contracts_dst = out_dir / PROMPT_CONTRACTS_PACKAGE_PATH
+    contracts_dst.parent.mkdir(parents=True, exist_ok=True)
+    if PROMPT_CONTRACTS_FILE_SRC.is_file():
+        shutil.copy2(PROMPT_CONTRACTS_FILE_SRC, contracts_dst)
+    else:
+        contracts_dst.write_text(json.dumps({"registry_version": "missing", "contracts": []}, indent=2), encoding="utf-8")
+    validator_dst = out_dir / PROMPT_REGISTRY_VALIDATOR_PACKAGE_PATH
+    validator_dst.parent.mkdir(parents=True, exist_ok=True)
+    if PROMPT_REGISTRY_VALIDATOR_SRC.is_file():
+        shutil.copy2(PROMPT_REGISTRY_VALIDATOR_SRC, validator_dst)
+    else:
+        validator_dst.write_text("# validate_prompt_registry.py was not found in the repository at package build time.\n", encoding="utf-8")
     wb_raw = openpyxl.load_workbook(output_xlsx, data_only=True)
     metrics = _compute_base_metrics(wb_raw)
     telemetry_events, telemetry_components = _copy_telemetry_files(args.prompt_telemetry or [], out_dir)

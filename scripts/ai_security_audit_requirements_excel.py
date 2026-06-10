@@ -29,9 +29,14 @@ except Exception:
 
 try:
     from lib.prompt_telemetry import record_prompt_call
+    from lib.prompt_registry import get_prompt_contract
 except Exception:
     def record_prompt_call(**kwargs: Any) -> str:  # type: ignore
         return str(kwargs.get("prompt_call_id") or "")
+    def get_prompt_contract(prompt_id: str, *, required: bool = True) -> Dict[str, Any]:  # type: ignore
+        if required:
+            raise KeyError(prompt_id)
+        return {}
 
 
 def _first_nonempty_env(*names: str) -> str:
@@ -869,31 +874,16 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
     class JustificationBatch(BaseModel):
         items: List[JustificationItem]
 
-    system = (
-        "/no_think\n"
-        "You draft very short audit justifications in English for security requirement outcomes.\n"
-        "Strict rules:\n"
-        "- Do not reason step by step.\n"
-        "- Do not produce hidden reasoning.\n"
-        "- Return the final JSON immediately.\n"
-        "- Output English only.\n"
-        "- If any provided notes contain non-English text, paraphrase them into English and do not quote them verbatim.\n"
-        "- Do not invent evidence or flags.\n"
-        "- Use only the provided context.\n"
-        "- Keep exactly 1 short sentence per requirement.\n"
-        "- Mention state, normalized summary (YES/NO/NA), relevant note hint, and evidence_count when available.\n"
-        "- If a flag is not present in the fingerprint, state: 'flag not present in fingerprint'.\n"
-        "- Do not change the precomputed result.\n"
-        "- Do not use Markdown, code fences, prose, bullet points, comments, or tool calls.\n"
-        "- Return exactly one raw JSON object and nothing else.\n"
-        "- Return ONLY JSON in the form: {\"items\": [{\"id\": \"...\", \"justification\": \"...\"}, ...]}.\n"
-    )
+    contract = get_prompt_contract("P-AIX-001")
+    system = str(contract.get("system_prompt_transcript") or contract.get("system_prompt") or "")
+    if not system:
+        raise RuntimeError("P-AIX-001 system prompt is empty in scripts/prompt_contracts.json")
     user_payload = {"batch": batch_ctx}
-    expected_schema = {"items": [{"id": "<exact requirement PUID>", "justification": "<one short English sentence>"}]}
-    prompt_id = "P-AIX-001"
-    prompt_name = "Requirement justification"
-    prompt_scope = "audit_matrix"
-    prompt_category = "primary_audit_prompt"
+    expected_schema = contract.get("required_output_schema_object") or {"items": [{"id": "<exact requirement PUID>", "justification": "<one short English sentence>"}]}
+    prompt_id = str(contract.get("prompt_id") or "P-AIX-001")
+    prompt_name = str(contract.get("prompt_name") or "Requirement justification")
+    prompt_scope = str(contract.get("prompt_scope") or "audit_matrix")
+    prompt_category = str(contract.get("prompt_category") or "primary_audit_prompt")
     ids = [str(item.get("id") or "") for item in batch_ctx if isinstance(item, dict)]
     print(
         f"[AI] Justification request prepared: items={len(batch_ctx)} "

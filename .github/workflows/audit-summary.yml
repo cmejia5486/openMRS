@@ -248,6 +248,13 @@ jobs:
           "AI_VENV_DIR=$venv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "[PY] Using Python: $pythonExe"
 
+      - name: Validate prompt registry
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          & $env:PYTHON_EXE scripts/validate_prompt_registry.py --repo-root . --strict
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build Audit Summary analysis pack
         shell: powershell
         run: |
