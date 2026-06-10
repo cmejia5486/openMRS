@@ -136,6 +136,39 @@ THEME_RED = "FCE4D6"
 THEME_ORANGE = "FCE4D6"
 THEME_GRAY = "EDEDED"
 
+
+NUMERIC_DECISION_RULES = {
+    "num_requirements": "comparability requirement: value must equal the same metric in every comparable run; mismatch excludes the run from stability analysis.",
+    "compliance_matrix_hash": "exact agreement requirement: value must match across comparable runs for exact_matrix_agreement_rate = 1.000.",
+    "llm_config_hash": "comparability requirement: value must match across comparable runs unless intentionally comparing configurations.",
+    "prompt_inventory_hash": "comparability requirement: value must match across comparable runs; target prompt_inventory_stability = 1.000.",
+    "json_valid_rate": "acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
+    "schema_valid_rate": "acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
+    "completion_rate": "acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
+    "traceability_ok_rate": "acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
+    "fallback_rate": "target <= 0.050; review-required > 0.050 and <= 0.100; critical > 0.100.",
+    "retry_rate": "target <= 0.200; review-required > 0.200 and <= 0.500; critical > 0.500.",
+    "prompt_success_rate": "acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
+}
+
+STABILITY_NUMERIC_DECISION_RULES = {
+    "comparable_run_count": "minimum n >= 2 for a repeated-run comparison; recommended n >= 5 when the study protocol requires five executions.",
+    "exact_matrix_agreement_rate": "target = 1.000; review-required >= 0.950 and < 1.000; critical < 0.950.",
+    "requirement_result_agreement_rate": "acceptable >= 0.990; review-required >= 0.950 and < 0.990; critical < 0.950.",
+    "changed_requirement_count": "target = 0; review-required 1 to 2; critical >= 3.",
+    "yes_count_sd": "target = 0.000; review-required > 0.000 and <= 1.000; critical > 1.000.",
+    "no_count_sd": "target = 0.000; review-required > 0.000 and <= 1.000; critical > 1.000.",
+    "na_count_sd": "target = 0.000; review-required > 0.000 and <= 1.000; critical > 1.000.",
+    "prompt_inventory_stability": "target = 1.000; review-required >= 0.950 and < 1.000; critical < 0.950.",
+    "llm_config_stability": "target = 1.000; review-required >= 0.950 and < 1.000; critical < 0.950.",
+    "validation_rate_mean": "positive rates acceptable >= 0.950; fallback mean target <= 0.050; retry mean target <= 0.200.",
+    "validation_rate_sd": "target <= 0.020; review-required > 0.020 and <= 0.050; critical > 0.050.",
+    "Fleiss kappa": "strong agreement >= 0.800; moderate >= 0.600 and < 0.800; weak < 0.600; not_applicable when n or category distribution is unsuitable.",
+}
+
+def _metric_decision_rule(metric: str) -> str:
+    return NUMERIC_DECISION_RULES.get(str(metric or ""), "explicit numeric rule not configured; review metric definition before publication.")
+
 CONTROL_FIELDS = [
     "json_required_detected",
     "schema_required_detected",
@@ -188,7 +221,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Rows in Appendix_Requirement_Rows",
         "denominator": "Not applicable",
         "source_sheet": "Appendix_Requirement_Rows",
-        "interpretation": "Repeated-run comparisons should use the same requirement count and PUID set.",
+        "interpretation": "Comparable repeated runs must have identical num_requirements and identical PUID sets; otherwise the run is excluded from stability calculations.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -200,7 +233,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Not applicable",
         "denominator": "Not applicable",
         "source_sheet": "Run_Summary and Appendix_Requirement_Rows",
-        "interpretation": "Identical hashes across runs indicate exact matrix agreement.",
+        "interpretation": "Exact matrix agreement is satisfied only when this hash is identical across comparable runs; target exact_matrix_agreement_rate = 1.000.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -212,7 +245,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Not applicable",
         "denominator": "Not applicable",
         "source_sheet": "Run_Summary",
-        "interpretation": "Runs with different LLM configuration should not be mixed unless intentionally compared.",
+        "interpretation": "Comparable repeated runs must use the same llm_config_hash; otherwise the run is excluded unless the study intentionally compares configurations.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -224,7 +257,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Not applicable",
         "denominator": "Not applicable",
         "source_sheet": "Prompt_Contracts",
-        "interpretation": "Used by stability-analysis.xlsx to verify the prompt set is stable.",
+        "interpretation": "Comparable repeated runs must use the same prompt_inventory_hash; target prompt_inventory_stability = 1.000.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -236,7 +269,7 @@ METRIC_DEFINITIONS = [
         "numerator": "LLM calls with json_valid=true",
         "denominator": "All LLM calls recorded",
         "source_sheet": "Appendix_LLM_Calls and Appendix_Prompt_Calls",
-        "interpretation": "A low value means the model did not reliably return machine-readable JSON.",
+        "interpretation": "Apply numeric rule: acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -248,7 +281,7 @@ METRIC_DEFINITIONS = [
         "numerator": "LLM calls with schema_valid=true",
         "denominator": "All LLM calls recorded",
         "source_sheet": "Appendix_LLM_Calls and Appendix_Prompt_Calls",
-        "interpretation": "A low value indicates outputs required retry, repair or fallback.",
+        "interpretation": "Apply numeric rule: acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -260,7 +293,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Received items",
         "denominator": "Expected items",
         "source_sheet": "Appendix_LLM_Calls and Appendix_Prompt_Calls",
-        "interpretation": "Below 100% means at least one expected item was missing or rejected.",
+        "interpretation": "Apply numeric rule: acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -272,7 +305,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Items preserving the expected identifier",
         "denominator": "Items where identifier traceability applies",
         "source_sheet": "Appendix_LLM_Items and Appendix_Prompt_Calls",
-        "interpretation": "A low value indicates generated content could not be safely linked to the supplied item.",
+        "interpretation": "Apply numeric rule: acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -284,7 +317,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Items with fallback_used=true",
         "denominator": "Requirements evaluated",
         "source_sheet": "Appendix_LLM_Items",
-        "interpretation": "Fallback preserves deterministic audit results when generated text cannot be accepted.",
+        "interpretation": "Apply numeric rule: target <= 0.050; review-required > 0.050 and <= 0.100; critical > 0.100.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -296,7 +329,7 @@ METRIC_DEFINITIONS = [
         "numerator": "Total retry count",
         "denominator": "All LLM calls recorded",
         "source_sheet": "Appendix_LLM_Calls and Appendix_Prompt_Calls",
-        "interpretation": "High values suggest endpoint, prompt or response-format instability.",
+        "interpretation": "Apply numeric rule: target <= 0.200; review-required > 0.200 and <= 0.500; critical > 0.500.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
@@ -308,11 +341,15 @@ METRIC_DEFINITIONS = [
         "numerator": "Accepted prompt calls",
         "denominator": "Executed prompt calls",
         "source_sheet": "Prompt_Run_Results and Appendix_Prompt_Calls",
-        "interpretation": "Shows whether each prompt produced usable controlled output in this execution.",
+        "interpretation": "Apply numeric rule: acceptable >= 0.950; review-required >= 0.900 and < 0.950; critical < 0.900.",
         "single_run": "yes",
         "stability_analysis": "yes",
     },
 ]
+
+
+for _metric_def in METRIC_DEFINITIONS:
+    _metric_def.setdefault("numeric_decision_rule", _metric_decision_rule(_metric_def.get("metric")))
 
 PACKAGE_COMPONENTS = [
     {
@@ -795,14 +832,14 @@ def _build_llm_validation_summary(metrics: Dict[str, Any], prompt_run_results: L
     successful_prompt_calls = sum(_safe_int(r.get("successful_call_count"), 0) for r in prompt_run_results)
     failed_prompt_calls = sum(_safe_int(r.get("failed_call_count"), 0) for r in prompt_run_results)
     rows = [
-        ("json_valid_rate", metrics["json_valid_count"], metrics["num_llm_calls"], metrics["json_valid_rate"], "Rate of LLM calls that returned parseable JSON."),
-        ("schema_valid_rate", metrics["schema_valid_count"], metrics["num_llm_calls"], metrics["schema_valid_rate"], "Rate of LLM calls with the required output structure."),
-        ("completion_rate", metrics["received_items"], metrics["expected_items"], metrics["completion_rate"], "Accepted items divided by expected items."),
-        ("traceability_ok_rate", metrics["traceability_ok"], metrics["traceability_expected"], metrics["traceability_ok_rate"], "Items that preserved expected identifiers where traceability applies."),
-        ("fallback_rate", metrics["fallback_items"], metrics["num_requirements"], metrics["fallback_rate"], "Deterministic fallback use for requirement-level justifications."),
-        ("retry_rate", metrics["retry_count"], metrics["num_llm_calls"], metrics["retry_rate"], "Retries used for LLM call recovery."),
-        ("prompt_success_rate", successful_prompt_calls, prompt_calls, _rate(successful_prompt_calls, prompt_calls), "Prompt calls accepted after all applicable validations."),
-        ("failed_prompt_call_count", failed_prompt_calls, prompt_calls, failed_prompt_calls, "Prompt calls that were rejected or required fallback."),
+        ("json_valid_rate", metrics["json_valid_count"], metrics["num_llm_calls"], metrics["json_valid_rate"], f"Rate of LLM calls that returned parseable JSON. Numeric rule: {NUMERIC_DECISION_RULES['json_valid_rate']}"),
+        ("schema_valid_rate", metrics["schema_valid_count"], metrics["num_llm_calls"], metrics["schema_valid_rate"], f"Rate of LLM calls with the required output structure. Numeric rule: {NUMERIC_DECISION_RULES['schema_valid_rate']}"),
+        ("completion_rate", metrics["received_items"], metrics["expected_items"], metrics["completion_rate"], f"Accepted items divided by expected items. Numeric rule: {NUMERIC_DECISION_RULES['completion_rate']}"),
+        ("traceability_ok_rate", metrics["traceability_ok"], metrics["traceability_expected"], metrics["traceability_ok_rate"], f"Items that preserved expected identifiers where traceability applies. Numeric rule: {NUMERIC_DECISION_RULES['traceability_ok_rate']}"),
+        ("fallback_rate", metrics["fallback_items"], metrics["num_requirements"], metrics["fallback_rate"], f"Deterministic fallback use for requirement-level justifications. Numeric rule: {NUMERIC_DECISION_RULES['fallback_rate']}"),
+        ("retry_rate", metrics["retry_count"], metrics["num_llm_calls"], metrics["retry_rate"], f"Retries used for LLM call recovery. Numeric rule: {NUMERIC_DECISION_RULES['retry_rate']}"),
+        ("prompt_success_rate", successful_prompt_calls, prompt_calls, _rate(successful_prompt_calls, prompt_calls), f"Prompt calls accepted after all applicable validations. Numeric rule: {NUMERIC_DECISION_RULES['prompt_success_rate']}"),
+        ("failed_prompt_call_count", failed_prompt_calls, prompt_calls, failed_prompt_calls, "Numeric count rule: target = 0; review-required = 1; critical >= 2."),
     ]
     return [{"metric": m, "numerator": n, "denominator": d, "value": v, "plain_language_interpretation": interp} for m, n, d, v, interp in rows]
 
@@ -870,17 +907,17 @@ def _prompt_scope_definition_rows() -> List[List[str]]:
 
 def _stability_formula_rows() -> List[List[str]]:
     return [
-        ["comparable_run_count", "comparable_run_count = count(runs where repository, commit_sha, input_fingerprint, prompt_inventory_hash, llm_config_hash, num_requirements and PUID set match)", "Number of repeated executions accepted for stability calculations."],
-        ["exact_matrix_agreement_rate", "exact_matrix_agreement_rate = mode_count(compliance_matrix_hash) / comparable_run_count", "Share of comparable runs with the most frequent complete result matrix."],
-        ["requirement_result_agreement_rate", "requirement_result_agreement_rate = pairwise_matching_results / pairwise_total_comparisons", "pairwise_matching_results = count of run pairs where result(run_i,puid) = result(run_j,puid), summed across all PUIDs."],
-        ["changed_requirement_count", "changed_requirement_count = count(PUID where count(unique_results_across_comparable_runs) > 1)", "Number of requirements whose yes/no/n/a result changed across comparable runs."],
-        ["yes_count_mean", "yes_count_mean = sum(yes_count_i) / n", "Mean number of yes results across n comparable runs."],
-        ["yes_count_sd", "yes_count_sd = sqrt(sum((yes_count_i - yes_count_mean)^2) / (n - 1))", "Sample standard deviation of yes counts across comparable runs. Same formula applies to no_count_sd and na_count_sd."],
-        ["prompt_inventory_stability", "prompt_inventory_stability = mode_count(prompt_inventory_hash) / comparable_run_count", "Confirms whether all comparable runs used the same centralized prompt registry and observed prompt hashes."],
-        ["llm_config_stability", "llm_config_stability = mode_count(llm_config_hash) / comparable_run_count", "Confirms whether all comparable runs used the same LLM runtime configuration."],
-        ["validation_rate_mean", "validation_rate_mean = sum(validation_rate_i) / n", "Mean of a per-run validation rate such as json_valid_rate, schema_valid_rate, completion_rate, traceability_ok_rate, fallback_rate, retry_rate, or prompt_success_rate."],
-        ["validation_rate_sd", "validation_rate_sd = sqrt(sum((validation_rate_i - validation_rate_mean)^2) / (n - 1))", "Sample standard deviation of the selected validation rate across comparable runs."],
-        ["Fleiss kappa", "kappa = (P_bar - P_e) / (1 - P_e)", "P_bar is observed categorical agreement across PUID results; P_e is expected agreement from category proportions."],
+        ["comparable_run_count", "comparable_run_count = count(runs where repository, commit_sha, input_fingerprint, prompt_inventory_hash, llm_config_hash, num_requirements and PUID set match)", "Number of repeated executions accepted for stability calculations. Numeric rule: minimum n >= 2; recommended n >= 5 when the protocol requires five executions."],
+        ["exact_matrix_agreement_rate", "exact_matrix_agreement_rate = mode_count(compliance_matrix_hash) / comparable_run_count", "Share of comparable runs with the most frequent complete result matrix. Numeric rule: target = 1.000; review-required >= 0.950 and < 1.000; critical < 0.950."],
+        ["requirement_result_agreement_rate", "requirement_result_agreement_rate = pairwise_matching_results / pairwise_total_comparisons", "pairwise_matching_results = count of run pairs where result(run_i,puid) = result(run_j,puid), summed across all PUIDs. Numeric rule: acceptable >= 0.990; review-required >= 0.950 and < 0.990; critical < 0.950."],
+        ["changed_requirement_count", "changed_requirement_count = count(PUID where count(unique_results_across_comparable_runs) > 1)", "Number of requirements whose yes/no/n/a result changed across comparable runs. Numeric rule: target = 0; review-required 1 to 2; critical >= 3."],
+        ["yes_count_mean", "yes_count_mean = sum(yes_count_i) / n", "Mean number of yes results across n comparable runs. Numeric rule: descriptive metric; evaluate together with yes_count_sd, no_count_sd and na_count_sd."],
+        ["yes_count_sd", "yes_count_sd = sqrt(sum((yes_count_i - yes_count_mean)^2) / (n - 1))", "Sample standard deviation of yes counts across comparable runs. Same formula applies to no_count_sd and na_count_sd. Numeric rule: target = 0.000; review-required > 0.000 and <= 1.000; critical > 1.000."],
+        ["prompt_inventory_stability", "prompt_inventory_stability = mode_count(prompt_inventory_hash) / comparable_run_count", "Confirms whether all comparable runs used the same centralized prompt registry and observed prompt hashes. Numeric rule: target = 1.000; review-required >= 0.950 and < 1.000; critical < 0.950."],
+        ["llm_config_stability", "llm_config_stability = mode_count(llm_config_hash) / comparable_run_count", "Confirms whether all comparable runs used the same LLM runtime configuration. Numeric rule: target = 1.000; review-required >= 0.950 and < 1.000; critical < 0.950."],
+        ["validation_rate_mean", "validation_rate_mean = sum(validation_rate_i) / n", "Mean of a per-run validation rate such as json_valid_rate, schema_valid_rate, completion_rate, traceability_ok_rate, fallback_rate, retry_rate, or prompt_success_rate. Numeric rule: positive rates acceptable >= 0.950; fallback mean target <= 0.050; retry mean target <= 0.200."],
+        ["validation_rate_sd", "validation_rate_sd = sqrt(sum((validation_rate_i - validation_rate_mean)^2) / (n - 1))", "Sample standard deviation of the selected validation rate across comparable runs. Numeric rule: target <= 0.020; review-required > 0.020 and <= 0.050; critical > 0.050."],
+        ["Fleiss kappa", "kappa = (P_bar - P_e) / (1 - P_e)", "P_bar is observed categorical agreement across PUID results; P_e is expected agreement from category proportions. Numeric rule: strong agreement >= 0.800; moderate >= 0.600 and < 0.800; weak < 0.600; not_applicable when unsuitable."],
     ]
 
 
@@ -1194,7 +1231,9 @@ def _generate_pdf(path: Path, metrics: Dict[str, Any], rows: Dict[str, List[Dict
     b.table("Run Metrics package contents", ["Component", "Type", "Purpose"], [[r["component"], r["type"], r["purpose"]] for r in rows["package_contents"]], widths=[0.28,0.18,0.54], max_rows=10)
     b.table("Visible workbook reading order", ["Sheet", "What the user should learn"], [["user_guide", "How to read the workbook and which sheets are primary or Appendix."], ["metric_definitions", "Plain-language definition, formula and interpretation for each metric."], ["run_summary", "Current execution identity, counts and hashes."], ["input_evidence", "Inputs, generated outputs, telemetry and package components with hashes."], ["prompt_contracts", "Prompt IDs, exact prompt transcripts, required schemas and validation mechanisms."], ["prompt_control_breakdown", "Each control clause mapped to a validation mechanism and metric."], ["prompt_run_results", "Prompt-level outcome for this execution."], ["llm_validation_summary", "Aggregated LLM-control metrics."], ["stability_readiness", "Whether this run contains the fields needed for repeated-run comparison."], ["Appendix_*", "Raw evidence preserved for reconstruction and traceability."]], widths=[0.28,0.72], max_rows=12)
     b.h1("2. Metrics used")
-    b.table("Metric formulas and interpretation", ["Metric", "Question", "Formula", "Interpretation"], [[r["metric"], r["plain_language_question"], r["formula"], r["interpretation"]] for r in METRIC_DEFINITIONS], widths=[0.20,0.30,0.22,0.28], max_rows=20)
+    b.table("Metric formulas, thresholds and interpretation", ["Metric", "Question", "Formula", "Numeric decision rule", "Interpretation"], [[r["metric"], r["plain_language_question"], r["formula"], r.get("numeric_decision_rule", _metric_decision_rule(r["metric"])), r["interpretation"]] for r in METRIC_DEFINITIONS], widths=[0.16,0.24,0.18,0.24,0.18], max_rows=20)
+    b.table("Numeric decision thresholds for single-run metrics", ["Metric family", "Target or acceptable", "Review-required", "Critical"], [["Positive LLM validation rates: json_valid_rate, schema_valid_rate, completion_rate, traceability_ok_rate, prompt_success_rate", ">= 0.950", ">= 0.900 and < 0.950", "< 0.900"], ["fallback_rate", "<= 0.050", "> 0.050 and <= 0.100", "> 0.100"], ["retry_rate", "<= 0.200", "> 0.200 and <= 0.500", "> 0.500"], ["failed_prompt_call_count", "0", "1", ">= 2"]], widths=[0.40,0.20,0.22,0.18], max_rows=8)
+
     b.h1("3. Current execution summary")
     compliance_chart = chart_dir / "compliance.png"
     _make_bar_chart(compliance_chart, ["yes", "no", "n/a"], [metrics["counts"].get("yes",0), metrics["counts"].get("no",0), metrics["counts"].get("n/a",0)], "Compliance result distribution", "Requirement count")
@@ -1293,7 +1332,7 @@ def build(args: argparse.Namespace) -> None:
         "successful_prompt_call_count": sum(1 for r in prompt_calls if r.get("prompt_success") == "true"),
     })
     _write_kv(wb, "user_guide", _build_user_guide())
-    _write_rows(wb, "metric_definitions", METRIC_DEFINITIONS, ["metric", "plain_language_question", "purpose", "formula", "numerator", "denominator", "source_sheet", "interpretation", "single_run", "stability_analysis"])
+    _write_rows(wb, "metric_definitions", METRIC_DEFINITIONS, ["metric", "plain_language_question", "purpose", "formula", "numerator", "denominator", "source_sheet", "interpretation", "numeric_decision_rule", "single_run", "stability_analysis"])
     _write_kv(wb, "run_summary", list(summary.items()))
     _write_rows(wb, "package_contents", package_contents, ["component", "type", "included", "reader_priority", "purpose", "duplication_policy"])
     _write_rows(wb, "input_evidence", input_evidence, ["input_name", "evidence_group", "evidence_role", "artifact_type", "path", "file_count", "sha256", "availability", "purpose", "used_for_stability_comparability"])
