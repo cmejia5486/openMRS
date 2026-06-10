@@ -36,6 +36,9 @@ jobs:
           $ErrorActionPreference = "Stop"
           $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
           $technicalDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
+          $runMetricsInputDir = Join-Path $dataDir "run-metrics-input"
+          $runMetricsPackageDir = Join-Path $dataDir "run-metrics-audit-summary"
+          $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry-audit-summary.jsonl"
           $auditConfigPath = Join-Path $PWD "scripts\audit_summary_literals.json"
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
           New-Item -ItemType Directory -Force -Path $technicalDir | Out-Null
