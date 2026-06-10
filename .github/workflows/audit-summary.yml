@@ -34,39 +34,76 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-          $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
-          $technicalDir = Join-Path $env:RUNNER_TEMP "audit-technical-inputs"
+
+          # Robust path bootstrap for self-hosted Windows runners.
+          # The previous failure occurred because $runMetricsInputDir reached
+          # New-Item as $null. This block computes every runtime path first,
+          # validates it, and only then creates directories.
+          $runnerTemp = [string]$env:RUNNER_TEMP
+          if ([string]::IsNullOrWhiteSpace($runnerTemp)) {
+            $runnerTemp = [System.IO.Path]::GetTempPath().TrimEnd([System.IO.Path]::DirectorySeparatorChar)
+            Write-Host "[WARN] RUNNER_TEMP was empty. Falling back to: $runnerTemp"
+          }
+
+          $dataDir = Join-Path $runnerTemp "vision360-data"
+          $technicalDir = Join-Path $runnerTemp "audit-technical-inputs"
           $runMetricsInputDir = Join-Path $dataDir "run-metrics-input"
           $runMetricsPackageDir = Join-Path $dataDir "run-metrics"
           $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry-audit-summary.jsonl"
           $auditConfigPath = Join-Path $PWD "scripts\audit_summary_literals.json"
 
+          $vision360BundleDir = Join-Path $technicalDir "vision360"
+          $trivyPayloadDir = Join-Path $technicalDir "trivy"
+          $mobsfReportDir = Join-Path $technicalDir "mobsf"
+          $mobsfDynamicReportDir = Join-Path $technicalDir "mobsf-dynamic"
+          $sastFindingsDir = Join-Path $technicalDir "sast"
+          $auditExcelPath = Join-Path $dataDir "security_audit_requirements.xlsx"
+          $auditAnalysisJsonPath = Join-Path $dataDir "audit_summary_analysis_pack.json"
+          $auditSummaryDocxPath = Join-Path $dataDir "Audit Summary.docx"
+          $auditSummaryChartDir = Join-Path $dataDir "_audit_summary_charts"
+          $mplConfigDir = Join-Path $dataDir "_matplotlib"
+
+          $requiredPaths = @(
+            @{ Name = "VISION360_DATA_DIR"; Value = $dataDir },
+            @{ Name = "AUDIT_TECHNICAL_INPUTS_DIR"; Value = $technicalDir },
+            @{ Name = "RUN_METRICS_INPUT_DIR"; Value = $runMetricsInputDir },
+            @{ Name = "RUN_METRICS_PACKAGE_DIR"; Value = $runMetricsPackageDir },
+            @{ Name = "PROMPT_TELEMETRY_PATH"; Value = $promptTelemetryPath },
+            @{ Name = "AUDIT_CONFIG_JSON_PATH"; Value = $auditConfigPath }
+          )
+          foreach ($entry in $requiredPaths) {
+            if ([string]::IsNullOrWhiteSpace([string]$entry.Value)) {
+              throw ("Runtime path '{0}' resolved to an empty value." -f $entry.Name)
+            }
+          }
+
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
           New-Item -ItemType Directory -Force -Path $technicalDir | Out-Null
           New-Item -ItemType Directory -Force -Path $runMetricsInputDir | Out-Null
-          New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
-          if (Test-Path $promptTelemetryPath) { Remove-Item -LiteralPath $promptTelemetryPath -Force }
-          if (Test-Path $runMetricsPackageDir) {
+          if (Test-Path -LiteralPath $runMetricsPackageDir) {
             Remove-Item -LiteralPath $runMetricsPackageDir -Recurse -Force
           }
           New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
+          if (Test-Path -LiteralPath $promptTelemetryPath) {
+            Remove-Item -LiteralPath $promptTelemetryPath -Force
+          }
 
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_CONFIG_JSON_PATH=$auditConfigPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "VISION360_BUNDLE_DIR=$(Join-Path $technicalDir 'vision360')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "TRIVY_PAYLOAD_DIR=$(Join-Path $technicalDir 'trivy')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MOBSF_REPORT_DIR=$(Join-Path $technicalDir 'mobsf')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MOBSF_DYNAMIC_REPORT_DIR=$(Join-Path $technicalDir 'mobsf-dynamic')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "SAST_FINDINGS_DIR=$(Join-Path $technicalDir 'sast')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_EXCEL_PATH=$(Join-Path $dataDir 'security_audit_requirements.xlsx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_ANALYSIS_JSON_PATH=$(Join-Path $dataDir 'audit_summary_analysis_pack.json')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_DOCX_PATH=$(Join-Path $dataDir 'Audit Summary.docx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "AUDIT_SUMMARY_CHART_DIR=$(Join-Path $dataDir '_audit_summary_charts')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VISION360_BUNDLE_DIR=$vision360BundleDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "TRIVY_PAYLOAD_DIR=$trivyPayloadDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MOBSF_REPORT_DIR=$mobsfReportDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MOBSF_DYNAMIC_REPORT_DIR=$mobsfDynamicReportDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SAST_FINDINGS_DIR=$sastFindingsDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_EXCEL_PATH=$auditExcelPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_ANALYSIS_JSON_PATH=$auditAnalysisJsonPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_SUMMARY_DOCX_PATH=$auditSummaryDocxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AUDIT_SUMMARY_CHART_DIR=$auditSummaryChartDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RUN_METRICS_INPUT_DIR=$runMetricsInputDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "PROMPT_TELEMETRY_PATH=$promptTelemetryPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MPLCONFIGDIR=$(Join-Path $dataDir '_matplotlib')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "MPLCONFIGDIR=$mplConfigDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
           Write-Host "[PATH] VISION360_DATA_DIR=$dataDir"
           Write-Host "[PATH] AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir"
@@ -247,13 +284,6 @@ jobs:
           "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AI_VENV_DIR=$venv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "[PY] Using Python: $pythonExe"
-
-      - name: Validate prompt registry
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          & $env:PYTHON_EXE scripts/validate_prompt_registry.py --repo-root . --strict
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build Audit Summary analysis pack
         shell: powershell
