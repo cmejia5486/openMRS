@@ -175,7 +175,7 @@ jobs:
             "matplotlib",
             "requests",
             "pyyaml",
-            "jsonschema"
+            "jsonschema",
             "reportlab>=4.0.0"
           )
           $requirements = $requirementsList -join "`n"
