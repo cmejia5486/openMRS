@@ -4,6 +4,7 @@
 import json
 import os
 import re
+import time
 from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Dict, Any, List
@@ -24,6 +25,22 @@ except Exception as exc:
     AI_RUNTIME_IMPORT_ERROR = exc
 else:
     AI_RUNTIME_IMPORT_ERROR = None
+
+try:
+    from lib.prompt_telemetry import contract_for_section, record_prompt_call
+except Exception:
+    def contract_for_section(section_name: str, fallback_source_function: str = "_ai_json_chat") -> Dict[str, Any]:  # type: ignore
+        return {
+            "prompt_id": "UNAVAILABLE",
+            "prompt_name": section_name,
+            "prompt_scope": "unavailable",
+            "prompt_category": "unavailable",
+            "source_file": "scripts/audit_summary_stage2_generate_docx.py",
+            "source_function": fallback_source_function,
+            "registration_status": "unavailable",
+        }
+    def record_prompt_call(**kwargs: Any) -> str:  # type: ignore
+        return str(kwargs.get("prompt_call_id") or "")
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -2135,6 +2152,64 @@ def _collect_ai_language_policy_hits(value: Any) -> List[str]:
 def _ai_repair_attempts() -> int:
     return max(0, min(3, _safe_int(os.getenv("AUDIT_SUMMARY_AI_SECTION_REPAIR_ATTEMPTS", "0"), 0)))
 
+
+def _prompt_expected_items(user_payload: Dict[str, Any]) -> int:
+    if not isinstance(user_payload, dict):
+        return 0
+    if isinstance(user_payload.get("items"), list):
+        return len(user_payload.get("items") or [])
+    context = user_payload.get("context") if isinstance(user_payload.get("context"), dict) else {}
+    for key in ("positive_controls", "top_weakness_patterns", "patterns", "technical_findings"):
+        value = context.get(key) if isinstance(context, dict) else None
+        if isinstance(value, list):
+            return len(value)
+    schema = user_payload.get("required_output_schema") if isinstance(user_payload.get("required_output_schema"), dict) else {}
+    for value in schema.values():
+        if isinstance(value, list):
+            return 1
+    return 1
+
+
+def _prompt_received_items(obj: Dict[str, Any]) -> int:
+    if not isinstance(obj, dict) or not obj:
+        return 0
+    counts = [len(v) for v in obj.values() if isinstance(v, list)]
+    return max(counts) if counts else 1
+
+
+def _prompt_schema_valid(obj: Dict[str, Any], user_payload: Dict[str, Any]) -> bool:
+    if not isinstance(obj, dict):
+        return False
+    schema = user_payload.get("required_output_schema") if isinstance(user_payload, dict) else None
+    if not isinstance(schema, dict) or not schema:
+        return True
+    return all(key in obj for key in schema.keys())
+
+
+def _prompt_traceability_ok(obj: Dict[str, Any], user_payload: Dict[str, Any]) -> bool | None:
+    if not isinstance(obj, dict) or not isinstance(user_payload, dict):
+        return None
+    expected = []
+    for item in user_payload.get("items", []) if isinstance(user_payload.get("items"), list) else []:
+        if isinstance(item, dict):
+            item_id = _clean_text(item.get("item_id") or item.get("puid") or item.get("id"))
+            if item_id:
+                expected.append(item_id)
+    if not expected:
+        return None
+    seen = []
+    for value in obj.values():
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    item_id = _clean_text(item.get("item_id") or item.get("puid") or item.get("id"))
+                    if item_id:
+                        seen.append(item_id)
+    if not seen:
+        return False
+    return set(seen).issubset(set(expected))
+
+
 def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str, Any], max_tokens: int = 1600) -> Dict[str, Any]:
     """Call the configured AI runtime and require report-ready language.
 
@@ -2153,6 +2228,11 @@ def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str,
     base_system_prompt = system_prompt
     last_hits: List[str] = []
     attempts = 1 + _ai_repair_attempts()
+    call_started_at = time.time()
+    last_error = ""
+    contract = contract_for_section(section_name, fallback_source_function="_ai_json_chat")
+    expected_schema = user_payload.get("required_output_schema") if isinstance(user_payload, dict) else {}
+    expected_items = _prompt_expected_items(user_payload)
 
     for attempt in range(1, attempts + 1):
         if attempt == 1:
@@ -2201,12 +2281,95 @@ def _ai_json_chat(section_name: str, system_prompt: str, user_payload: Dict[str,
                     print(f"[AI][RETRY] Section {section_name} used non-report wording: {', '.join(hits)}")
                     continue
                 print(f"[AI][WARN] Section {section_name} still contains non-report wording after retries: {', '.join(hits)}")
+                record_prompt_call(
+                    prompt_id=str(contract.get("prompt_id") or ""),
+                    prompt_name=str(contract.get("prompt_name") or section_name),
+                    prompt_scope=str(contract.get("prompt_scope") or "audit_summary"),
+                    prompt_category=str(contract.get("prompt_category") or "primary_audit_summary_prompt"),
+                    source_file=str(contract.get("source_file") or "scripts/audit_summary_stage2_generate_docx.py"),
+                    source_function=str(contract.get("source_function") or "_ai_json_chat"),
+                    section_name=section_name,
+                    system_prompt=effective_system_prompt,
+                    user_payload=user_payload,
+                    expected_schema=expected_schema,
+                    model=str(getattr(runtime, "model", "")),
+                    provider=str(getattr(runtime, "provider", "")),
+                    max_output_tokens=max_tokens,
+                    reasoning_effort=_ai_env("AI_REASONING_EFFORT"),
+                    attempt_count=attempt,
+                    retry_count=max(0, attempt - 1),
+                    expected_items=expected_items,
+                    received_items=_prompt_received_items(obj),
+                    json_valid=True,
+                    schema_valid=_prompt_schema_valid(obj, user_payload),
+                    traceability_ok=_prompt_traceability_ok(obj, user_payload),
+                    repair_used="repair" in section_name,
+                    fallback_used=True,
+                    elapsed_s=time.time() - call_started_at,
+                    error="Non-report wording remained after repair attempts: " + ", ".join(hits),
+                    registration_status=str(contract.get("registration_status") or "registered"),
+                )
                 return {}
 
             print(f"[AI] Section {section_name} completed.")
+            record_prompt_call(
+                prompt_id=str(contract.get("prompt_id") or ""),
+                prompt_name=str(contract.get("prompt_name") or section_name),
+                prompt_scope=str(contract.get("prompt_scope") or "audit_summary"),
+                prompt_category=str(contract.get("prompt_category") or "primary_audit_summary_prompt"),
+                source_file=str(contract.get("source_file") or "scripts/audit_summary_stage2_generate_docx.py"),
+                source_function=str(contract.get("source_function") or "_ai_json_chat"),
+                section_name=section_name,
+                system_prompt=effective_system_prompt,
+                user_payload=user_payload,
+                expected_schema=expected_schema,
+                model=str(getattr(runtime, "model", "")),
+                provider=str(getattr(runtime, "provider", "")),
+                max_output_tokens=max_tokens,
+                reasoning_effort=_ai_env("AI_REASONING_EFFORT"),
+                attempt_count=attempt,
+                retry_count=max(0, attempt - 1),
+                expected_items=expected_items,
+                received_items=_prompt_received_items(obj),
+                json_valid=True,
+                schema_valid=_prompt_schema_valid(obj, user_payload),
+                traceability_ok=_prompt_traceability_ok(obj, user_payload),
+                repair_used="repair" in section_name,
+                elapsed_s=time.time() - call_started_at,
+                registration_status=str(contract.get("registration_status") or "registered"),
+            )
             return obj
         except Exception as exc:
+            last_error = str(exc)
             print(f"[AI][WARN] Section {section_name} attempt {attempt}/{attempts} failed: {exc}")
+    record_prompt_call(
+        prompt_id=str(contract.get("prompt_id") or ""),
+        prompt_name=str(contract.get("prompt_name") or section_name),
+        prompt_scope=str(contract.get("prompt_scope") or "audit_summary"),
+        prompt_category=str(contract.get("prompt_category") or "primary_audit_summary_prompt"),
+        source_file=str(contract.get("source_file") or "scripts/audit_summary_stage2_generate_docx.py"),
+        source_function=str(contract.get("source_function") or "_ai_json_chat"),
+        section_name=section_name,
+        system_prompt=base_system_prompt,
+        user_payload=user_payload,
+        expected_schema=expected_schema,
+        model=str(getattr(runtime, "model", "")),
+        provider=str(getattr(runtime, "provider", "")),
+        max_output_tokens=max_tokens,
+        reasoning_effort=_ai_env("AI_REASONING_EFFORT"),
+        attempt_count=attempts,
+        retry_count=max(0, attempts - 1),
+        expected_items=expected_items,
+        received_items=0,
+        json_valid=False,
+        schema_valid=False,
+        traceability_ok=False,
+        repair_used="repair" in section_name,
+        fallback_used=True,
+        elapsed_s=time.time() - call_started_at,
+        error=last_error or "AI section generation failed",
+        registration_status=str(contract.get("registration_status") or "registered"),
+    )
     return {}
 
 def _compact_patterns_for_ai(patterns: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:

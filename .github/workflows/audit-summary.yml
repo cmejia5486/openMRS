@@ -39,6 +39,9 @@ jobs:
           $auditConfigPath = Join-Path $PWD "scripts\audit_summary_literals.json"
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
           New-Item -ItemType Directory -Force -Path $technicalDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $runMetricsInputDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
+          if (Test-Path $promptTelemetryPath) { Remove-Item -LiteralPath $promptTelemetryPath -Force }
           "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_TECHNICAL_INPUTS_DIR=$technicalDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_CONFIG_JSON_PATH=$auditConfigPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
@@ -51,6 +54,9 @@ jobs:
           "AUDIT_ANALYSIS_JSON_PATH=$(Join-Path $dataDir 'audit_summary_analysis_pack.json')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_SUMMARY_DOCX_PATH=$(Join-Path $dataDir 'Audit Summary.docx')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "AUDIT_SUMMARY_CHART_DIR=$(Join-Path $dataDir '_audit_summary_charts')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_INPUT_DIR=$runMetricsInputDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PROMPT_TELEMETRY_PATH=$promptTelemetryPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "MPLCONFIGDIR=$(Join-Path $dataDir '_matplotlib')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Download security audit Excel
@@ -58,6 +64,13 @@ jobs:
         with:
           name: security-audit-excel
           path: ${{ env.VISION360_DATA_DIR }}
+
+      - name: Download run metrics package
+        continue-on-error: true
+        uses: actions/download-artifact@v6
+        with:
+          name: run-metrics
+          path: ${{ env.RUN_METRICS_INPUT_DIR }}
 
       - name: Validate security audit Excel
         shell: powershell
@@ -233,6 +246,23 @@ jobs:
           & $env:PYTHON_EXE scripts/audit_summary_stage2_generate_docx.py --in $env:AUDIT_ANALYSIS_JSON_PATH --out $env:AUDIT_SUMMARY_DOCX_PATH
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Build Audit Summary prompt metrics package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $rawMetrics = Join-Path $env:RUN_METRICS_INPUT_DIR "run-metrics.xlsx"
+          if (-not (Test-Path -LiteralPath $rawMetrics)) {
+            Write-Host "[WARN] Base run-metrics.xlsx not found at $rawMetrics. Skipping Audit Summary prompt metrics package."
+            exit 0
+          }
+          & $env:PYTHON_EXE scripts/build_run_metrics_package.py `
+            --raw-metrics $rawMetrics `
+            --out-dir $env:RUN_METRICS_PACKAGE_DIR `
+            --prompt-telemetry $env:PROMPT_TELEMETRY_PATH `
+            --analysis-pack $env:AUDIT_ANALYSIS_JSON_PATH `
+            --audit-summary-docx $env:AUDIT_SUMMARY_DOCX_PATH
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Convert DOCX to PDF
         shell: powershell
         run: |
@@ -282,6 +312,16 @@ jobs:
           Get-ChildItem -File $analysisDir | ForEach-Object { Write-Host ("  - {0}" -f $_.Name) }
           Write-Host "[ARTIFACT] audit-summary-zip will publish only:"
           Get-ChildItem -File $reportDir | ForEach-Object { Write-Host ("  - {0}" -f $_.Name) }
+
+      - name: Upload Audit Summary run metrics package
+        uses: actions/upload-artifact@v6
+        with:
+          name: run-metrics-audit-summary
+          if-no-files-found: warn
+          path: |
+            ${{ env.RUN_METRICS_PACKAGE_DIR }}\run-metrics.xlsx
+            ${{ env.RUN_METRICS_PACKAGE_DIR }}\run-metrics-methodology.pdf
+            ${{ env.PROMPT_TELEMETRY_PATH }}
 
       - name: Upload Audit Summary analysis pack
         uses: actions/upload-artifact@v6

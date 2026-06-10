@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import hashlib
 import math
+import os
 import shutil
 import textwrap
 from datetime import datetime, timezone
@@ -162,8 +164,183 @@ def _compute_metrics(raw_wb: Any) -> Dict[str, Any]:
     }
 
 
+
+
+def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    if not path or not path.is_file():
+        return rows
+    with path.open("r", encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(obj, dict):
+                rows.append(obj)
+    return rows
+
+
+def _registered_prompt_inventory_rows() -> List[Dict[str, Any]]:
+    try:
+        from lib.prompt_telemetry import registered_prompt_inventory
+        return list(registered_prompt_inventory())
+    except Exception:
+        return []
+
+
+def _prompt_bool(value: Any) -> str:
+    return "true" if _to_bool(value) else "false"
+
+
+def _prompt_inventory_from_calls(prompt_calls: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    seen: Dict[str, Dict[str, Any]] = {}
+    for call in prompt_calls:
+        pid = str(call.get("prompt_id") or "")
+        if not pid or pid in seen:
+            continue
+        seen[pid] = {
+            "prompt_id": pid,
+            "prompt_name": call.get("prompt_name", ""),
+            "prompt_scope": call.get("prompt_scope", ""),
+            "prompt_category": call.get("prompt_category", ""),
+            "is_primary": call.get("is_primary", ""),
+            "is_auxiliary": call.get("is_auxiliary", ""),
+            "source_file": call.get("source_file", ""),
+            "source_function": call.get("source_function", ""),
+            "registration_status": call.get("registration_status", "runtime_detected"),
+        }
+    return list(seen.values())
+
+
+def _prepare_prompt_metrics(prompt_telemetry_path: Path | None, extra_prompt_calls: List[Dict[str, Any]] | None = None) -> Dict[str, Any]:
+    events = _read_jsonl(prompt_telemetry_path) if prompt_telemetry_path else []
+    prompt_calls = [e for e in events if e.get("event_type") == "prompt_call"]
+    if extra_prompt_calls:
+        prompt_calls = list(extra_prompt_calls) + prompt_calls
+    registered = _registered_prompt_inventory_rows()
+    inventory_by_id: Dict[str, Dict[str, Any]] = {}
+    for row in registered:
+        pid = str(row.get("prompt_id") or "")
+        if pid:
+            inventory_by_id[pid] = dict(row)
+    for row in _prompt_inventory_from_calls(prompt_calls):
+        pid = str(row.get("prompt_id") or "")
+        if pid and pid not in inventory_by_id:
+            inventory_by_id[pid] = dict(row)
+
+    executed_ids = {str(c.get("prompt_id") or "") for c in prompt_calls if c.get("prompt_id")}
+    inventory_rows: List[Dict[str, Any]] = []
+    for pid in sorted(inventory_by_id):
+        row = dict(inventory_by_id[pid])
+        row["executed_in_this_run"] = "true" if pid in executed_ids else "false"
+        row["prompt_hashes_observed"] = ", ".join(sorted({str(c.get("prompt_hash") or "") for c in prompt_calls if str(c.get("prompt_id") or "") == pid and c.get("prompt_hash")}))
+        row["call_count"] = sum(1 for c in prompt_calls if str(c.get("prompt_id") or "") == pid)
+        inventory_rows.append(row)
+
+    controls_rows: List[Dict[str, Any]] = []
+    for call in prompt_calls:
+        controls_rows.append({
+            "prompt_call_id": call.get("prompt_call_id", ""),
+            "prompt_id": call.get("prompt_id", ""),
+            "json_required_detected": call.get("json_required_detected", ""),
+            "schema_required_detected": call.get("schema_required_detected", ""),
+            "identifier_preservation_detected": call.get("identifier_preservation_detected", ""),
+            "grounding_required_detected": call.get("grounding_required_detected", ""),
+            "no_invent_evidence_detected": call.get("no_invent_evidence_detected", ""),
+            "no_change_result_detected": call.get("no_change_result_detected", ""),
+            "english_only_detected": call.get("english_only_detected", ""),
+            "repair_or_retry_detected": call.get("repair_or_retry_detected", ""),
+            "contract_score": call.get("contract_score", ""),
+        })
+
+    discovery_events: List[Dict[str, Any]] = []
+    for call in prompt_calls:
+        if str(call.get("registration_status") or "registered") != "registered" or str(call.get("prompt_id") or "").startswith("AUTO-"):
+            discovery_events.append({
+                "event_type": "UNREGISTERED_LLM_PROMPT",
+                "severity": "warning",
+                "prompt_call_id": call.get("prompt_call_id", ""),
+                "prompt_id": call.get("prompt_id", ""),
+                "source_file": call.get("source_file", ""),
+                "source_function": call.get("source_function", ""),
+                "message": "A runtime LLM call was detected without a registered prompt contract.",
+            })
+
+    primary_count = sum(1 for row in inventory_rows if _to_bool(row.get("is_primary")))
+    auxiliary_count = sum(1 for row in inventory_rows if _to_bool(row.get("is_auxiliary")))
+    executed_primary = sum(1 for row in inventory_rows if _to_bool(row.get("is_primary")) and _to_bool(row.get("executed_in_this_run")))
+    executed_auxiliary = sum(1 for row in inventory_rows if _to_bool(row.get("is_auxiliary")) and _to_bool(row.get("executed_in_this_run")))
+    prompt_hashes = sorted({str(c.get("prompt_hash") or "") for c in prompt_calls if c.get("prompt_hash")})
+    config_hashes = sorted({str(c.get("schema_hash") or "") for c in prompt_calls if c.get("schema_hash")})
+    valid_json = sum(1 for c in prompt_calls if _to_bool(c.get("json_valid")))
+    valid_schema = sum(1 for c in prompt_calls if _to_bool(c.get("schema_valid")))
+
+    summary_rows = [
+        {"metric": "registered_prompt_contract_count", "value": len(inventory_rows), "interpretation": "Registered prompt contracts known to the workflow."},
+        {"metric": "primary_audit_related_prompt_count", "value": primary_count, "interpretation": "Primary prompts related to audit matrix or Audit Summary generation."},
+        {"metric": "auxiliary_repair_prompt_count", "value": auxiliary_count, "interpretation": "Auxiliary repair prompts used only to complete missing structured fields."},
+        {"metric": "executed_prompt_call_count", "value": len(prompt_calls), "interpretation": "Runtime LLM calls recorded in this execution scope."},
+        {"metric": "executed_primary_prompt_contract_count", "value": executed_primary, "interpretation": "Primary prompt contracts that were actually invoked in this execution scope."},
+        {"metric": "executed_auxiliary_prompt_contract_count", "value": executed_auxiliary, "interpretation": "Auxiliary repair contracts that were actually invoked in this execution scope."},
+        {"metric": "unregistered_prompt_call_count", "value": len(discovery_events), "interpretation": "Runtime LLM calls not matched to a registered prompt contract."},
+        {"metric": "prompt_call_json_valid_rate", "value": _rate(valid_json, len(prompt_calls)), "interpretation": "Prompt calls that returned parseable JSON divided by prompt calls."},
+        {"metric": "prompt_call_schema_valid_rate", "value": _rate(valid_schema, len(prompt_calls)), "interpretation": "Prompt calls satisfying the expected schema divided by prompt calls."},
+        {"metric": "prompt_inventory_hash", "value": hashlib.sha256(json.dumps(inventory_rows, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")).hexdigest(), "interpretation": "Hash of the prompt inventory for repeated-run comparison."},
+        {"metric": "prompt_hash_count", "value": len(prompt_hashes), "interpretation": "Distinct prompt hashes observed in runtime calls."},
+        {"metric": "schema_hash_count", "value": len(config_hashes), "interpretation": "Distinct expected-output schema hashes observed in runtime calls."},
+    ]
+    return {
+        "prompt_events": events,
+        "prompt_calls": prompt_calls,
+        "prompt_inventory": inventory_rows,
+        "prompt_controls": controls_rows,
+        "prompt_contract_summary": summary_rows,
+        "prompt_discovery_events": discovery_events,
+        "prompt_telemetry_path": str(prompt_telemetry_path or ""),
+    }
+
+
+def _add_prompt_sheets(wb: Any, prompt_metrics: Dict[str, Any]) -> None:
+    inventory_headers = [
+        "prompt_id", "prompt_name", "prompt_scope", "prompt_category", "is_primary", "is_auxiliary",
+        "source_file", "source_function", "section_match", "registration_status", "executed_in_this_run",
+        "call_count", "prompt_hashes_observed",
+    ]
+    call_headers = [
+        "prompt_call_id", "prompt_id", "prompt_name", "prompt_scope", "prompt_category", "section_name",
+        "source_file", "source_function", "model", "provider", "max_output_tokens", "reasoning_effort",
+        "attempt_count", "retry_count", "expected_items", "received_items", "json_valid", "schema_valid",
+        "traceability_ok", "repair_used", "fallback_used", "elapsed_s", "prompt_hash", "schema_hash", "payload_hash",
+        "registration_status", "error",
+    ]
+    control_headers = [
+        "prompt_call_id", "prompt_id", "json_required_detected", "schema_required_detected",
+        "identifier_preservation_detected", "grounding_required_detected", "no_invent_evidence_detected",
+        "no_change_result_detected", "english_only_detected", "repair_or_retry_detected", "contract_score",
+    ]
+    summary_headers = ["metric", "value", "interpretation"]
+    events_headers = ["event_type", "severity", "prompt_call_id", "prompt_id", "source_file", "source_function", "message"]
+    ws = _replace_sheet(wb, "prompt_inventory")
+    _append_dict_rows(ws, prompt_metrics.get("prompt_inventory", []), inventory_headers)
+    ws = _replace_sheet(wb, "prompt_calls")
+    _append_dict_rows(ws, prompt_metrics.get("prompt_calls", []), call_headers)
+    ws = _replace_sheet(wb, "prompt_controls")
+    _append_dict_rows(ws, prompt_metrics.get("prompt_controls", []), control_headers)
+    ws = _replace_sheet(wb, "prompt_contract_summary")
+    _append_dict_rows(ws, prompt_metrics.get("prompt_contract_summary", []), summary_headers)
+    ws = _replace_sheet(wb, "prompt_discovery_events")
+    _append_dict_rows(ws, prompt_metrics.get("prompt_discovery_events", []), events_headers)
+
 def _remove_non_raw_sheets(wb: Any) -> None:
-    allowed = {"run_summary", "input_hashes", "compliance_export", "llm_calls", "llm_items", "package_manifest"}
+    allowed = {
+        "run_summary", "input_hashes", "compliance_export", "llm_calls", "llm_items",
+        "prompt_inventory", "prompt_calls", "prompt_controls", "prompt_contract_summary",
+        "prompt_discovery_events", "package_manifest",
+    }
     for sheet in list(wb.sheetnames):
         if sheet not in allowed:
             del wb[sheet]
@@ -240,6 +417,11 @@ def _style_workbook(wb: Any) -> None:
         "compliance_export": "70AD47",
         "llm_calls": "ED7D31",
         "llm_items": "A5A5A5",
+        "prompt_inventory": "8064A2",
+        "prompt_calls": "9E480E",
+        "prompt_controls": "5B9BD5",
+        "prompt_contract_summary": "17365D",
+        "prompt_discovery_events": "C00000",
         "package_manifest": "8064A2",
     }
 
@@ -464,6 +646,11 @@ def _add_workbook_structure_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None
         ["compliance_export", "One row per requirement: PUID, result, flags used, justification length, and row hash."],
         ["llm_calls", "One row per LLM call: expected items, received items, validation flags, retries, time, model, and error."],
         ["llm_items", "One row per PUID-level LLM item: received status, completeness, traceability, fallback, source, and result."],
+        ["prompt_inventory", "Registered audit-related prompt contracts, scope, category, source location, execution status, and observed prompt hashes."],
+        ["prompt_calls", "One row per runtime prompt invocation: prompt ID, sequential call ID, model, schema, hashes, validation flags, retry, repair, and fallback."],
+        ["prompt_controls", "Detected prompt-level controls such as JSON-only output, schema requirement, identifier preservation, grounding, no-invention, and no-result-change clauses."],
+        ["prompt_contract_summary", "Prompt-count and prompt-validation metrics used to explain the LLM role and repeated-run comparability."],
+        ["prompt_discovery_events", "New, unregistered, or review-required prompt discovery events."],
         ["package_manifest", "Artifact file names, paths, hashes, and package generation timestamp."],
     ]
     _add_table(fig, [0.075, 0.42, 0.85, 0.38], rows, ["Sheet", "Raw data captured"], fontsize=8.0, col_widths=[0.22, 0.78])
@@ -557,12 +744,40 @@ def _add_chart_page(pdf: PdfPages, fig: Any, caption: str) -> None:
     plt.close(fig)
 
 
+
+
+def _add_prompt_contract_methodology_page(pdf: PdfPages, metrics: Dict[str, Any]) -> None:
+    prompt = metrics.get("prompt_metrics", {})
+    summary_rows = prompt.get("prompt_contract_summary", [])
+    lookup = {str(r.get("metric")): r.get("value") for r in summary_rows if isinstance(r, dict)}
+    fig = plt.figure(figsize=(8.27, 11.69))
+    fig.patch.set_facecolor("white")
+    _add_page_title(fig, "Prompt-contract control model", "How LLM prompts are identified, controlled, validated, and prepared for repeated-run stability analysis.")
+    y = 0.86
+    y = _add_paragraph(fig, 0.08, y, "Each runtime LLM invocation is assigned a sequential prompt_call_id and linked to a stable prompt_id. Prompt contracts are classified by scope: audit_matrix, audit_summary, audit_summary_repair, run_metrics, or infrastructure. Only audit-related prompt contracts are used to explain the role of the LLM in the audit workflow.", width=94)
+    y = _add_paragraph(fig, 0.08, y, "The prompt inventory separates primary prompts from auxiliary repair prompts. Primary prompts generate requirement justifications or Audit Summary content. Auxiliary repair prompts only complete missing structured treatment fields; they do not adjudicate compliance, alter yes/no/n/a outcomes, or introduce new evidence.", width=94)
+    rows = [
+        ["Registered prompt contracts", lookup.get("registered_prompt_contract_count", "")],
+        ["Primary audit-related prompts", lookup.get("primary_audit_related_prompt_count", "")],
+        ["Auxiliary repair prompts", lookup.get("auxiliary_repair_prompt_count", "")],
+        ["Runtime prompt calls", lookup.get("executed_prompt_call_count", "")],
+        ["Unregistered prompt calls", lookup.get("unregistered_prompt_call_count", "")],
+        ["Prompt inventory hash", _short_text(lookup.get("prompt_inventory_hash", ""), 72)],
+    ]
+    _add_table(fig, [0.08, 0.44, 0.84, 0.27], rows, ["Metric", "Value"], fontsize=8.0, col_widths=[0.45, 0.55])
+    y = 0.36
+    y = _add_paragraph(fig, 0.08, y, "The prompt_controls sheet records whether each prompt call contains control clauses for JSON-only output, schema adherence, identifier preservation, grounding in provided evidence, no invented evidence, no change to precomputed compliance results, English-only output, and repair or retry behavior.", width=94)
+    y = _add_paragraph(fig, 0.08, y, "For repeated-run analysis, prompt_inventory_hash, prompt_hash, schema_hash, payload_hash, and llm_config_hash allow the analyst to verify that executions compared in stability-analysis.xlsx used fixed prompt contracts, fixed output schemas, fixed inputs, and fixed LLM configuration.", width=94)
+    pdf.savefig(fig)
+    plt.close(fig)
+
 def _generate_methodology_pdf(output_pdf: Path, metrics: Dict[str, Any]) -> None:
     output_pdf.parent.mkdir(parents=True, exist_ok=True)
     with PdfPages(output_pdf) as pdf:
         _add_title_page(pdf, metrics)
         _add_methodology_scope_page(pdf, metrics)
         _add_workbook_structure_page(pdf, metrics)
+        _add_prompt_contract_methodology_page(pdf, metrics)
         _add_metric_detail_page(pdf, metrics)
         _add_compliance_hash_page(pdf, metrics)
         _add_real_llm_examples_page(pdf, metrics)
@@ -596,7 +811,12 @@ def build(args: argparse.Namespace) -> None:
 
     wb = openpyxl.load_workbook(output_xlsx)
     _remove_non_raw_sheets(wb)
+    existing_prompt_calls = _read_sheet_as_dicts(wb, "prompt_calls")
+    prompt_telemetry = Path(args.prompt_telemetry) if str(args.prompt_telemetry or "").strip() else None
+    prompt_metrics = _prepare_prompt_metrics(prompt_telemetry, extra_prompt_calls=existing_prompt_calls)
     metrics = _compute_metrics(wb)
+    metrics["prompt_metrics"] = prompt_metrics
+    _add_prompt_sheets(wb, prompt_metrics)
     _add_package_manifest_sheet(wb, raw_path, output_xlsx, output_pdf)
     _normalize_workbook_for_export(wb)
     _style_workbook(wb)
@@ -622,6 +842,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--analysis-pack", required=False, default="")
     parser.add_argument("--audit-summary-docx", required=False, default="")
     parser.add_argument("--audit-summary-pdf", required=False, default="")
+    parser.add_argument("--prompt-telemetry", required=False, default=os.getenv("PROMPT_TELEMETRY_PATH", ""))
     return parser.parse_args()
 
 

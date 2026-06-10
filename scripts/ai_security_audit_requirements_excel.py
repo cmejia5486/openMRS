@@ -27,6 +27,12 @@ try:
 except Exception:
     BaseModel = None  # type: ignore
 
+try:
+    from lib.prompt_telemetry import record_prompt_call
+except Exception:
+    def record_prompt_call(**kwargs: Any) -> str:  # type: ignore
+        return str(kwargs.get("prompt_call_id") or "")
+
 
 def _first_nonempty_env(*names: str) -> str:
     for name in names:
@@ -596,10 +602,18 @@ def _record_llm_call(
     max_tokens: int,
     parse_route: bool,
     error: str = "",
+    prompt_call_id: str = "",
+    prompt_id: str = "",
+    prompt_scope: str = "",
+    prompt_category: str = "",
 ) -> None:
     call_id = f"LLM-{len(RUN_METRICS['llm_calls']) + 1:04d}"
     RUN_METRICS["llm_calls"].append({
         "llm_call_id": call_id,
+        "prompt_call_id": prompt_call_id,
+        "prompt_id": prompt_id,
+        "prompt_scope": prompt_scope,
+        "prompt_category": prompt_category,
         "call_type": call_type,
         "expected_items": int(expected_items),
         "received_items": int(received_items),
@@ -821,8 +835,9 @@ def _write_run_metrics_raw_xlsx(
     _append_dict_rows_sheet(wb, "input_hashes", input_hash_rows, ["input_name", "path", "sha256"])
     _append_dict_rows_sheet(wb, "compliance_export", compliance_rows, ["puid", "result", "flags_used", "flags_count", "justification_length_chars", "row_hash"])
     _append_dict_rows_sheet(wb, "llm_calls", RUN_METRICS["llm_calls"], [
-        "llm_call_id", "call_type", "expected_items", "received_items", "json_valid", "schema_valid",
-        "retry_count", "elapsed_s", "model", "max_output_tokens", "parse_route", "error",
+        "llm_call_id", "prompt_call_id", "prompt_id", "prompt_scope", "prompt_category", "call_type",
+        "expected_items", "received_items", "json_valid", "schema_valid", "retry_count", "elapsed_s",
+        "model", "max_output_tokens", "parse_route", "error",
     ])
     _append_dict_rows_sheet(wb, "llm_items", RUN_METRICS["llm_items"], [
         "run_batch", "puid", "expected_by_llm", "received_from_llm", "field_complete",
@@ -874,6 +889,11 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
         "- Return ONLY JSON in the form: {\"items\": [{\"id\": \"...\", \"justification\": \"...\"}, ...]}.\n"
     )
     user_payload = {"batch": batch_ctx}
+    expected_schema = {"items": [{"id": "<exact requirement PUID>", "justification": "<one short English sentence>"}]}
+    prompt_id = "P-AIX-001"
+    prompt_name = "Requirement justification"
+    prompt_scope = "audit_matrix"
+    prompt_category = "primary_audit_prompt"
     ids = [str(item.get("id") or "") for item in batch_ctx if isinstance(item, dict)]
     print(
         f"[AI] Justification request prepared: items={len(batch_ctx)} "
@@ -914,6 +934,30 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                         f"| elapsed={time.time() - attempt_started_at:.1f}s",
                         flush=True,
                     )
+                    prompt_call_id = record_prompt_call(
+                        prompt_id=prompt_id,
+                        prompt_name=prompt_name,
+                        prompt_scope=prompt_scope,
+                        prompt_category=prompt_category,
+                        source_file="scripts/ai_security_audit_requirements_excel.py",
+                        source_function="generate_justifications_via_openai",
+                        section_name="justification",
+                        system_prompt=system,
+                        user_payload=user_payload,
+                        expected_schema=expected_schema,
+                        model=model,
+                        provider=os.getenv("AI_PROVIDER", ""),
+                        max_output_tokens=max_tokens,
+                        reasoning_effort=effort,
+                        attempt_count=attempts_used,
+                        retry_count=max(0, attempts_used - 1),
+                        expected_items=len(batch_ctx),
+                        received_items=len(out),
+                        json_valid=True,
+                        schema_valid=True,
+                        traceability_ok=set(out).issubset(set(ids)),
+                        elapsed_s=time.time() - call_started_at,
+                    )
                     _record_llm_call(
                         call_type="justification",
                         expected_items=len(batch_ctx),
@@ -925,6 +969,10 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                         model=model,
                         max_tokens=max_tokens,
                         parse_route=True,
+                        prompt_call_id=prompt_call_id,
+                        prompt_id=prompt_id,
+                        prompt_scope=prompt_scope,
+                        prompt_category=prompt_category,
                     )
                     return out
 
@@ -950,6 +998,30 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                 f"| elapsed={time.time() - attempt_started_at:.1f}s",
                 flush=True,
             )
+            prompt_call_id = record_prompt_call(
+                prompt_id=prompt_id,
+                prompt_name=prompt_name,
+                prompt_scope=prompt_scope,
+                prompt_category=prompt_category,
+                source_file="scripts/ai_security_audit_requirements_excel.py",
+                source_function="generate_justifications_via_openai",
+                section_name="justification",
+                system_prompt=system,
+                user_payload=user_payload,
+                expected_schema=expected_schema,
+                model=model,
+                provider=os.getenv("AI_PROVIDER", ""),
+                max_output_tokens=max_tokens,
+                reasoning_effort=effort,
+                attempt_count=attempts_used,
+                retry_count=max(0, attempts_used - 1),
+                expected_items=len(batch_ctx),
+                received_items=len(out),
+                json_valid=True,
+                schema_valid=isinstance(items_obj, list),
+                traceability_ok=set(out).issubset(set(ids)),
+                elapsed_s=time.time() - call_started_at,
+            )
             _record_llm_call(
                 call_type="justification",
                 expected_items=len(batch_ctx),
@@ -961,6 +1033,10 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                 model=model,
                 max_tokens=max_tokens,
                 parse_route=False,
+                prompt_call_id=prompt_call_id,
+                prompt_id=prompt_id,
+                prompt_scope=prompt_scope,
+                prompt_category=prompt_category,
             )
             return out
         except Exception as e:
@@ -979,6 +1055,32 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
         file=sys.stderr,
         flush=True,
     )
+    prompt_call_id = record_prompt_call(
+        prompt_id=prompt_id,
+        prompt_name=prompt_name,
+        prompt_scope=prompt_scope,
+        prompt_category=prompt_category,
+        source_file="scripts/ai_security_audit_requirements_excel.py",
+        source_function="generate_justifications_via_openai",
+        section_name="justification",
+        system_prompt=system,
+        user_payload=user_payload,
+        expected_schema=expected_schema,
+        model=model,
+        provider=os.getenv("AI_PROVIDER", ""),
+        max_output_tokens=max_tokens,
+        reasoning_effort=effort,
+        attempt_count=attempts_used,
+        retry_count=max(0, attempts_used - 1),
+        expected_items=len(batch_ctx),
+        received_items=0,
+        json_valid=False,
+        schema_valid=False,
+        traceability_ok=False,
+        fallback_used=True,
+        elapsed_s=time.time() - call_started_at,
+        error=str(last_err or "justification generation failed"),
+    )
     _record_llm_call(
         call_type="justification",
         expected_items=len(batch_ctx),
@@ -991,6 +1093,10 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
         max_tokens=max_tokens,
         parse_route=supports_parse,
         error=str(last_err or "justification generation failed"),
+        prompt_call_id=prompt_call_id,
+        prompt_id=prompt_id,
+        prompt_scope=prompt_scope,
+        prompt_category=prompt_category,
     )
     return {}
 

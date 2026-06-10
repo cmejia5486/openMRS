@@ -49,6 +49,7 @@ jobs:
           $requirementsSourcePath = Join-Path $PWD "scripts\requirements.json"
           $xlsxPath = Join-Path $dataDir "security_audit_requirements.xlsx"
           $runMetricsPath = Join-Path $dataDir "run-metrics.xlsx"
+          $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry.jsonl"
           $runMetricsPackageDir = Join-Path $dataDir "run-metrics"
 
           New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
@@ -62,6 +63,7 @@ jobs:
           "REQUISITES_SOURCE_PATH=$requirementsSourcePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SECURITY_AUDIT_XLSX_PATH=$xlsxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RUN_METRICS_XLSX_PATH=$runMetricsPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PROMPT_TELEMETRY_PATH=$promptTelemetryPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
           if (Test-Path $xlsxPath) {
@@ -69,6 +71,9 @@ jobs:
           }
           if (Test-Path $runMetricsPath) {
             Remove-Item -LiteralPath $runMetricsPath -Force
+          }
+          if (Test-Path $promptTelemetryPath) {
+            Remove-Item -LiteralPath $promptTelemetryPath -Force
           }
           if (Test-Path $runMetricsPackageDir) {
             Remove-Item -LiteralPath $runMetricsPackageDir -Recurse -Force
@@ -80,6 +85,7 @@ jobs:
           Write-Host "[PATH] REQUISITES_SOURCE_PATH=$requirementsSourcePath"
           Write-Host "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsxPath"
           Write-Host "[PATH] RUN_METRICS_XLSX_PATH=$runMetricsPath"
+          Write-Host "[PATH] PROMPT_TELEMETRY_PATH=$promptTelemetryPath"
           Write-Host "[PATH] RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir"
 
       - name: Configure portable runtime paths on Unix
@@ -95,10 +101,11 @@ jobs:
           requirements_source_path="$PWD/scripts/requirements.json"
           xlsx_path="$data_dir/security_audit_requirements.xlsx"
           run_metrics_path="$data_dir/run-metrics.xlsx"
+          prompt_telemetry_path="$data_dir/prompt-telemetry.jsonl"
           run_metrics_package_dir="$data_dir/run-metrics"
 
           mkdir -p "$data_dir" "$bundle_dir" "$run_metrics_package_dir"
-          rm -f "$xlsx_path" "$run_metrics_path"
+          rm -f "$xlsx_path" "$run_metrics_path" "$prompt_telemetry_path"
           rm -rf "$run_metrics_package_dir"
           mkdir -p "$run_metrics_package_dir"
 
@@ -110,6 +117,7 @@ jobs:
             echo "REQUISITES_SOURCE_PATH=$requirements_source_path"
             echo "SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
             echo "RUN_METRICS_XLSX_PATH=$run_metrics_path"
+            echo "PROMPT_TELEMETRY_PATH=$prompt_telemetry_path"
             echo "RUN_METRICS_PACKAGE_DIR=$run_metrics_package_dir"
           } >> "$GITHUB_ENV"
 
@@ -118,6 +126,7 @@ jobs:
           echo "[PATH] REQUISITES_SOURCE_PATH=$requirements_source_path"
           echo "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
           echo "[PATH] RUN_METRICS_XLSX_PATH=$run_metrics_path"
+          echo "[PATH] PROMPT_TELEMETRY_PATH=$prompt_telemetry_path"
           echo "[PATH] RUN_METRICS_PACKAGE_DIR=$run_metrics_package_dir"
 
       - name: Set up shared Python environment on Windows
@@ -725,7 +734,6 @@ jobs:
         env:
           USE_OPENAI_JUSTIFICATIONS: "1"
           STRICT_ENGLISH_OUTPUT: "1"
-          TRANSLATE_REQUIREMENT_DESCRIPTIONS: "1"
           PYTHONNOUSERSITE: "1"
           PYTHONUNBUFFERED: "1"
           AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
@@ -750,7 +758,6 @@ jobs:
         env:
           USE_OPENAI_JUSTIFICATIONS: "1"
           STRICT_ENGLISH_OUTPUT: "1"
-          TRANSLATE_REQUIREMENT_DESCRIPTIONS: "1"
           PYTHONNOUSERSITE: "1"
           PYTHONUNBUFFERED: "1"
           AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
@@ -770,7 +777,8 @@ jobs:
 
           & $env:PYTHON_EXE scripts/build_run_metrics_package.py `
             --raw-metrics $env:RUN_METRICS_XLSX_PATH `
-            --out-dir $env:RUN_METRICS_PACKAGE_DIR
+            --out-dir $env:RUN_METRICS_PACKAGE_DIR `
+            --prompt-telemetry $env:PROMPT_TELEMETRY_PATH
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
@@ -790,7 +798,8 @@ jobs:
 
           "$PYTHON_EXE" scripts/build_run_metrics_package.py \
             --raw-metrics "$RUN_METRICS_XLSX_PATH" \
-            --out-dir "$RUN_METRICS_PACKAGE_DIR"
+            --out-dir "$RUN_METRICS_PACKAGE_DIR" \
+            --prompt-telemetry "$PROMPT_TELEMETRY_PATH"
           test -f "$RUN_METRICS_PACKAGE_DIR/run-metrics.xlsx"
           test -f "$RUN_METRICS_PACKAGE_DIR/run-metrics-methodology.pdf"
 
@@ -809,3 +818,4 @@ jobs:
           path: |
             ${{ runner.temp }}/vision360-data/run-metrics/run-metrics.xlsx
             ${{ runner.temp }}/vision360-data/run-metrics/run-metrics-methodology.pdf
+            ${{ runner.temp }}/vision360-data/prompt-telemetry.jsonl
