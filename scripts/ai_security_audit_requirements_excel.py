@@ -514,7 +514,8 @@ def audit_requirement(puid: str, desc: str, flag_ids: List[str], flags_by_id: Di
         if override_scenario_activated is False:
             result = ("no" if has_negative_risk_yes else "yes") if prohibitive else ("no" if has_negative_risk_yes else "n/a")
             meta["decision_rule"] = "override_scope_inactive_prohibitive" if prohibitive else "override_scope_inactive_not_applicable"
-            return apply_legacy_compat_decision(result, desc, flag_evs, meta)
+            result, meta = apply_legacy_compat_decision(result, desc, flag_evs, meta)
+            return result, flag_evs, meta
 
     if conditional:
         conditional_scenario_activated = compute_conditional_scenario_activated(flag_evs)
@@ -539,7 +540,8 @@ def audit_requirement(puid: str, desc: str, flag_ids: List[str], flags_by_id: Di
             result = "n/a"
             meta["decision_rule"] = "insufficient_or_not_applicable_evidence"
 
-    return apply_legacy_compat_decision(result, desc, flag_evs, meta)
+    result, meta = apply_legacy_compat_decision(result, desc, flag_evs, meta)
+    return result, flag_evs, meta
 
 
 class _ResponsesCompat:
