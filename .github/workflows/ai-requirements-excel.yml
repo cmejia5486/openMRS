@@ -49,7 +49,6 @@ jobs:
           $requirementsSourcePath = Join-Path $PWD "scripts\requirements.json"
           $xlsxPath = Join-Path $dataDir "security_audit_requirements.xlsx"
           $runMetricsPath = Join-Path $dataDir "run-metrics.xlsx"
-          $decisionTracePath = Join-Path $dataDir "decision_trace.json"
           $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry-ai-requirements.jsonl"
           $runMetricsPackageDir = Join-Path $dataDir "run-metrics"
 
@@ -64,7 +63,6 @@ jobs:
           "REQUISITES_SOURCE_PATH=$requirementsSourcePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SECURITY_AUDIT_XLSX_PATH=$xlsxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RUN_METRICS_XLSX_PATH=$runMetricsPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "DECISION_TRACE_PATH=$decisionTracePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "PROMPT_TELEMETRY_PATH=$promptTelemetryPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
@@ -73,9 +71,6 @@ jobs:
           }
           if (Test-Path $runMetricsPath) {
             Remove-Item -LiteralPath $runMetricsPath -Force
-          }
-          if (Test-Path $decisionTracePath) {
-            Remove-Item -LiteralPath $decisionTracePath -Force
           }
           if (Test-Path $promptTelemetryPath) {
             Remove-Item -LiteralPath $promptTelemetryPath -Force
@@ -90,7 +85,6 @@ jobs:
           Write-Host "[PATH] REQUISITES_SOURCE_PATH=$requirementsSourcePath"
           Write-Host "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsxPath"
           Write-Host "[PATH] RUN_METRICS_XLSX_PATH=$runMetricsPath"
-          Write-Host "[PATH] DECISION_TRACE_PATH=$decisionTracePath"
           Write-Host "[PATH] PROMPT_TELEMETRY_PATH=$promptTelemetryPath"
           Write-Host "[PATH] RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir"
 
@@ -107,12 +101,11 @@ jobs:
           requirements_source_path="$PWD/scripts/requirements.json"
           xlsx_path="$data_dir/security_audit_requirements.xlsx"
           run_metrics_path="$data_dir/run-metrics.xlsx"
-          decision_trace_path="$data_dir/decision_trace.json"
           prompt_telemetry_path="$data_dir/prompt-telemetry-ai-requirements.jsonl"
           run_metrics_package_dir="$data_dir/run-metrics"
 
           mkdir -p "$data_dir" "$bundle_dir" "$run_metrics_package_dir"
-          rm -f "$xlsx_path" "$run_metrics_path" "$decision_trace_path" "$prompt_telemetry_path"
+          rm -f "$xlsx_path" "$run_metrics_path" "$prompt_telemetry_path"
           rm -rf "$run_metrics_package_dir"
           mkdir -p "$run_metrics_package_dir"
 
@@ -124,7 +117,6 @@ jobs:
             echo "REQUISITES_SOURCE_PATH=$requirements_source_path"
             echo "SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
             echo "RUN_METRICS_XLSX_PATH=$run_metrics_path"
-            echo "DECISION_TRACE_PATH=$decision_trace_path"
             echo "PROMPT_TELEMETRY_PATH=$prompt_telemetry_path"
             echo "RUN_METRICS_PACKAGE_DIR=$run_metrics_package_dir"
           } >> "$GITHUB_ENV"
@@ -134,7 +126,6 @@ jobs:
           echo "[PATH] REQUISITES_SOURCE_PATH=$requirements_source_path"
           echo "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
           echo "[PATH] RUN_METRICS_XLSX_PATH=$run_metrics_path"
-          echo "[PATH] DECISION_TRACE_PATH=$decision_trace_path"
           echo "[PATH] PROMPT_TELEMETRY_PATH=$prompt_telemetry_path"
           echo "[PATH] RUN_METRICS_PACKAGE_DIR=$run_metrics_package_dir"
 
@@ -759,7 +750,6 @@ jobs:
         if: runner.os == 'Windows'
         env:
           USE_OPENAI_JUSTIFICATIONS: "1"
-          AUDIT_DECISION_MODE: "hybrid"
           STRICT_ENGLISH_OUTPUT: "1"
           PYTHONNOUSERSITE: "1"
           PYTHONUNBUFFERED: "1"
@@ -779,15 +769,11 @@ jobs:
           if (-not (Test-Path $env:RUN_METRICS_XLSX_PATH)) {
             throw "run-metrics.xlsx was not created at $env:RUN_METRICS_XLSX_PATH"
           }
-          if (-not (Test-Path $env:DECISION_TRACE_PATH)) {
-            throw "decision_trace.json was not created at $env:DECISION_TRACE_PATH"
-          }
 
       - name: Run AI audit on Unix
         if: runner.os != 'Windows'
         env:
           USE_OPENAI_JUSTIFICATIONS: "1"
-          AUDIT_DECISION_MODE: "hybrid"
           STRICT_ENGLISH_OUTPUT: "1"
           PYTHONNOUSERSITE: "1"
           PYTHONUNBUFFERED: "1"
@@ -799,7 +785,6 @@ jobs:
           "$PYTHON_EXE" scripts/ai_security_audit_requirements_excel.py
           test -f "$SECURITY_AUDIT_XLSX_PATH"
           test -f "$RUN_METRICS_XLSX_PATH"
-          test -f "$DECISION_TRACE_PATH"
 
       - name: Build run metrics package on Windows
         if: runner.os == 'Windows'
@@ -842,9 +827,7 @@ jobs:
         with:
           name: security-audit-excel
           if-no-files-found: error
-          path: |
-            ${{ runner.temp }}/vision360-data/security_audit_requirements.xlsx
-            ${{ runner.temp }}/vision360-data/decision_trace.json
+          path: ${{ runner.temp }}/vision360-data/security_audit_requirements.xlsx
 
       - name: Upload run metrics package
         uses: actions/upload-artifact@v6

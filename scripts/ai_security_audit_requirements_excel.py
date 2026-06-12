@@ -88,7 +88,6 @@ FINGERPRINT_PATH = _resolve_path("VISION360_FINGERPRINT_PATH", "vision360_finger
 REQUISITES_PATH = _resolve_path("REQUISITES_PATH", "requisites.json")
 OUTPUT_XLSX_PATH = _resolve_path("SECURITY_AUDIT_XLSX_PATH", "security_audit_requirements.xlsx")
 RUN_METRICS_XLSX_PATH = _resolve_path("RUN_METRICS_XLSX_PATH", "run-metrics.xlsx")
-DECISION_TRACE_PATH = _resolve_path("DECISION_TRACE_PATH", "decision_trace.json")
 
 RUN_METRICS: Dict[str, List[Dict[str, Any]]] = {
     "llm_calls": [],
@@ -155,49 +154,6 @@ GATE_FLAG_IDS = {
     "has_defined_certificate_management_policy",
     "has_defined_identity_lifecycle_policy",
 }
-
-
-# Legacy-compatible decision mode -------------------------------------------------
-# The original ai_correlate.py model inferred some YES/N/A outcomes from direct
-# technical evidence, not only from fully satisfied requirement flags.  The new
-# flag-based model is stricter and may return n/a when a positive-control flag is
-# missing, even if a mapped negative-risk flag explicitly shows absence of the risk.
-# These tokens let AUDIT_DECISION_MODE=hybrid recover that prior behaviour without
-# hardcoding PUIDs or fixed result counts.
-LEGACY_PROHIBITIVE_HINTS = [
-    "must not", "shall not", "should not", "do not", "does not", "not contain",
-    "not store", "not use", "remove", "prevent", "avoid", "without", "no ",
-]
-
-LEGACY_DIRECT_ABSENCE_RISK_FLAGS = {
-    "has_manifest_allow_clear_text_traffic_true",
-    "has_manifest_debuggable_true",
-    "has_android_debuggable_enabled",
-    "has_manifest_allow_backup_true",
-    "has_cert_signed_with_debug_certificate",
-    "has_cert_x509_subject_android_debug",
-    "has_cert_uses_sha1_signature_algorithm",
-    "has_cert_v1_signature_present_janus_risk",
-    "has_insecure_random_generator",
-    "has_insecure_http_based_webview_communication",
-    "has_hardcoded_credentials",
-    "has_secrets_generic_found",
-    "has_stores_keys_in_plaintext",
-    "has_stores_sensitive_data_on_device",
-    "has_external_storage_permissions",
-    "has_extra_risky_permissions",
-    "has_sca_known_vulnerable_dependencies",
-    "has_sca_critical_vulnerabilities",
-    "has_sca_high_vulnerabilities",
-    "has_sca_medium_vulnerabilities",
-    "has_sca_fixable_vulnerabilities",
-    "has_sca_security_sensitive_outdated_libraries",
-}
-
-LEGACY_CAPABILITY_FLAG_HINTS = [
-    "webview", "biometric", "nfc", "bluetooth", "camera", "location", "saml", "oauth",
-    "soap", "dynamic_code_loading", "content_provider", "custom_permission",
-]
 
 
 def _json_decode_error_details(e: json.JSONDecodeError) -> str:
@@ -378,101 +334,6 @@ def extract_req_fields(req_obj: Dict[str, Any]) -> Tuple[str, str, List[str]]:
     return puid, desc, flags_list
 
 
-
-def decision_mode() -> str:
-    mode = os.getenv("AUDIT_DECISION_MODE", "strict_flags").strip().lower()
-    aliases = {
-        "strict": "strict_flags",
-        "flags": "strict_flags",
-        "legacy": "legacy_compat",
-        "legacy-compatible": "legacy_compat",
-        "compat": "legacy_compat",
-    }
-    return aliases.get(mode, mode if mode in {"strict_flags", "legacy_compat", "hybrid"} else "strict_flags")
-
-
-def _desc_has_legacy_prohibitive_semantics(desc: str) -> bool:
-    s = f" {(desc or '').lower()} "
-    return any(tok in s for tok in LEGACY_PROHIBITIVE_HINTS)
-
-
-def _flag_is_legacy_absence_risk(fe: FlagEvidence) -> bool:
-    fid = (fe.id or "").lower()
-    if fid in LEGACY_DIRECT_ABSENCE_RISK_FLAGS:
-        return True
-    if fe.classification != "NEGATIVE_RISK":
-        return False
-    return any(tok in fid for tok in ("insecure", "weak", "debug", "cleartext", "hardcoded", "plaintext", "sha1", "md5", "exported_true", "backup_enabled_true"))
-
-
-def apply_legacy_compat_decision(
-    base_result: str,
-    desc: str,
-    flag_evs: List[FlagEvidence],
-    meta: Dict[str, Any],
-) -> Tuple[str, Dict[str, Any]]:
-    """Apply old ai_correlate-like inference without hardcoding PUID outcomes.
-
-    Precedence remains conservative:
-    - any CONTRADICT outcome remains no;
-    - only n/a can be promoted to yes;
-    - promotion requires explicit absence of a mapped negative risk, e.g. cleartext=false,
-      debuggable=false, allowBackup=true absent, no weak crypto signal;
-    - missing positive-control flags do not block this legacy-compatible YES when the
-      requirement is prohibitive or risk-absence based.
-    """
-    mode = decision_mode()
-    meta = dict(meta or {})
-    meta["decision_mode"] = mode
-    meta["base_result_before_compat"] = base_result
-    meta["legacy_compat_applied"] = False
-    meta["legacy_compat_reason"] = ""
-
-    if mode == "strict_flags":
-        meta["decision_rule"] = meta.get("decision_rule") or "strict_flags"
-        return base_result, meta
-
-    non_app = [fe for fe in flag_evs if fe.classification != "APPLICABILITY"]
-    contradictions = [fe for fe in non_app if fe.outcome == "CONTRADICT"]
-    if contradictions:
-        meta["decision_rule"] = "contradicting_mapped_signal"
-        return "no", meta
-
-    if base_result == "yes":
-        meta["decision_rule"] = meta.get("decision_rule") or "all_mapped_signals_support"
-        return base_result, meta
-
-    supported_absent_risks = [
-        fe for fe in non_app
-        if fe.outcome == "SUPPORT" and fe.summary_norm == "NO" and _flag_is_legacy_absence_risk(fe)
-    ]
-    desc_prohibitive = _desc_has_legacy_prohibitive_semantics(desc)
-    only_applicability = bool(flag_evs) and not non_app
-    app_flags = [fe for fe in flag_evs if fe.classification == "APPLICABILITY"]
-    all_capability_absent = bool(app_flags) and all(fe.summary_norm in {"NO", "NA"} for fe in app_flags)
-    capability_like = any(any(h in (fe.id or "").lower() for h in LEGACY_CAPABILITY_FLAG_HINTS) for fe in flag_evs)
-
-    if base_result == "n/a" and only_applicability and all_capability_absent and capability_like:
-        meta["decision_rule"] = "legacy_capability_absent_na"
-        return "n/a", meta
-
-    if base_result == "n/a" and supported_absent_risks and desc_prohibitive:
-        meta["legacy_compat_applied"] = True
-        meta["legacy_compat_reason"] = "explicit_absence_of_mapped_negative_risk_supports_prohibitive_requirement"
-        meta["legacy_supporting_absent_risk_flags"] = [fe.id for fe in supported_absent_risks]
-        meta["decision_rule"] = "legacy_absent_risk_promoted_to_yes"
-        return "yes", meta
-
-    if mode == "legacy_compat" and base_result == "n/a" and supported_absent_risks:
-        meta["legacy_compat_applied"] = True
-        meta["legacy_compat_reason"] = "explicit_absence_of_mapped_negative_risk_supports_legacy_yes"
-        meta["legacy_supporting_absent_risk_flags"] = [fe.id for fe in supported_absent_risks]
-        meta["decision_rule"] = "legacy_absent_risk_promoted_to_yes"
-        return "yes", meta
-
-    meta["decision_rule"] = meta.get("decision_rule") or "insufficient_or_not_applicable_evidence"
-    return base_result, meta
-
 def audit_requirement(puid: str, desc: str, flag_ids: List[str], flags_by_id: Dict[str, Dict[str, Any]]) -> Tuple[str, List[FlagEvidence], Dict[str, Any]]:
     prohibitive = is_prohibitive(desc)
     conditional = is_conditional(desc)
@@ -495,31 +356,15 @@ def audit_requirement(puid: str, desc: str, flag_ids: List[str], flags_by_id: Di
 
     has_negative_risk_yes = any((fe.classification == "NEGATIVE_RISK" and fe.summary_norm == "YES") for fe in flag_evs if fe.outcome != "MISSING")
 
-    meta = dict(
-        prohibitive=prohibitive,
-        conditional=conditional,
-        override_used=override_used,
-        override_scenario_activated=override_scenario_activated,
-        gate_flags=[],
-        conditional_scenario_activated=conditional_scenario_activated,
-        decision_rule="",
-    )
-
     if override_used:
         override_scenario_activated, gate_flags = compute_override_scenario_activated(flag_evs, flag_ids)
-        meta.update(
-            override_scenario_activated=override_scenario_activated,
-            gate_flags=[ge.id for ge in gate_flags],
-        )
         if override_scenario_activated is False:
             result = ("no" if has_negative_risk_yes else "yes") if prohibitive else ("no" if has_negative_risk_yes else "n/a")
-            meta["decision_rule"] = "override_scope_inactive_prohibitive" if prohibitive else "override_scope_inactive_not_applicable"
-            result, meta = apply_legacy_compat_decision(result, desc, flag_evs, meta)
+            meta = dict(prohibitive=prohibitive, conditional=conditional, override_used=True, override_scenario_activated=override_scenario_activated, gate_flags=[ge.id for ge in gate_flags], conditional_scenario_activated=None)
             return result, flag_evs, meta
 
     if conditional:
         conditional_scenario_activated = compute_conditional_scenario_activated(flag_evs)
-        meta["conditional_scenario_activated"] = conditional_scenario_activated
 
     non_app = [fe for fe in flag_evs if fe.classification != "APPLICABILITY"]
     any_contradict = any(fe.outcome == "CONTRADICT" for fe in non_app)
@@ -528,19 +373,15 @@ def audit_requirement(puid: str, desc: str, flag_ids: List[str], flags_by_id: Di
 
     if any_contradict:
         result = "no"
-        meta["decision_rule"] = "contradicting_mapped_signal"
     elif all_support and not any_unknown:
         result = "yes"
-        meta["decision_rule"] = "all_mapped_signals_support"
     else:
         if conditional and (conditional_scenario_activated is False):
             result = "yes" if prohibitive else "n/a"
-            meta["decision_rule"] = "conditional_scenario_inactive_prohibitive" if prohibitive else "conditional_scenario_inactive_not_applicable"
         else:
             result = "n/a"
-            meta["decision_rule"] = "insufficient_or_not_applicable_evidence"
 
-    result, meta = apply_legacy_compat_decision(result, desc, flag_evs, meta)
+    meta = dict(prohibitive=prohibitive, conditional=conditional, override_used=override_used, override_scenario_activated=override_scenario_activated, gate_flags=[ge.id for ge in gate_flags], conditional_scenario_activated=conditional_scenario_activated)
     return result, flag_evs, meta
 
 
@@ -938,7 +779,6 @@ def _write_run_metrics_raw_xlsx(
     exports raw execution telemetry and requirement-level hashes.
     """
     RUN_METRICS_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DECISION_TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     llm_snapshot = _llm_config_snapshot(batch_size=batch_size)
     llm_config_hash = _stable_json_hash(llm_snapshot)
@@ -1296,35 +1136,6 @@ def deterministic_justification(req: RequirementAudit, flag_evidences: List[Flag
     return " ".join(sentences[:6])
 
 
-
-def flag_evidence_to_trace(fe: FlagEvidence) -> Dict[str, Any]:
-    return {
-        "id": fe.id,
-        "title": fe.title,
-        "classification": fe.classification,
-        "expected": fe.expected,
-        "observed_summary_norm": fe.summary_norm,
-        "outcome": fe.outcome,
-        "state": fe.state,
-        "summary": fe.summary,
-        "evidence_count": fe.evidence_count,
-        "notes": fe.notes,
-    }
-
-
-def write_decision_trace(path: Path, traces: List[Dict[str, Any]], counts: Dict[str, int]) -> None:
-    payload = {
-        "schema": "msec-at-decision-trace-v1",
-        "generated_at_utc": _now_utc_iso(),
-        "decision_mode": decision_mode(),
-        "counts": dict(counts),
-        "total": len(traces),
-        "items": traces,
-    }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[OK] Decision trace generated: {path}", flush=True)
-
 def main() -> None:
     run_started_at = time.time()
     RUN_METRICS["llm_calls"] = []
@@ -1336,8 +1147,6 @@ def main() -> None:
     print(f"[PATH] REQUISITES_PATH={REQUISITES_PATH}", flush=True)
     print(f"[PATH] OUTPUT_XLSX_PATH={OUTPUT_XLSX_PATH}", flush=True)
     print(f"[PATH] RUN_METRICS_XLSX_PATH={RUN_METRICS_XLSX_PATH}", flush=True)
-    print(f"[PATH] DECISION_TRACE_PATH={DECISION_TRACE_PATH}", flush=True)
-    print(f"[MODE] AUDIT_DECISION_MODE={decision_mode()}", flush=True)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -1390,7 +1199,6 @@ def main() -> None:
     batch_size = env_int("OPENAI_BATCH_SIZE", 25)
     batch_size = 25 if batch_size <= 0 else batch_size
     audits: List[RequirementAudit] = []
-    decision_traces: List[Dict[str, Any]] = []
     counts = {"yes": 0, "no": 0, "n/a": 0}
     use_openai_just = env_bool("USE_OPENAI_JUSTIFICATIONS", False)
     total = len(requirements)
@@ -1484,15 +1292,6 @@ def main() -> None:
                 if strict_english and looks_non_english(just):
                     raise SystemExit(f"STRICT_ENGLISH_OUTPUT is enabled, but the generated justification for PUID={req_audit.puid} is not English.")
             req_audit.justification_en = just
-            decision_traces.append({
-                "puid": req_audit.puid,
-                "result": req_audit.result,
-                "description_en": req_audit.description_en,
-                "flags_used": list(req_audit.flags_used),
-                "decision_mode": decision_mode(),
-                "meta": dict(meta or {}),
-                "flags": [flag_evidence_to_trace(fe) for fe in flag_evs],
-            })
             _append_llm_item({
                 "run_batch": b + 1,
                 "puid": req_audit.puid,
@@ -1527,7 +1326,6 @@ def main() -> None:
     OUTPUT_XLSX_PATH.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUTPUT_XLSX_PATH)
     print(f"[OK] Excel generated: {OUTPUT_XLSX_PATH}", flush=True)
-    write_decision_trace(DECISION_TRACE_PATH, decision_traces, counts)
     _write_run_metrics_raw_xlsx(
         audits=audits,
         counts=counts,
