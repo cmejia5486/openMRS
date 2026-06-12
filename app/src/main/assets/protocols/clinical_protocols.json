@@ -1,0 +1,634 @@
+{
+  "version": "1.0",
+  "source": "WHO/National STGs",
+  "protocols": [
+    {
+      "id": "MALARIA_UNCOMPLICATED",
+      "name": "Uncomplicated Malaria",
+      "category": "Infectious Disease",
+      "icd10Codes": ["B50", "B51", "B52", "B53", "B54"],
+      "applicableTo": "ALL",
+      "steps": [
+        {
+          "id": "confirm",
+          "title": "Confirm Diagnosis",
+          "instructions": "Perform malaria rapid diagnostic test (mRDT) or blood smear. All suspected malaria cases MUST have parasitological confirmation before treatment.",
+          "requiredActions": ["RDT or blood smear"],
+          "warningFlags": ["Do NOT treat presumptively if RDT available"]
+        },
+        {
+          "id": "classify",
+          "title": "Classify Severity",
+          "instructions": "Check for danger signs: inability to drink/breastfeed, persistent vomiting, convulsions, lethargy/unconsciousness, inability to sit/stand.",
+          "redFlags": ["Prostration", "Impaired consciousness", "Respiratory distress", "Multiple convulsions", "Circulatory collapse", "Abnormal bleeding", "Jaundice", "Hemoglobinuria"],
+          "escalation": "If ANY red flag present → Refer immediately as SEVERE MALARIA"
+        },
+        {
+          "id": "treat_adult",
+          "title": "Treatment — Adults & Children >5kg",
+          "instructions": "First-line: Artemether-Lumefantrine (AL) for 3 days. Give with fatty food to improve absorption.",
+          "medications": [
+            {
+              "name": "Artemether-Lumefantrine",
+              "dose": "Weight-based: 5-14kg: 1 tab; 15-24kg: 2 tabs; 25-34kg: 3 tabs; ≥35kg: 4 tabs",
+              "frequency": "Twice daily (0, 8, 24, 36, 48, 60 hours) = 6 doses over 3 days",
+              "duration": "3 days"
+            }
+          ],
+          "alternatives": [
+            {
+              "name": "Artesunate-Amodiaquine",
+              "indication": "If AL unavailable or contraindicated"
+            },
+            {
+              "name": "Dihydroartemisinin-Piperaquine",
+              "indication": "Second-line alternative"
+            }
+          ]
+        },
+        {
+          "id": "followup",
+          "title": "Follow-up",
+          "instructions": "Review on Day 3 if symptoms persist. Repeat mRDT on Day 3 if still febrile. If treatment failure, switch to second-line ACT.",
+          "followUpDays": 3,
+          "referralCriteria": ["No improvement after 48 hours", "Worsening symptoms", "Development of danger signs"]
+        }
+      ]
+    },
+    {
+      "id": "MALARIA_SEVERE",
+      "name": "Severe Malaria",
+      "category": "Infectious Disease",
+      "icd10Codes": ["B50.0", "B50.8"],
+      "applicableTo": "ALL",
+      "urgency": "EMERGENCY",
+      "steps": [
+        {
+          "id": "stabilize",
+          "title": "Emergency Stabilization",
+          "instructions": "Establish IV access. Check glucose (hypoglycemia common). Manage airway. Monitor vitals every 15 minutes.",
+          "requiredActions": ["IV access", "Blood glucose check", "Airway management", "Continuous monitoring"]
+        },
+        {
+          "id": "pre_referral",
+          "title": "Pre-Referral Treatment",
+          "instructions": "If IV artesunate not available at facility, give pre-referral treatment and REFER IMMEDIATELY.",
+          "medications": [
+            {
+              "name": "Artesunate IV/IM",
+              "dose": "2.4 mg/kg at 0, 12, 24 hours, then daily",
+              "duration": "Until oral medication tolerated (minimum 24 hours IV)"
+            },
+            {
+              "name": "Artesunate rectal (pre-referral)",
+              "dose": "Children <6 years: 10 mg/kg single dose",
+              "indication": "Pre-referral only when injection not possible"
+            }
+          ]
+        },
+        {
+          "id": "refer",
+          "title": "Referral",
+          "instructions": "All severe malaria cases should be managed at a facility with inpatient capacity. Refer urgently with documentation of pre-referral treatment given.",
+          "referTo": "District/Regional Hospital"
+        }
+      ]
+    },
+    {
+      "id": "HIV_TESTING",
+      "name": "HIV Testing & Counseling",
+      "category": "Infectious Disease",
+      "icd10Codes": ["B20", "B21", "B22", "B23", "B24", "Z21"],
+      "applicableTo": "ALL",
+      "steps": [
+        {
+          "id": "assess",
+          "title": "Assess for HIV Testing",
+          "instructions": "Offer HIV testing to: all patients with TB symptoms, all pregnant women, STI patients, all patients who request it. Use opt-out approach in high-prevalence settings.",
+          "requiredActions": ["Pre-test counseling", "Informed consent"]
+        },
+        {
+          "id": "test",
+          "title": "Perform Testing",
+          "instructions": "Use national testing algorithm. Typically: rapid test 1 → if reactive, rapid test 2 (different manufacturer). If discordant, send for confirmatory test.",
+          "requiredActions": ["Rapid test following national algorithm"]
+        },
+        {
+          "id": "positive",
+          "title": "If HIV Positive",
+          "instructions": "Post-test counseling. Assess for WHO clinical staging and CD4 count. Initiate ART same day if clinically ready (Treat All approach). Screen for TB, hepatitis B, STIs.",
+          "medications": [
+            {
+              "name": "TLD (Tenofovir + Lamivudine + Dolutegravir)",
+              "dose": "1 tablet daily",
+              "indication": "First-line for adults and adolescents ≥20kg"
+            }
+          ],
+          "requiredActions": ["WHO staging", "CD4 count if available", "TB screening", "Baseline labs (Creatinine, HBsAg)"],
+          "followUpDays": 14
+        },
+        {
+          "id": "negative",
+          "title": "If HIV Negative",
+          "instructions": "Post-test counseling on risk reduction. If high-risk exposure in last 72 hours, consider PEP. If ongoing high risk, consider PrEP. Retest in 3 months if in window period.",
+          "followUpDays": 90
+        }
+      ]
+    },
+    {
+      "id": "TB_SCREENING",
+      "name": "Tuberculosis Screening & Treatment",
+      "category": "Infectious Disease",
+      "icd10Codes": ["A15", "A16", "A17", "A18", "A19"],
+      "applicableTo": "ALL",
+      "steps": [
+        {
+          "id": "screen",
+          "title": "TB Symptom Screen",
+          "instructions": "Ask about the 4 cardinal symptoms: cough ≥2 weeks, fever, night sweats, weight loss. In HIV-positive patients, ANY one symptom is sufficient to warrant investigation.",
+          "redFlags": ["Hemoptysis", "Severe weight loss", "Persistent fever >2 weeks"]
+        },
+        {
+          "id": "investigate",
+          "title": "Investigate",
+          "instructions": "Collect 2 sputum samples (spot + early morning). Send for GeneXpert MTB/RIF as first-line test. Chest X-ray if available.",
+          "requiredActions": ["Sputum collection", "GeneXpert or smear microscopy", "Chest X-ray if available"]
+        },
+        {
+          "id": "treat_new",
+          "title": "Treatment — New TB Case",
+          "instructions": "Start standard 6-month regimen: 2 months intensive phase + 4 months continuation phase. Register in TB register. Notify public health.",
+          "medications": [
+            {
+              "name": "RHZE (Rifampicin + Isoniazid + Pyrazinamide + Ethambutol)",
+              "dose": "Weight-based fixed-dose combination",
+              "frequency": "Daily",
+              "duration": "2 months (intensive phase)"
+            },
+            {
+              "name": "RH (Rifampicin + Isoniazid)",
+              "dose": "Weight-based fixed-dose combination",
+              "frequency": "Daily",
+              "duration": "4 months (continuation phase)"
+            },
+            {
+              "name": "Pyridoxine (Vitamin B6)",
+              "dose": "25 mg daily",
+              "indication": "Prevent isoniazid-induced neuropathy"
+            }
+          ],
+          "requiredActions": ["TB notification", "Treatment supporter identified", "Baseline LFTs"],
+          "followUpDays": 14
+        },
+        {
+          "id": "monitor",
+          "title": "Treatment Monitoring",
+          "instructions": "Monthly reviews: weight, symptom assessment, medication adherence. Sputum at months 2, 5, 6. If sputum positive at month 2, extend intensive phase and request drug sensitivity testing.",
+          "referralCriteria": ["Drug-resistant TB (GeneXpert rifampicin resistant)", "Treatment failure", "Serious adverse reactions"]
+        }
+      ]
+    },
+    {
+      "id": "HYPERTENSION",
+      "name": "Hypertension Management",
+      "category": "Non-Communicable Disease",
+      "icd10Codes": ["I10", "I11", "I12", "I13", "I15"],
+      "applicableTo": "ADULT",
+      "steps": [
+        {
+          "id": "diagnose",
+          "title": "Confirm Diagnosis",
+          "instructions": "Diagnosis requires elevated BP on at least 2 separate occasions. Measure BP in both arms at first visit. Use appropriate cuff size. Patient should be seated, resting for 5 minutes.",
+          "criteria": {
+            "Stage 1": "SBP 140-159 or DBP 90-99",
+            "Stage 2": "SBP 160-179 or DBP 100-109",
+            "Stage 3": "SBP ≥180 or DBP ≥110"
+          }
+        },
+        {
+          "id": "assess_risk",
+          "title": "Cardiovascular Risk Assessment",
+          "instructions": "Assess total CV risk: age, sex, smoking, diabetes, cholesterol, family history. Check for target organ damage: proteinuria, LVH, retinopathy.",
+          "requiredActions": ["Fasting glucose", "Urinalysis (proteinuria)", "Serum creatinine", "Lipid panel if available"]
+        },
+        {
+          "id": "lifestyle",
+          "title": "Lifestyle Modifications (All Patients)",
+          "instructions": "Reduce salt intake (<5g/day). Regular physical activity (30 min/day, 5 days/week). Healthy diet (fruits, vegetables, reduce fat). Limit alcohol. Stop smoking. Maintain healthy weight (BMI 18.5-24.9)."
+        },
+        {
+          "id": "treat",
+          "title": "Pharmacological Treatment",
+          "instructions": "Start medication if: Stage 1 with high CV risk or target organ damage, or Stage 2+, or diabetes/CKD with BP ≥130/80.",
+          "medications": [
+            {
+              "name": "Amlodipine",
+              "dose": "5-10 mg daily",
+              "indication": "First-line, especially in Black African patients"
+            },
+            {
+              "name": "Enalapril",
+              "dose": "5-20 mg daily",
+              "indication": "First-line if diabetes/proteinuria. NOT in pregnancy."
+            },
+            {
+              "name": "Hydrochlorothiazide",
+              "dose": "12.5-25 mg daily",
+              "indication": "Add-on or first-line if fluid overload/heart failure"
+            }
+          ],
+          "followUpDays": 28
+        },
+        {
+          "id": "crisis",
+          "title": "Hypertensive Crisis",
+          "instructions": "If SBP ≥180 or DBP ≥120 with symptoms (headache, visual changes, chest pain, dyspnea): This is a hypertensive EMERGENCY. Give sublingual nifedipine 10mg, monitor closely, REFER to hospital.",
+          "urgency": "EMERGENCY",
+          "referralCriteria": ["BP ≥180/120 with symptoms", "Suspected end-organ damage", "Resistant hypertension (uncontrolled on 3 drugs)"]
+        }
+      ]
+    },
+    {
+      "id": "DIABETES_TYPE2",
+      "name": "Type 2 Diabetes Management",
+      "category": "Non-Communicable Disease",
+      "icd10Codes": ["E11", "E14"],
+      "applicableTo": "ADULT",
+      "steps": [
+        {
+          "id": "diagnose",
+          "title": "Confirm Diagnosis",
+          "instructions": "Fasting plasma glucose ≥7.0 mmol/L (126 mg/dL) on 2 occasions, OR random glucose ≥11.1 mmol/L (200 mg/dL) with symptoms, OR HbA1c ≥6.5% (48 mmol/mol).",
+          "criteria": {
+            "Normal": "FPG <5.6 mmol/L",
+            "Pre-diabetes": "FPG 5.6-6.9 mmol/L",
+            "Diabetes": "FPG ≥7.0 mmol/L"
+          }
+        },
+        {
+          "id": "assess",
+          "title": "Baseline Assessment",
+          "instructions": "Full history and examination. Check for complications: eyes (retinopathy), feet (neuropathy, ulcers), kidneys (proteinuria), cardiovascular risk.",
+          "requiredActions": ["HbA1c or fasting glucose", "Serum creatinine + eGFR", "Urinalysis (proteinuria)", "Lipid panel", "Foot examination", "Visual acuity", "BP measurement"]
+        },
+        {
+          "id": "lifestyle",
+          "title": "Lifestyle Modifications (All Patients)",
+          "instructions": "Dietary counseling: reduce refined carbohydrates, increase fiber, regular meals. Physical activity: 150 min/week moderate intensity. Weight management. Smoking cessation. Foot care education."
+        },
+        {
+          "id": "treat",
+          "title": "Pharmacological Treatment",
+          "instructions": "Start Metformin if lifestyle measures insufficient after 3 months (or immediately if HbA1c >8%). Target HbA1c <7% for most adults.",
+          "medications": [
+            {
+              "name": "Metformin",
+              "dose": "Start 500 mg daily, increase to 500 mg BD, max 1g BD",
+              "indication": "First-line for all T2DM. Take with meals to reduce GI side effects.",
+              "contraindications": ["eGFR <30", "Acute illness", "Before contrast dye"]
+            },
+            {
+              "name": "Glimepiride",
+              "dose": "1-4 mg daily",
+              "indication": "Add if HbA1c >7% on max metformin. WARN about hypoglycemia."
+            },
+            {
+              "name": "Insulin (NPH)",
+              "dose": "Start 10 units at bedtime, titrate by 2 units every 3 days to target FPG <7",
+              "indication": "If dual oral therapy fails, or HbA1c >10%, or symptomatic hyperglycemia"
+            }
+          ],
+          "followUpDays": 90
+        },
+        {
+          "id": "emergencies",
+          "title": "Diabetic Emergencies",
+          "instructions": "Diabetic Ketoacidosis (DKA): glucose >14, ketones positive, acidotic breathing. Hyperosmolar state: glucose >33, altered consciousness. BOTH are emergencies requiring immediate IV fluids and insulin. REFER to hospital.",
+          "urgency": "EMERGENCY",
+          "redFlags": ["Glucose >20 mmol/L with ketones", "Altered consciousness", "Severe dehydration", "Kussmaul breathing"],
+          "referralCriteria": ["DKA", "Hyperosmolar state", "Recurrent hypoglycemia", "HbA1c >10% despite treatment"]
+        }
+      ]
+    },
+    {
+      "id": "IMCI_FEVER",
+      "name": "IMCI — Fever in Children Under 5",
+      "category": "Pediatric",
+      "icd10Codes": ["R50"],
+      "applicableTo": "PEDIATRIC",
+      "steps": [
+        {
+          "id": "assess_danger",
+          "title": "Check for General Danger Signs",
+          "instructions": "Ask: Is the child able to drink/breastfeed? Does the child vomit everything? Has the child had convulsions? Look: Is the child lethargic or unconscious?",
+          "redFlags": ["Unable to drink/breastfeed", "Vomiting everything", "Convulsions", "Lethargic/unconscious"],
+          "escalation": "ANY danger sign → Give pre-referral treatment → REFER URGENTLY"
+        },
+        {
+          "id": "assess_fever",
+          "title": "Assess Fever",
+          "instructions": "Temperature ≥37.5°C or feels hot. Check: Duration of fever. History of measles in last 3 months. Stiff neck. Bulging fontanelle (infants). Rash.",
+          "requiredActions": ["Temperature measurement", "Malaria RDT in endemic areas"]
+        },
+        {
+          "id": "classify",
+          "title": "Classify and Treat",
+          "instructions": "VERY SEVERE FEBRILE DISEASE: Danger sign + fever → First dose antibiotics + antimalarial + refer. MALARIA: Positive RDT → ACT for 3 days. FEVER — MALARIA UNLIKELY: Negative RDT + no other cause → Paracetamol, review in 2 days.",
+          "medications": [
+            {
+              "name": "Paracetamol",
+              "dose": "10-15 mg/kg every 6 hours as needed",
+              "indication": "All febrile children for symptomatic relief"
+            },
+            {
+              "name": "Artemether-Lumefantrine",
+              "dose": "Weight-based per national guidelines",
+              "indication": "Positive malaria RDT"
+            }
+          ],
+          "followUpDays": 2
+        },
+        {
+          "id": "counsel",
+          "title": "Counsel Mother/Caregiver",
+          "instructions": "When to return immediately: unable to drink/breastfeed, becomes sicker, fever persists >3 days, develops convulsions. Extra fluids. Continue feeding. Use insecticide-treated nets."
+        }
+      ]
+    },
+    {
+      "id": "IMCI_DIARRHEA",
+      "name": "IMCI — Diarrhea in Children Under 5",
+      "category": "Pediatric",
+      "icd10Codes": ["A09", "K52"],
+      "applicableTo": "PEDIATRIC",
+      "steps": [
+        {
+          "id": "assess",
+          "title": "Assess Dehydration",
+          "instructions": "Look: general condition (well/restless/lethargic), eyes (normal/sunken), skin pinch (returns quickly/slowly/very slowly). Ask: Is the child thirsty?",
+          "criteria": {
+            "No dehydration": "No signs: Plan A",
+            "Some dehydration": "2+ signs (restless, sunken eyes, drinks eagerly, slow skin pinch): Plan B",
+            "Severe dehydration": "2+ signs (lethargic, sunken eyes, unable to drink, very slow pinch): Plan C"
+          }
+        },
+        {
+          "id": "plan_a",
+          "title": "Plan A — Treat at Home",
+          "instructions": "Give extra fluids (as much as child will take). Give ORS after each loose stool: <2 yrs: 50-100ml; 2-10 yrs: 100-200ml; >10 yrs: as much as wanted. Give zinc supplements. Continue feeding.",
+          "medications": [
+            {
+              "name": "ORS (Oral Rehydration Salts)",
+              "dose": "50-100 ml per loose stool (<2 yrs), 100-200 ml (2-10 yrs)",
+              "duration": "Until diarrhea stops"
+            },
+            {
+              "name": "Zinc sulfate",
+              "dose": "<6 months: 10 mg/day; ≥6 months: 20 mg/day",
+              "duration": "10-14 days (continue even after diarrhea stops)"
+            }
+          ]
+        },
+        {
+          "id": "plan_b",
+          "title": "Plan B — Treat at Facility",
+          "instructions": "Give ORS over 4 hours: weight(kg) × 75 ml. Reassess after 4 hours and reclassify. If improving → Plan A. If same → repeat Plan B. If worsening → Plan C.",
+          "followUpDays": 1
+        },
+        {
+          "id": "plan_c",
+          "title": "Plan C — Severe Dehydration",
+          "instructions": "Start IV Ringer's Lactate immediately. If IV not possible, refer urgently with ORS by mouth/NG tube en route.",
+          "urgency": "EMERGENCY",
+          "medications": [
+            {
+              "name": "Ringer's Lactate IV",
+              "dose": "Infant: 30 ml/kg over 1 hr, then 70 ml/kg over 5 hrs. Older child: 30 ml/kg over 30 min, then 70 ml/kg over 2.5 hrs",
+              "indication": "Severe dehydration"
+            }
+          ],
+          "referralCriteria": ["Unable to establish IV access", "Not improving after 6 hours", "Signs of cholera in outbreak area"]
+        },
+        {
+          "id": "bloody",
+          "title": "Bloody Diarrhea (Dysentery)",
+          "instructions": "If blood in stool: treat as dysentery with ciprofloxacin. Follow up in 2 days. If not improving, consider amebic dysentery (metronidazole).",
+          "medications": [
+            {
+              "name": "Ciprofloxacin",
+              "dose": "15 mg/kg twice daily",
+              "duration": "3 days"
+            }
+          ],
+          "followUpDays": 2
+        }
+      ]
+    },
+    {
+      "id": "IMCI_PNEUMONIA",
+      "name": "IMCI — Cough/Pneumonia in Children Under 5",
+      "category": "Pediatric",
+      "icd10Codes": ["J18", "J20", "J21", "J06"],
+      "applicableTo": "PEDIATRIC",
+      "steps": [
+        {
+          "id": "assess",
+          "title": "Assess for Pneumonia",
+          "instructions": "Count respiratory rate for full 60 seconds (child must be calm). Check: chest indrawing, stridor when calm, oxygen saturation.",
+          "criteria": {
+            "Fast breathing": "<2 months: ≥60/min; 2-12 months: ≥50/min; 1-5 years: ≥40/min",
+            "Chest indrawing": "Lower chest wall draws in on inspiration"
+          }
+        },
+        {
+          "id": "classify",
+          "title": "Classify",
+          "instructions": "SEVERE PNEUMONIA: Chest indrawing OR danger sign → Give first dose antibiotics → REFER. PNEUMONIA: Fast breathing, no chest indrawing → Oral amoxicillin. NO PNEUMONIA (COUGH/COLD): No fast breathing, no indrawing → Safe home care.",
+          "redFlags": ["Chest indrawing", "SpO2 <90%", "Stridor when calm", "Any general danger sign"]
+        },
+        {
+          "id": "treat",
+          "title": "Treatment — Pneumonia",
+          "medications": [
+            {
+              "name": "Amoxicillin",
+              "dose": "40 mg/kg twice daily (high-dose for pneumonia)",
+              "duration": "5 days"
+            }
+          ],
+          "followUpDays": 2,
+          "referralCriteria": ["Not improving after 2 days", "Worsening", "New danger signs"]
+        },
+        {
+          "id": "severe",
+          "title": "Pre-Referral — Severe Pneumonia",
+          "urgency": "EMERGENCY",
+          "medications": [
+            {
+              "name": "Ampicillin IM",
+              "dose": "50 mg/kg",
+              "indication": "Pre-referral first dose"
+            },
+            {
+              "name": "Gentamicin IM",
+              "dose": "7.5 mg/kg",
+              "indication": "Pre-referral first dose"
+            }
+          ],
+          "instructions": "Give first dose of both antibiotics. Keep child warm. If SpO2 <90%, give oxygen. REFER URGENTLY to hospital."
+        }
+      ]
+    },
+    {
+      "id": "ANTENATAL_CARE",
+      "name": "Antenatal Care (ANC)",
+      "category": "Maternal Health",
+      "icd10Codes": ["Z34", "O09"],
+      "applicableTo": "ADULT_FEMALE",
+      "steps": [
+        {
+          "id": "first_visit",
+          "title": "First ANC Visit (Before 12 Weeks Ideally)",
+          "instructions": "Confirm pregnancy. Calculate gestational age and EDD. Full history and examination. Blood pressure, weight, height.",
+          "requiredActions": ["Hb/FBC", "Blood group & Rh", "HIV test", "Syphilis RPR/VDRL", "Urinalysis", "Blood glucose", "Hepatitis B"],
+          "medications": [
+            {
+              "name": "Ferrous sulfate + Folic acid",
+              "dose": "60 mg elemental iron + 400 mcg folic acid daily",
+              "duration": "Throughout pregnancy and 3 months postpartum"
+            },
+            {
+              "name": "Calcium supplementation",
+              "dose": "1.5-2g daily (if low dietary calcium intake)",
+              "duration": "From 20 weeks"
+            }
+          ]
+        },
+        {
+          "id": "routine_visits",
+          "title": "Routine ANC Visits Schedule",
+          "instructions": "WHO recommends minimum 8 contacts: Weeks 12, 20, 26, 30, 34, 36, 38, 40. Each visit: BP, weight, fundal height, fetal heart rate, urinalysis for proteinuria.",
+          "redFlags": ["BP ≥140/90 (pre-eclampsia)", "Proteinuria", "Vaginal bleeding", "Severe headache/visual disturbance", "Epigastric pain", "Reduced fetal movements", "Fever >38°C"]
+        },
+        {
+          "id": "ipp",
+          "title": "IPT for Malaria (Endemic Areas)",
+          "instructions": "Give intermittent preventive treatment with SP from 13 weeks. At least 3 doses, 1 month apart. Give as DOT (directly observed therapy).",
+          "medications": [
+            {
+              "name": "Sulfadoxine-Pyrimethamine (SP/Fansidar)",
+              "dose": "3 tablets (500/25mg each) as single dose",
+              "frequency": "Monthly from 13 weeks to delivery (minimum 3 doses)"
+            }
+          ]
+        },
+        {
+          "id": "danger_signs",
+          "title": "Obstetric Danger Signs — REFER",
+          "urgency": "EMERGENCY",
+          "instructions": "Educate mother on danger signs requiring immediate facility visit.",
+          "redFlags": ["Heavy vaginal bleeding", "Convulsions/fits", "Severe headache with blurred vision", "Fever", "Severe abdominal pain", "Fast/difficult breathing", "Reduced/absent fetal movements"],
+          "referralCriteria": ["Pre-eclampsia/eclampsia", "Antepartum hemorrhage", "Preterm labor", "Malpresentation in labor", "Prolonged/obstructed labor"]
+        }
+      ]
+    },
+    {
+      "id": "ASTHMA",
+      "name": "Asthma Management",
+      "category": "Non-Communicable Disease",
+      "icd10Codes": ["J45", "J46"],
+      "applicableTo": "ALL",
+      "steps": [
+        {
+          "id": "diagnose",
+          "title": "Diagnosis",
+          "instructions": "History of recurrent episodes of wheeze, cough (especially at night/early morning), chest tightness, breathlessness. Symptoms variable, triggered by exercise/allergens/infections. Peak flow variability >20%.",
+          "criteria": {
+            "Intermittent": "Symptoms <2 days/week, nighttime ≤2x/month",
+            "Mild persistent": "Symptoms >2 days/week but not daily",
+            "Moderate persistent": "Daily symptoms, nighttime >1x/week",
+            "Severe persistent": "Continuous symptoms, frequent nighttime"
+          }
+        },
+        {
+          "id": "acute",
+          "title": "Acute Asthma Attack",
+          "instructions": "Assess severity: mild (talks in sentences), moderate (talks in phrases), severe (talks in words), life-threatening (silent chest, drowsy).",
+          "medications": [
+            {
+              "name": "Salbutamol inhaler (MDI + spacer)",
+              "dose": "4-8 puffs, repeat every 20 min for 1 hour if needed",
+              "indication": "First-line for acute bronchospasm"
+            },
+            {
+              "name": "Prednisolone oral",
+              "dose": "Adults: 40-50 mg; Children: 1-2 mg/kg (max 40 mg)",
+              "duration": "3-5 days"
+            }
+          ],
+          "redFlags": ["Silent chest", "Unable to speak", "SpO2 <92%", "Drowsy/confused", "Poor response to initial bronchodilator"],
+          "referralCriteria": ["Severe/life-threatening attack", "No improvement after 1 hour", "Previous near-fatal asthma"]
+        },
+        {
+          "id": "maintenance",
+          "title": "Long-term Management",
+          "instructions": "Step-up approach. All patients need a reliever (salbutamol). Add controller (inhaled corticosteroid) if symptoms frequent. Teach inhaler technique. Written asthma action plan.",
+          "medications": [
+            {
+              "name": "Beclomethasone inhaler",
+              "dose": "Low dose: 100-200 mcg BD; Medium: 200-400 mcg BD",
+              "indication": "Controller — start if symptoms >2x/week or any nighttime symptoms"
+            }
+          ],
+          "followUpDays": 30
+        }
+      ]
+    },
+    {
+      "id": "WOUND_CARE",
+      "name": "Wound Assessment & Management",
+      "category": "Surgical/Trauma",
+      "icd10Codes": ["T14", "S01", "S61", "S81"],
+      "applicableTo": "ALL",
+      "steps": [
+        {
+          "id": "assess",
+          "title": "Wound Assessment",
+          "instructions": "Assess: type (laceration/abrasion/puncture/crush), depth, contamination, time since injury, tendon/nerve/vessel involvement, foreign bodies."
+        },
+        {
+          "id": "clean",
+          "title": "Clean & Irrigate",
+          "instructions": "Copious irrigation with clean water or normal saline. Remove visible debris and foreign bodies. Debride devitalized tissue. Clean wound with antiseptic (povidone-iodine or chlorhexidine).",
+          "requiredActions": ["Irrigation", "Foreign body check", "Wound measurement/documentation"]
+        },
+        {
+          "id": "tetanus",
+          "title": "Tetanus Prophylaxis",
+          "instructions": "Check immunization status. Clean minor wound: TT if >10 years since last dose. Tetanus-prone wound (dirty, >6 hrs, deep/puncture): TT if >5 years + consider TIG if incomplete/unknown primary series.",
+          "medications": [
+            {
+              "name": "Tetanus Toxoid (TT)",
+              "dose": "0.5 ml IM",
+              "indication": "Tetanus-prone wound with incomplete/unknown immunization"
+            }
+          ]
+        },
+        {
+          "id": "treat",
+          "title": "Treatment & Closure",
+          "instructions": "Primary closure if: clean wound <6 hours old (face: up to 24 hrs). Delayed primary closure: contaminated wounds, >6 hours. Leave open: infected/heavily contaminated wounds, bite wounds.",
+          "medications": [
+            {
+              "name": "Amoxicillin-Clavulanate",
+              "dose": "Adults: 625 mg TDS; Children: 25 mg/kg/day divided TDS",
+              "duration": "5-7 days",
+              "indication": "Only for: bite wounds, crush injuries, heavy contamination, immunocompromised patients"
+            }
+          ],
+          "referralCriteria": ["Tendon/nerve/vessel injury", "Joint involvement", "Fracture", "Significant tissue loss", "Facial wounds requiring plastic surgery"]
+        }
+      ]
+    }
+  ]
+}

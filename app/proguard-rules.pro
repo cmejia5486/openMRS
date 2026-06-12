@@ -1,61 +1,36 @@
-# ───────────── Compose ─────────────
--keep class androidx.compose.** { *; }
+# SQLCipher (zetetic sqlcipher-android 4.6+)
+-keep class net.zetetic.database.sqlcipher.** { *; }
+-dontwarn net.zetetic.database.sqlcipher.**
 
-# ───────────── Your app package ─────────────
--keep class com.lyecdevelopers.core.** { *; }
+# Bouncy Castle
+-keep class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
 
-# ───────────── Hilt & DI ─────────────
--keep class dagger.hilt.** { *; }
--keep class javax.inject.** { *; }
--keep class dagger.internal.** { *; }
+# Room
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
 
-# ───────────── WorkManager + Hilt Worker ─────────────
--keep class androidx.work.Worker { *; }
--keep class androidx.hilt.work.HiltWorkerFactory { *; }
--keep class androidx.hilt.work.** { *; }
+# Sherpa-ONNX (JNI native speech recognition)
+-keep class com.k2fsa.sherpa.onnx.** { *; }
+-dontwarn com.k2fsa.sherpa.onnx.**
 
-# ───────────── Room ─────────────
--keep class androidx.room.** { *; }
--keep @androidx.room.* class * { *; }
+# ASR pipeline
+-keep class com.chartlite.app.asr.SherpaASRPipeline { *; }
+-keep class com.chartlite.app.asr.ModelDownloader { *; }
+-keep class com.chartlite.app.asr.ModelDownloader$DownloadState { *; }
+-keep class com.chartlite.app.asr.ModelDownloader$DownloadState$* { *; }
 
-# ───────────── Moshi JSON ─────────────
--keep class com.squareup.moshi.** { *; }
--keep @com.squareup.moshi.JsonClass class * { *; }
+# ChartLite LLM (on-device llama.cpp JNI bridge)
+-keep class com.chartlite.llm.** { *; }
+-dontwarn com.chartlite.llm.**
 
-# ───────────── Retrofit interfaces ─────────────
--keep interface retrofit2.** { *; }
-
-# ───────────── Coil ─────────────
--keep class coil.** { *; }
-
-# ───────────── Firebase ─────────────
-# Firebase Crashlytics needs mapping file upload — no keep needed for basic config.
-# If you have custom analytics events with reflection, keep them here.
-
-# ───────────── Android FHIR ─────────────
--keep class com.google.android.fhir.** { *; }
-
-# ───────────── Google Play Startup ─────────────
--keep class androidx.startup.** { *; }
-
-# ───────────── DataStore ─────────────
--keep class androidx.datastore.** { *; }
-
-# ───────────── Security Crypto ─────────────
--keep class androidx.security.crypto.** { *; }
-
-# ───────────── Your Application class ─────────────
--keep class com.lyecdevelopers.ugandaemrmobile.**Application { *; }
-
-# ───────────── Keep ViewModels ─────────────
--keep class *ViewModel
-
-# ───────────── Activities & Fragments ─────────────
--keep class * extends android.app.Activity
--keep class * extends androidx.fragment.app.Fragment
-
-# ───────────── Keep Kotlin metadata & annotations ─────────────
--keepattributes *Annotation*, Signature, InnerClasses
-
-# ───────────── Keep enums (sealed classes safety) ─────────────
--keepclassmembers enum * { *; }
+# Gson model classes — keep all classes deserialized via gson.fromJson
+-keep class com.chartlite.app.facilities.** { *; }
+-keep class com.chartlite.app.protocols.** { *; }
+-keep class com.chartlite.app.model.** { *; }
+-keep class com.chartlite.app.sync.SyncEnvelope { *; }
+-keep class com.chartlite.app.sync.SyncPayload { *; }
+-keep class com.chartlite.app.sync.CrossFacilitySyncPayload { *; }
+-keep class com.chartlite.app.cdss.StaticCDSS$DrugInteractionWrapper { *; }
+-keep class com.chartlite.app.cdss.StaticCDSS$DrugInteraction { *; }
+-keep class com.chartlite.app.auth.JoinCodeManager$JoinCode { *; }

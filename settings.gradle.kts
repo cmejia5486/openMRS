@@ -1,16 +1,11 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -19,13 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "UgandaEMRMobile"
+rootProject.name = "chartlite"
 include(":app")
-include(":auth")
-include(":sync")
-include(":settings")
-include(":worklist")
-include(":core")
-include(":core-navigation")
-include(":main")
-include(":form")
+include(":llm")
+include(":benchmark")

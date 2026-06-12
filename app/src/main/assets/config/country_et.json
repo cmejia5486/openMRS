@@ -1,0 +1,17 @@
+{
+  "country": "ET",
+  "name": "Ethiopia",
+  "languages": ["am", "en", "om", "ti"],
+  "defaultLanguage": "am",
+  "formularyFile": "formulary/et_formulary.json",
+  "icd10File": "icd10/phc_top300.json",
+  "cdssRules": "cdss/et_rules.json",
+  "languageModelDir": "lm/et/",
+  "smsEnabled": true,
+  "nationalIdFormat": "^[A-Z0-9]{10,12}$",
+  "nationalIdLabel": "National ID",
+  "phoneFormat": "^\\+251\\d{9}$",
+  "dateFormat": "dd/MM/yyyy",
+  "currencyCode": "ETB",
+  "facilityIdPrefix": "ET"
+}

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChartLite | Our Approach</title>
+  <meta name="description" content="Technology should adapt to how medicine is practiced, not force clinicians to change their workflow.">
+  <meta name="theme-color" content="#F9F8F6">
+  <link rel="canonical" href="https://chartlite.health/approach">
+  <meta property="og:url" content="https://chartlite.health/approach">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ChartLite | Our Approach">
+  <meta property="og:description" content="Technology should adapt to how medicine is practiced, not force clinicians to change their workflow.">
+  <meta property="og:site_name" content="ChartLite">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #F9F8F6;
+      --text-color: #2b2b2b;
+      --text-muted: #666666;
+      --primary-dark: #1A2E35;
+      --accent: #A27B5C;
+      --surface: #FFFFFF;
+      --border: #E5E0D8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, .serif {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-dark);
+      font-weight: 400;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Navbar ── */
+    nav { padding: 32px 0; border-bottom: 1px solid var(--border); margin-bottom: 64px; }
+    .nav-inner { display: flex; justify-content: space-between; align-items: center; }
+    .logo {
+      font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600;
+      color: var(--primary-dark); text-decoration: none; letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a {
+      text-decoration: none; color: var(--text-color); font-size: 12px;
+      letter-spacing: 0.04em; text-transform: uppercase; font-weight: 500; transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a.active { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 4px; }
+    .nav-cta { border-bottom: 1px solid var(--primary-dark); padding-bottom: 4px; }
+
+    /* ── Hamburger Menu ── */
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      width: 32px; height: 24px; position: relative; z-index: 101;
+    }
+    .hamburger span {
+      display: block; width: 100%; height: 2px; background: var(--primary-dark);
+      position: absolute; left: 0; transition: all 0.3s ease;
+    }
+    .hamburger span:nth-child(1) { top: 2px; }
+    .hamburger span:nth-child(2) { top: 11px; }
+    .hamburger span:nth-child(3) { top: 20px; }
+    .hamburger.open span:nth-child(1) { top: 11px; transform: rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { top: 11px; transform: rotate(-45deg); }
+
+    .mobile-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(26, 46, 53, 0.95); z-index: 100; flex-direction: column;
+      justify-content: center; align-items: center; gap: 24px;
+    }
+    .mobile-overlay.open { display: flex; }
+    .mobile-overlay a {
+      text-decoration: none; color: #fff; font-size: 20px; font-weight: 400;
+      font-family: 'Playfair Display', serif; letter-spacing: 0.02em;
+      padding: 12px 0; transition: opacity 0.3s;
+    }
+    .mobile-overlay a:hover { opacity: 0.7; }
+    .mobile-overlay a.active { border-bottom: 1px solid var(--accent); color: var(--accent); }
+
+    /* ── Page Header ── */
+    .page-header { text-align: center; margin-bottom: 80px; }
+    .page-header h1 { font-size: 48px; margin-bottom: 20px; letter-spacing: -0.01em; }
+    .page-header p {
+      font-size: 18px; color: var(--text-muted); max-width: 640px;
+      margin: 0 auto; font-weight: 300; line-height: 1.7;
+    }
+
+    /* ── Section Headers ── */
+    .section-block { margin-bottom: 96px; }
+    .section-header { margin-bottom: 40px; }
+    .section-header h2 { font-size: 32px; margin-bottom: 12px; }
+    .section-header p {
+      color: var(--text-muted); font-size: 16px; font-weight: 300;
+      max-width: 680px; line-height: 1.7;
+    }
+    .section-header.centered { text-align: center; }
+    .section-header.centered p { margin: 0 auto; }
+
+    /* ── Workflow Steps ── */
+    .workflow-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    .workflow-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 36px 28px; position: relative; transition: box-shadow 0.3s ease;
+    }
+    .workflow-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); }
+    .workflow-card .step-number {
+      font-family: 'Playfair Display', serif; font-size: 40px;
+      color: var(--accent); opacity: 0.35; line-height: 1; margin-bottom: 20px;
+    }
+    .workflow-card h3 {
+      font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 600;
+      color: var(--primary-dark); margin-bottom: 12px;
+    }
+    .workflow-card p {
+      font-size: 14px; color: var(--text-muted); line-height: 1.7; font-weight: 300;
+    }
+    .workflow-card .card-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px; border-radius: 8px; margin-bottom: 20px;
+    }
+    .workflow-card .card-icon svg { width: 24px; height: 24px; }
+
+    .icon-voice { background: #F3F2EE; color: var(--primary-dark); }
+    .icon-extract { background: #F3F2EE; color: var(--primary-dark); }
+    .icon-review { background: #F3F2EE; color: var(--primary-dark); }
+
+    /* ── Intro Text Block ── */
+    .intro-text {
+      max-width: 720px; margin: 0 auto 48px; text-align: center;
+    }
+    .intro-text p {
+      font-size: 16px; color: var(--text-muted); font-weight: 300; line-height: 1.8;
+    }
+
+    /* ── Reality Grid ── */
+    .reality-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+    }
+    .reality-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 28px; display: flex; gap: 20px; align-items: flex-start;
+      transition: box-shadow 0.3s ease;
+    }
+    .reality-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); }
+    .reality-card .reality-icon {
+      width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .reality-card .reality-icon svg { width: 22px; height: 22px; }
+    .reality-challenge {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+      font-weight: 500; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .reality-card h4 {
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
+      color: var(--primary-dark); margin-bottom: 8px;
+    }
+    .reality-card p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.6; font-weight: 300;
+    }
+
+    .icon-offline { background: #F3F2EE; color: var(--primary-dark); }
+    .icon-device { background: #F3F2EE; color: var(--primary-dark); }
+    .icon-simple { background: #F3F2EE; color: var(--primary-dark); }
+    .icon-secure { background: #F3F2EE; color: var(--primary-dark); }
+
+    /* ── Separator ── */
+    .section-separator {
+      border: none; border-top: 1px solid var(--border);
+      margin: 0 0 96px 0;
+    }
+
+    /* ── Open Source Section ── */
+    .open-source-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin-top: 40px;
+    }
+    .os-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px; text-align: center;
+      transition: box-shadow 0.3s ease;
+    }
+    .os-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); }
+    .os-value {
+      font-family: 'Playfair Display', serif; font-size: 22px;
+      color: var(--primary-dark); margin-bottom: 6px;
+    }
+    .os-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); font-weight: 500;
+    }
+
+    /* ── Highlight Box ── */
+    .highlight-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 28px; margin-top: 32px;
+    }
+    .highlight-box p {
+      font-size: 14px; color: var(--text-muted); line-height: 1.7; font-weight: 300;
+    }
+    .highlight-box code {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+      background: var(--bg-color); padding: 2px 6px; border-radius: 3px;
+      color: var(--primary-dark);
+    }
+
+    /* ── CTA Section ── */
+    .cta-section {
+      padding: 80px 0; border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .cta-quote {
+      font-family: 'Playfair Display', serif; font-size: 28px;
+      color: var(--primary-dark); font-style: italic; font-weight: 400;
+      max-width: 680px; margin: 0 auto 32px; line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+    .cta-button {
+      display: inline-block; padding: 14px 36px; background: var(--primary-dark);
+      color: #fff; text-decoration: none; border-radius: 6px; font-size: 14px;
+      font-weight: 500; letter-spacing: 0.04em; transition: background 0.3s ease;
+    }
+    .cta-button:hover { background: #243E47; }
+
+    /* ── Footer ── */
+    footer { padding: 64px 0; text-align: center; border-top: 1px solid var(--border); }
+    footer .logo { display: inline-block; margin-bottom: 24px; }
+    footer p { color: var(--text-muted); font-size: 13px; }
+    .footer-links { margin-top: 24px; display: flex; justify-content: center; gap: 24px; }
+    .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; }
+    .footer-links a:hover { color: var(--primary-dark); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 0; margin-bottom: 40px; }
+      .nav-links { gap: 16px; }
+      .nav-links a { font-size: 12px; }
+      .page-header h1 { font-size: 32px; }
+      .page-header { margin-bottom: 56px; }
+      .section-header h2 { font-size: 26px; }
+      .section-block { margin-bottom: 72px; }
+
+      .workflow-grid { grid-template-columns: 1fr; }
+      .reality-grid { grid-template-columns: 1fr; }
+      .open-source-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .cta-quote { font-size: 24px; }
+    }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .hamburger { display: block; }
+      .page-header h1 { font-size: 26px; }
+      .page-header p { font-size: 16px; }
+      .section-header h2 { font-size: 22px; }
+
+      .open-source-grid { grid-template-columns: 1fr 1fr; }
+      .cta-quote { font-size: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <div class="nav-links">
+        <a href="approach.html" class="active">Our Approach</a>
+        <a href="technology.html">Technology</a>
+        <a href="sms-demo.html">Portable Record</a>
+        <a href="connectivity.html">Connectivity</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="ai-pipeline.html">AI Pipeline</a>
+        <a href="index.html#download" class="nav-cta">Get Started</a>
+      </div>
+      <button class="hamburger" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-overlay" id="mobileMenu" role="dialog" aria-label="Navigation menu">
+    <a href="approach.html" class="active">Our Approach</a>
+    <a href="technology.html">Technology</a>
+    <a href="sms-demo.html">Portable Record</a>
+    <a href="connectivity.html">Connectivity</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="ai-pipeline.html">AI Pipeline</a>
+    <a href="index.html#download">Get Started</a>
+  </div>
+
+  <main class="container">
+
+    <!-- Page Header -->
+    <section class="page-header">
+      <h1>Our Approach</h1>
+      <p>Technology should adapt to how medicine is practiced, not force clinicians to change their workflow.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         1. Voice-First Documentation
+         ═══════════════════════════════════════════ -->
+    <section class="section-block">
+      <div class="section-header centered">
+        <h2>Voice-first documentation</h2>
+        <p>Clinicians speak naturally. No menus, no checkboxes, no forms. The device listens and understands.</p>
+      </div>
+
+      <div class="intro-text">
+        <p>Clinical documentation should not require a clinician to become a data entry clerk. ChartLite captures the way doctors already communicate &mdash; through spoken language &mdash; and transforms it into structured medical records automatically.</p>
+      </div>
+
+      <div class="workflow-grid">
+        <div class="workflow-card">
+          <div class="step-number">01</div>
+          <div class="card-icon icon-voice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </div>
+          <h3>Speak Your Assessment</h3>
+          <p>Discuss symptoms, observations, and treatment plans naturally. Press the mic button and talk as you would to a colleague. Short dictation snippets capture vitals, diagnoses, and medications in your own words.</p>
+        </div>
+        <div class="workflow-card">
+          <div class="step-number">02</div>
+          <div class="card-icon icon-extract">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <h3>Instant Structure</h3>
+          <p>On-device AI extracts diagnoses, vitals, medications, and clinical findings automatically. ICD-10 codes matched from a local database of 300 primary care conditions. Drug names resolved against a 515-entry national formulary.</p>
+        </div>
+        <div class="workflow-card">
+          <div class="step-number">03</div>
+          <div class="card-icon icon-review">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <h3>Review and Save</h3>
+          <p>A formatted clinical note is generated for brief review. Encounter summary, insurance claim data, and a full SOAP note &mdash; all produced from your spoken words. Confirm with a single tap.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-separator">
+
+    <!-- ═══════════════════════════════════════════
+         2. Designed for Reality
+         ═══════════════════════════════════════════ -->
+    <section class="section-block">
+      <div class="section-header centered">
+        <h2>Designed for reality</h2>
+        <p>Built for the actual conditions of primary care &mdash; not the ideal ones.</p>
+      </div>
+
+      <div class="reality-grid">
+        <div class="reality-card">
+          <div class="reality-icon icon-offline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+              <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+          </div>
+          <div>
+            <div class="reality-challenge">No reliable internet?</div>
+            <h4>Works 100% offline</h4>
+            <p>Every feature &mdash; voice recognition, clinical extraction, drug safety alerts, encrypted storage &mdash; runs entirely on the device. No server calls, no cloud dependency, no data charges.</p>
+          </div>
+        </div>
+        <div class="reality-card">
+          <div class="reality-icon icon-device">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </div>
+          <div>
+            <div class="reality-challenge">Expensive devices?</div>
+            <h4>Runs on $80 Android phones</h4>
+            <p>Optimized for the Samsung Galaxy A03 with 2 GB RAM. Hardware-aware model selection automatically chooses the right AI model tier for your device. No flagship hardware required.</p>
+          </div>
+        </div>
+        <div class="reality-card">
+          <div class="reality-icon icon-simple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+              <line x1="9" y1="9" x2="9.01" y2="9"/>
+              <line x1="15" y1="9" x2="15.01" y2="9"/>
+            </svg>
+          </div>
+          <div>
+            <div class="reality-challenge">Complex training?</div>
+            <h4>Speak naturally, no learning curve</h4>
+            <p>If you can talk to a patient, you can use ChartLite. No EHR training sessions, no template memorization, no workflow disruption. The interface is your voice.</p>
+          </div>
+        </div>
+        <div class="reality-card">
+          <div class="reality-icon icon-secure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="reality-challenge">Data security?</div>
+            <h4>Bank-grade encryption on device</h4>
+            <p>Six layers of encryption protect patient data at rest and in transit. SQLCipher database encryption, AES-256-GCM for SMS records, PBKDF2 PIN hashing. All data stays on the device unless you choose to sync.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-separator">
+
+    <!-- ═══════════════════════════════════════════
+         3. Open Source, Always Free
+         ═══════════════════════════════════════════ -->
+    <section class="section-block">
+      <div class="section-header centered">
+        <h2>Open source, always free</h2>
+        <p>ChartLite is open-source and will always be free for clinical use. No subscriptions, no hidden fees, no vendor lock-in.</p>
+      </div>
+
+      <div class="open-source-grid">
+        <div class="os-card">
+          <div class="os-value">$0</div>
+          <div class="os-label">License Cost</div>
+        </div>
+        <div class="os-card">
+          <div class="os-value">Apache 2.0</div>
+          <div class="os-label">License</div>
+        </div>
+        <div class="os-card">
+          <div class="os-value">3+5</div>
+          <div class="os-label">Active + Planned Country Configs</div>
+        </div>
+        <div class="os-card">
+          <div class="os-value">100%</div>
+          <div class="os-label">Offline Capable</div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <p>Healthcare software should not be a recurring expense for clinics that can barely afford supplies. ChartLite is built as a public good &mdash; free to use, free to modify, free to distribute. The source code is available on GitHub, and every clinical feature works without a server, an account, or a subscription. Fork it, adapt it for your country's formulary, deploy it to your facility. No permission needed.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       4. CTA Section
+       ═══════════════════════════════════════════ -->
+  <section class="cta-section">
+    <div class="container">
+      <p class="cta-quote">&ldquo;A clinic's most valuable resource is the clinician's time. ChartLite restores that time.&rdquo;</p>
+      <a href="index.html#download" class="cta-button">Get Started</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <p>&copy; 2026 ChartLite. Open-source under the Apache License 2.0.</p>
+      <div class="footer-links">
+        <a href="https://github.com/prismindanalytics/chartlite" target="_blank" rel="noopener noreferrer">Source Code</a>
+        <a href="mailto:hello@chartlite.health">Contact the Team</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      var btn = document.querySelector('.hamburger');
+      var menu = document.getElementById('mobileMenu');
+      btn.classList.toggle('open');
+      menu.classList.toggle('open');
+      var isOpen = menu.classList.contains('open');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+      btn.setAttribute('aria-expanded', isOpen);
+      if (isOpen) {
+        menu.querySelector('a').focus();
+      }
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var menu = document.getElementById('mobileMenu');
+        if (menu.classList.contains('open')) {
+          toggleMenu();
+          document.querySelector('.hamburger').focus();
+        }
+      }
+    });
+  </script>
+
+</body>
+
+</html>

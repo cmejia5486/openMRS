@@ -1,0 +1,146 @@
+{
+  "penicillin": {
+    "allergen": "penicillin",
+    "contraindicated": ["0001", "0003", "0004", "0005"],
+    "contraindicatedNames": ["amoxicillin", "ampicillin", "flucloxacillin", "penicillin", "cloxacillin", "piperacillin", "amoxicillin-clavulanate", "co-amoxiclav"],
+    "crossReactivity": ["cephalosporins_1st_gen"],
+    "crossReactivityNames": ["cephalexin", "cefazolin", "cefadroxil"],
+    "severity": "high",
+    "message": "Patient has penicillin allergy. {drug} is a penicillin-type antibiotic. Consider azithromycin or doxycycline."
+  },
+  "cephalosporin": {
+    "allergen": "cephalosporin",
+    "contraindicated": [],
+    "contraindicatedNames": ["cephalexin", "cefazolin", "cefadroxil", "cefuroxime", "cefixime", "ceftriaxone", "cefotaxime", "ceftazidime", "cefepime"],
+    "crossReactivity": [],
+    "crossReactivityNames": ["amoxicillin", "ampicillin"],
+    "severity": "high",
+    "message": "Patient has cephalosporin allergy. {drug} is a cephalosporin. Consider azithromycin, fluoroquinolone, or doxycycline."
+  },
+  "sulfa": {
+    "allergen": "sulfa",
+    "contraindicated": ["0050", "0051"],
+    "contraindicatedNames": ["cotrimoxazole", "sulfamethoxazole", "trimethoprim-sulfamethoxazole", "tmp-smx", "bactrim", "septrin", "sulfadiazine", "sulfasalazine", "dapsone"],
+    "crossReactivity": [],
+    "crossReactivityNames": ["furosemide", "hydrochlorothiazide", "thiazide"],
+    "severity": "high",
+    "message": "Patient has sulfa allergy. {drug} contains sulfonamide. Use alternative antibiotic. Note: cross-reactivity with thiazide diuretics is rare but possible."
+  },
+  "macrolide": {
+    "allergen": "macrolide",
+    "contraindicated": [],
+    "contraindicatedNames": ["azithromycin", "erythromycin", "clarithromycin"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has macrolide allergy. {drug} is a macrolide antibiotic. Consider doxycycline or amoxicillin."
+  },
+  "fluoroquinolone": {
+    "allergen": "fluoroquinolone",
+    "contraindicated": [],
+    "contraindicatedNames": ["ciprofloxacin", "levofloxacin", "moxifloxacin", "ofloxacin", "norfloxacin", "nalidixic acid"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has fluoroquinolone allergy. {drug} is a fluoroquinolone. Consider alternative antibiotic based on sensitivity."
+  },
+  "nsaid": {
+    "allergen": "nsaid",
+    "contraindicated": ["0011", "0012"],
+    "contraindicatedNames": ["ibuprofen", "diclofenac", "naproxen", "piroxicam", "indomethacin", "meloxicam", "ketorolac", "ketoprofen"],
+    "crossReactivity": ["0101"],
+    "crossReactivityNames": ["aspirin"],
+    "severity": "high",
+    "message": "Patient has NSAID allergy. {drug} is an NSAID. Use paracetamol for pain relief."
+  },
+  "aspirin": {
+    "allergen": "aspirin",
+    "contraindicated": ["0101"],
+    "contraindicatedNames": ["aspirin", "acetylsalicylic acid"],
+    "crossReactivity": ["0011", "0012"],
+    "crossReactivityNames": ["ibuprofen", "diclofenac", "naproxen"],
+    "severity": "high",
+    "message": "Patient has aspirin allergy. {drug} may cross-react. Consider alternative analgesic or antiplatelet."
+  },
+  "opioid": {
+    "allergen": "opioid",
+    "contraindicated": ["0120", "0121"],
+    "contraindicatedNames": ["tramadol", "morphine", "codeine", "pethidine", "fentanyl", "oxycodone", "hydromorphone"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has opioid allergy. {drug} is an opioid. Use non-opioid alternatives (paracetamol, NSAIDs if tolerated)."
+  },
+  "ace_inhibitor": {
+    "allergen": "ace_inhibitor",
+    "contraindicated": [],
+    "contraindicatedNames": ["enalapril", "lisinopril", "perindopril", "ramipril", "captopril"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has ACE inhibitor allergy (angioedema risk). {drug} is an ACE inhibitor. Use ARB (losartan) or calcium channel blocker instead."
+  },
+  "abacavir": {
+    "allergen": "abacavir",
+    "contraindicated": [],
+    "contraindicatedNames": ["abacavir", "abc"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has abacavir hypersensitivity (HLA-B*5701). {drug} is CONTRAINDICATED — can cause fatal reaction. Use TDF-based regimen instead."
+  },
+  "nevirapine": {
+    "allergen": "nevirapine",
+    "contraindicated": [],
+    "contraindicatedNames": ["nevirapine", "nvp"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has nevirapine allergy (Stevens-Johnson syndrome risk). {drug} is CONTRAINDICATED. Use efavirenz or dolutegravir-based regimen."
+  },
+  "isoniazid": {
+    "allergen": "isoniazid",
+    "contraindicated": [],
+    "contraindicatedNames": ["isoniazid", "inh"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has isoniazid allergy. {drug} should not be used. Consult TB treatment guidelines for alternative regimen."
+  },
+  "rifampicin": {
+    "allergen": "rifampicin",
+    "contraindicated": [],
+    "contraindicatedNames": ["rifampicin", "rifampin", "rifabutin"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has rifampicin hypersensitivity. {drug} should not be used. Consult TB specialist for alternative regimen."
+  },
+  "local_anesthetic": {
+    "allergen": "local_anesthetic",
+    "contraindicated": [],
+    "contraindicatedNames": ["lidocaine", "lignocaine", "bupivacaine", "ropivacaine", "prilocaine"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has local anesthetic allergy. {drug} is a local anesthetic. Use alternative agent or refer for allergy testing."
+  },
+  "tetracycline": {
+    "allergen": "tetracycline",
+    "contraindicated": [],
+    "contraindicatedNames": ["tetracycline", "doxycycline", "minocycline"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has tetracycline allergy. {drug} is a tetracycline. Consider azithromycin or amoxicillin as alternative."
+  },
+  "aminoglycoside": {
+    "allergen": "aminoglycoside",
+    "contraindicated": [],
+    "contraindicatedNames": ["gentamicin", "amikacin", "streptomycin", "kanamycin", "tobramycin", "neomycin"],
+    "crossReactivity": [],
+    "crossReactivityNames": [],
+    "severity": "high",
+    "message": "Patient has aminoglycoside allergy. {drug} is an aminoglycoside. Use alternative antibiotic based on culture sensitivity."
+  }
+}

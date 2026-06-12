@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChartLite — Portable Health Record</title>
+<meta name="description" content="See how a spoken consultation becomes an encrypted SMS that any clinic can decrypt — a complete portable health record demo.">
+<meta name="theme-color" content="#F9F8F6">
+<link rel="canonical" href="https://chartlite.health/sms-demo">
+<meta property="og:url" content="https://chartlite.health/sms-demo">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ChartLite — Portable Health Record">
+<meta property="og:description" content="See how a spoken consultation becomes an encrypted SMS that any clinic can decrypt.">
+<meta property="og:site_name" content="ChartLite">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-color: #F9F8F6; --surface: #FFFFFF; --border: #E5E0D8;
+    --primary-dark: #1A2E35; --accent: #A27B5C; --accent-light: #F3EDE7;
+    --green: #3D7A5F; --green-light: #EBF5F0;
+    --red: #B04040; --red-light: #FDF2F2;
+    --amber: #B8860B; --amber-light: #FFF8E7;
+    --blue: #3B6B8A; --blue-light: #EDF4F8;
+    --purple: #6B5B8A; --purple-light: #F3F0F8;
+    --gray-50: #FAFAF8; --gray-100: #F3F2EE; --gray-200: #E5E0D8;
+    --gray-300: #D1CBC1; --gray-400: #9C9587; --gray-500: #6B6459;
+    --gray-600: #4B4740; --gray-700: #37342F; --gray-800: #2B2925; --gray-900: #1A1917;
+    --radius: 4px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg-color); color: var(--gray-900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .site-nav { padding: 32px 0; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+  .site-nav .nav-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600; color: var(--primary-dark); text-decoration: none; letter-spacing: -0.02em; }
+  .nav-links { display: flex; gap: 20px; }
+  .nav-links a { text-decoration: none; color: var(--gray-900); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 500; transition: color 0.3s; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a.active { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 4px; }
+  .nav-cta { border-bottom: 1px solid var(--primary-dark) !important; padding-bottom: 4px; }
+
+  /* ── Hamburger Menu ── */
+  .hamburger {
+    display: none; background: none; border: none; cursor: pointer;
+    width: 32px; height: 24px; position: relative; z-index: 101;
+  }
+  .hamburger span {
+    display: block; width: 100%; height: 2px; background: var(--primary-dark);
+    position: absolute; left: 0; transition: all 0.3s ease;
+  }
+  .hamburger span:nth-child(1) { top: 2px; }
+  .hamburger span:nth-child(2) { top: 11px; }
+  .hamburger span:nth-child(3) { top: 20px; }
+  .hamburger.open span:nth-child(1) { top: 11px; transform: rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { top: 11px; transform: rotate(-45deg); }
+
+  .mobile-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(26, 46, 53, 0.95); z-index: 100; flex-direction: column;
+    justify-content: center; align-items: center; gap: 24px;
+  }
+  .mobile-overlay.open { display: flex; }
+  .mobile-overlay a {
+    text-decoration: none; color: #fff; font-size: 20px; font-weight: 400;
+    font-family: 'Playfair Display', serif; letter-spacing: 0.02em;
+    padding: 12px 0; transition: opacity 0.3s;
+  }
+  .mobile-overlay a:hover { opacity: 0.7; }
+  .mobile-overlay a.active { border-bottom: 1px solid var(--accent); color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .nav-links { display: none; }
+    .hamburger { display: block; }
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
+  h1, h2, h3, .serif { font-family: 'Playfair Display', serif; color: var(--primary-dark); font-weight: 400; }
+  h1 { font-size: 42px; line-height: 1.2; }
+  h2 { font-size: 24px; margin-bottom: 12px; }
+  h3 { font-size: 18px; margin-bottom: 8px; }
+
+  .hero {
+    background: var(--primary-dark);
+    color: white; border-radius: var(--radius); padding: 56px 40px; margin-bottom: 40px; text-align: center;
+  }
+  .hero h1 { font-size: 42px; color: white; margin-bottom: 8px; }
+  .hero p { color: rgba(255,255,255,0.7); font-size: 16px; font-weight: 300; }
+
+  .card { background: var(--surface); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; border: 1px solid var(--border); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .nav-links { gap: 16px; } .nav-links a { font-size: 12px; } }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
+  .tab {
+    padding: 10px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--gray-600); transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .tab.active { background: var(--primary-dark); color: white; border-color: var(--primary-dark); }
+  .tab:hover:not(.active) { background: var(--gray-100); border-color: var(--gray-300); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 12px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
+    border: none; cursor: pointer; transition: all 0.3s; letter-spacing: 0.03em;
+  }
+  .btn-primary { background: var(--primary-dark); color: white; }
+  .btn-primary:hover { background: #243D46; }
+  .btn-primary:disabled { background: var(--gray-300); cursor: not-allowed; }
+  .btn-outline { background: var(--surface); color: var(--gray-700); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--gray-50); }
+  .btn-red { background: var(--red); color: white; }
+  .btn-red:hover { opacity: 0.9; }
+
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
+  .tag-red { background: #F3F0EE; color: #8A6E5C; }
+  .tag-amber { background: #F3F2EE; color: #7A7A5C; }
+  .tag-green { background: #EEF3F0; color: #5C7A6E; }
+  .tag-blue { background: #EDF1F3; color: #5B778A; }
+  .tag-purple { background: #F0EEF3; color: #6B5B7A; }
+
+  .highlight-box { border-left: 3px solid; padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 10px 0; font-size: 14px; }
+  .highlight-box.green { border-color: var(--border); background: var(--gray-50); }
+  .highlight-box.red { border-color: var(--border); background: var(--gray-50); }
+  .highlight-box.blue { border-color: var(--border); background: var(--gray-50); }
+  .highlight-box.amber { border-color: var(--border); background: var(--gray-50); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 600px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { text-align: center; padding: 18px; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--border); }
+  .stat-value { font-size: 28px; font-weight: 600; font-family: 'Playfair Display', serif; }
+  .stat-label { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); color: var(--gray-500); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--gray-100); }
+
+  /* Flow (used by recovery & encryption flows) */
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 20px 0; }
+  .flow-step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500; min-width: 90px; transition: all 0.3s; }
+  .flow-step.active { border-color: var(--green); background: var(--green-light); }
+  .flow-arrow { font-size: 18px; color: var(--gray-400); }
+
+  /* Pipeline Visualization */
+  .pipeline { position: relative; }
+  .pipeline-step { display: flex; gap: 20px; margin-bottom: 4px; }
+  .pipeline-step .step-marker { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .pipeline-step .step-number {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--gray-100); border: 2px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+    color: var(--gray-400); transition: all 0.5s ease; position: relative; z-index: 2;
+  }
+  .pipeline-step .step-line { width: 2px; flex: 1; background: var(--gray-200); min-height: 12px; transition: background 0.5s ease; }
+  .pipeline-step:last-child .step-line { display: none; }
+  .pipeline-step .step-body { flex: 1; padding-bottom: 12px; }
+  .pipeline-step .step-header { cursor: pointer; padding: 8px 0; }
+  .pipeline-step .step-header h3 { font-size: 17px; margin-bottom: 0; transition: color 0.3s; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--gray-400); }
+  .pipeline-step .step-subtitle { font-size: 13px; color: var(--gray-400); margin: 0; transition: color 0.3s; }
+  .pipeline-step .step-detail {
+    max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.3s ease;
+  }
+  .pipeline-step.active .step-number { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 0 0 4px rgba(162,123,92,0.2); }
+  .pipeline-step.active .step-header h3 { color: var(--primary-dark); }
+  .pipeline-step.active .step-subtitle { color: var(--gray-600); }
+  .pipeline-step.active .step-detail { max-height: 400px; opacity: 1; margin-top: 12px; }
+  .pipeline-step.completed .step-number { background: var(--green); border-color: var(--green); color: white; }
+  .pipeline-step.completed .step-line { background: var(--green); }
+  .pipeline-step.completed .step-header h3 { color: var(--gray-600); }
+  .pipeline-step.completed .step-subtitle { color: var(--gray-400); }
+
+  .data-preview { background: var(--gray-50); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 14px; }
+  .preview-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-400); font-weight: 700; margin-bottom: 8px; }
+  .transcript-text { font-style: italic; color: var(--gray-600); line-height: 1.7; font-size: 14px; }
+  .extracted-fields { display: grid; gap: 8px; }
+  .field-row { display: flex; gap: 12px; align-items: baseline; }
+  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-400); font-weight: 700; min-width: 52px; }
+  .field-value { font-size: 14px; color: var(--gray-700); }
+  .field-value.val-red { color: var(--red); font-weight: 600; }
+  .mini-bytes { display: flex; flex-wrap: wrap; gap: 1px; }
+  .mini-byte { width: 10px; height: 12px; border-radius: 1px; }
+  .mini-phone { background: var(--gray-800); border-radius: 14px; padding: 8px; max-width: 220px; }
+  .mini-phone-screen { background: white; border-radius: 10px; padding: 10px; }
+  .mini-sms { background: var(--accent-light); border-radius: 10px 10px 10px 2px; padding: 8px 10px; font-family: 'Courier New', monospace; font-size: 8px; word-break: break-all; line-height: 1.3; color: var(--gray-600); }
+
+  .pipeline-controls { display: flex; gap: 8px; align-items: center; }
+  .pipeline-progress { flex: 1; height: 3px; background: var(--gray-200); border-radius: 2px; overflow: hidden; }
+  .pipeline-progress-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; width: 0; }
+
+  @media (max-width: 600px) {
+    .pipeline-step { gap: 12px; }
+    .pipeline-step .step-number { width: 32px; height: 32px; font-size: 12px; }
+    .pipeline-step .step-header h3 { font-size: 15px; }
+    .extracted-fields { gap: 6px; }
+    .field-row { flex-direction: column; gap: 2px; }
+  }
+
+  /* Phone */
+  .phone { background: var(--gray-800); border-radius: 28px; padding: 12px; max-width: 340px; margin: 0 auto; }
+  .phone-notch { width: 100px; height: 6px; background: var(--gray-700); border-radius: 3px; margin: 0 auto 8px; }
+  .phone-screen { background: white; border-radius: 18px; padding: 16px; min-height: 180px; }
+  .sms-bubble { background: var(--accent-light); border-radius: 16px 16px 16px 4px; padding: 12px 16px; margin-bottom: 8px; font-family: 'Courier New', monospace; font-size: 10px; word-break: break-all; line-height: 1.4; color: var(--gray-700); }
+  .sms-label { font-size: 11px; color: var(--gray-500); margin-bottom: 4px; }
+  .sms-time { text-align: right; font-size: 10px; color: var(--gray-400); margin-top: 4px; }
+
+  /* Patient profile */
+  .patient-profile { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--accent-light); border-radius: var(--radius); margin-bottom: 16px; }
+  .patient-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; flex-shrink: 0; }
+  .patient-info h3 { margin-bottom: 0; color: var(--primary-dark); }
+  .patient-info p { font-size: 13px; color: var(--gray-500); margin: 0; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item { position: relative; margin-bottom: 16px; padding: 12px; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--border); transition: all 0.3s; }
+  .tl-item.current { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 0 0 3px rgba(162,123,92,0.15); }
+  .tl-item.future { opacity: 0.35; }
+  .tl-dot { position: absolute; left: -24px; top: 16px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid white; box-shadow: 0 0 0 2px var(--accent); }
+  .tl-item.abnormal .tl-dot { background: var(--red); box-shadow: 0 0 0 2px var(--red); }
+  .tl-item.future .tl-dot { background: var(--gray-300); box-shadow: 0 0 0 2px var(--gray-300); }
+  .tl-date { font-size: 12px; color: var(--gray-500); font-weight: 600; }
+  .tl-clinic { font-size: 11px; color: var(--gray-400); }
+  .tl-content { font-size: 13px; margin-top: 4px; }
+  .tl-content strong { color: var(--primary-dark); }
+
+  /* Recovery input */
+  .decrypt-form { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  .decrypt-form .field { flex: 1; min-width: 180px; }
+  .decrypt-form label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 4px; }
+  .decrypt-form input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 15px; font-family: 'Courier New', monospace; letter-spacing: 2px; transition: border-color 0.2s; background: var(--surface); }
+  .decrypt-form input:focus { outline: none; border-color: var(--accent); }
+
+  /* Byte map */
+  .byte-map { display: flex; flex-wrap: wrap; gap: 2px; margin: 16px 0; }
+  .byte-cell { width: 18px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: white; border-radius: 2px; cursor: pointer; transition: transform 0.15s; }
+  .byte-cell:hover { transform: scale(1.4); z-index: 10; }
+  .bc-version { background: var(--gray-700); } .bc-encounter { background: var(--blue); }
+  .bc-history { background: var(--green); } .bc-chronic { background: var(--amber); }
+  .bc-abnormal { background: var(--red); } .bc-note { background: var(--gray-400); } .bc-crc { background: var(--gray-800); }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--gray-600); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* Fade in animation */
+  @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeSlideIn 0.4s ease-out; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(162,123,92,0.4); } 50% { box-shadow: 0 0 0 8px rgba(162,123,92,0); } }
+  .pulse { animation: pulse 1.5s ease-in-out 2; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Footer */
+  .site-footer { border-top: 1px solid var(--border); padding: 64px 0; margin-top: 48px; text-align: center; }
+  .site-footer .logo { display: inline-block; margin-bottom: 24px; }
+  .site-footer p { font-size: 13px; color: var(--gray-500); }
+  .footer-links { margin-top: 24px; display: flex; justify-content: center; gap: 24px; }
+  .footer-links a { color: var(--gray-500); text-decoration: none; font-size: 13px; }
+  .footer-links a:hover { color: var(--primary-dark); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">ChartLite.</a>
+    <div class="nav-links">
+      <a href="approach.html">Our Approach</a>
+      <a href="technology.html">Technology</a>
+      <a href="sms-demo.html" class="active">Portable Record</a>
+      <a href="connectivity.html">Connectivity</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="ai-pipeline.html">AI Pipeline</a>
+      <a href="index.html#download" class="nav-cta">Get Started</a>
+    </div>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-overlay" id="mobileMenu" role="dialog" aria-label="Navigation menu">
+  <a href="approach.html">Our Approach</a>
+  <a href="technology.html">Technology</a>
+  <a href="sms-demo.html" class="active">Portable Record</a>
+  <a href="connectivity.html">Connectivity</a>
+  <a href="privacy.html">Privacy</a>
+  <a href="ai-pipeline.html">AI Pipeline</a>
+  <a href="index.html#download">Get Started</a>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>SMS as Portable Health Record</h1>
+    <p>One SMS. Complete health history. No internet required.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('howItWorks', this)">How It Works</button>
+    <button class="tab" onclick="showSection('patientJourney', this)">Patient Journey</button>
+    <button class="tab" onclick="showSection('liveRecovery', this)">Live Recovery</button>
+    <button class="tab" onclick="showSection('wireFormat', this)">Wire Format</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SECTION 1: HOW IT WORKS                            -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="howItWorks" class="section active">
+    <div class="card">
+      <h2>The Problem</h2>
+      <p style="color:var(--gray-600)">In rural sub-Saharan Africa, patients visit multiple clinics with no shared EMR. Paper records get lost. There's no internet for cloud sync. But nearly every patient has a basic phone that can receive SMS.</p>
+      <div class="highlight-box green" style="margin-top:16px">
+        <strong>The solution:</strong> After every visit, the patient receives an encrypted SMS containing their <em>complete</em> significant health history &mdash; chronic conditions, all abnormal results, allergies, and the latest visit. Store only the latest SMS. That's the entire portable health record.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px">
+        <div>
+          <h2>End-to-End Flow</h2>
+          <p style="color:var(--gray-600);font-size:14px;margin:0">How a spoken consultation becomes a portable health record</p>
+        </div>
+        <div class="pipeline-controls">
+          <button class="btn btn-primary" onclick="playPipeline()" id="pipelineBtn">Play</button>
+          <button class="btn btn-outline" onclick="resetPipeline()" style="padding:10px 16px">Reset</button>
+        </div>
+      </div>
+      <div class="pipeline-progress"><div class="pipeline-progress-bar" id="pipelineProgress"></div></div>
+
+      <div class="pipeline" id="pipeline" style="margin-top:20px">
+
+        <div class="pipeline-step" data-step="0">
+          <div class="step-marker"><div class="step-number">1</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-header" onclick="goToStep(0)">
+              <h3>Record</h3>
+              <p class="step-subtitle">Clinician speaks naturally during the consultation</p>
+            </div>
+            <div class="step-detail">
+              <div class="data-preview">
+                <div class="preview-label">Raw Audio Transcript</div>
+                <p class="transcript-text">"Patient complains of persistent headache for three days. Blood pressure is one forty-eight over ninety-four. Continue amlodipine at ten milligrams once daily and add hydrochlorothiazide twelve point five. She is allergic to penicillin, NSAIDs, and sulfa drugs..."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-step="1">
+          <div class="step-marker"><div class="step-number">2</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-header" onclick="goToStep(1)">
+              <h3>Extract</h3>
+              <p class="step-subtitle">On-device AI identifies clinical entities from the transcript</p>
+            </div>
+            <div class="step-detail">
+              <div class="data-preview">
+                <div class="preview-label">Structured Clinical Data</div>
+                <div class="extracted-fields">
+                  <div class="field-row"><span class="field-label">Dx</span><span class="field-value">I10 &mdash; Essential Hypertension</span></div>
+                  <div class="field-row"><span class="field-label">Dx 2</span><span class="field-value">E11.9 &mdash; Type 2 Diabetes</span></div>
+                  <div class="field-row"><span class="field-label">BP</span><span class="field-value val-red">148/94 mmHg</span></div>
+                  <div class="field-row"><span class="field-label">Temp</span><span class="field-value">36.9&deg;C</span></div>
+                  <div class="field-row"><span class="field-label">Pulse</span><span class="field-value">82 bpm</span></div>
+                  <div class="field-row"><span class="field-label">Height</span><span class="field-value">162 cm</span></div>
+                  <div class="field-row"><span class="field-label">SpO2</span><span class="field-value">97%</span></div>
+                  <div class="field-row"><span class="field-label">RR</span><span class="field-value">18 breaths/min</span></div>
+                  <div class="field-row"><span class="field-label">Rx 1</span><span class="field-value">Amlodipine 10mg OD</span></div>
+                  <div class="field-row"><span class="field-label">Rx 2</span><span class="field-value">Metformin 850mg BD</span></div>
+                  <div class="field-row"><span class="field-label">Rx 3</span><span class="field-value">HCTZ 12.5mg OD</span></div>
+                  <div class="field-row"><span class="field-label">Allergy</span><span class="field-value val-red">Penicillin, NSAID, Sulfa</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-step="2">
+          <div class="step-marker"><div class="step-number">3</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-header" onclick="goToStep(2)">
+              <h3>Aggregate</h3>
+              <p class="step-subtitle">Combine current visit with all prior health history</p>
+            </div>
+            <div class="step-detail">
+              <div class="data-preview">
+                <div class="preview-label">Accumulated Health Summary</div>
+                <div class="extracted-fields">
+                  <div class="field-row"><span class="field-label">Visits</span><span class="field-value">7 total across 4 clinics</span></div>
+                  <div class="field-row"><span class="field-label">Chronic</span><span class="field-value">Hypertension (5/7 visits), T2DM (3/7 visits)</span></div>
+                  <div class="field-row"><span class="field-label">Abnormal</span><span class="field-value val-red">BP 148/94 (today), Temp 38.7&deg;C (Dec 2025)</span></div>
+                  <div class="field-row"><span class="field-label">Allergies</span><span class="field-value">Penicillin + NSAID + Sulfa (cumulative)</span></div>
+                  <div class="field-row"><span class="field-label">Growth</span><span class="field-value">78 kg / 162 cm (Z: -0.1 / -0.5)</span></div>
+                  <div class="field-row"><span class="field-label">Vaccines</span><span class="field-value">Influenza, TT (dose 2), COVID</span></div>
+                  <div class="field-row"><span class="field-label">Clinical</span><span class="field-value">Glucose flag (T2DM monitoring)</span></div>
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:var(--gray-500)">Every new SMS replaces the old one &mdash; always contains the complete picture.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-step="3">
+          <div class="step-marker"><div class="step-number">4</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-header" onclick="goToStep(3)">
+              <h3>Encode</h3>
+              <p class="step-subtitle">Compress entire health record into 92 bytes of binary</p>
+            </div>
+            <div class="step-detail">
+              <div class="data-preview">
+                <div class="preview-label">92-Byte Binary Payload</div>
+                <div class="mini-bytes" id="pipelineByteMap"></div>
+                <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
+                  <span style="font-size:11px;color:var(--gray-500)"><span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:var(--blue);vertical-align:middle;margin-right:3px"></span>Current encounter (34B)</span>
+                  <span style="font-size:11px;color:var(--gray-500)"><span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:var(--green);vertical-align:middle;margin-right:3px"></span>Health history (38B)</span>
+                  <span style="font-size:11px;color:var(--gray-500)"><span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:var(--gray-400);vertical-align:middle;margin-right:3px"></span>Notes + CRC (20B)</span>
+                </div>
+                <div style="margin-top:8px;font-size:12px;color:var(--gray-500)">33:1 compression ratio vs. equivalent JSON</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-step="4">
+          <div class="step-marker"><div class="step-number">5</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-header" onclick="goToStep(4)">
+              <h3>Encrypt</h3>
+              <p class="step-subtitle">AES-256-GCM encryption using patient's phone number as key</p>
+            </div>
+            <div class="step-detail">
+              <div class="data-preview">
+                <div class="preview-label">Encryption Pipeline</div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:8px">
+                  <span class="tag tag-blue">92 bytes</span>
+                  <span style="color:var(--gray-400)">&rarr;</span>
+                  <span class="tag tag-purple">PBKDF2 (100K iter)</span>
+                  <span style="color:var(--gray-400)">&rarr;</span>
+                  <span class="tag tag-amber">AES-256-GCM</span>
+                  <span style="color:var(--gray-400)">&rarr;</span>
+                  <span class="tag tag-green">120 bytes</span>
+                </div>
+                <div class="extracted-fields" style="font-size:13px">
+                  <div class="field-row"><span class="field-label">Key</span><span class="field-value">Patient phone number (+ optional PIN)</span></div>
+                  <div class="field-row"><span class="field-label">Nonce</span><span class="field-value">12-byte random IV</span></div>
+                  <div class="field-row"><span class="field-label">Auth</span><span class="field-value">16-byte GCM authentication tag</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pipeline-step" data-step="5">
+          <div class="step-marker"><div class="step-number">6</div></div>
+          <div class="step-body">
+            <div class="step-header" onclick="goToStep(5)">
+              <h3>Deliver</h3>
+              <p class="step-subtitle">Base64 encode and send as a single standard SMS</p>
+            </div>
+            <div class="step-detail">
+              <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+                <div class="mini-phone">
+                  <div style="width:60px;height:4px;background:var(--gray-700);border-radius:2px;margin:0 auto 6px"></div>
+                  <div class="mini-phone-screen">
+                    <div style="font-size:9px;color:var(--gray-500);margin-bottom:3px">From: ChartLite</div>
+                    <div class="mini-sms" id="pipelineSms">Loading...</div>
+                    <div style="font-size:8px;color:var(--gray-400);text-align:right;margin-top:3px">160 chars &middot; 1 SMS</div>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:180px">
+                  <div class="highlight-box green" style="margin:0;font-size:13px">
+                    <strong>One SMS. Complete health record.</strong><br>
+                    The patient keeps only the latest SMS. Any clinician, at any clinic, can decrypt it with just the patient's phone number &mdash; no internet, no server, no paper.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>What's Inside Each SMS</h2>
+      <div class="stat-grid" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-value" style="color:var(--blue)">1</div><div class="stat-label">Latest visit (full detail)</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--amber)">5</div><div class="stat-label">Chronic conditions max</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--red)">3</div><div class="stat-label">Abnormal vitals max</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--green)">255</div><div class="stat-label">Total visits tracked</div></div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <h3>Current Visit</h3>
+          <ul style="font-size:14px;padding-left:20px;color:var(--gray-600)">
+            <li>Date, provider, facility</li>
+            <li>Up to 3 diagnoses (ICD-10)</li>
+            <li>Up to 3 medications with dose + frequency</li>
+            <li>Vitals: BP, temperature, weight, pulse, height, SpO2, respiratory rate</li>
+            <li>Current allergy flags</li>
+            <li>Follow-up instructions</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Accumulated Health History</h3>
+          <ul style="font-size:14px;padding-left:20px;color:var(--gray-600)">
+            <li><strong>Chronic conditions</strong> &mdash; diagnoses seen in 2+ visits (up to 5)</li>
+            <li><strong>Abnormal vitals</strong> &mdash; most recent per type, with dates (up to 3)</li>
+            <li><strong>Cumulative allergies</strong> &mdash; union across every visit</li>
+            <li><strong>Growth summary</strong> &mdash; weight, height, Z-scores</li>
+            <li><strong>Immunizations</strong> &mdash; up to 3 EPI vaccines with dose number</li>
+            <li><strong>Clinical status flags</strong> &mdash; HIV, TB, pregnancy, syphilis, HepB, malaria, anemia, and more</li>
+            <li><strong>Total visit count</strong> &mdash; full care history length</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recovery: Any Clinic, Any Time</h2>
+      <div class="flow" id="recoveryFlow">
+        <div class="flow-step">Patient shows SMS<br><small>on their phone</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">Clinician enters<br><small>patient phone number</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">PBKDF2 derives key<br><small>100K iterations</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">AES-256-GCM decrypt</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step" style="border-color:var(--green);background:var(--green-light)">Complete health record</div>
+      </div>
+      <div class="highlight-box blue" style="margin-top:16px">
+        <strong>No internet. No server. No paper.</strong> The patient's phone IS the health record. The phone number is the key. Any clinician, at any clinic, can recover the full picture in seconds.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How Does the SMS Reach the Provider?</h2>
+      <p style="color:var(--gray-600);margin-bottom:16px">The encrypted SMS lives on the <strong>patient's phone</strong>. When they visit a new clinic, there are several ways to transfer it:</p>
+      <div class="grid-2">
+        <div>
+          <h3>Transfer Methods</h3>
+          <table>
+            <tr><td style="color:var(--gray-500);width:40px">1.</td><td><strong>Forward SMS</strong> &mdash; Patient forwards the encrypted SMS to the clinic's phone number. ChartLite auto-detects it from the inbox</td></tr>
+            <tr><td style="color:var(--gray-500)">2.</td><td><strong>Same device</strong> &mdash; If the clinic phone is also running ChartLite, the SMS is already in the inbox &mdash; just select it in the "Recover SMS" screen</td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>What About Same-Facility Visits?</h3>
+          <div class="highlight-box green">
+            <strong>SMS decryption is not needed within the same facility.</strong> All patient data is already in the local encrypted database (SQLCipher). The SMS is only needed at <em>new</em> clinics that have never seen this patient before.
+          </div>
+          <h3 style="margin-top:16px">SIM Swap / Lost Number?</h3>
+          <ul style="font-size:14px;padding-left:20px;color:var(--gray-600)">
+            <li>The <strong>original clinic keeps a full copy</strong> in the local encrypted database &mdash; the SMS is only for portability</li>
+            <li>If a patient gets a new number, they revisit their clinic to get a fresh SMS encrypted with the new number</li>
+            <li>The patient's phone number on file is updated at registration</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Encryption: Practical Security</h2>
+      <p style="color:var(--gray-600);margin-bottom:16px">The encryption key is the <strong>patient's phone number</strong> &mdash; something they always know, no memorization required.</p>
+      <div class="grid-2">
+        <div>
+          <h3>Default: Phone Number</h3>
+          <ul style="font-size:14px;padding-left:20px;color:var(--gray-600)">
+            <li>The SMS is encrypted using the patient's phone number as the key</li>
+            <li>The clinician asks <em>"what is your phone number?"</em> &mdash; a natural question at any clinic</li>
+            <li>No PIN to remember</li>
+            <li>Works in every country, with every patient</li>
+            <li><strong>Already a massive upgrade over paper records</strong> (which have zero encryption)</li>
+          </ul>
+          <div class="highlight-box green" style="margin-top:12px">
+            <strong>Think of it like paper records.</strong> Paper records are completely unprotected &mdash; anyone can read them. Phone-number-encrypted SMS is protected against casual access while remaining practical for clinic use.
+          </div>
+        </div>
+        <div>
+          <h3>Shared Phones? Optional PIN</h3>
+          <div class="highlight-box blue">
+            For patients who share a phone with family, ChartLite supports an optional 4-digit PIN chosen by the patient. The encryption key becomes <code>phoneNumber:PIN</code> &mdash; even family members who know the number can't decrypt without the PIN.
+          </div>
+          <ul style="font-size:14px;padding-left:20px;color:var(--gray-600);margin-top:12px">
+            <li><strong>No PIN (default)</strong> &mdash; phone number alone. Zero friction, protects against strangers</li>
+            <li><strong>With PIN</strong> &mdash; patient chooses a 4-digit PIN at registration. Protects privacy between family members</li>
+            <li>PIN is <strong>optional and patient-initiated</strong>, never forced</li>
+            <li>Clinician asks: "What's your phone number?" then "Did you set a PIN?"</li>
+          </ul>
+          <h3 style="margin-top:16px">Per-Country Configuration</h3>
+          <div style="font-size:14px;color:var(--gray-600)">
+            Encryption mode is configurable per country deployment. Future versions may support additional key derivation methods for stricter regulatory requirements.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SECTION 2: PATIENT JOURNEY                         -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="patientJourney" class="section">
+    <div class="patient-profile">
+      <div class="patient-avatar">AO</div>
+      <div class="patient-info">
+        <h3>Amara Okafor</h3>
+        <p>Female, 52 &middot; Phone: 072 123 4567 &middot; Patient ID: KFMT-4WRN</p>
+        <p>Known penicillin allergy &middot; Lives in rural Limpopo, visits multiple clinics</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <h2 style="margin-bottom:0">Visit Timeline</h2>
+          <p style="color:var(--gray-500);font-size:13px">Step through each visit to see the SMS health record build up</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="journeyPrev()" id="jprev" disabled>&larr; Previous</button>
+          <button class="btn btn-primary" onclick="journeyNext()" id="jnext">Next Visit &rarr;</button>
+          <button class="btn btn-outline" onclick="journeyReset()">Reset</button>
+        </div>
+      </div>
+      <div id="journeyTimeline" class="timeline"></div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="card" id="journeySmsCard">
+          <h3>SMS on Amara's Phone</h3>
+          <div class="phone">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="sms-label">From: ChartLite Clinic</div>
+              <div class="sms-bubble" id="journeySmsBubble">No visits yet. Click "Next Visit" to begin Amara's story.</div>
+              <div class="sms-time" id="journeySmsTime"></div>
+            </div>
+          </div>
+          <div style="margin-top:12px;text-align:center">
+            <span class="tag tag-green" id="journeySegments" style="display:none"></span>
+            <span class="tag tag-blue" id="journeyBytes" style="display:none"></span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>What a Clinician Sees After Decrypting</h3>
+          <div id="journeyDecrypted">
+            <p style="color:var(--gray-400);font-size:14px">No data yet. Step through visits to build the health record.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SECTION 3: LIVE RECOVERY                           -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="liveRecovery" class="section">
+    <div class="card">
+      <h2>Live Recovery Demo</h2>
+      <p style="color:var(--gray-600);margin-bottom:16px">
+        Amara Okafor walks into Polokwane District Hospital &mdash; a clinic she has <strong>never visited before</strong>. She has no paper records. But she has one SMS on her phone from her last visit at a rural clinic 3 weeks ago.
+      </p>
+      <p style="color:var(--gray-600);margin-bottom:20px">
+        The clinician copies the encrypted SMS into ChartLite and asks Amara for her phone number. <strong>Try it:</strong>
+      </p>
+
+      <div class="decrypt-form">
+        <div class="field">
+          <label>Patient Phone Number</label>
+          <input type="text" id="recPhone" value="0721234567" placeholder="e.g. 0721234567">
+        </div>
+        <button class="btn btn-primary" onclick="runLiveRecovery()" id="recBtn" style="height:44px;margin-bottom:0">
+          Decrypt SMS
+        </button>
+      </div>
+
+      <div style="margin-top:12px">
+        <label style="font-size:13px;color:var(--gray-500);cursor:pointer;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="recPinToggle" onchange="document.getElementById('recPinField').style.display=this.checked?'block':'none'">
+          Patient has a PIN (shared phone)
+        </label>
+        <div id="recPinField" style="display:none;margin-top:8px">
+          <input type="password" id="recPin" placeholder="4-digit PIN" maxlength="4" style="width:140px;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px">
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <p style="font-size:12px;color:var(--gray-400)">Demo phone number pre-filled: <code>0721234567</code> &middot; Try a wrong number to see decryption fail</p>
+      </div>
+    </div>
+
+    <!-- Encrypted SMS visual -->
+    <div class="card" id="recSmsCard">
+      <h3>Encrypted SMS (on Amara's phone)</h3>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="sms-label">From: Tzaneen PHC &middot; 18 Feb 2026</div>
+          <div class="sms-bubble" id="recSmsBubble" style="font-size:9px"></div>
+          <div class="sms-time">18/02/2026 14:32 &middot; 160 chars &middot; 1 SMS &middot; Encrypted</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decryption error (hidden until wrong phone number) -->
+    <div id="recError" style="display:none">
+      <div class="highlight-box red fade-in" style="font-size:15px">
+        <strong>Decryption failed.</strong> The AES-256-GCM authentication tag does not match &mdash; wrong phone number.
+      </div>
+      <div class="card fade-in" style="margin-top:16px">
+        <h3 style="color:var(--red)">Why This Matters</h3>
+        <p style="font-size:14px;color:var(--gray-600)">
+          AES-256-GCM is an <strong>authenticated encryption</strong> scheme. If even one digit of the phone number is wrong, the entire decryption fails &mdash; you don't get partial or garbled data, you get <em>nothing</em>. Only the correct phone number can unlock the health record.
+        </p>
+        <p style="font-size:14px;color:var(--gray-600);margin-top:8px">
+          <strong>Try the correct phone number:</strong> <code>0721234567</code>
+        </p>
+      </div>
+    </div>
+
+    <!-- Decrypted result (hidden until decrypt) -->
+    <div id="recResult" style="display:none">
+      <div class="highlight-box green fade-in" style="font-size:15px">
+        <strong>Decrypted successfully.</strong> Full health record recovered from a single SMS.
+      </div>
+
+      <div class="stat-grid fade-in" style="margin:20px 0">
+        <div class="stat-card"><div class="stat-value" style="color:var(--green)">7</div><div class="stat-label">Total clinic visits</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--amber)">2</div><div class="stat-label">Chronic conditions</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--red)">3</div><div class="stat-label">Abnormal vitals flagged</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--purple)">3</div><div class="stat-label">Known allergies</div></div>
+      </div>
+
+      <!-- Latest visit -->
+      <div class="card fade-in">
+        <h2>Latest Visit &mdash; 18 Feb 2026</h2>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Tzaneen Primary Health Care &middot; Dr. Mokoena</p>
+        <div class="grid-2">
+          <div>
+            <table>
+              <tr><td style="color:var(--gray-500)">Primary Diagnosis</td><td><strong>I10 &mdash; Essential Hypertension</strong></td></tr>
+              <tr><td style="color:var(--gray-500)">Secondary</td><td>E11.9 &mdash; Type 2 Diabetes</td></tr>
+              <tr><td style="color:var(--gray-500)">Blood Pressure</td><td><span style="color:var(--primary-dark);font-weight:600">148/94 mmHg (High)</span></td></tr>
+              <tr><td style="color:var(--gray-500)">Temperature</td><td>36.9&deg;C</td></tr>
+              <tr><td style="color:var(--gray-500)">Pulse</td><td>82 bpm</td></tr>
+              <tr><td style="color:var(--gray-500)">Height</td><td>162 cm</td></tr>
+              <tr><td style="color:var(--gray-500)">Weight</td><td>78 kg</td></tr>
+              <tr><td style="color:var(--gray-500)">SpO2</td><td>97%</td></tr>
+              <tr><td style="color:var(--gray-500)">Resp. Rate</td><td>16&ndash;19 breaths/min</td></tr>
+            </table>
+          </div>
+          <div>
+            <table>
+              <tr><td style="color:var(--gray-500)">Medication 1</td><td><strong>Amlodipine 10mg OD</strong></td></tr>
+              <tr><td style="color:var(--gray-500)">Medication 2</td><td><strong>Metformin 850mg BD</strong></td></tr>
+              <tr><td style="color:var(--gray-500)">Medication 3</td><td>Hydrochlorothiazide 12.5mg OD</td></tr>
+              <tr><td style="color:var(--gray-500)">Follow-up</td><td>14 days</td></tr>
+              <tr><td style="color:var(--gray-500)">Allergies (this visit)</td><td><span class="tag tag-red">Penicillin</span></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chronic conditions -->
+      <div class="card fade-in">
+        <h2>Chronic Conditions</h2>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Diagnoses appearing in 2 or more visits, tracked across all clinics</p>
+        <div class="highlight-box amber">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>I10 &mdash; Essential Hypertension</strong><br><span style="font-size:12px;color:var(--gray-600)">First diagnosed Sep 2025 at Tzaneen PHC</span></div>
+            <span class="tag tag-red" style="font-size:13px">5 of 7 visits</span>
+          </div>
+        </div>
+        <div class="highlight-box amber">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>E11.9 &mdash; Type 2 Diabetes Mellitus</strong><br><span style="font-size:12px;color:var(--gray-600)">First diagnosed Nov 2025 at Mopani Clinic</span></div>
+            <span class="tag tag-amber" style="font-size:13px">3 of 7 visits</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Abnormal vitals -->
+      <div class="card fade-in">
+        <h2>Abnormal Vitals History</h2>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Most recent abnormal reading for each vital type, with dates</p>
+        <table>
+          <thead><tr><th>Date</th><th>Vital</th><th>Reading</th><th>Normal Range</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>18 Feb 2026</td><td>Systolic BP</td>
+              <td style="color:var(--red);font-weight:600">148 mmHg</td>
+              <td style="color:var(--gray-500)">90 &ndash; 139</td>
+              <td><span class="tag tag-red">HIGH</span></td>
+            </tr>
+            <tr>
+              <td>18 Feb 2026</td><td>Diastolic BP</td>
+              <td style="color:var(--red);font-weight:600">94 mmHg</td>
+              <td style="color:var(--gray-500)">61 &ndash; 89</td>
+              <td><span class="tag tag-red">HIGH</span></td>
+            </tr>
+            <tr>
+              <td>22 Dec 2025</td><td>Temperature</td>
+              <td style="color:var(--red);font-weight:600">38.7&deg;C</td>
+              <td style="color:var(--gray-500)">35.5 &ndash; 37.9</td>
+              <td><span class="tag tag-red">FEVER</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Allergies -->
+      <div class="card fade-in">
+        <h2>Known Allergies (Cumulative)</h2>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Union of all allergy flags reported across every visit</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag tag-red" style="font-size:14px;padding:6px 14px">Penicillin</span>
+          <span class="tag tag-red" style="font-size:14px;padding:6px 14px">NSAID</span>
+          <span class="tag tag-amber" style="font-size:14px;padding:6px 14px">Sulfa</span>
+        </div>
+        <p style="font-size:12px;color:var(--gray-500);margin-top:8px">Penicillin: reported since first visit. NSAID: flagged Dec 2025 (GI reaction). Sulfa: flagged Jan 2026.</p>
+      </div>
+
+      <!-- Immunizations -->
+      <div class="card fade-in">
+        <h2>Immunizations</h2>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">EPI vaccines recorded across visits</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag tag-blue" style="font-size:14px;padding:6px 14px">Influenza (dose 1)</span>
+          <span class="tag tag-blue" style="font-size:14px;padding:6px 14px">TT (dose 2)</span>
+          <span class="tag tag-blue" style="font-size:14px;padding:6px 14px">COVID (dose 1)</span>
+        </div>
+      </div>
+
+      <!-- Growth Summary -->
+      <div class="card fade-in">
+        <h2>Growth Summary</h2>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">Latest anthropometric measurements and Z-scores</p>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-value" style="color:var(--blue)">78</div><div class="stat-label">Weight (kg)</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:var(--blue)">162</div><div class="stat-label">Height (cm)</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:var(--green)">-0.1</div><div class="stat-label">Weight Z-score</div></div>
+          <div class="stat-card"><div class="stat-value" style="color:var(--green)">-0.5</div><div class="stat-label">Height Z-score</div></div>
+        </div>
+      </div>
+
+      <!-- What this means -->
+      <div class="card fade-in" style="background:var(--green-light);border-color:var(--green)">
+        <h2 style="color:var(--green-dark)">What the Clinician Now Knows</h2>
+        <p style="color:var(--green-dark);font-size:14px;">Without any internet connection, server lookup, or paper trail &mdash; from a single SMS &mdash; the new clinician at Polokwane District Hospital can see that:</p>
+        <ul style="padding-left:20px;margin-top:12px;color:var(--green-dark);font-size:14px">
+          <li>Amara is a <strong>chronic hypertensive patient</strong> with BP consistently elevated across 5 visits</li>
+          <li>She has <strong>Type 2 Diabetes</strong> diagnosed 3 months ago, on Metformin</li>
+          <li>Her current BP is <strong>148/94 &mdash; still uncontrolled</strong> despite Amlodipine 10mg + HCTZ</li>
+          <li>SpO2 is <strong>97%</strong> and respiratory rate is <strong>16&ndash;19</strong> breaths/min &mdash; both normal</li>
+          <li>She had a <strong>febrile episode</strong> in December (38.7&deg;C), possibly infectious</li>
+          <li>She is <strong>allergic to Penicillin, NSAIDs, and Sulfa drugs</strong> &mdash; do NOT prescribe amoxicillin, ibuprofen, or cotrimoxazole</li>
+          <li>She has had <strong>3 EPI vaccinations</strong> recorded: Influenza, TT booster, and COVID</li>
+          <li>Growth Z-scores are within normal range (weight Z: -0.1, height Z: -0.5)</li>
+          <li>She has had <strong>7 clinic visits</strong> across multiple facilities, indicating she is actively engaged in care</li>
+          <li>Follow-up was due <strong>14 days</strong> from 18 Feb &mdash; she is slightly overdue</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- SECTION 4: WIRE FORMAT                             -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="wireFormat" class="section">
+    <div class="card">
+      <h2>Binary Wire Format (92 bytes &mdash; fits in 1 SMS)</h2>
+      <p style="color:var(--gray-600);margin-bottom:16px">Each colored cell = one byte. Hover to see the field. This is what travels inside the encrypted SMS.</p>
+      <div class="byte-map" id="byteMap"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gray-700)"></div>Version (0x04 = V4)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Current Encounter (bytes 0&ndash;33)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Health History (bytes 34&ndash;71)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gray-400)"></div>Free Text Note (bytes 72&ndash;90)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gray-800)"></div>CRC-8 (byte 91)</div>
+      </div>
+      <div id="byteDetail" style="margin-top:16px;padding:12px;background:var(--gray-50);border-radius:8px;font-size:14px;color:var(--gray-600);min-height:40px;">
+        Hover over a byte to see its purpose.
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Current Encounter (Bytes 0&ndash;33)</h3>
+        <table>
+          <tr><th>Bytes</th><th>Field</th><th>Encoding</th></tr>
+          <tr><td>0</td><td>Version</td><td>0x04 (V4)</td></tr>
+          <tr><td>1-2</td><td>Date</td><td>Days since 2024-01-01 (uint16)</td></tr>
+          <tr><td>3-5</td><td>Provider + Facility</td><td>12-bit hash each</td></tr>
+          <tr><td>6-13</td><td>Patient ID</td><td>8 ASCII bytes, zero-padded</td></tr>
+          <tr><td>14</td><td>Flags</td><td>numDx(2) | numMeds(2) | urgency(2) | followUpType(2)</td></tr>
+          <tr><td>15-18</td><td>Diagnoses</td><td>3 &times; 9-bit ICD-10 hash, bit-packed (4 bytes)</td></tr>
+          <tr><td>19-24</td><td>Medications</td><td>3 &times; 16-bit (drug+dose+freq)</td></tr>
+          <tr><td>25-31</td><td>Vitals (expanded)</td><td>systolic, diastolic, temp, weight, pulse, height, SpO2|RR packed</td></tr>
+          <tr><td>32</td><td>Allergy flags</td><td>8-bit bitmap</td></tr>
+          <tr><td>33</td><td>Follow-up value</td><td>Days / weeks / months</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Health History (Bytes 34&ndash;71)</h3>
+        <table>
+          <tr><th>Bytes</th><th>Field</th><th>Encoding</th></tr>
+          <tr><td>34</td><td>History flags</td><td>numChronicDx(3) | numAbnormalVitals(3) | hasGrowth(1) | hasImmunizations(1)</td></tr>
+          <tr><td>35</td><td>Cumulative allergies</td><td>Union of ALL visits</td></tr>
+          <tr><td>36</td><td>Total visits</td><td>0&ndash;255</td></tr>
+          <tr><td>37-46</td><td>Chronic conditions</td><td>5 &times; 2 bytes: icd10Hash(9b) | occurrenceCount(7b)</td></tr>
+          <tr><td>47-58</td><td>Abnormal vitals</td><td>3 &times; 4 bytes: date(2) + vitalType(1) + rawValue(1)</td></tr>
+          <tr><td>59-62</td><td>Growth summary</td><td>weight(1) + height(1) + weightZ&times;10(int8) + heightZ&times;10(int8)</td></tr>
+          <tr><td>63</td><td>Immunization header</td><td>numVaccines(3b) | reserved(5b)</td></tr>
+          <tr><td>64-69</td><td>Immunizations</td><td>3 &times; 2 bytes: vaccineIndex(8b) + doseNumber(4b)|reserved(4b)</td></tr>
+          <tr><td>70</td><td>Clinical status 1</td><td>HIV, TB, pregnancy, syphilis, HepB, malaria</td></tr>
+          <tr><td>71</td><td>Clinical status 2</td><td>anemia, blood group, glucose, proteinuria, sickle cell, malnutrition</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Free Text + CRC (Bytes 72&ndash;91)</h3>
+      <table>
+        <tr><th>Bytes</th><th>Field</th><th>Encoding</th></tr>
+        <tr><td>72-90</td><td>Free-text note</td><td>19 ASCII bytes, zero-padded</td></tr>
+        <tr><td>91</td><td>CRC-8</td><td>CRC-8/MAXIM polynomial 0x31</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Encryption Pipeline</h3>
+      <div class="flow" id="encFlow">
+        <div class="flow-step">92 bytes binary</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step" style="border-color:var(--blue)">PBKDF2<br><small>Phone number<br>100K iterations</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step" style="border-color:var(--amber)">AES-256-GCM<br><small>12-byte nonce<br>16-byte auth tag</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step" style="border-color:var(--green)">Base64<br><small>~160 chars</small></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step" style="border-color:var(--green);background:var(--green-light)">1 SMS</div>
+      </div>
+
+      <div class="stat-grid" style="margin-top:20px">
+        <div class="stat-card"><div class="stat-value" style="color:var(--blue)">92</div><div class="stat-label">Bytes (binary payload)</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--amber)">120</div><div class="stat-label">Bytes (after encryption)</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--green)">160</div><div class="stat-label">Chars (Base64) &mdash; 1 SMS</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--gray-700)">33:1</div><div class="stat-label">Compression vs JSON</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── TAB NAV ──
+function showSection(id, tabEl) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+}
+
+// ── FLOW ANIMATION (recovery & encryption flows) ──
+function animateFlow(containerId) {
+  const steps = document.querySelectorAll(`#${containerId} .flow-step`);
+  steps.forEach(s => s.classList.remove('active'));
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i > 0) steps[i-1].classList.remove('active');
+    if (i < steps.length) { steps[i].classList.add('active'); i++; }
+    else { clearInterval(iv); setTimeout(() => steps.forEach(s => s.classList.remove('active')), 2500); }
+  }, 500);
+}
+
+// ── PIPELINE VISUALIZATION ──
+let pipelineStep = -1;
+let pipelineTimer = null;
+const PIPELINE_STEPS = 6;
+
+function goToStep(step) {
+  pipelineStep = step;
+  renderPipeline();
+}
+
+function resetPipeline() {
+  if (pipelineTimer) { clearInterval(pipelineTimer); pipelineTimer = null; }
+  pipelineStep = -1;
+  const btn = document.getElementById('pipelineBtn');
+  btn.innerHTML = 'Play';
+  btn.disabled = false;
+  renderPipeline();
+}
+
+function playPipeline() {
+  if (pipelineTimer) { clearInterval(pipelineTimer); pipelineTimer = null; }
+  pipelineStep = -1;
+  const btn = document.getElementById('pipelineBtn');
+  btn.disabled = true;
+  btn.innerHTML = 'Playing...';
+
+  pipelineTimer = setInterval(() => {
+    pipelineStep++;
+    if (pipelineStep >= PIPELINE_STEPS) {
+      clearInterval(pipelineTimer);
+      pipelineTimer = null;
+      btn.innerHTML = 'Replay';
+      btn.disabled = false;
+      return;
+    }
+    renderPipeline();
+  }, 1800);
+  // Start immediately
+  pipelineStep = 0;
+  renderPipeline();
+}
+
+function renderPipeline() {
+  const steps = document.querySelectorAll('.pipeline-step');
+  const progress = document.getElementById('pipelineProgress');
+
+  steps.forEach((el, i) => {
+    el.classList.remove('active', 'completed');
+    if (i === pipelineStep) el.classList.add('active');
+    else if (i < pipelineStep) el.classList.add('completed');
+  });
+
+  // Progress bar
+  if (pipelineStep < 0) progress.style.width = '0%';
+  else progress.style.width = ((pipelineStep + 1) / PIPELINE_STEPS * 100) + '%';
+
+  // Fill mini SMS in deliver step
+  if (pipelineStep === 5 && encryptedSmsCache.length > 0) {
+    const el = document.getElementById('pipelineSms');
+    if (el) el.textContent = encryptedSmsCache[encryptedSmsCache.length - 1];
+  }
+}
+
+// Build mini byte map for encode step
+(function buildMiniByteMap() {
+  const map = document.getElementById('pipelineByteMap');
+  if (!map) return;
+  const sections = [
+    { count: 34, color: 'var(--blue)' },    // Current encounter (bytes 0-33)
+    { count: 38, color: 'var(--green)' },    // Health history (bytes 34-71)
+    { count: 19, color: 'var(--gray-400)' }, // Free text note (bytes 72-90)
+    { count: 1, color: 'var(--gray-800)' }   // CRC-8 (byte 91)
+  ];
+  sections.forEach(s => {
+    for (let i = 0; i < s.count; i++) {
+      const el = document.createElement('div');
+      el.className = 'mini-byte';
+      el.style.background = s.color;
+      map.appendChild(el);
+    }
+  });
+})();
+
+// ── BYTE MAP ──
+(function() {
+  const map = document.getElementById('byteMap');
+  const detail = document.getElementById('byteDetail');
+  if (!map) return;
+  const bytes = [];
+  function add(n, cls, label) { for (let i = 0; i < n; i++) bytes.push({cls, label: Array.isArray(label) ? label[i] : label}); }
+  // Current Encounter (bytes 0-33)
+  add(1, 'bc-version', 'Version byte (0x04 = V4)');
+  add(2, 'bc-encounter', 'Encounter date — days since 2024-01-01 (uint16)');
+  add(3, 'bc-encounter', 'Provider hash (12 bits) + Facility hash (12 bits)');
+  add(8, 'bc-encounter', 'Patient ID — 8 ASCII bytes, zero-padded');
+  add(1, 'bc-encounter', 'Flags: numDx(2b) | numMeds(2b) | urgency(2b) | followUpType(2b)');
+  add(4, 'bc-encounter', 'Diagnoses — 3 × 9-bit ICD-10 code hash indices, bit-packed into 4 bytes');
+  add(6, 'bc-encounter', 'Medications — 3 × 16-bit packed: drug index(9) + dose code(4) + freq code(3)');
+  add(7, 'bc-encounter', ['Systolic BP (value − 60, uint8)', 'Diastolic BP (value − 30, uint8)', 'Temperature ((°C − 35.0) × 10, uint8)', 'Weight in kg (uint8)', 'Pulse in bpm (uint8)', 'Height in cm (uint8)', 'Packed: SpO2 upper 5b (offset 70) | RR lower 3b (coded)']);
+  add(1, 'bc-encounter', 'This encounter\'s allergy flags — 8 bits, one per category');
+  add(1, 'bc-encounter', 'Follow-up value — days/weeks/months based on type bits');
+  // Health History (bytes 34-71)
+  add(1, 'bc-history', 'History flags: numChronicDx(3b) | numAbnormalVitals(3b) | hasGrowth(1b) | hasImmunizations(1b)');
+  add(1, 'bc-history', 'Cumulative allergy flags — bitwise OR of every visit\'s allergy byte');
+  add(1, 'bc-history', 'Total visit count (0–255) — how many encounters this patient has had');
+  add(10, 'bc-history', 'Chronic conditions — 5 × 2 bytes each: 9-bit ICD-10 hash + 7-bit occurrence count');
+  add(12, 'bc-history', 'Abnormal vitals — 3 × 4 bytes each: date(2) + vitalType(1) + rawValue(1)');
+  add(4, 'bc-history', ['Growth: last weight (kg, uint8)', 'Growth: last height (cm, uint8)', 'Growth: weight Z-score × 10 (signed int8)', 'Growth: height Z-score × 10 (signed int8)']);
+  add(1, 'bc-history', 'Immunization header: numVaccines(3b) | reserved(5b)');
+  add(6, 'bc-history', 'Immunizations — 3 × 2 bytes each: vaccineIndex(8b) + doseNumber(4b)|reserved(4b)');
+  add(1, 'bc-history', 'Clinical status flags 1: HIV, TB, pregnancy, syphilis, HepB, malaria');
+  add(1, 'bc-history', 'Clinical status flags 2: anemia, blood group, glucose, proteinuria, sickle cell, malnutrition');
+  // Free Text + CRC (bytes 72-91)
+  add(19, 'bc-note', 'Free-text clinical note — truncated ASCII, zero-padded (19 bytes)');
+  add(1, 'bc-crc', 'CRC-8/MAXIM checksum — polynomial 0x31 over all preceding bytes');
+  bytes.forEach((b, i) => {
+    const c = document.createElement('div');
+    c.className = `byte-cell ${b.cls}`;
+    c.textContent = i;
+    c.addEventListener('mouseenter', () => { detail.innerHTML = `<strong>Byte ${i}:</strong> ${b.label}`; });
+    map.appendChild(c);
+  });
+})();
+
+// ══════════════════════════════════════════════════════════════
+// REAL CRYPTO — V4 Binary Encoder + AES-256-GCM via Web Crypto
+// ══════════════════════════════════════════════════════════════
+
+const CRYPTO_SALT = 'ChartLite-PHR-v1';     // must match SMSEncryption.kt
+const PBKDF2_ITERATIONS = 100000;
+const MAX_V4_PAYLOAD = 92;
+const EPOCH = new Date(Date.UTC(2024, 0, 1)); // 2024-01-01
+const PATIENT_ID = 'KFMT-4WRN';
+
+// EPI Vaccine Index
+const VACCINE_INDEX = { none: 0, BCG: 1, OPV: 2, PENTA: 3, PCV: 4, ROTA: 5, MEASLES: 6, HPV: 7, TT: 8, HEP_B: 9, YELLOW_FEVER: 10, TYPHOID: 11, INFLUENZA: 12, COVID: 13, RUBELLA: 14, MUMPS: 15, VARICELLA: 16 };
+
+// RR coded values: 0=unknown, 1=<12, 2=12-15, 3=16-19, 4=20-24, 5=25-29, 6=30-39, 7=>=40
+function encodeRR(rr) {
+  if (!rr || rr === 0) return 0;
+  if (rr < 12) return 1;
+  if (rr <= 15) return 2;
+  if (rr <= 19) return 3;
+  if (rr <= 24) return 4;
+  if (rr <= 29) return 5;
+  if (rr <= 39) return 6;
+  return 7;
+}
+
+function decodeRR(code) {
+  const labels = ['Unknown', '<12', '12-15', '16-19', '20-24', '25-29', '30-39', '\u226540'];
+  return labels[code] || 'Unknown';
+}
+
+// Allergy flag bits (must match BinaryEncoder.kt)
+const ALLERGY_FLAGS = { penicillin: 7, sulfa: 6, nsaid: 5, latex: 4, contrast: 3, opioid: 2, 'ace inhibitor': 1 };
+
+// Dose codes (4 bits)
+const DOSE_CODES = { 50: 1, 100: 2, 125: 3, 250: 4, 500: 5, 1000: 6, 5: 7, 10: 8, 20: 9, 25: 10, 40: 11, 2.5: 12 };
+
+// Frequency codes (3 bits)
+const FREQ_CODES = { OD: 1, BD: 2, TDS: 3, QDS: 4, PRN: 5, STAT: 6, WEEKLY: 7 };
+
+// Demo drug name → formulary index
+const DRUG_INDEX = { paracetamol: 1, amlodipine: 10, metformin: 20, erythromycin: 30, hctz: 40, hydrochlorothiazide: 40 };
+
+// Java String.hashCode() — matches Kotlin/JVM behavior
+function javaHashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return h;
+}
+
+// CRC-8/MAXIM (reflected, poly 0x31)
+function crc8maxim(data) {
+  let crc = 0;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data[i];
+    for (let j = 0; j < 8; j++) {
+      crc = (crc & 1) ? ((crc >>> 1) ^ 0x8C) : (crc >>> 1);
+    }
+  }
+  return crc & 0xFF;
+}
+
+// ICD-10 code → 9-bit index (matches BinaryEncoder.codeToIndex)
+function codeToIndex(icd10Code) {
+  return javaHashCode(icd10Code) & 0x1FF;
+}
+
+// Days since epoch (2024-01-01)
+function daysSince(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return Math.floor((d - EPOCH) / 86400000);
+}
+
+// Parse medication string like "Amlodipine 5mg OD" → { drugIndex, doseCode, freqCode }
+function parseMed(medStr) {
+  const parts = medStr.trim().split(/\s+/);
+  const name = parts[0].toLowerCase();
+  const drugIdx = DRUG_INDEX[name] || 0;
+  let dose = 0, freq = 0;
+  for (let i = 1; i < parts.length; i++) {
+    const m = parts[i].match(/^([\d.]+)mg$/i);
+    if (m) dose = DOSE_CODES[parseFloat(m[1])] || 0;
+    else freq = FREQ_CODES[parts[i].toUpperCase()] || 0;
+  }
+  return { drugIndex: drugIdx, doseCode: dose, freqCode: freq };
+}
+
+// Compute allergy byte from array of allergy names
+function allergyByte(allergies) {
+  let byte = 0;
+  for (const a of allergies) {
+    const lower = a.toLowerCase();
+    let matched = false;
+    for (const [name, bit] of Object.entries(ALLERGY_FLAGS)) {
+      if (lower.includes(name)) { byte |= (1 << bit); matched = true; }
+    }
+    if (!matched) byte |= 1; // "other" at bit 0
+  }
+  return byte;
+}
+
+// Write a 16-bit big-endian value into a Uint8Array at offset
+function write16(buf, offset, val) {
+  buf[offset] = (val >>> 8) & 0xFF;
+  buf[offset + 1] = val & 0xFF;
+}
+
+// ── V4 BINARY ENCODER ──
+// Matches BinaryEncoder.encodeWithHistory() in Kotlin (v4 format)
+async function encodeV4(visit, allVisits) {
+  const buf = new Uint8Array(MAX_V4_PAYLOAD);
+
+  // ═══ CURRENT ENCOUNTER (bytes 0-33) ═══
+
+  // ── Byte 0: Version ──
+  buf[0] = 0x04;
+
+  // ── Bytes 1-2: Date ──
+  const days = daysSince(visit.date);
+  write16(buf, 1, days);
+
+  // ── Bytes 3-5: Provider(12) + Facility(12) ──
+  const provHash = javaHashCode(visit.doctor) & 0xFFF;
+  const facHash = javaHashCode(visit.clinic) & 0xFFF;
+  const combined = (provHash << 12) | facHash;
+  buf[3] = (combined >>> 16) & 0xFF;
+  buf[4] = (combined >>> 8) & 0xFF;
+  buf[5] = combined & 0xFF;
+
+  // ── Bytes 6-13: Patient ID (8 ASCII bytes, zero-padded) ──
+  const patIdBytes = new TextEncoder().encode(PATIENT_ID);
+  for (let i = 0; i < 8; i++) buf[6 + i] = i < patIdBytes.length ? patIdBytes[i] : 0;
+
+  // ── Byte 14: Flags ──
+  const dxCodes = visit.dxCode.split(', ').slice(0, 3);
+  const medsList = visit.meds.split(', ').slice(0, 3);
+  const numDx = Math.min(dxCodes.length, 3);
+  const numMeds = Math.min(medsList.length, 3);
+  const followUpDays = parseInt(visit.followUp) || 0;
+  const followUpType = followUpDays === 0 ? 0 : followUpDays <= 31 ? 1 : followUpDays <= 210 ? 2 : 3;
+  buf[14] = ((numDx & 3) << 6) | ((numMeds & 3) << 4) | (0 << 2) | (followUpType & 3);
+
+  // ── Bytes 15-18: Diagnoses (3 × 9-bit, packed into 4 bytes) ──
+  const dxValues = [0, 0, 0];
+  for (let i = 0; i < numDx; i++) dxValues[i] = codeToIndex(dxCodes[i]);
+  let accum = 0;
+  for (let i = 0; i < 3; i++) accum = (accum << 9) | (dxValues[i] & 0x1FF);
+  accum <<= 5; // pad to 32 bits
+  buf[15] = (accum >>> 24) & 0xFF;
+  buf[16] = (accum >>> 16) & 0xFF;
+  buf[17] = (accum >>> 8) & 0xFF;
+  buf[18] = accum & 0xFF;
+
+  // ── Bytes 19-24: Medications (3 × 16-bit) ──
+  for (let i = 0; i < 3; i++) {
+    if (i < numMeds) {
+      const m = parseMed(medsList[i]);
+      const packed = ((m.drugIndex & 0x1FF) << 7) | ((m.doseCode & 0xF) << 3) | (m.freqCode & 0x7);
+      write16(buf, 19 + i * 2, packed);
+    }
+  }
+
+  // ── Bytes 25-31: Vitals EXPANDED (7 bytes) ──
+  buf[25] = Math.max(0, Math.min(255, (visit.sbp || 120) - 60));
+  buf[26] = Math.max(0, Math.min(255, (visit.dbp || 80) - 30));
+  buf[27] = Math.max(0, Math.min(255, Math.round(((visit.temp || 37.0) - 35.0) * 10)));
+  buf[28] = Math.max(0, Math.min(255, visit.weight || 0));
+  buf[29] = Math.max(0, Math.min(255, visit.pulse || 0));
+  buf[30] = Math.max(0, Math.min(255, visit.height || 0));
+  // Byte 31: SpO2 upper 5b (offset 70) | RR lower 3b (coded)
+  const spo2Val = Math.max(0, Math.min(31, (visit.spo2 || 98) - 70));
+  const rrCode = encodeRR(visit.rr || 0);
+  buf[31] = ((spo2Val & 0x1F) << 3) | (rrCode & 0x07);
+
+  // ── Byte 32: Allergy flags ──
+  buf[32] = allergyByte(visit.allergies);
+
+  // ── Byte 33: Follow-up ──
+  let fVal = 0;
+  if (followUpType === 1) fVal = followUpDays;
+  else if (followUpType === 2) fVal = Math.floor(followUpDays / 7);
+  else if (followUpType === 3) fVal = Math.floor(followUpDays / 30);
+  buf[33] = Math.max(0, Math.min(255, fVal));
+
+  // ═══ HEALTH HISTORY (bytes 34-71) ═══
+
+  // Chronic conditions: ICD-10 codes appearing in >= 2 visits
+  const dxFreq = {};
+  allVisits.forEach(v => {
+    v.dxCode.split(', ').forEach(code => { dxFreq[code] = (dxFreq[code] || 0) + 1; });
+  });
+  const chronics = Object.entries(dxFreq)
+    .filter(([_, c]) => c >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // Abnormal vitals: most recent abnormal reading per type
+  const abnormals = [];
+  const seenTypes = new Set();
+  [...allVisits].reverse().forEach(v => {
+    if (!seenTypes.has(0) && (v.sbp >= 140 || v.sbp <= 90)) { seenTypes.add(0); abnormals.push({ date: v.date, type: 0, raw: (v.sbp || 120) - 60 }); }
+    if (!seenTypes.has(1) && (v.dbp >= 90 || v.dbp <= 60)) { seenTypes.add(1); abnormals.push({ date: v.date, type: 1, raw: (v.dbp || 80) - 30 }); }
+    if (!seenTypes.has(2) && (v.temp >= 38.0 || v.temp <= 35.5)) { seenTypes.add(2); abnormals.push({ date: v.date, type: 2, raw: Math.round(((v.temp || 37.0) - 35.0) * 10) }); }
+    if (!seenTypes.has(3) && (v.pulse > 100 || v.pulse < 60)) { seenTypes.add(3); abnormals.push({ date: v.date, type: 3, raw: v.pulse }); }
+  });
+  const abSlice = abnormals.slice(0, 3);
+
+  // Cumulative allergy flags
+  let cumAllergy = 0;
+  allVisits.forEach(v => { cumAllergy |= allergyByte(v.allergies); });
+
+  // Growth data from latest visit
+  const latestVisit = allVisits[allVisits.length - 1];
+  const hasGrowth = (latestVisit.weight > 0 || latestVisit.height > 0) ? 1 : 0;
+
+  // Immunizations from latest visit
+  const immunizations = (latestVisit.immunizations || []).slice(0, 3);
+  const hasImmunizations = immunizations.length > 0 ? 1 : 0;
+
+  // ── Byte 34: History flags ──
+  buf[34] = ((chronics.length & 7) << 5) | ((abSlice.length & 7) << 2) | ((hasGrowth & 1) << 1) | (hasImmunizations & 1);
+
+  // ── Byte 35: Cumulative allergy flags ──
+  buf[35] = cumAllergy;
+
+  // ── Byte 36: Total visit count ──
+  buf[36] = Math.min(255, allVisits.length);
+
+  // ── Bytes 37-46: Chronic conditions (5 × 2 bytes) ──
+  for (let i = 0; i < 5; i++) {
+    if (i < chronics.length) {
+      const [code, count] = chronics[i];
+      const idx = codeToIndex(code);
+      const packed = ((idx & 0x1FF) << 7) | (Math.min(count, 127) & 0x7F);
+      write16(buf, 37 + i * 2, packed);
+    }
+  }
+
+  // ── Bytes 47-58: Abnormal vitals (3 × 4 bytes) ──
+  for (let i = 0; i < 3; i++) {
+    if (i < abSlice.length) {
+      const av = abSlice[i];
+      const vDays = daysSince(av.date);
+      write16(buf, 47 + i * 4, vDays);
+      buf[47 + i * 4 + 2] = av.type;
+      buf[47 + i * 4 + 3] = Math.max(0, Math.min(255, av.raw));
+    }
+  }
+
+  // ── Bytes 59-62: Growth summary ──
+  buf[59] = Math.max(0, Math.min(255, latestVisit.weight || 0));
+  buf[60] = Math.max(0, Math.min(255, latestVisit.height || 0));
+  buf[61] = (latestVisit.weightZ != null) ? ((Math.round(latestVisit.weightZ * 10)) & 0xFF) : 0; // signed int8
+  buf[62] = (latestVisit.heightZ != null) ? ((Math.round(latestVisit.heightZ * 10)) & 0xFF) : 0; // signed int8
+
+  // ── Byte 63: Immunization header ──
+  buf[63] = ((immunizations.length & 7) << 5);
+
+  // ── Bytes 64-69: Immunizations (3 × 2 bytes) ──
+  for (let i = 0; i < 3; i++) {
+    if (i < immunizations.length) {
+      const vacc = immunizations[i];
+      buf[64 + i * 2] = VACCINE_INDEX[vacc.name] || 0;
+      buf[64 + i * 2 + 1] = ((vacc.dose & 0xF) << 4);
+    }
+  }
+
+  // ── Byte 70: Clinical status flags 1 ──
+  const cs1 = latestVisit.clinicalStatus1 || 0;
+  buf[70] = cs1;
+
+  // ── Byte 71: Clinical status flags 2 ──
+  const cs2 = latestVisit.clinicalStatus2 || 0;
+  buf[71] = cs2;
+
+  // ═══ FREE TEXT + CRC (bytes 72-91) ═══
+
+  // ── Bytes 72-90: Free-text note (19 bytes) ──
+  if (visit.note) {
+    const noteBytes = new TextEncoder().encode(visit.note.substring(0, 19));
+    const toCopy = Math.min(noteBytes.length, 19);
+    buf.set(noteBytes.slice(0, toCopy), 72);
+  }
+
+  // ── Byte 91: CRC-8/MAXIM ──
+  buf[91] = crc8maxim(buf.slice(0, 91));
+
+  return buf;
+}
+
+// ══════════════════════════════════════
+// AES-256-GCM ENCRYPTION (Web Crypto)
+// ══════════════════════════════════════
+
+async function deriveKey(phoneNumber, pin) {
+  const passwordStr = pin ? `${phoneNumber}:${pin}` : phoneNumber;
+  const password = new TextEncoder().encode(passwordStr);
+  const salt = new TextEncoder().encode(CRYPTO_SALT);
+  const keyMaterial = await crypto.subtle.importKey('raw', password, 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptPayload(payload, key) {
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: nonce, tagLength: 128 },
+    key, payload
+  );
+  // Output: nonce(12) + ciphertext+tag(payload.length + 16)
+  const result = new Uint8Array(12 + ciphertext.byteLength);
+  result.set(nonce, 0);
+  result.set(new Uint8Array(ciphertext), 12);
+  return result;
+}
+
+async function decryptPayload(encrypted, key) {
+  const nonce = encrypted.slice(0, 12);
+  const ciphertext = encrypted.slice(12);
+  const plaintext = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: nonce, tagLength: 128 },
+    key, ciphertext
+  );
+  return new Uint8Array(plaintext);
+}
+
+// Base64 encode (without padding, matching Kotlin Base64.withoutPadding)
+function toBase64NoPad(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/=+$/, '');
+}
+
+function fromBase64(str) {
+  // Re-add padding
+  while (str.length % 4 !== 0) str += '=';
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+// ══════════════════════════════════════════════
+// PATIENT JOURNEY — Amara Okafor's story
+// ══════════════════════════════════════════════
+const VISITS = [
+  {
+    date: '2025-08-14', clinic: 'Tzaneen PHC', doctor: 'Sr. Nkosi',
+    dx: 'J06.9 — Upper Respiratory Infection', dxCode: 'J06.9',
+    sbp: 128, dbp: 82, temp: 37.2, pulse: 78, weight: 76, height: 162, spo2: 98, rr: 16,
+    meds: 'Paracetamol 500mg TDS', allergies: ['Penicillin'],
+    followUp: '7 days', note: 'Sore throat, fluids',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }],
+    weightZ: -0.3, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0
+  },
+  {
+    date: '2025-09-10', clinic: 'Tzaneen PHC', doctor: 'Dr. Mokoena',
+    dx: 'I10 — Essential Hypertension', dxCode: 'I10',
+    sbp: 152, dbp: 96, temp: 36.8, pulse: 84, weight: 77, height: 162, spo2: 97, rr: 18,
+    meds: 'Amlodipine 5mg OD', allergies: ['Penicillin'],
+    followUp: '14 days', note: 'New HTN, lifestyle',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }],
+    weightZ: -0.2, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0
+  },
+  {
+    date: '2025-10-08', clinic: 'Mopani District Clinic', doctor: 'Dr. Patel',
+    dx: 'I10 — Essential Hypertension', dxCode: 'I10',
+    sbp: 144, dbp: 92, temp: 36.9, pulse: 80, weight: 77, height: 162, spo2: 98, rr: 17,
+    meds: 'Amlodipine 5mg OD', allergies: ['Penicillin'],
+    followUp: '30 days', note: 'BP improving, cont.',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }],
+    weightZ: -0.2, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0
+  },
+  {
+    date: '2025-11-12', clinic: 'Mopani District Clinic', doctor: 'Dr. Patel',
+    dx: 'I10 — Hypertension; E11.9 — Type 2 Diabetes', dxCode: 'I10, E11.9',
+    sbp: 146, dbp: 90, temp: 37.0, pulse: 76, weight: 78, height: 162, spo2: 97, rr: 18,
+    meds: 'Amlodipine 5mg OD, Metformin 500mg BD', allergies: ['Penicillin'],
+    followUp: '14 days', note: 'FBG 8.4, new T2DM',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }, { name: 'TT', dose: 2 }],
+    weightZ: -0.1, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0x20 // glucose flag
+  },
+  {
+    date: '2025-12-22', clinic: 'Tzaneen PHC', doctor: 'Sr. Nkosi',
+    dx: 'J03.9 — Acute Tonsillitis; I10 — Hypertension', dxCode: 'J03.9, I10',
+    sbp: 138, dbp: 86, temp: 38.7, pulse: 96, weight: 77, height: 162, spo2: 96, rr: 22,
+    meds: 'Erythromycin 500mg QDS, Amlodipine 5mg OD, Metformin 500mg BD', allergies: ['Penicillin', 'NSAID'],
+    followUp: '5 days', note: 'Febrile, erythro Rx',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }, { name: 'TT', dose: 2 }],
+    weightZ: -0.2, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0x20
+  },
+  {
+    date: '2026-01-15', clinic: 'Letaba Hospital OPD', doctor: 'Dr. Mabaso',
+    dx: 'I10 — Hypertension; E11.9 — Type 2 Diabetes', dxCode: 'I10, E11.9',
+    sbp: 142, dbp: 88, temp: 37.1, pulse: 74, weight: 78, height: 162, spo2: 97, rr: 17,
+    meds: 'Amlodipine 10mg OD, Metformin 850mg BD', allergies: ['Penicillin', 'NSAID', 'Sulfa'],
+    followUp: '30 days', note: 'Uptitrated amlo+met',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }, { name: 'TT', dose: 2 }],
+    weightZ: -0.1, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0x20
+  },
+  {
+    date: '2026-02-18', clinic: 'Tzaneen PHC', doctor: 'Dr. Mokoena',
+    dx: 'I10 — Hypertension; E11.9 — Type 2 Diabetes', dxCode: 'I10, E11.9',
+    sbp: 148, dbp: 94, temp: 36.9, pulse: 82, weight: 78, height: 162, spo2: 97, rr: 18,
+    meds: 'Amlodipine 10mg OD, Metformin 850mg BD, HCTZ 12.5mg OD', allergies: ['Penicillin', 'NSAID', 'Sulfa'],
+    followUp: '14 days', note: 'Added HCTZ, chk lyt',
+    immunizations: [{ name: 'INFLUENZA', dose: 1 }, { name: 'TT', dose: 2 }, { name: 'COVID', dose: 1 }],
+    weightZ: -0.1, heightZ: -0.5, clinicalStatus1: 0, clinicalStatus2: 0x20
+  }
+];
+
+// ── Journey state ──
+let journeyStep = -1;
+let encryptedSmsCache = [];  // real encrypted Base64 per step
+let demoKey = null;          // pre-derived AES key
+let lastEncryptedBytes = null; // raw encrypted bytes for recovery demo
+
+// Pre-compute all encrypted SMS on page load
+async function initCrypto() {
+  try {
+    demoKey = await deriveKey('0721234567');
+    for (let i = 0; i < VISITS.length; i++) {
+      const payload = await encodeV4(VISITS[i], VISITS.slice(0, i + 1));
+      const enc = await encryptPayload(payload, demoKey);
+      encryptedSmsCache.push(toBase64NoPad(enc));
+      if (i === VISITS.length - 1) lastEncryptedBytes = enc;
+    }
+    // Update recovery SMS bubble with real encrypted content
+    const bubble = document.getElementById('recSmsBubble');
+    if (bubble) bubble.textContent = encryptedSmsCache[encryptedSmsCache.length - 1];
+    // Re-render journey if already showing a step
+    if (journeyStep >= 0) renderJourney();
+  } catch (e) {
+    console.error('Crypto init failed:', e);
+  }
+}
+
+function journeyReset() {
+  journeyStep = -1;
+  document.getElementById('jprev').disabled = true;
+  document.getElementById('jnext').disabled = false;
+  document.getElementById('jnext').textContent = 'Next Visit \u2192';
+  renderJourney();
+}
+
+function journeyPrev() {
+  if (journeyStep > 0) journeyStep--;
+  renderJourney();
+}
+
+function journeyNext() {
+  if (journeyStep < VISITS.length - 1) { journeyStep++; renderJourney(); }
+}
+
+function renderJourney() {
+  const prevBtn = document.getElementById('jprev');
+  const nextBtn = document.getElementById('jnext');
+  prevBtn.disabled = journeyStep <= 0;
+  nextBtn.disabled = journeyStep >= VISITS.length - 1;
+  if (journeyStep >= VISITS.length - 1) nextBtn.textContent = 'All visits shown';
+  else nextBtn.textContent = 'Next Visit \u2192';
+
+  // Timeline
+  const tl = document.getElementById('journeyTimeline');
+  if (journeyStep < 0) {
+    tl.innerHTML = '<p style="color:var(--gray-400);font-size:14px;padding:16px 0">Click "Next Visit" to begin Amara\'s 7-visit journey across multiple clinics.</p>';
+    document.getElementById('journeySmsBubble').textContent = 'No visits yet. Click "Next Visit" to begin Amara\'s story.';
+    document.getElementById('journeySmsTime').textContent = '';
+    document.getElementById('journeySegments').style.display = 'none';
+    document.getElementById('journeyBytes').style.display = 'none';
+    document.getElementById('journeyDecrypted').innerHTML = '<p style="color:var(--gray-400);font-size:14px">No data yet. Step through visits to build the health record.</p>';
+    return;
+  }
+
+  let html = '';
+  VISITS.forEach((v, i) => {
+    const isCurrent = i === journeyStep;
+    const isFuture = i > journeyStep;
+    const isAbnormal = v.sbp >= 140 || v.sbp <= 90 || v.dbp >= 90 || v.dbp <= 60 || v.temp >= 38.0 || v.temp <= 35.5 || v.pulse > 100 || v.pulse < 60;
+    let cls = isCurrent ? 'tl-item current' : isFuture ? 'tl-item future' : 'tl-item';
+    if (isAbnormal && !isFuture) cls += ' abnormal';
+    html += `<div class="${cls}">
+      <div class="tl-dot"></div>
+      <div class="tl-date">${v.date} ${isCurrent ? '<span class="tag tag-green" style="margin-left:4px">CURRENT</span>' : ''}</div>
+      <div class="tl-clinic">${v.clinic} &middot; ${v.doctor}</div>
+      <div class="tl-content">
+        <strong>${v.dx}</strong><br>
+        <span style="font-size:12px;color:var(--gray-500)">BP ${v.sbp}/${v.dbp}${(v.sbp>=140||v.dbp>=90)&&!isFuture?' \u26A0':''}  &middot; T ${v.temp}\u00B0C${(v.temp>=38.0)&&!isFuture?' \u26A0':''}  &middot; P ${v.pulse}  &middot; SpO2 ${v.spo2}%  &middot; ${v.meds.split(',')[0]}</span>
+      </div>
+    </div>`;
+  });
+  tl.innerHTML = html;
+
+  // Show real encrypted SMS from cache (or placeholder while crypto loads)
+  const activeVisits = VISITS.slice(0, journeyStep + 1);
+  const smsText = encryptedSmsCache[journeyStep] || 'Encrypting...';
+  document.getElementById('journeySmsBubble').textContent = smsText;
+  const latest = activeVisits[activeVisits.length - 1];
+  document.getElementById('journeySmsTime').textContent = `${latest.date} \u00B7 ${latest.clinic} \u00B7 AES-256-GCM Encrypted`;
+  document.getElementById('journeySegments').style.display = 'inline-block';
+  document.getElementById('journeySegments').textContent = `1 SMS (${smsText.length} chars)`;
+  document.getElementById('journeyBytes').style.display = 'inline-block';
+  document.getElementById('journeyBytes').textContent = '92 bytes \u2192 AES-256-GCM \u2192 Base64';
+
+  // Build decrypted view
+  renderJourneyDecrypted(activeVisits);
+}
+
+function renderJourneyDecrypted(visits) {
+  const container = document.getElementById('journeyDecrypted');
+  const latest = visits[visits.length - 1];
+
+  // Chronic conditions
+  const dxFreq = {};
+  visits.forEach(v => {
+    v.dxCode.split(', ').forEach(code => {
+      const full = v.dx.split('; ').find(d => d.startsWith(code)) || code;
+      if (!dxFreq[code]) dxFreq[code] = { name: full, count: 0 };
+      dxFreq[code].count++;
+    });
+  });
+  const chronics = Object.entries(dxFreq).filter(([_, d]) => d.count >= 2).sort((a,b) => b[1].count - a[1].count);
+
+  // Abnormal vitals (most recent per type)
+  const abnormals = [];
+  const seen = new Set();
+  [...visits].reverse().forEach(v => {
+    if (!seen.has('sbp') && (v.sbp >= 140 || v.sbp <= 90)) { seen.add('sbp'); abnormals.push({ date: v.date, label: 'Systolic BP', value: v.sbp + ' mmHg', status: v.sbp >= 140 ? 'HIGH' : 'LOW' }); }
+    if (!seen.has('dbp') && (v.dbp >= 90 || v.dbp <= 60)) { seen.add('dbp'); abnormals.push({ date: v.date, label: 'Diastolic BP', value: v.dbp + ' mmHg', status: v.dbp >= 90 ? 'HIGH' : 'LOW' }); }
+    if (!seen.has('temp') && (v.temp >= 38.0 || v.temp <= 35.5)) { seen.add('temp'); abnormals.push({ date: v.date, label: 'Temperature', value: v.temp + '\u00B0C', status: v.temp >= 38.0 ? 'FEVER' : 'LOW' }); }
+    if (!seen.has('pulse') && (v.pulse > 100 || v.pulse < 60)) { seen.add('pulse'); abnormals.push({ date: v.date, label: 'Pulse', value: v.pulse + ' bpm', status: v.pulse > 100 ? 'HIGH' : 'LOW' }); }
+  });
+
+  // Cumulative allergies
+  const allAllergies = new Set();
+  visits.forEach(v => v.allergies.forEach(a => allAllergies.add(a)));
+
+  let html = `
+    <div class="stat-grid" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-value" style="color:var(--green)">${visits.length}</div><div class="stat-label">Visits</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--amber)">${chronics.length}</div><div class="stat-label">Chronic</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--red)">${abnormals.length}</div><div class="stat-label">Abnormal Vitals</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--purple)">${allAllergies.size}</div><div class="stat-label">Allergies</div></div>
+    </div>`;
+
+  // Latest visit
+  html += `<h3 style="margin-bottom:6px">Latest Visit</h3>
+    <table style="margin-bottom:16px">
+      <tr><td style="color:var(--gray-500);width:120px">Date</td><td>${latest.date}</td></tr>
+      <tr><td style="color:var(--gray-500)">Clinic</td><td>${latest.clinic}</td></tr>
+      <tr><td style="color:var(--gray-500)">Diagnosis</td><td><strong>${latest.dx}</strong></td></tr>
+      <tr><td style="color:var(--gray-500)">BP</td><td>${latest.sbp}/${latest.dbp} mmHg ${(latest.sbp>=140||latest.dbp>=90)?'<span class="tag tag-red">HIGH</span>':''}</td></tr>
+      <tr><td style="color:var(--gray-500)">Temp</td><td>${latest.temp}\u00B0C ${latest.temp>=38.0?'<span class="tag tag-red">FEVER</span>':''}</td></tr>
+      <tr><td style="color:var(--gray-500)">Pulse</td><td>${latest.pulse} bpm</td></tr>
+      <tr><td style="color:var(--gray-500)">Height</td><td>${latest.height} cm</td></tr>
+      <tr><td style="color:var(--gray-500)">Weight</td><td>${latest.weight} kg</td></tr>
+      <tr><td style="color:var(--gray-500)">SpO2</td><td>${latest.spo2}%</td></tr>
+      <tr><td style="color:var(--gray-500)">Resp. Rate</td><td>${decodeRR(encodeRR(latest.rr))} breaths/min</td></tr>
+      <tr><td style="color:var(--gray-500)">Medications</td><td>${latest.meds}</td></tr>
+      <tr><td style="color:var(--gray-500)">Follow-up</td><td>${latest.followUp}</td></tr>
+    </table>`;
+
+  // Chronic conditions
+  if (chronics.length > 0) {
+    html += `<h3 style="color:var(--amber);margin-bottom:6px">Chronic Conditions</h3>`;
+    chronics.forEach(([code, d]) => {
+      html += `<div class="highlight-box amber" style="padding:8px 12px;margin:4px 0">
+        <strong>${d.name}</strong> \u2014 <span class="tag tag-amber">${d.count} of ${visits.length} visits</span></div>`;
+    });
+  }
+
+  // Abnormal vitals
+  if (abnormals.length > 0) {
+    html += `<h3 style="color:var(--red);margin:12px 0 6px">Abnormal Vitals</h3>`;
+    abnormals.forEach(a => {
+      html += `<div class="highlight-box red" style="padding:8px 12px;margin:4px 0">
+        <strong>${a.date}:</strong> ${a.label} <strong>${a.value}</strong> <span class="tag tag-red">${a.status}</span></div>`;
+    });
+  }
+
+  // Allergies
+  if (allAllergies.size > 0) {
+    html += `<h3 style="margin:12px 0 6px">Known Allergies</h3><div>`;
+    allAllergies.forEach(a => { html += `<span class="tag tag-red">${a}</span> `; });
+    html += '</div>';
+  }
+
+  // Growth summary
+  if (latest.height || latest.weight) {
+    html += `<h3 style="margin:12px 0 6px">Growth Summary</h3>
+      <div class="highlight-box green" style="padding:8px 12px;margin:4px 0">
+        <strong>Weight:</strong> ${latest.weight} kg (Z: ${latest.weightZ != null ? latest.weightZ.toFixed(1) : 'N/A'})
+        &nbsp;&middot;&nbsp;
+        <strong>Height:</strong> ${latest.height} cm (Z: ${latest.heightZ != null ? latest.heightZ.toFixed(1) : 'N/A'})
+      </div>`;
+  }
+
+  // Immunizations
+  const allImmunizations = [];
+  const seenVacc = new Set();
+  [...visits].reverse().forEach(v => {
+    (v.immunizations || []).forEach(imm => {
+      const key = imm.name + '-' + imm.dose;
+      if (!seenVacc.has(key)) { seenVacc.add(key); allImmunizations.push(imm); }
+    });
+  });
+  if (allImmunizations.length > 0) {
+    html += `<h3 style="margin:12px 0 6px">Immunizations</h3><div>`;
+    allImmunizations.forEach(imm => { html += `<span class="tag tag-blue">${imm.name} (dose ${imm.dose})</span> `; });
+    html += '</div>';
+  }
+
+  // Clinical status flags
+  if (latest.clinicalStatus1 || latest.clinicalStatus2) {
+    const flags1 = ['HIV+', 'TB', 'Pregnant', 'Syphilis', 'HepB', 'Malaria'];
+    const flags2 = ['Anemia', 'Blood Group', 'Glucose', 'Proteinuria', 'Sickle Cell', 'Malnutrition'];
+    const activeFlags = [];
+    for (let i = 0; i < 6; i++) { if (latest.clinicalStatus1 & (1 << (7 - i))) activeFlags.push(flags1[i]); }
+    for (let i = 0; i < 6; i++) { if (latest.clinicalStatus2 & (1 << (7 - i))) activeFlags.push(flags2[i]); }
+    if (activeFlags.length > 0) {
+      html += `<h3 style="color:var(--purple);margin:12px 0 6px">Clinical Status Flags</h3><div>`;
+      activeFlags.forEach(f => { html += `<span class="tag tag-purple">${f}</span> `; });
+      html += '</div>';
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// LIVE RECOVERY — Real AES-256-GCM Decryption
+// ══════════════════════════════════════════════
+
+async function runLiveRecovery() {
+  const phone = document.getElementById('recPhone').value.trim();
+  const pinToggle = document.getElementById('recPinToggle');
+  const pinInput = document.getElementById('recPin');
+  const pin = (pinToggle && pinToggle.checked && pinInput.value.trim()) ? pinInput.value.trim() : null;
+  const result = document.getElementById('recResult');
+  const errorDiv = document.getElementById('recError');
+  const btn = document.getElementById('recBtn');
+
+  if (!phone || phone.length < 6) {
+    alert('Please enter the patient\'s phone number.');
+    return;
+  }
+
+  result.style.display = 'none';
+  if (errorDiv) errorDiv.style.display = 'none';
+  btn.innerHTML = '\u23F3 Deriving key (PBKDF2, 100K iterations)...';
+  btn.disabled = true;
+
+  try {
+    // Step 1: Real PBKDF2 key derivation from phone number + optional PIN
+    const key = await deriveKey(phone, pin);
+
+    btn.innerHTML = '\uD83D\uDD12 Decrypting AES-256-GCM...';
+
+    // Step 2: Get the encrypted SMS (real bytes from last journey step)
+    const smsText = document.getElementById('recSmsBubble').textContent;
+    const encBytes = fromBase64(smsText);
+
+    // Step 3: Real AES-256-GCM decryption (will throw if wrong key)
+    const plaintext = await decryptPayload(encBytes, key);
+
+    btn.innerHTML = '\u2705 Verifying CRC-8 integrity...';
+    await new Promise(r => setTimeout(r, 400));
+
+    // Step 4: Verify CRC-8
+    const expectedCrc = crc8maxim(plaintext.slice(0, plaintext.length - 1));
+    const actualCrc = plaintext[plaintext.length - 1];
+    if (expectedCrc !== actualCrc) throw new Error('CRC mismatch');
+
+    // Success — show decrypted health record
+    result.style.display = 'block';
+    btn.innerHTML = '\uD83D\uDD12 Decrypt SMS';
+    btn.disabled = false;
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    // Decryption failed — wrong PIN or tampered data
+    btn.innerHTML = '\uD83D\uDD12 Decrypt SMS';
+    btn.disabled = false;
+
+    if (errorDiv) {
+      errorDiv.style.display = 'block';
+      errorDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // Fallback if error div doesn't exist
+      result.style.display = 'none';
+      alert('Decryption failed. Wrong phone number or PIN. AES-256-GCM authentication tag mismatch.');
+    }
+  }
+}
+
+// Init journey and crypto
+journeyReset();
+initCrypto();
+
+// Hamburger menu
+function toggleMenu() {
+  var btn = document.querySelector('.hamburger');
+  var menu = document.getElementById('mobileMenu');
+  btn.classList.toggle('open');
+  menu.classList.toggle('open');
+  var isOpen = menu.classList.contains('open');
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+  btn.setAttribute('aria-expanded', isOpen);
+  if (isOpen) {
+    menu.querySelector('a').focus();
+  }
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var menu = document.getElementById('mobileMenu');
+    if (menu.classList.contains('open')) {
+      toggleMenu();
+      document.querySelector('.hamburger').focus();
+    }
+  }
+});
+</script>
+
+<footer class="site-footer">
+  <div class="container">
+    <a href="index.html" class="logo">ChartLite.</a>
+    <p>&copy; 2026 ChartLite. Open-source under the Apache License 2.0.</p>
+    <div class="footer-links">
+      <a href="https://github.com/prismindanalytics/chartlite" target="_blank" rel="noopener noreferrer">Source Code</a>
+      <a href="mailto:hello@chartlite.health">Contact the Team</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

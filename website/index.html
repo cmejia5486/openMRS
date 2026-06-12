@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChartLite | Clinical Documentation</title>
+  <meta name="description" content="A voice-first charting tool built for the reality of primary care facilities.">
+  <meta name="theme-color" content="#F9F8F6">
+  <link rel="canonical" href="https://chartlite.health/">
+  <meta property="og:url" content="https://chartlite.health/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ChartLite | Clinical Documentation">
+  <meta property="og:description" content="A voice-first charting tool built for the reality of primary care facilities.">
+  <meta property="og:site_name" content="ChartLite">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #F9F8F6;
+      /* Warm paper */
+      --text-color: #2b2b2b;
+      --text-muted: #666666;
+      --primary-dark: #1A2E35;
+      /* Deep slate */
+      --accent: #A27B5C;
+      /* Soft bronze */
+      --surface: #FFFFFF;
+      --border: #E5E0D8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    .serif {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-dark);
+      font-weight: 400;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar */
+    nav {
+      padding: 32px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 64px;
+    }
+
+    .nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-color);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    .nav-cta {
+      border-bottom: 1px solid var(--primary-dark);
+      padding-bottom: 4px;
+    }
+
+    /* ── Hamburger Menu ── */
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      width: 32px; height: 24px; position: relative; z-index: 101;
+    }
+    .hamburger span {
+      display: block; width: 100%; height: 2px; background: var(--primary-dark);
+      position: absolute; left: 0; transition: all 0.3s ease;
+    }
+    .hamburger span:nth-child(1) { top: 2px; }
+    .hamburger span:nth-child(2) { top: 11px; }
+    .hamburger span:nth-child(3) { top: 20px; }
+    .hamburger.open span:nth-child(1) { top: 11px; transform: rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { top: 11px; transform: rotate(-45deg); }
+
+    .mobile-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(26, 46, 53, 0.95); z-index: 100; flex-direction: column;
+      justify-content: center; align-items: center; gap: 24px;
+    }
+    .mobile-overlay.open { display: flex; }
+    .mobile-overlay a {
+      text-decoration: none; color: #fff; font-size: 20px; font-weight: 400;
+      font-family: 'Playfair Display', serif; letter-spacing: 0.02em;
+      padding: 12px 0; transition: opacity 0.3s;
+    }
+    .mobile-overlay a:hover { opacity: 0.7; }
+
+    /* Hero Section */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 64px;
+      align-items: center;
+      margin-bottom: 120px;
+    }
+
+    .hero-text h1 {
+      font-size: 56px;
+      line-height: 1.1;
+      margin-bottom: 32px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-text p {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 520px;
+      font-weight: 300;
+    }
+
+    .hero-image img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .hero-text .btn-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      padding: 16px 28px;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      border: 1px solid transparent;
+      border-radius: 4px;
+    }
+
+    .btn-solid {
+      background-color: var(--primary-dark);
+      color: var(--surface);
+    }
+
+    .btn-solid:hover {
+      background-color: #2A454F;
+    }
+
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--primary-dark);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary-dark);
+    }
+
+    /* Quote Section */
+    .quote-section {
+      text-align: center;
+      padding: 140px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 120px;
+    }
+
+    .quote-section h2 {
+      font-size: 32px;
+      font-style: italic;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.4;
+      color: var(--primary-dark);
+    }
+
+    /* Editorial Layout - Features */
+    .editorial-block {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 80px;
+      margin-bottom: 120px;
+      align-items: center;
+    }
+
+    .editorial-block.reverse {
+      grid-template-columns: 7fr 5fr;
+    }
+
+    .editorial-block.reverse .editorial-text {
+      order: 2;
+    }
+
+    .editorial-block.reverse .editorial-image {
+      order: 1;
+    }
+
+    .editorial-text h3 {
+      font-size: 36px;
+      margin-bottom: 24px;
+    }
+
+    .editorial-text p {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin-top: 32px;
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+    }
+
+    .feature-list li {
+      display: flex;
+      margin-bottom: 24px;
+    }
+
+    .feature-list .number {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: var(--accent);
+      min-width: 40px;
+    }
+
+    .feature-list .details h4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      color: var(--primary-dark);
+    }
+
+    .feature-list .details p {
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+
+    .editorial-image {
+      height: 100%;
+      min-height: 480px;
+    }
+
+    .editorial-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    /* Technical Pillars */
+    .tech-section {
+      padding: 120px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .tech-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .tech-header h2 {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .tech-header p {
+      color: var(--text-muted);
+      font-size: 18px;
+      max-width: 600px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 48px;
+    }
+
+    .tech-pillar h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--primary-dark);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .tech-pillar p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* Final CTA */
+    .cta {
+      background-color: var(--primary-dark);
+      color: var(--surface);
+      text-align: center;
+      padding: 120px 24px;
+    }
+
+    .cta h2 {
+      color: var(--surface);
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+
+    .cta p {
+      font-size: 18px;
+      opacity: 0.8;
+      max-width: 500px;
+      margin: 0 auto 40px;
+      font-weight: 300;
+    }
+
+    .cta .btn-solid {
+      background-color: var(--surface);
+      color: var(--primary-dark);
+    }
+
+    .cta .btn-solid:hover {
+      background-color: var(--bg-color);
+    }
+
+    /* Footer */
+    footer {
+      padding: 64px 0;
+      text-align: center;
+    }
+
+    footer .logo {
+      display: inline-block;
+      margin-bottom: 24px;
+    }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary-dark);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      nav {
+        padding: 20px 0;
+        margin-bottom: 40px;
+      }
+
+      .nav-links {
+        gap: 16px;
+      }
+
+      .nav-links a {
+        font-size: 12px;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        text-align: center;
+      }
+
+      .hero-text h1 {
+        font-size: 36px;
+      }
+
+      .hero-text p {
+        margin: 0 auto 40px;
+        font-size: 16px;
+      }
+
+      .hero-text .btn-container {
+        justify-content: center;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .tech-grid {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .editorial-block,
+      .editorial-block.reverse {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .editorial-block.reverse .editorial-text {
+        order: 1;
+      }
+
+      .editorial-block.reverse .editorial-image {
+        order: 2;
+      }
+
+      .editorial-image {
+        min-height: 320px;
+      }
+
+      .quote-section {
+        padding: 80px 0;
+      }
+
+      .quote-section h2 {
+        font-size: 22px;
+      }
+
+      .cta h2 {
+        font-size: 32px;
+      }
+
+      .cta {
+        padding: 80px 24px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .hamburger { display: block; }
+
+      .hero-text h1 {
+        font-size: 30px;
+      }
+
+      .editorial-text h3 {
+        font-size: 28px;
+      }
+
+      .tech-header h2 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <div class="nav-links">
+        <a href="approach.html">Our Approach</a>
+        <a href="technology.html">Technology</a>
+        <a href="sms-demo.html">Portable Record</a>
+        <a href="connectivity.html">Connectivity</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="ai-pipeline.html">AI Pipeline</a>
+        <a href="#download" class="nav-cta">Get Started</a>
+      </div>
+      <button class="hamburger" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-overlay" id="mobileMenu" role="dialog" aria-label="Navigation menu">
+    <a href="approach.html">Our Approach</a>
+    <a href="technology.html">Technology</a>
+    <a href="sms-demo.html">Portable Record</a>
+    <a href="connectivity.html">Connectivity</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="ai-pipeline.html">AI Pipeline</a>
+    <a href="#download" onclick="toggleMenu()">Get Started</a>
+  </div>
+
+  <main class="container">
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-text">
+        <h1>Care without the paperwork.</h1>
+        <p>ChartLite is a voice-powered documentation tool built for primary care. It operates <strong>100%
+            offline</strong> and is <strong>completely free</strong>, translating spoken consultations into structured
+          clinical records.</p>
+        <div class="btn-container">
+          <a href="#download" class="btn btn-solid">Deploy in Your Clinic ($0)</a>
+          <a href="#approach" class="btn btn-outline">Read Our Approach</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <!-- Re-using the LMIC hero image -->
+        <img src="hero.png" alt="A smiling healthcare professional holding a mobile device.">
+      </div>
+    </section>
+
+    <!-- Break/Quote -->
+    <section class="quote-section" id="approach">
+      <div class="container">
+        <h2>"A clinic's most valuable resource is the clinician's time. ChartLite restores that time by completely
+          removing the friction of data entry."</h2>
+      </div>
+    </section>
+
+    <!-- First Editorial Block - Voice -->
+    <section class="editorial-block">
+      <div class="editorial-text">
+        <h3>As natural as a conversation.</h3>
+        <p>We believe technology should adapt to how you practice medicine, not force you to change your workflow. By
+          utilizing advanced on-device speech recognition, ChartLite listens to the natural dialogue between you and
+          your patient.</p>
+        <p>There are no complex menus to navigate or checkboxes to fill out. You speak. The application understands.</p>
+
+        <ul class="feature-list">
+          <li>
+            <div class="number">01</div>
+            <div class="details">
+              <h4>Speak Your Assessment</h4>
+              <p>Discuss symptoms and treatment with your patient normally while the device records.</p>
+            </div>
+          </li>
+          <li>
+            <div class="number">02</div>
+            <div class="details">
+              <h4>Instant Structure</h4>
+              <p>The system automatically extracts the diagnosis, vital signs, and prescribed medications.</p>
+            </div>
+          </li>
+          <li>
+            <div class="number">03</div>
+            <div class="details">
+              <h4>Review and Save</h4>
+              <p>A formatted clinical note is generated for your brief review and immediate approval.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="editorial-image">
+        <img src="sync.png" alt="A clinician holding a phone showing the ChartLite voice-to-chart interface in a consultation room.">
+      </div>
+    </section>
+
+    <!-- Second Editorial Block - Offline/Reality -->
+    <section class="editorial-block reverse" id="technology">
+      <div class="editorial-text">
+        <h3>100% Offline. Scales as you grow.</h3>
+        <p>Many systems require expensive servers and uninterrupted broadband. We designed ChartLite to function
+          flawlessly even when those aren't guaranteed.</p>
+        <p>It operates entirely offline on standard Android devices, with battery-aware inference that queues
+          transcripts and processes them in efficient batches. When reliable internet or advanced devices are available,
+          ChartLite adds secure peer-to-peer sync — including cross-facility patient sharing — optional cloud AI, and enterprise-grade reporting
+          integrations.</p>
+        <p>Whether you are operating a rural healthcare outpost or a fast-paced urban practice, the platform adapts to
+          your infrastructure. No matter the setting, your data is protected with bank-standard encryption.</p>
+        <p style="margin-top: 24px; font-weight: 500; color: var(--primary-dark);">ChartLite is open-source and will
+          always be completely free for clinical use. No subscriptions, no hidden fees.</p>
+      </div>
+      <div class="editorial-image"
+        style="background-color: var(--bg-color); padding: 60px 40px; display: flex; align-items: center; justify-content: flex-start; border-radius: 4px; border: 1px solid rgba(0,0,0,0.06);">
+        <ul style="list-style: none; padding: 0; margin: 0; font-family: var(--font-body); font-size: 17px; line-height: 1.8; color: var(--primary-dark);">
+          <li style="margin-bottom: 20px; padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: var(--accent-muted); font-weight: 600;">01</span> Zero ongoing licensing fees.</li>
+          <li style="margin-bottom: 20px; padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: var(--accent-muted); font-weight: 600;">02</span> Fully functional without internet.</li>
+          <li style="margin-bottom: 20px; padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: var(--accent-muted); font-weight: 600;">03</span> Unlocks optional cloud AI &amp; reporting when connected.</li>
+          <li style="padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: var(--accent-muted); font-weight: 600;">04</span> Built for both remote clinics &amp; urban practices.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Technical Architecture Section -->
+    <section class="tech-section" id="architecture">
+      <div class="tech-header">
+        <h2>Enterprise-Grade Architecture.</h2>
+        <p>Built on modern, verifiable technologies to ensure reliability, security, and interoperability in the most
+          demanding environments.</p>
+      </div>
+      <div class="tech-grid">
+        <div class="tech-pillar">
+          <h4>On-Device AI Inference</h4>
+          <p>Unlike traditional cloud-dependent EMRs, ChartLite executes entirely locally. It utilizes <strong>Offline
+              Speech Recognition</strong> (sherpa-onnx powered ASR with 7 model tiers including medASR for clinical vocabulary) for speech recognition and a quantized <strong>Qwen 3.5</strong> model via
+            <strong>llama.cpp</strong> (with flash attention and Q8 KV cache) for clinical extraction. A 6-strategy fallback chain (Gemini Nano &rarr; Qwen on-device &rarr; Claude &rarr; OpenAI &rarr; Gemini &rarr; Regex) ensures extraction always succeeds. An on-device <strong>RAG pipeline</strong> retrieves
+            only the relevant diagnoses and drugs per transcript — keeping context windows lean and accurate on
+            resource-constrained hardware.</p>
+        </div>
+        <div class="tech-pillar">
+          <h4>Zero-Trust Security</h4>
+          <p>Data at rest is protected by a <strong>SQLCipher</strong> encrypted database. In completely offline
+            settings, vital synchronization is achieved using an <strong>AES-256-GCM</strong> encrypted binary payload
+            over standard SMS networks. <strong>Play Integrity</strong> device attestation verifies app authenticity before any cloud API access.</p>
+        </div>
+        <div class="tech-pillar">
+          <h4>Global Interoperability</h4>
+          <p>Clinical data is stored natively for speed, with <strong>FHIR R4</strong> bundles generated on-demand for
+            external systems like DHIS2 and OpenMRS. A built-in <strong>billing engine</strong> automates ICD-10 to CPT/HCPCS mapping, E/M level coding, and <strong>SOAP note generation</strong> from structured encounter data. Ready for insurance claims and national health information exchanges across 3 active + 5 planned countries.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <section class="cta" id="download">
+    <div class="container">
+      <h2>ChartLite is in active development.</h2>
+      <p>We're building in the open and iterating fast. The project is free and open-source — you're welcome to try it, explore the code, and see how it works.</p>
+      <p style="margin-top:8px;">If you run a clinic or health facility and want to explore a pilot, we'd love to hear from you. And whether you're a clinician, developer, or health systems researcher — your feedback helps us build something better.</p>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:24px;">
+        <a href="https://github.com/prismindanalytics/chartlite" target="_blank" rel="noopener noreferrer" class="btn btn-solid">View on GitHub</a>
+        <a href="mailto:hello@chartlite.health" class="btn btn-solid" style="background:transparent;color:var(--accent);border:1.5px solid var(--accent);">Get in Touch</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <p>&copy; 2026 ChartLite. Open-source under the Apache License 2.0.</p>
+      <div class="footer-links">
+        <a href="https://github.com/prismindanalytics/chartlite" target="_blank" rel="noopener noreferrer">Source Code</a>
+        <a href="mailto:hello@chartlite.health">Contact the Team</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      var btn = document.querySelector('.hamburger');
+      var menu = document.getElementById('mobileMenu');
+      btn.classList.toggle('open');
+      menu.classList.toggle('open');
+      var isOpen = menu.classList.contains('open');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+      btn.setAttribute('aria-expanded', isOpen);
+      if (isOpen) {
+        menu.querySelector('a').focus();
+      }
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var menu = document.getElementById('mobileMenu');
+        if (menu.classList.contains('open')) {
+          toggleMenu();
+          document.querySelector('.hamburger').focus();
+        }
+      }
+    });
+  </script>
+
+</body>
+
+</html>

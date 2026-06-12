@@ -1,0 +1,17 @@
+{
+  "country": "ZA",
+  "name": "South Africa",
+  "languages": ["en", "zu", "xh", "af", "st"],
+  "defaultLanguage": "en",
+  "formularyFile": "formulary/za_formulary.json",
+  "icd10File": "icd10/phc_top300.json",
+  "cdssRules": "cdss/za_rules.json",
+  "languageModelDir": "lm/za/",
+  "smsEnabled": true,
+  "nationalIdFormat": "^\\d{13}$",
+  "nationalIdLabel": "SA ID Number",
+  "phoneFormat": "^\\+27\\d{9}$",
+  "dateFormat": "dd/MM/yyyy",
+  "currencyCode": "ZAR",
+  "facilityIdPrefix": "ZA"
+}

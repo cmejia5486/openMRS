@@ -1,0 +1,17 @@
+{
+  "country": "US",
+  "name": "United States",
+  "languages": ["en", "es"],
+  "defaultLanguage": "en",
+  "formularyFile": "formulary/us_formulary.json",
+  "icd10File": "icd10/phc_top300.json",
+  "cdssRules": "cdss/us_rules.json",
+  "languageModelDir": "lm/us/",
+  "smsEnabled": false,
+  "nationalIdFormat": "^\\d{3}-\\d{2}-\\d{4}$",
+  "nationalIdLabel": "SSN (optional)",
+  "phoneFormat": "^\\+1\\d{10}$",
+  "dateFormat": "MM/dd/yyyy",
+  "currencyCode": "USD",
+  "facilityIdPrefix": "US"
+}

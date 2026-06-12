@@ -1,0 +1,17 @@
+{
+  "country": "NG",
+  "name": "Nigeria",
+  "languages": ["en", "yo", "ha"],
+  "defaultLanguage": "en",
+  "formularyFile": "formulary/ng_formulary.json",
+  "icd10File": "icd10/phc_top300.json",
+  "cdssRules": "cdss/ng_rules.json",
+  "languageModelDir": "lm/ng/",
+  "smsEnabled": true,
+  "nationalIdFormat": "^\\d{11}$",
+  "nationalIdLabel": "NIN",
+  "phoneFormat": "^\\+234\\d{10}$",
+  "dateFormat": "dd/MM/yyyy",
+  "currencyCode": "NGN",
+  "facilityIdPrefix": "NG"
+}

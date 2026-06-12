@@ -1,0 +1,17 @@
+{
+  "country": "MW",
+  "name": "Malawi",
+  "languages": ["ny", "en"],
+  "defaultLanguage": "en",
+  "formularyFile": "formulary/mw_formulary.json",
+  "icd10File": "icd10/phc_top300.json",
+  "cdssRules": "cdss/mw_rules.json",
+  "languageModelDir": "lm/mw/",
+  "smsEnabled": true,
+  "nationalIdFormat": "^[A-Z0-9]{8,12}$",
+  "nationalIdLabel": "National ID",
+  "phoneFormat": "^\\+265\\d{9}$",
+  "dateFormat": "dd/MM/yyyy",
+  "currencyCode": "MWK",
+  "facilityIdPrefix": "MW"
+}
