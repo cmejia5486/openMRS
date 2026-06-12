@@ -63,7 +63,6 @@ Android FHIR Engine (local store) + Remote FHIR API (OpenMRS)
 
 ### ✅ Prerequisites
 
-<<<<<<< HEAD
 * Android Studio Hedgehog or later
 * JDK 11
 * Kotlin 1.9+
@@ -155,14 +154,3 @@ This project is licensed under the [MIT License](LICENSE).
 ## 👥 Maintained by
 
 > METS Program - Uganda
-=======
-# Resources
-- [User Guide](https://github.com/openmrs/openmrs-android-client-user-guide)
-- [Contribution Guidelines](https://github.com/openmrs/openmrs-contrib-android-client/blob/master/CONTRIBUTING.md)
-- [JIRA](https://issues.openmrs.org/browse/AC/?selectedTab=com.atlassian.jira.jira-projects-plugin:summary-panel)
-- [Sprint board](https://issues.openmrs.org/secure/RapidBoard.jspa?rapidView=60)
-- [Dashboard](https://issues.openmrs.org/secure/Dashboard.jspa?selectPageId=12851)
-- [CI](https://travis-ci.org/openmrs/openmrs-contrib-android-client)
-- [Google Play](https://play.google.com/store/apps/details?id=org.openmrs.mobile)
-- [Release Notes](releaseNotes.md)
->>>>>>> 0fd462a5a9dcb07a5391932b2c8ea4ee5342a127
