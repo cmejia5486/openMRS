@@ -1766,8 +1766,7 @@
       "controles": "The application must encrypt passwords during transmission to ensure that no passwords are sent in clear text over the network.",
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
-        "has_android_ssl_pinning_present",
-        "has_ssl_pinning_findings_severity_good"
+        "has_android_ssl_pinning_present"
       ]
     },
     {
@@ -5253,8 +5252,8 @@
       "Validation criteria": "Communication Protocol Analysis Test:\nTest: Examine the communication framework used for app-server interactions.\nExpected result: Communication is established using secure, authenticated methods such as FCM or encrypted IP protocols, without reliance on SMS.\nAuthentication Mechanism Verification Test:\nTest: Validate the authentication methods applied in app-server communications.\nExpected result: Communications are authenticated, ensuring only legitimate devices and servers can exchange data.\nSMS Interception Test:\nTest: Attempt to intercept communications sent via SMS if any fallback is enabled.\nExpected result: No sensitive data is sent via SMS, even during fallback scenarios.\nEncryption Assessment Test:\nTest: Confirm that all data exchanged over the communication channel is encrypted end-to-end.\nExpected result: Data in transit is encrypted with robust protocols such as TLS 1.3.\nAlternative Channel Resilience Test:\nTest: Introduce simulated network vulnerabilities and evaluate the app’s ability to maintain secure communication without reverting to SMS.\nExpected result: The app continues to utilize secure alternatives without compromising communication security.",
       "controles": "The application must prioritize secure and authenticated communication methods, such as Firebase Cloud Messaging (FCM) or encrypted IP-based networking protocols, instead of relying on SMS for app-server interactions.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_android_ssl_pinning_present"
       ]
     },
     {
@@ -5298,9 +5297,9 @@
       "Validation criteria": "Network Interception Simulation Test:\nTest: Simulate a man-in-the-middle (MITM) attack during data transmission between the app and the server.\nExpected result: The app uses encrypted communication protocols, preventing eavesdropping or tampering with transmitted data.\nEncryption Protocol Validation Test:\nTest: Verify the implementation of TLS (minimum v1.2) or equivalent encryption for all network communications.\nExpected result: Data in transit is encrypted, and the server’s certificate is validated.\nEnd-to-End Encryption Test:\nTest: Confirm that the application encrypts sensitive data at the application layer before transmission.\nExpected result: Sensitive data remains encrypted throughout transmission and is decrypted only on the intended recipient’s device.\nTraffic Inspection Test:\nTest: Inspect network traffic using tools like Wireshark or Burp Suite to detect any plaintext data transmission.\nExpected result: No sensitive data is visible in plaintext during transmission.\nCode Review for Secure Communication Practices:\nTest: Analyze the app’s source code for the implementation of secure communication libraries and proper encryption methods.\nExpected result: Secure communication libraries are used, and no sensitive data is transmitted without encryption.",
       "controles": "The application must assume that the network layer is unsecure and susceptible to eavesdropping. Implement end-to-end encryption and other secure communication practices to safeguard sensitive data transmitted over the network.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_android_ssl_pinning_detected",
-        "has_insecure_http_based_webview_communication"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_network_security_config_present"
       ]
     },
     {
@@ -5344,9 +5343,9 @@
       "Validation criteria": "Secure Protocol Verification Test:\nTest: Verify that all network communications between the mobile app and backend servers use TLS 1.2 or higher.\nExpected result: All communications are encrypted with a secure protocol, and unencrypted channels are rejected.\nIntegrity Validation Test:\nTest: Validate that integrity checks (e.g., message authentication codes) are implemented for transmitted data.\nExpected result: Data modifications during transit are detected and rejected by the system.\nEncryption Algorithm Verification Test:\nTest: Ensure that the encryption algorithms used (e.g., AES-256 for data encryption) meet current industry standards.\nExpected result: Encryption mechanisms comply with industry best practices for security and performance.\nSimulated Interception Test:\nTest: Perform penetration testing to simulate data interception attempts during transmission.\nExpected result: Attempts to intercept or modify transmitted data are unsuccessful, and alerts are generated where applicable.\nConfiguration Inspection Test:\nTest: Inspect the app's network configuration to ensure the use of secure libraries and APIs (e.g., Secure Transport for iOS or strong cipher suites in TLS).\nExpected result: Secure configurations are in place, and insecure protocols or cipher suites are disabled.\nEndpoint Authentication Test:\nTest: Verify that the app authenticates the remote server using trusted certificates and rejects connections to untrusted endpoints.\nExpected result: Only trusted endpoints are connected, and certificate validation errors are logged and reported.",
       "controles": "The mobile application must ensure the confidentiality and integrity of electronically transmitted data, including electronic protected health information (ePHI), by implementing industry-standard encryption protocols (e.g., TLS/SSL) and integrity controls during data transmission.",
       "Flags": [
-        "has_ssl_cert_pinning_implemented",
-        "has_ssl_pinning_findings_severity_good",
-        "has_insecure_http_based_webview_communication"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5440,8 +5439,9 @@
       "Validation criteria": "TLS Encryption Verification Test:\nTest: Analyze the network traffic to confirm that all transmitted data is encrypted using TLS.\nExpected result: All network communications are encrypted using TLS 1.2 or higher.\nCryptographic Mechanism Test:\nTest: Validate the use of HMAC-SHA1, HMAC-SHA-256, HMAC-SHA-512, or GCM mode to ensure data integrity during transmission.\nExpected result: Cryptographic mechanisms are correctly applied to prevent unauthorized data tampering.\nIntegrity Verification Test:\nTest: Modify transmitted data in transit and validate the system’s ability to detect unauthorized changes.\nExpected result: Any tampering with the data is detected, and the transmission is rejected.\nCertificate Validation Test:\nTest: Verify that the application validates TLS certificates, including checking for expiration and revocation.\nExpected result: Only valid and trusted certificates are accepted.\nFallback Prevention Test:\nTest: Attempt to establish connections using deprecated or insecure encryption protocols such as TLS 1.0 or SSL.\nExpected result: The application rejects connections using insecure protocols.",
       "controles": "The mobile application must ensure the confidentiality and integrity of transmitted information by requiring TLS encryption for all communications. Cryptographic mechanisms such as HMAC-SHA1, HMAC-SHA-256, HMAC-SHA-512, or GCM mode must be implemented to prevent unauthorized disclosure and detect tampering during data transmission.",
       "Flags": [
-        "has_android_ssl_pinning_detected",
-        "has_tls_ssl_pinning_implemented"
+         "has_manifest_allow_clear_text_traffic_true",
+         "has_insecure_http_based_webview_communication",
+         "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5463,8 +5463,11 @@
       "Validation criteria": "HTTP Response Validation Test:\nTest: Simulate data downloads over HTTP and verify that the application performs input validation on the received data.\nExpected result: Data is validated, and any unexpected or malformed data is rejected or sanitized.\nWebView Data Handling Test:\nTest: Load untrusted or malformed data into WebView and observe application behavior.\nExpected result: The WebView component rejects or properly escapes unsafe content without executing scripts or rendering malicious elements.\nInjection Attack Simulation Test:\nTest: Inject malicious data into HTTP responses and validate that the application detects and blocks the attack.\nExpected result: The application identifies and neutralizes injection attempts, ensuring no compromise of security.\nSecure Protocol Usage Test:\nTest: Attempt to force the application to process data downloaded over insecure protocols without validation.\nExpected result: The application enforces validation or prevents processing untrusted data.\nError Handling Test:\nTest: Validate the application's response when receiving corrupted or unexpected data over HTTP.\nExpected result: The application gracefully handles errors, rejecting malicious data while maintaining functionality.\nPenetration Testing:\nTest: Conduct penetration testing focused on manipulating data downloaded over HTTP to identify vulnerabilities.\nExpected result: No vulnerabilities are exploitable through manipulated or unvalidated data responses.",
       "controles": "The mobile application must validate all data downloaded over insecure protocols, such as HTTP. Input validation must be enforced on all responses, particularly when processing data in WebView components or handling responses to HTTP intents, to ensure untrusted data does not compromise application security.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_webview_components",
+		"has_webview_addjavascriptinterface_present",
+		"has_webview_javascript_interface_leaks_sensitive_data"
       ]
     },
     {
@@ -5654,9 +5657,9 @@
       "Validation criteria": "Protocol Validation Test:\nTest: Attempt to establish a connection to the backend server over HTTP.\nExpected result: The application rejects connections over HTTP and enforces HTTPS.\nProtocol Enforcement Test:\nTest: Intercept and analyze traffic between the app and the backend using a proxy tool.\nExpected result: All traffic uses secure HTTPS protocols, and attempts to downgrade to HTTP fail.\nConfiguration Review Test:\nTest: Review the application’s network configuration to ensure that HttpsURLConnection is used for all communication.\nExpected result: No instances of unsecured HttpURLConnection or non-HTTPS endpoints are present in the application code.\nServer Compatibility Test:\nTest: Attempt to connect to the backend server using the latest secure TLS protocol versions.\nExpected result: The application successfully establishes connections with servers using secure TLS versions (e.g., TLS 1.2 or later).\nDowngrade Attack Simulation Test:\nTest: Simulate a downgrade attack by forcing the server to use older, less secure protocols.\nExpected result: The application blocks the connection and logs an appropriate error.\nBackend Verification Test:\nTest: Inspect server configurations to verify support for secure protocols and enforcement of HTTPS connections.\nExpected result: The server enforces HTTPS and rejects any insecure connections.\nPenetration Testing:\nTest: Conduct penetration tests focusing on network security to identify potential vulnerabilities in protocol usage.\nExpected result: The application demonstrates resilience against protocol-related attacks, with all sensitive data securely encrypted.",
       "controles": "The application must enforce the use of secure communication protocols, such as HTTPS, for all network communication involving sensitive data. Connections over unsecured protocols, such as HTTP, must be blocked, and HTTPS must be used by default, especially on unsecured networks like public Wi-Fi.",
       "Flags": [
-        "has_manifest_allow_clear_text_traffic_true",
-        "has_tls_ssl_pinning_implemented",
-        "has_insecure_http_based_webview_communication"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5678,9 +5681,9 @@
       "Validation criteria": "SSL/TLS Verification Test\nTest: Attempt to establish a connection using an HTTP endpoint instead of HTTPS.\nExpected Result: The application rejects any non-HTTPS connection.\nCertificate Validation Test\nTest: Inspect the handling of SSL/TLS certificates, including rejection of expired, self-signed, or untrusted certificates.\nExpected Result: The application accepts only certificates from trusted Certificate Authorities (CAs).\nMutual Authentication Test\nTest: Establish a connection between a client and server requiring mutual authentication.\nExpected Result: Both endpoints validate certificates, and the connection succeeds only with proper authentication.\nNetwork Traffic Inspection Test\nTest: Capture network traffic between the app and server using a packet analyzer to verify encryption.\nExpected Result: All transmitted data is encrypted and unintelligible.",
       "controles": "The application must secure all network communication with SSL/TLS protocols to ensure the confidentiality and integrity of transmitted data, particularly for sensitive operations such as API calls, authentication, and data exchanges. Mutual authentication must be utilized when handling non-releasable or highly sensitive data.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_soap_uses_mutual_tls",
-        "has_soap_uses_tls"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -5728,7 +5731,9 @@
       "Validation criteria": "HTTPS Connection Test:\nTest: Establish a connection to the server and verify that only HTTPS is used for data transmission.\nExpected Result: The application rejects insecure HTTP connections and uses HTTPS exclusively.\nSocket Encryption Test:\nTest: Verify that the SSLSocket class is used with proper configurations, including hostname verification.\nExpected Result: The application enforces hostname verification and does not allow connections with unverified hosts.\nMITM Attack Simulation Test:\nTest: Simulate a man-in-the-middle attack to intercept data during transmission.\nExpected Result: The application detects and blocks the attack, preventing data leakage.\nProtocol Inspection Test:\nTest: Analyze network traffic to confirm that all communication is encrypted using modern TLS versions.\nExpected Result: Only TLS 1.2 or higher protocols are used, and weak protocols are rejected.\nHostname Validation Test:\nTest: Attempt to connect to a server with a mismatched certificate hostname.\nExpected Result: The application refuses to establish a connection, ensuring the hostname is validated.",
       "controles": "The application must implement encrypted socket-level communication using HTTPS URIs or the SSLSocket class for secure file retrieval and data transmission. Additional hostname verification precautions must be applied when using SSLSocket to prevent man-in-the-middle (MITM) attacks. All network traffic must follow best practices for securing data privacy and integrity during transit.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5859,9 +5864,10 @@
       "Validation criteria": "Certificate Validation Test:\nTest: Attempt to connect to servers with invalid, expired, or self-signed certificates.\nExpected Result: The application rejects connections to servers without trusted certificates in the key chain.\nSSL Chain Verification Test:\nTest: Verify that the application enforces SSL chain validation by attempting connections through a compromised certificate chain.\nExpected Result: The application identifies and blocks certificate chains that are not fully trusted.\nEndpoint Identity Test:\nTest: Simulate connections to endpoints with spoofed server certificates.\nExpected Result: The application verifies the identity of the endpoint and rejects spoofed certificates.\nStatic Code Analysis Test:\nTest: Review the source code to ensure TLS initialization validates the server's certificate against the trusted key chain.\nExpected Result: The code implements strict server certificate validation logic.\nDynamic Security Testing:\nTest: Perform MITM attacks using SSL stripping and proxy tools.\nExpected Result: The application detects and prevents connection establishment under MITM scenarios.",
       "controles": "The application must establish secure TLS connections only after verifying the identity of the endpoint server using trusted certificates in the key chain and enforcing SSL chain verification.",
       "Flags": [
-        "has_android_ssl_pinning_detected",
-        "has_android_ssl_pinning_present",
-        "has_ssl_pinning_findings_severity_good"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_android_ssl_pinning_detected",
+		"has_android_ssl_pinning_present"
       ]
     },
     {
@@ -8654,11 +8660,11 @@
       "Validation criteria": "Certificate Pinning Validation Test:\nTest: Verify the app only accepts connections to backend servers using the pinned certificates.\nExpected Result: The app rejects connections with unpinned or invalid certificates.\nFallback Handling Test:\nTest: Simulate a scenario where the pinned certificate is revoked or expired.\nExpected Result: The app fails securely and provides an appropriate error message to users.\nCleartext Traffic Prevention Test:\nTest: Attempt to establish a connection over HTTP instead of HTTPS.\nExpected Result: The app rejects the connection and logs the event.\nDynamic Certificate Update Test:\nTest: Replace the backend server certificate with an updated pinned certificate.\nExpected Result: The app seamlessly transitions to the new certificate without requiring user intervention.\nAudit of Trust Anchors:\nTest: Review the app's trust store to ensure it only includes pinned certificates or keys for trusted endpoints.\nExpected Result: Only the expected certificates or public keys are listed in the trust store.",
       "controles": "Mobile health applications must implement certificate pinning to restrict trusted certificates to a predefined set, ensuring secure communication with backend servers and mitigating risks from compromised Certificate Authorities.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented",
-        "has_android_ssl_pinning_present",
-        "has_android_ssl_pinning_detected",
-        "has_ssl_pinning_findings_severity_good"
+		"has_tls_ssl_pinning_implemented",
+		"has_ssl_cert_pinning_implemented",
+		"has_android_ssl_pinning_present",
+		"has_android_ssl_pinning_detected",
+		"has_ssl_pinning_findings_severity_good"
       ]
     },
     {
@@ -11031,12 +11037,11 @@
       "Validation criteria": "Certificate Validation:\nTest: Verify the application's ability to validate certificates against trusted certificate authorities.\nExpected Result: Certificates are validated and rejected if not issued by a trusted authority or if they are expired or revoked.\nDigital Signature Verification:\nTest: Test the application’s ability to verify the integrity of messages using digital signatures.\nExpected Result: Only messages with valid digital signatures are processed.\nAuthentication Challenge Testing:\nTest: Simulate an unauthorized party attempting to authenticate in the encryption process.\nExpected Result: Unauthorized attempts are rejected, and the system logs the event.\nMechanism Robustness Assessment:\nTest: Inspect all validation and authentication mechanisms for adherence to industry best practices and standards, such as FIPS or NIST guidelines.\nExpected Result: Mechanisms comply with recognized security standards and perform reliably under all conditions.\nDynamic Testing for Validation Flow:\nTest: Perform runtime testing to ensure validation and authentication processes execute securely during live operations.\nExpected Result: The system securely validates and authenticates all encryption-related operations without performance degradation or failure.",
       "controles": "The application must implement robust validation and authentication mechanisms to verify the integrity and authenticity of all parties involved in the encryption process.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented",
-        "has_ssl_pinning_findings_severity_good",
-        "has_android_ssl_pinning_present",
-        "has_manifest_allow_clear_text_traffic_true",
-        "has_endpoint_requires_user_authentication"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_endpoint_requires_user_authentication",
+		"has_android_ssl_pinning_present",
+		"has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -11295,7 +11300,7 @@
       "Validation criteria": "Random Number Source Validation:\nTest: Inspect the application's random number generation methods to ensure the use of a secure generator like SecureRandom.\nExpected Result: The application consistently uses secure random number generators for all cryptographic operations.\nEntropy Verification:\nTest: Evaluate the entropy of generated random values using statistical tests to ensure high randomness.\nExpected Result: Random values exhibit high entropy and do not follow predictable patterns.\nKey Generation Audit:\nTest: Verify that all cryptographic keys are initialized using a secure random number generator.\nExpected Result: Keys are securely generated with no predictable or reused values.\nToken Security Test:\nTest: Analyze generated tokens or nonces for randomness and resistance to replay or guessing attacks.\nExpected Result: Tokens are unpredictable and unique for each session or operation.\nPenetration Testing for Randomness Weakness:\nTest: Conduct security testing to identify potential weaknesses in the application’s random value generation process.\nExpected Result: The application demonstrates resilience to attacks targeting randomness vulnerabilities.\nLogging and Monitoring of Randomness Failures:\nTest: Verify that the application logs and alerts on any detected failures in random number generation.\nExpected Result: Failures or abnormalities in randomness generation are logged and trigger security alerts.",
       "controles": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
       "Flags": [
-        "has_android_insecure_random_rng"
+         "has_android_insecure_random_rng"
       ]
     },
     {
@@ -11317,7 +11322,7 @@
       "Validation criteria": "Randomness Audit:\nTest: Verify that IVs or counters are generated using secure random number generators, such as SecureRandom.\nExpected Result: Generated IVs and counters exhibit cryptographic randomness and high entropy.\nReplay Attack Simulation:\nTest: Simulate a replay attack to ensure the application does not accept reused IVs or counters.\nExpected Result: The application rejects reused IVs or counters, ensuring data integrity.\nCode Review for Counter Reuse:\nTest: Conduct a thorough review of the codebase to ensure no instances of counter reuse exist.\nExpected Result: All counters and IVs are unique and securely generated for each operation.\nDynamic Encryption Testing:\nTest: Perform runtime testing of the encryption module to observe IV/counter generation during operations.\nExpected Result: Encryption consistently generates unique, random IVs or counters without reuse.\nIntegrity Validation Post-Encryption:\nTest: Verify the integrity and security of encrypted data when processed using CTR mode with generated IVs/counters.\nExpected Result: Data remains secure and resistant to cryptographic analysis or attacks.",
       "controles": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
       "Flags": [
-        "has_android_insecure_random_rng"
+         "has_android_insecure_random_rng"
       ]
     }
   ]

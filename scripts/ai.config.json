@@ -13,7 +13,7 @@
   "api_version_env_var": "",
   "reasoning_effort": "",
   "max_output_tokens": 20000,
-  "batch_size": 20,
+  "batch_size": 15,
   "timeout_s": 600,
   "temperature": 0,
   "extra_headers": {}
@@ -29,7 +29,7 @@
       "api_version_env_var": "",
       "reasoning_effort": "high",
       "max_output_tokens": 6000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 600,
       "temperature": 0,
       "extra_headers": {}
@@ -45,7 +45,7 @@
       "api_version_env_var": "",
       "reasoning_effort": "low",
       "max_output_tokens": 2000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 20,
       "temperature": null,
       "extra_headers": {}
@@ -61,7 +61,7 @@
       "api_version_env_var": "AZURE_OPENAI_API_VERSION",
       "reasoning_effort": "medium",
       "max_output_tokens": 4000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 30,
       "temperature": null,
       "extra_headers": {}
@@ -77,7 +77,7 @@
       "api_version_env_var": "",
       "reasoning_effort": "medium",
       "max_output_tokens": 4000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 30,
       "temperature": null,
       "extra_headers": {}
@@ -93,7 +93,7 @@
       "api_version_env_var": "",
       "reasoning_effort": "medium",
       "max_output_tokens": 4000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 30,
       "temperature": null,
       "extra_headers": {}
@@ -109,7 +109,7 @@
       "api_version_env_var": "",
       "reasoning_effort": "medium",
       "max_output_tokens": 4000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 30,
       "temperature": null,
       "extra_headers": {}
@@ -125,7 +125,7 @@
       "api_version_env_var": "",
       "reasoning_effort": "medium",
       "max_output_tokens": 4000,
-      "batch_size": 20,
+      "batch_size": 15,
       "timeout_s": 30,
       "temperature": null,
       "extra_headers": {}
@@ -136,14 +136,14 @@
     "profile": "lm_studio_local",
     "reasoning_effort": "low",
     "max_output_tokens": 20000,
-    "batch_size": 20,
+    "batch_size": 15,
     "timeout_s": 600
   },
   "audit_summary_docx": {
     "profile": "lm_studio_local",
     "reasoning_effort": "medium",
     "max_output_tokens": 20000,
-    "batch_size": 20,
+    "batch_size": 15,
     "timeout_s": 1200
   }
  }
