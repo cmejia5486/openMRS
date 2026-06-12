@@ -19,36 +19,25 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-import androidx.room.TypeConverters;
 
 import com.openmrs.android_sdk.library.dao.AllergyRoomDAO;
-import com.openmrs.android_sdk.library.dao.AppointmentRoomDAO;
 import com.openmrs.android_sdk.library.dao.ConceptRoomDAO;
-import com.openmrs.android_sdk.library.dao.DrugRoomDAO;
 import com.openmrs.android_sdk.library.dao.EncounterCreateRoomDAO;
 import com.openmrs.android_sdk.library.dao.EncounterRoomDAO;
 import com.openmrs.android_sdk.library.dao.EncounterTypeRoomDAO;
 import com.openmrs.android_sdk.library.dao.FormResourceDAO;
 import com.openmrs.android_sdk.library.dao.LocationRoomDAO;
 import com.openmrs.android_sdk.library.dao.ObservationRoomDAO;
-import com.openmrs.android_sdk.library.dao.OrderRoomDAO;
 import com.openmrs.android_sdk.library.dao.PatientRoomDAO;
-import com.openmrs.android_sdk.library.dao.ProgramRoomDAO;
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO;
 import com.openmrs.android_sdk.library.dao.VisitRoomDAO;
 import com.openmrs.android_sdk.library.databases.entities.AllergyEntity;
-import com.openmrs.android_sdk.library.databases.entities.AppointmentEntity;
 import com.openmrs.android_sdk.library.databases.entities.ConceptEntity;
-import com.openmrs.android_sdk.library.databases.entities.DrugEntity;
 import com.openmrs.android_sdk.library.databases.entities.EncounterEntity;
 import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity;
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.databases.entities.ObservationEntity;
-import com.openmrs.android_sdk.library.databases.entities.OrderEntity;
 import com.openmrs.android_sdk.library.databases.entities.PatientEntity;
-import com.openmrs.android_sdk.library.databases.entities.ProgramEntity;
-import com.openmrs.android_sdk.library.databases.entities.StandaloneEncounterEntity;
-import com.openmrs.android_sdk.library.databases.entities.StandaloneObservationEntity;
 import com.openmrs.android_sdk.library.databases.entities.VisitEntity;
 import com.openmrs.android_sdk.library.models.EncounterType;
 import com.openmrs.android_sdk.library.models.Encountercreate;
@@ -60,23 +49,17 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
  */
 @Database(entities = {ConceptEntity.class,
         EncounterEntity.class,
-        StandaloneEncounterEntity.class,
         LocationEntity.class,
         ObservationEntity.class,
-        StandaloneObservationEntity.class,
         PatientEntity.class,
         VisitEntity.class,
         Provider.class,
         FormResourceEntity.class,
         EncounterType.class,
         Encountercreate.class,
-        AllergyEntity.class,
-        AppointmentEntity.class,
-        OrderEntity.class,
-        ProgramEntity.class,
-        DrugEntity.class},
+        AllergyEntity.class},
         version = 1)
-@TypeConverters({StringListConverter.class, WorkflowConverter.class})
+
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
@@ -178,31 +161,4 @@ public abstract class AppDatabase extends RoomDatabase {
      * @return the allergy room dao
      */
     public abstract AllergyRoomDAO allergyRoomDAO();
-
-    /**
-     * Appointment Room DAO
-     *
-     * @return the Appointment Room DAO
-     */
-    public abstract AppointmentRoomDAO appointmentRoomDAO();
-
-    /**
-     * Order Room DAO
-     *
-     * @return the Order Room DAO
-     */
-    public abstract OrderRoomDAO orderRoomDAO();
-
-    /**
-     * Program Room DAO
-     *
-     * @return the Program Room DAO
-     */
-    public abstract ProgramRoomDAO programRoomDAO();
-
-     /** Drug Room DAO
-     *
-     * @return the Drug Room DAO
-     */
-    public abstract DrugRoomDAO drugRoomDAO();
 }

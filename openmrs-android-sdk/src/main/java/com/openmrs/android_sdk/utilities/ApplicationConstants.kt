@@ -68,7 +68,7 @@ object ApplicationConstants {
     object API {
         const val REST_ENDPOINT = "/ws/rest/v1/"
         const val FULL = "full"
-        const val TAG_ADMISSION_LOCATION = "Admission Location"
+        const val TAG_ADMISSION_LOCATION="Admission Location"
     }
 
     object UserKeys {
@@ -102,9 +102,7 @@ object ApplicationConstants {
     object BundleKeys {
         const val CUSTOM_DIALOG_BUNDLE = "customDialogBundle"
         const val PATIENT_ID_BUNDLE = "patientID"
-        const val COUNTRIES_BUNDLE = "countries_list"
         const val VISIT_ID = "visitID"
-        const val ENCOUNTER_UUID = "encounterUuid"
         const val ENCOUNTERTYPE = "encounterType"
         const val VALUEREFERENCE = "valueReference"
         const val FORM_NAME = "formName"
@@ -112,10 +110,10 @@ object ApplicationConstants {
         const val PATIENTS_AND_MATCHES = "PATIENTS_AND_MATCHES"
         const val FORM_FIELDS_BUNDLE = "formFieldsBundle"
         const val FORM_FIELDS_LIST_BUNDLE = "formFieldsListBundle"
-        const val FORM_PAGE_BUNDLE = "formPageBundle"
         const val PATIENT_QUERY_BUNDLE = "patientQuery"
         const val PATIENTS_START_INDEX = "patientsStartIndex"
-        const val PROVIDER_BUNDLE = "providerID"
+        const val PROVIDER_ID_BUNDLE = "providerID"
+        const val EXISTING_PROVIDERS_BUNDLE = "existingProviders"
         const val ALLERGY_UUID = "allergy_uuid"
         const val PATIENT_UUID = "patient_uuid"
     }
@@ -147,6 +145,8 @@ object ApplicationConstants {
     }
 
     object RequestCodes {
+        const val ADD_PROVIDER_REQ_CODE = 100
+        const val EDIT_PROVIDER_REQ_CODE = 101
         const val START_SETTINGS_REQ_CODE = 102
         const val IMAGE_REQUEST = 1
         const val GALLERY_IMAGE_REQUEST = 2
@@ -203,11 +203,11 @@ object ApplicationConstants {
         const val CONCEPT_SEVERITY_MILD = "allergy.concept.severity.mild"
         const val CONCEPT_SEVERITY_MODERATE = "allergy.concept.severity.moderate"
         const val CONCEPT_SEVERITY_SEVERE = "allergy.concept.severity.severe"
+        const val PROPERTY_REACTION = "REACTION"
         const val PROPERTY_FOOD = "FOOD"
         const val PROPERTY_DRUG = "DRUG"
         const val PROPERTY_OTHER = "OTHER"
         const val PROPERTY_MILD = "Mild"
-        const val PROPERTY_MODERATE = "Moderate"
         const val PROPERTY_SEVERE = "Severe"
         const val SELECT_ALLERGEN = "Select Allergen"
         const val SELECT_REACTION = "Reactions (you can select multiple)"

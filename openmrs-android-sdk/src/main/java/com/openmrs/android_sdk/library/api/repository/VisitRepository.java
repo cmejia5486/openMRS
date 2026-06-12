@@ -14,26 +14,17 @@
 
 package com.openmrs.android_sdk.library.api.repository;
 
-import static com.openmrs.android_sdk.utilities.DateUtils.OPEN_MRS_REQUEST_FORMAT;
-import static com.openmrs.android_sdk.utilities.DateUtils.convertTime;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.io.IOException;
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Response;
-import rx.Observable;
-
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.library.dao.EncounterCreateRoomDAO;
 import com.openmrs.android_sdk.library.dao.EncounterDAO;
 import com.openmrs.android_sdk.library.dao.LocationDAO;
 import com.openmrs.android_sdk.library.dao.VisitDAO;
-import com.openmrs.android_sdk.library.databases.AppDatabaseHelper;
 import com.openmrs.android_sdk.library.models.Encounter;
+import com.openmrs.android_sdk.library.models.Encountercreate;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.Visit;
@@ -41,298 +32,272 @@ import com.openmrs.android_sdk.library.models.VisitType;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.DateUtils;
 
+import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.DefaultResponseCallback;
+import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.GetVisitTypeCallback;
+import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.StartVisitResponseCallback;
+import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.VisitsResponseCallback;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+
 
 /**
  * The type Visit repository.
  */
-@Singleton
 public class VisitRepository extends BaseRepository {
 
-    public LocationDAO locationDAO;
-    public VisitDAO visitDAO;
-    public EncounterDAO encounterDAO;
-
-    String representation = "custom:(uuid,location:ref,visitType:ref,startDatetime,stopDatetime,encounters:full)";
+    private LocationDAO locationDAO;
+    private VisitDAO visitDAO;
+    private EncounterDAO encounterDAO;
+    private EncounterCreateRoomDAO encounterCreateRoomDAO;
 
     /**
      * Instantiates a new Visit repository.
      */
-    @Inject
-    public VisitRepository(VisitDAO visitDAO, EncounterDAO encounterDAO, LocationDAO locationDAO) {
+    public VisitRepository() {
+        visitDAO = new VisitDAO();
+        encounterDAO = new EncounterDAO();
+        encounterCreateRoomDAO = db.encounterCreateRoomDAO();
+        locationDAO = new LocationDAO();
+    }
+
+    /**
+     * used in Unit tests with mockUp objects
+     *
+     * @param restApi
+     * @param visitDAO
+     * @param locationDAO
+     * @param encounterDAO
+     */
+    public VisitRepository(OpenMRSLogger logger, RestApi restApi, VisitDAO visitDAO, LocationDAO locationDAO, EncounterDAO encounterDAO) {
+        super(restApi, logger);
         this.visitDAO = visitDAO;
         this.encounterDAO = encounterDAO;
         this.locationDAO = locationDAO;
     }
 
+
     /**
-     * Executes a Retrofit request
+     * This method is used for syncing Visits data to the servers when no callback listener is provided
      *
-     * @param call    the interface call
-     * @param message the error message to display
-     * @param <T>     the response type
-     * @return T
-     * @throws Exception if an error occurs during the request
+     * @param patient
      */
-    public <T> T executeRequest(Call<T> call, String message) throws Exception {
-        Response<T> response = call.execute();
-
-        if (response.isSuccessful() && response.body() != null) {
-            return response.body();
-        } else {
-            logger.e(message + response.message());
-            throw new Exception(response.message());
-        }
-    }
-
-    public List<Visit> fetchVisitsAndSave(Call<Results<Visit>> call, Patient patient) throws IOException {
-        Response<Results<Visit>> response = call.execute();
-
-        if (response.isSuccessful()) {
-            List<Visit> visits = response.body().getResults();
-            for (Visit visit : visits) {
-                visitDAO.saveOrUpdate(visit, patient.getId()).toBlocking().subscribe();
-            }
-            return visits;
-        } else {
-            throw new IOException("Error with fetching visits by patient UUID: " + response.message());
-        }
+    public void syncVisitsData(@NonNull Patient patient) {
+        syncVisitsData(patient, null);
     }
 
     /**
-     * This method downloads visits data asynchronously from the server.
+     * This method syncs visit data asynchronously and uses the callback listener to propogate back the results.
+     *
+     * @see DefaultResponseCallback
+     *
+     * @param patient
+     * @param callbackListener
+     */
+    public void syncVisitsData(@NonNull final Patient patient, @Nullable final DefaultResponseCallback callbackListener) {
+        Call<Results<Visit>> call = restApi.findVisitsByPatientUUID(patient.getUuid(), "custom:(uuid,location:ref,visitType:ref,startDatetime,stopDatetime,encounters:full)");
+        call.enqueue(new Callback<Results<Visit>>() {
+            @Override
+            public void onResponse(@NonNull Call<Results<Visit>> call, @NonNull Response<Results<Visit>> response) {
+                if (response.isSuccessful()) {
+                    List<Visit> visits = response.body().getResults();
+                    Observable.just(visits)
+                        .flatMap(Observable::from)
+                        .forEach(visit ->
+                                visitDAO.saveOrUpdate(visit, patient.getId())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(),
+                            error -> error.printStackTrace()
+                        );
+                    if (callbackListener != null) {
+                        callbackListener.onResponse();
+                    }
+                } else {
+                    if (callbackListener != null) {
+                        callbackListener.onErrorResponse(response.message());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Results<Visit>> call, @NonNull Throwable t) {
+                if (callbackListener != null) {
+                    callbackListener.onErrorResponse(t.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
+     * This method is used for getting visitType asynchronously .
+     *
+     * @see VisitType
+     * @see GetVisitTypeCallback
+     *
+     * @param callbackListener
+     */
+    public void getVisitType(final GetVisitTypeCallback callbackListener) {
+        Call<Results<VisitType>> call = restApi.getVisitType();
+        call.enqueue(new Callback<Results<VisitType>>() {
+            @Override
+            public void onResponse(@NonNull Call<Results<VisitType>> call, @NonNull Response<Results<VisitType>> response) {
+                if (response.isSuccessful()) {
+                    callbackListener.onGetVisitTypeResponse(response.body().getResults().get(0));
+                } else {
+                    callbackListener.onErrorResponse(response.message());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Results<VisitType>> call, @NonNull Throwable t) {
+                callbackListener.onErrorResponse(t.getMessage());
+            }
+        });
+    }
+
+
+    /**
+     * This method is used to sync Vitals of a patient in a visit without any callback listeners.
+     *
+     * @param patientUuid
+     */
+    public void syncLastVitals(final String patientUuid) {
+        syncLastVitals(patientUuid, null);
+    }
+
+    /**
+     * This method is used to sync Vitals of a patient with result asynchronously propagated back with callback listeners
+     *
+     * @see DefaultResponseCallback
+     *
+     * @param patientUuid
+     * @param callbackListener
+     */
+    public void syncLastVitals(final String patientUuid, @Nullable final DefaultResponseCallback callbackListener) {
+        Call<Results<Encounter>> call = restApi.getLastVitals(patientUuid, ApplicationConstants.EncounterTypes.VITALS, "full", 1, "desc");
+        call.enqueue(new Callback<Results<Encounter>>() {
+            @Override
+            public void onResponse(@NonNull Call<Results<Encounter>> call, @NonNull Response<Results<Encounter>> response) {
+                if (response.isSuccessful()) {
+                    if (!response.body().getResults().isEmpty()) {
+                        encounterDAO.saveLastVitalsEncounter(response.body().getResults().get(0), patientUuid);
+                    }
+                    if (callbackListener != null) {
+                        callbackListener.onResponse();
+                    }
+                } else {
+                    if (callbackListener != null) {
+                        callbackListener.onErrorResponse(response.message());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Results<Encounter>> call, @NonNull Throwable t) {
+                if (callbackListener != null) {
+                    callbackListener.onErrorResponse(t.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
+     * This method is used to end an active visit of a patient.
+     *
+     * @see Visit
+     * @see VisitsResponseCallback
+     *
+     * @param uuid
+     * @param visit
+     * @param callbackListener
+     */
+    public void endVisitByUuid(String uuid, Visit visit, VisitsResponseCallback callbackListener) {
+        restApi.endVisitByUUID(uuid, visit).enqueue(new Callback<Visit>() {
+            @Override
+            public void onResponse(@NonNull Call<Visit> call, @NonNull Response<Visit> response) {
+                if (callbackListener != null) {
+                    if (response.isSuccessful()) {
+                        callbackListener.onSuccess(response.body().getStopDatetime());
+                    } else {
+                        callbackListener.onFailure(response.message());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Visit> call, @NonNull Throwable t) {
+                if (callbackListener != null) {
+                    callbackListener.onFailure(t.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
+     * Start visit.
      *
      * @param patient the patient
      */
-    public Observable<List<Visit>> syncVisitsData(@NonNull final Patient patient) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call = restApi.findVisitsByPatientUUID(patient.getUuid(), representation);
-            return fetchVisitsAndSave(call, patient);
-        });
+    public void startVisit(final Patient patient) {
+        startVisit(patient, null);
     }
 
     /**
-     * Get a particular Visit of a patient from the server
+     * Start visit.
      *
-     * @param visitUuid the UUID of the visit.
+     * @param patient          the patient
+     * @param callbackListener the callback listener
      */
-    public Observable<Visit> getVisit(String visitUuid){
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Visit> call = restApi.getVisitFromUuid(visitUuid);
-            Response<Visit> response = call.execute();
+    public void startVisit(final Patient patient, @Nullable final StartVisitResponseCallback callbackListener) {
+        final Visit visit = new Visit();
+        visit.setStartDatetime(DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT));
+        visit.setPatient(patient);
+        visit.setLocation(locationDAO.findLocationByName(OpenmrsAndroid.getLocation()));
 
-            if (response.isSuccessful()) {
-                Visit visit = response.body();
-                return visit;
-            } else {
-                throw new IOException("Error with fetching visit by visit uuid: " + response.message());
-            }
-        });
-    }
+        visit.setVisitType(new VisitType("", OpenmrsAndroid.getVisitTypeUUID()));
 
-    /**
-     * This method is used for fetching VisitType asynchronously.
-     *
-     * @return Observable VisitType object or null
-     * @see VisitType
-     */
-    public Observable<VisitType> getVisitType() {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Response<Results<VisitType>> response = restApi.getVisitType().execute();
-            if (response.isSuccessful()) return response.body().getResults().get(0);
-            else return null;
-        });
-    }
-
-
-    /**
-     * This method is used to sync Vitals of a patient in a visit
-     *
-     * @param patientUuid Patient UUID to get vitals from
-     * @return Encounter observable containing last vitals
-     */
-    public Observable<Encounter> syncLastVitals(final String patientUuid) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Encounter>> call = restApi.getLastVitals(patientUuid, ApplicationConstants.EncounterTypes.VITALS, "full", 1, "desc");
-            Response<Results<Encounter>> response = call.execute();
-
-            if (response.isSuccessful()) {
-                if (!response.body().getResults().isEmpty()) {
-                    Encounter encounter = response.body().getResults().get(0);
-                    encounterDAO.saveLastVitalsEncounter(encounter, patientUuid);
-                    return encounter;
+        Call<Visit> call = restApi.startVisit(visit);
+        call.enqueue(new Callback<Visit>() {
+            @Override
+            public void onResponse(@NonNull Call<Visit> call, @NonNull Response<Visit> response) {
+                if (response.isSuccessful()) {
+                    Visit newVisit = response.body();
+                    visitDAO.saveOrUpdate(newVisit, patient.getId())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(id -> {
+                            if (callbackListener != null) {
+                                callbackListener.onStartVisitResponse(id);
+                            }
+                        });
+                } else {
+                    if (callbackListener != null) {
+                        callbackListener.onErrorResponse(response.message());
+                    }
                 }
-                return new Encounter();
-            } else {
-                throw new IOException("Error with fetching last vitals: " + response.message());
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Visit> call, @NonNull Throwable t) {
+                if (callbackListener != null) {
+                    callbackListener.onErrorResponse(t.getMessage());
+                }
             }
         });
     }
 
     /**
-     * This method ends an active visit of a patient.
+     * Add encounter created long.
      *
-     * @param visit visit to be ended
-     * @return observable boolean true if operation is successful
-     * @see Visit
+     * @param encountercreate the encountercreate
+     * @return the long
      */
-    public Observable<Boolean> endVisit(Visit visit) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            // Don't pass the full visit to the API as it will return an error, instead create an empty visit.
-            Visit emptyVisitWithStopDate = new Visit();
-            emptyVisitWithStopDate.setStopDatetime(convertTime(System.currentTimeMillis(), OPEN_MRS_REQUEST_FORMAT));
-
-            Response<Visit> response = restApi.endVisitByUUID(visit.getUuid(), emptyVisitWithStopDate).execute();
-            if (response.isSuccessful()) {
-                visit.setStopDatetime(emptyVisitWithStopDate.getStopDatetime());
-                visitDAO.saveOrUpdate(visit, visit.patient.getId()).single().toBlocking().first();
-                return true;
-            } else {
-                throw new Exception("endVisitByUuid error: " + response.message());
-            }
-        });
-    }
-
-    /**
-     * Start visit for a patient.
-     *
-     * @param patient the patient to start a visit for
-     * @return observable visit that has been started
-     */
-    public Observable<Visit> startVisit(final Patient patient) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            final Visit visit = new Visit();
-            visit.setStartDatetime(DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT));
-            visit.setPatient(patient);
-            visit.setLocation(locationDAO.findLocationByName(OpenmrsAndroid.getLocation()));
-
-            VisitType visitType = new VisitType();
-            visitType.setUuid(OpenmrsAndroid.getVisitTypeUUID());
-
-            visit.setVisitType(visitType);
-
-            Call<Visit> call = restApi.startVisit(visit);
-            Response<Visit> response = call.execute();
-
-            if (response.isSuccessful()) {
-                Visit newVisit = response.body();
-                long visitId = visitDAO.saveOrUpdate(newVisit, patient.getId()).toBlocking().first();
-                newVisit.setId(visitId);
-                return newVisit;
-            } else {
-                getLogger().e("Error starting a visit: " + response.message());
-                throw new Exception(response.message());
-            }
-        });
-    }
-
-    /**
-     * This method fetches visits for a particular location and saves them locally
-     *
-     * @param patient
-     * @param locationUuid
-     *
-     * @return the vist list
-     */
-    public Observable<List<Visit>> getVisitsByLocationAndSaveLocally(@NonNull final Patient patient,
-                                                                     String locationUuid) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call =
-                    restApi.findActiveVisitsByPatientAndLocation(patient.getUuid(), locationUuid,representation);
-            return fetchVisitsAndSave(call, patient);
-        });
-    }
-
-    /**
-     * This method fetches visits for a particular location and from a start date
-     * and saves them locally
-     *
-     * @param patient
-     * @param locationUuid
-     * @param fromStartDate
-     *
-     * @return the vist list
-     */
-    public Observable<List<Visit>>
-    getVisitsByLocationAndDateAndSaveLocally(@NonNull final Patient patient, String locationUuid, String fromStartDate) {
-
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call =
-                    restApi.findVisitsByPatientAndLocationAndDate(patient.getUuid(), locationUuid, fromStartDate, representation);
-            return fetchVisitsAndSave(call, patient);
-        });
-    }
-
-    /**
-     * This method fetches visits from a start date and saves them locally
-     *
-     * @param patient
-     * @param fromStartDate
-     *
-     * @return the vist list
-     */
-    public Observable<List<Visit>>
-    getVisitsByDateAndSaveLocally(@NonNull final Patient patient, String fromStartDate) {
-
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call =
-                    restApi.findVisitsByPatientAndDate(patient.getUuid(), fromStartDate, representation);
-            return fetchVisitsAndSave(call, patient);
-        });
-    }
-
-    /**
-     * This method fetches active visits from a given date and saves them locally
-     *
-     * @param patient
-     * @param fromStartDate
-     *
-     * @return the active vist list
-     */
-    public Observable<List<Visit>>
-    getActiveVisitsByDateAndSaveLocally(@NonNull final Patient patient, String fromStartDate) {
-
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call =
-                    restApi.findActiveVisitsByPatientAndDate(patient.getUuid(), fromStartDate, representation);
-            return fetchVisitsAndSave(call, patient);
-        });
-    }
-
-    /**
-     * This method fetches active visits for a location and saves them locally
-     *
-     * @param patient
-     * @param locationUuid
-     *
-     * @return the active vist list
-     */
-    public Observable<List<Visit>>
-    getActiveVisitsByLocationAndSaveLocally(@NonNull final Patient patient, String locationUuid) {
-
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call =
-                    restApi.findActiveVisitsByPatientAndLocation(patient.getUuid(), locationUuid, representation);
-            return fetchVisitsAndSave(call, patient);
-        });
-    }
-
-    /**
-     * This method fetches active visits for a location and from a start date
-     * and saves them locally
-     *
-     * @param patient
-     * @param fromStartDate
-     * @param locationUuid
-     *
-     * @return the active vist list
-     */
-    public Observable<List<Visit>>
-    getActiveVisitsByLocationAndDateAndSaveLocally(@NonNull final Patient patient, String locationUuid, String fromStartDate) {
-
-        return AppDatabaseHelper.createObservableIO(() -> {
-            Call<Results<Visit>> call =
-                    restApi.findActiveVisitsByPatientAndLocationAndDate(patient.getUuid(), locationUuid, fromStartDate, representation);
-            return fetchVisitsAndSave(call, patient);
-        });
+    public long addEncounterCreated(final Encountercreate encountercreate) {
+        return encounterCreateRoomDAO.addEncounterCreated(encountercreate);
     }
 }

@@ -10,6 +10,7 @@
 
 package com.openmrs.android_sdk.library.models
 
+import com.openmrs.android_sdk.library.databases.entities.ConceptEntity
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 
@@ -24,15 +25,9 @@ import java.io.Serializable
  */
 class Observation : Resource(), Serializable {
 
-    override var id: Long? = null
-
     @SerializedName("concept")
     @Expose
-    var concept: ConceptClass? = null
-
-    @SerializedName("value")
-    @Expose
-    var value: String? = null
+    var concept: ConceptEntity? = null
 
     @SerializedName("person")
     @Expose
@@ -78,26 +73,11 @@ class Observation : Resource(), Serializable {
     @Expose
     var formFieldNamespace: String? = null
 
-    @SerializedName("groupMembers")
-    @Expose
-    var groupMembers: List<Observation>? = null
-
-    @SerializedName("order")
-    @Expose
-    var order: String? = null
-
-    @SerializedName("status")
-    @Expose
-    var status: String? = null
-
-    @SerializedName("interpretation")
-    @Expose
-    var interpretation: String? = null
-
     @SerializedName("resourceVersion")
     @Expose
     var resourceVersion: String? = null
 
+    override var id: Long? = null
     var encounterID: Long? = null
     var displayValue: String? = null
         get() {
@@ -109,6 +89,7 @@ class Observation : Resource(), Serializable {
 
     var diagnosisList: String? = null
     var diagnosisCertainty: String? = null
+        private set
     var diagnosisOrder: String? = null
 
     var diagnosisNote: String? = null

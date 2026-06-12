@@ -63,12 +63,6 @@ public class PatientChartsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
         return mVitalNameList.size();
     }
 
-    public void updateList(JSONObject observationList) {
-        Iterator<String> keys = observationList.keys();
-        mVitalNameList = Lists.newArrayList(keys);
-        notifyDataSetChanged();
-    }
-
     interface OnClickListener {
         void showChartActivity(String vitalName);
     }

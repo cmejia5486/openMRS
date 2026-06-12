@@ -87,11 +87,6 @@ public class PatientAllergyRecyclerViewAdapter extends RecyclerView.Adapter<Pati
         return list.size();
     }
 
-    public void updateList(List<Allergy> allergies) {
-        list = allergies;
-        notifyDataSetChanged();
-    }
-
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView allergen;
         private TextView reaction;
