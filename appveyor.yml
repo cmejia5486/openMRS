@@ -23,4 +23,3 @@ artifacts:
 cache:
   - "%USERPROFILE%\\.m2"
   - "%USERPROFILE%\\.gradle"
-  
