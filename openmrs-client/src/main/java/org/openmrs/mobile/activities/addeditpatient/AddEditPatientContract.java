@@ -14,17 +14,16 @@
 
 package org.openmrs.mobile.activities.addeditpatient;
 
-import com.openmrs.android_sdk.library.models.ConceptAnswers;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.google.android.libraries.places.api.net.PlacesClient;
-
 import org.openmrs.mobile.activities.BasePresenterContract;
 import org.openmrs.mobile.activities.BaseView;
+import org.openmrs.mobile.models.Patient;
 
 import java.util.List;
 
 public interface AddEditPatientContract {
+
     interface View extends BaseView<Presenter> {
+
         void finishPatientInfoActivity();
 
         void setErrorsVisibility(boolean givenNameError,
@@ -51,20 +50,15 @@ public interface AddEditPatientContract {
         void showUpgradeRegistrationModuleInfo();
 
         boolean areFieldsNotEmpty();
-
-        void cannotMarkDeceased(String message);
-
-        void cannotMarkDeceased(int messageID);
-
-        void updateCauseOfDeathSpinner(ConceptAnswers concept);
     }
 
     interface Presenter extends BasePresenterContract {
+
         Patient getPatientToUpdate();
 
         boolean isRegisteringPatient();
 
-        void confirmRegister(Patient patient, boolean isPatientUnidentified);
+        void confirmRegister(Patient patient);
 
         void confirmUpdate(Patient patient);
 
@@ -73,9 +67,6 @@ public interface AddEditPatientContract {
         void registerPatient();
 
         void updatePatient(Patient patient);
-
-        PlacesClient getPlaces();
-
-        void getCauseOfDeathGlobalID();
     }
+
 }

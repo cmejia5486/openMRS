@@ -40,12 +40,10 @@
                 android:gravity="center_vertical|start"
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp"
-                android:textSize="26sp" />
-
+                android:textSize="22sp" />
         </LinearLayout>
 
-        <View style="@style/Divider.Horizontal.DarkGray"
-            android:layout_height="match_parent"/>
+        <View style="@style/Divider.Horizontal.DarkGray" />
 
         <LinearLayout
             android:layout_width="match_parent"

@@ -16,15 +16,16 @@ package org.openmrs.mobile.activities.providermanagerdashboard;
 
 import androidx.fragment.app.Fragment;
 
-import com.openmrs.android_sdk.library.models.Provider;
-
 import org.openmrs.mobile.activities.BasePresenterContract;
 import org.openmrs.mobile.activities.BaseView;
+import org.openmrs.mobile.models.Provider;
 
 import java.util.List;
 
 public interface ProviderManagerDashboardContract {
+
     interface View extends BaseView<ProviderManagerDashboardContract.Presenter> {
+
         void refreshUI();
 
         void updateAdapter(List<Provider> providerList);
@@ -37,10 +38,10 @@ public interface ProviderManagerDashboardContract {
 
         void updateViews(List<Provider> providerList);
 
-        void deleteProvider(String providerUuid);
+        void deleteProvider(String uuid);
 
         void addProvider(Provider provider);
 
-        void updateProvider(Provider provider);
+        void editProvider(Provider provider);
     }
 }

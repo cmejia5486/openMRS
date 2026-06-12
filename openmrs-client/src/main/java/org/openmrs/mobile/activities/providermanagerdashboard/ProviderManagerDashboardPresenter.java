@@ -16,21 +16,19 @@ package org.openmrs.mobile.activities.providermanagerdashboard;
 
 import androidx.fragment.app.Fragment;
 
-import com.openmrs.android_sdk.library.models.Provider;
-import com.openmrs.android_sdk.utilities.ToastUtil;
-
 import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.activities.BasePresenter;
-import com.openmrs.android_sdk.library.api.RestApi;
-import com.openmrs.android_sdk.library.api.RestServiceBuilder;
-import com.openmrs.android_sdk.library.api.repository.ProviderRepository;
-import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.DefaultResponseCallback;
+import org.openmrs.mobile.api.CustomApiCallback;
+import org.openmrs.mobile.api.retrofit.ProviderRepository;
+import org.openmrs.mobile.api.RestApi;
+import org.openmrs.mobile.api.RestServiceBuilder;
+import org.openmrs.mobile.models.Provider;
 
 import java.util.List;
 
-public class ProviderManagerDashboardPresenter extends BasePresenter implements ProviderManagerDashboardContract.Presenter, DefaultResponseCallback {
+public class ProviderManagerDashboardPresenter extends BasePresenter implements ProviderManagerDashboardContract.Presenter, CustomApiCallback {
+
     private RestApi restApi;
-    private ProviderRepository providerRepository;
     @NotNull
     private final ProviderManagerDashboardContract.View providerManagerView;
 
@@ -38,19 +36,18 @@ public class ProviderManagerDashboardPresenter extends BasePresenter implements 
         this.providerManagerView = providerManagerView;
         this.providerManagerView.setPresenter(this);
         restApi = RestServiceBuilder.createService(RestApi.class);
-        providerRepository = new ProviderRepository();
     }
 
-    public ProviderManagerDashboardPresenter(@NotNull ProviderManagerDashboardContract.View providerManagerView, @NotNull RestApi restApi, ProviderRepository providerRepository) {
+    public ProviderManagerDashboardPresenter(@NotNull ProviderManagerDashboardContract.View providerManagerView, @NotNull RestApi restApi) {
         this.providerManagerView = providerManagerView;
         this.restApi = restApi;
         this.providerManagerView.setPresenter(this);
-        this.providerRepository = providerRepository;
     }
 
     @Override
     public void getProviders(Fragment fragment) {
-        providerRepository.getProviders().observe(fragment, this::updateViews);
+        ProviderRepository providerRepository = new ProviderRepository();
+        providerRepository.getProviders(restApi).observe(fragment, this::updateViews);
     }
 
     @Override
@@ -64,18 +61,21 @@ public class ProviderManagerDashboardPresenter extends BasePresenter implements 
     }
 
     @Override
-    public void deleteProvider(String providerUuid) {
-        providerRepository.deleteProviders(providerUuid, this);
+    public void deleteProvider(String uuid) {
+        ProviderRepository providerRepository = new ProviderRepository();
+        providerRepository.deleteProviders(restApi, uuid, this);
     }
 
     @Override
     public void addProvider(Provider provider) {
-        providerRepository.addProvider(provider, this);
+        ProviderRepository providerRepository = new ProviderRepository();
+        providerRepository.addProvider(restApi, provider, this);
     }
 
     @Override
-    public void updateProvider(Provider provider) {
-        providerRepository.updateProvider(provider, this);
+    public void editProvider(Provider provider) {
+        ProviderRepository providerRepository = new ProviderRepository();
+        providerRepository.editProvider(restApi, provider, this);
     }
 
     @Override
@@ -84,12 +84,12 @@ public class ProviderManagerDashboardPresenter extends BasePresenter implements 
     }
 
     @Override
-    public void onErrorResponse(String errorMessage) {
-        ToastUtil.error(errorMessage);
+    public void onSuccess() {
+        providerManagerView.refreshUI();
     }
 
     @Override
-    public void onResponse() {
-        providerManagerView.refreshUI();
+    public void onFailure() {
+
     }
 }

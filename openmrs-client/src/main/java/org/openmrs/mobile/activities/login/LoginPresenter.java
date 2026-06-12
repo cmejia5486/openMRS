@@ -14,34 +14,32 @@
 
 package org.openmrs.mobile.activities.login;
 
-import androidx.annotation.NonNull;
-
-import com.openmrs.android_sdk.library.OpenMRSLogger;
-import com.openmrs.android_sdk.library.OpenmrsAndroid;
-import com.openmrs.android_sdk.library.dao.LocationDAO;
-import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
-import com.openmrs.android_sdk.library.models.Results;
-import com.openmrs.android_sdk.library.models.Session;
-import com.openmrs.android_sdk.library.models.VisitType;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.NetworkUtils;
-import com.openmrs.android_sdk.utilities.StringUtils;
-import com.openmrs.android_sdk.utilities.ToastUtil;
-
 import org.mindrot.jbcrypt.BCrypt;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.BasePresenter;
-import com.openmrs.android_sdk.library.api.RestApi;
-import com.openmrs.android_sdk.library.api.RestServiceBuilder;
-import org.openmrs.mobile.services.UserService;
-import com.openmrs.android_sdk.library.api.repository.VisitRepository;
+import org.openmrs.mobile.api.RestApi;
+import org.openmrs.mobile.api.RestServiceBuilder;
+import org.openmrs.mobile.api.UserService;
+import org.openmrs.mobile.api.repository.VisitRepository;
 import org.openmrs.mobile.application.OpenMRS;
-import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.GetVisitTypeCallback;
+import org.openmrs.mobile.application.OpenMRSLogger;
+import org.openmrs.mobile.dao.LocationDAO;
+import org.openmrs.mobile.databases.OpenMRSSQLiteOpenHelper;
+import org.openmrs.mobile.listeners.retrofit.GetVisitTypeCallbackListener;
+import org.openmrs.mobile.models.Location;
+import org.openmrs.mobile.models.Results;
+import org.openmrs.mobile.models.Session;
+import org.openmrs.mobile.models.VisitType;
 import org.openmrs.mobile.net.AuthorizationManager;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.NetworkUtils;
+import org.openmrs.mobile.utilities.StringUtils;
+import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -49,6 +47,7 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 public class LoginPresenter extends BasePresenter implements LoginContract.Presenter {
+
     private RestApi restApi;
     private VisitRepository visitRepository;
     private UserService userService;
@@ -62,7 +61,7 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
     public LoginPresenter(LoginContract.View loginView, OpenMRS openMRS) {
         this.loginView = loginView;
         this.mOpenMRS = openMRS;
-        this.mLogger = OpenmrsAndroid.getOpenMRSLogger();
+        this.mLogger = openMRS.getOpenMRSLogger();
         this.loginView.setPresenter(this);
         this.authorizationManager = new AuthorizationManager();
         this.locationDAO = new LocationDAO();
@@ -94,13 +93,13 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
     public void login(String username, String password, String url, String oldUrl) {
         if (validateLoginFields(username, password, url)) {
             loginView.hideSoftKeys();
-            if ((!OpenmrsAndroid.getUsername().equals(ApplicationConstants.EMPTY_STRING) &&
-                    !OpenmrsAndroid.getUsername().equals(username)) ||
-                    ((!OpenmrsAndroid.getServerUrl().equals(ApplicationConstants.EMPTY_STRING) &&
-                            !OpenmrsAndroid.getServerUrl().equals(oldUrl))) ||
-                    (!OpenmrsAndroid.getHashedPassword().equals(ApplicationConstants.EMPTY_STRING) &&
-                            !BCrypt.checkpw(password, OpenmrsAndroid.getHashedPassword())) ||
-                    mWipeRequired) {
+            if ((!mOpenMRS.getUsername().equals(ApplicationConstants.EMPTY_STRING) &&
+                 !mOpenMRS.getUsername().equals(username)) ||
+               ((!mOpenMRS.getServerUrl().equals(ApplicationConstants.EMPTY_STRING) &&
+                 !mOpenMRS.getServerUrl().equals(oldUrl))) ||
+               (!mOpenMRS.getHashedPassword().equals(ApplicationConstants.EMPTY_STRING) &&
+                 !BCrypt.checkpw(password, mOpenMRS.getHashedPassword())) ||
+               mWipeRequired) {
                 loginView.showWarningDialog();
             } else {
                 authenticateUser(username, password, url);
@@ -118,7 +117,6 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
         loginView.showLoadingAnimation();
         if (NetworkUtils.isOnline()) {
             mWipeRequired = wipeDatabase;
-
             RestApi restApi = RestServiceBuilder.createService(RestApi.class, username, password);
             Call<Session> call = restApi.getSession();
             call.enqueue(new Callback<Session>() {
@@ -128,23 +126,23 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
                         mLogger.d(response.body().toString());
                         Session session = response.body();
                         if (session.isAuthenticated()) {
-                            OpenmrsAndroid.deleteSecretKey();
+                            mOpenMRS.deleteSecretKey();
                             if (wipeDatabase) {
-                                mOpenMRS.deleteDatabase(ApplicationConstants.DB_NAME);
+                                mOpenMRS.deleteDatabase(OpenMRSSQLiteOpenHelper.DATABASE_NAME);
                                 setData(session.getSessionId(), url, username, password);
                                 mWipeRequired = false;
                             }
                             if (authorizationManager.isUserNameOrServerEmpty()) {
                                 setData(session.getSessionId(), url, username, password);
                             } else {
-                                OpenmrsAndroid.setSessionToken(session.getSessionId());
-                                OpenmrsAndroid.setPasswordAndHashedPassword(password);
+                                mOpenMRS.setSessionToken(session.getSessionId());
+                                mOpenMRS.setPasswordAndHashedPassword(password);
                             }
 
-                            visitRepository.getVisitType(new GetVisitTypeCallback() {
+                            visitRepository.getVisitType(new GetVisitTypeCallbackListener() {
                                 @Override
                                 public void onGetVisitTypeResponse(VisitType visitType) {
-                                    OpenmrsAndroid.setVisitTypeUUID(visitType.getUuid());
+                                    OpenMRS.getInstance().setVisitTypeUUID(visitType.getUuid());
                                 }
 
                                 @Override
@@ -155,8 +153,9 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
                                 @Override
                                 public void onErrorResponse(String errorMessage) {
 
-                                    OpenmrsAndroid.setVisitTypeUUID(ApplicationConstants.DEFAULT_VISIT_TYPE_UUID);
-                                    loginView.showToast(R.string.failed_fetching_visit_type_error_message, ToastUtil.ToastType.ERROR);
+                                    OpenMRS.getInstance().setVisitTypeUUID(ApplicationConstants.DEFAULT_VISIT_TYPE_UUID);
+                                    loginView.showToast("Failed to fetch visit type",
+                                            ToastUtil.ToastType.ERROR);
                                 }
                             });
                             setLogin(true, url);
@@ -181,11 +180,11 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
                 }
             });
         } else {
-            if (OpenmrsAndroid.isUserLoggedOnline() && url.equals(OpenmrsAndroid.getLastLoginServerUrl())) {
-                if (OpenmrsAndroid.getUsername().equals(username) && BCrypt.checkpw(password, OpenmrsAndroid.getHashedPassword())) {
-                    OpenmrsAndroid.deleteSecretKey();
-                    OpenmrsAndroid.setPasswordAndHashedPassword(password);
-                    OpenmrsAndroid.setSessionToken(OpenmrsAndroid.getLastSessionToken());
+            if (mOpenMRS.isUserLoggedOnline() && url.equals(mOpenMRS.getLastLoginServerUrl())) {
+                if (mOpenMRS.getUsername().equals(username) && BCrypt.checkpw(password, mOpenMRS.getHashedPassword())) {
+                    mOpenMRS.deleteSecretKey();
+                    mOpenMRS.setPasswordAndHashedPassword(password);
+                    mOpenMRS.setSessionToken(mOpenMRS.getLastSessionToken());
                     loginView.showToast(R.string.login_offline_toast_message,
                             ToastUtil.ToastType.NOTICE);
                     loginView.userAuthenticated();
@@ -207,9 +206,10 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
         }
     }
 
+
     @Override
-    public void saveLocationsToDatabase(List<LocationEntity> locationList, String selectedLocation) {
-        OpenmrsAndroid.setLocation(selectedLocation);
+    public void saveLocationsToDatabase(List<Location> locationList, String selectedLocation) {
+        mOpenMRS.setLocation(selectedLocation);
         locationDAO.deleteAllLocations();
         for (int i = 0; i < locationList.size(); i++) {
             locationDAO.saveLocation(locationList.get(i))
@@ -224,19 +224,19 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
 
         if (NetworkUtils.hasNetwork()) {
             String locationEndPoint = url + ApplicationConstants.API.REST_ENDPOINT + "location";
-            Call<Results<LocationEntity>> call =
+            Call<Results<Location>> call =
                     restApi.getLocations(locationEndPoint, "Login Location", "full");
-            call.enqueue(new Callback<Results<LocationEntity>>() {
+            call.enqueue(new Callback<Results<Location>>() {
                 @Override
-                public void onResponse(@NonNull Call<Results<LocationEntity>> call, @NonNull Response<Results<LocationEntity>> response) {
+                public void onResponse(@NonNull Call<Results<Location>> call, @NonNull Response<Results<Location>> response) {
                     if (response.isSuccessful()) {
                         RestServiceBuilder.changeBaseUrl(url.trim());
-                        OpenmrsAndroid.setServerUrl(url);
+                        mOpenMRS.setServerUrl(url);
                         loginView.initLoginForm(response.body().getResults(), url);
                         loginView.startFormListService();
                         loginView.setLocationErrorOccurred(false);
                     } else {
-                        loginView.showInvalidURLSnackbar(R.string.snackbar_server_error);
+                        loginView.showInvalidURLSnackbar("Failed to fetch server's locations");
                         loginView.setLocationErrorOccurred(true);
                         loginView.initLoginForm(new ArrayList<>(), url);
                     }
@@ -244,7 +244,7 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
                 }
 
                 @Override
-                public void onFailure(@NonNull Call<Results<LocationEntity>> call, @NonNull Throwable t) {
+                public void onFailure(@NonNull Call<Results<Location>> call, @NonNull Throwable t) {
                     loginView.hideUrlLoadingAnimation();
                     loginView.showInvalidURLSnackbar(t.getMessage());
                     loginView.initLoginForm(new ArrayList<>(), url);
@@ -253,35 +253,34 @@ public class LoginPresenter extends BasePresenter implements LoginContract.Prese
             });
         } else {
             addSubscription(locationDAO.getLocations()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(locationEntities -> {
-                        if (locationEntities.size() > 0) {
-                            loginView.initLoginForm(locationEntities, url);
+                     .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(locations -> {
+                        if (locations.size() > 0) {
+                            loginView.initLoginForm(locations, url);
                             loginView.setLocationErrorOccurred(false);
                         } else {
-                            loginView.showToast(R.string.no_internet_connection_message, ToastUtil.ToastType.ERROR);
+                            loginView.showToast("Network not available.", ToastUtil.ToastType.ERROR);
                             loginView.setLocationErrorOccurred(true);
                         }
                         loginView.hideLoadingAnimation();
                     }));
         }
+
     }
 
     private boolean validateLoginFields(String username, String password, String url) {
         return StringUtils.notEmpty(username) || StringUtils.notEmpty(password) || StringUtils.notEmpty(url);
     }
 
-    // use this method to populate the Openmrs username password and everything else.
-
-    private void setData(String sessionToken, String url, String username, String password) {
-        OpenmrsAndroid.setSessionToken(sessionToken);
-        OpenmrsAndroid.setServerUrl(url);
-        OpenmrsAndroid.setUsername(username);
-        OpenmrsAndroid.setPasswordAndHashedPassword(password);
+    private void setData(String sessionToken,String url, String username, String password) {
+        mOpenMRS.setSessionToken(sessionToken);
+        mOpenMRS.setServerUrl(url);
+        mOpenMRS.setUsername(username);
+        mOpenMRS.setPasswordAndHashedPassword(password);
     }
 
     private void setLogin(boolean isLogin, String serverUrl) {
-        OpenmrsAndroid.setUserLoggedOnline(isLogin);
-        OpenmrsAndroid.setLastLoginServerUrl(serverUrl);
+        mOpenMRS.setUserLoggedOnline(isLogin);
+        mOpenMRS.setLastLoginServerUrl(serverUrl);
     }
 }

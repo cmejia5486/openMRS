@@ -21,40 +21,36 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import com.openmrs.android_sdk.library.models.Encounter;
-import com.openmrs.android_sdk.library.models.Observation;
-import com.openmrs.android_sdk.library.models.Visit;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.ToastUtil;
-import com.google.common.collect.Lists;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openmrs.mobile.R;
+import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardFragment;
-import org.openmrs.mobile.databinding.FragmentPatientChartsBinding;
+import org.openmrs.mobile.models.Encounter;
+import org.openmrs.mobile.models.Observation;
+import org.openmrs.mobile.models.Visit;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.FontsUtil;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
-public class PatientChartsFragment extends PatientDashboardFragment implements PatientDashboardContract.ViewPatientCharts, PatientChartsRecyclerViewAdapter.OnClickListener {
-    private JSONObject observationList;
-    private FragmentPatientChartsBinding binding;
-    private PatientChartsRecyclerViewAdapter chartsListAdapter;
 
-    public static PatientChartsFragment newInstance() {
-        return new PatientChartsFragment();
-    }
+public class PatientChartsFragment extends PatientDashboardFragment implements PatientDashboardContract.ViewPatientCharts {
+
+    private ListView mListView;
+    private TextView mEmptyListView;
+    private JSONObject observationList;
+    private PatientChartsListAdapter chartsListAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,23 +61,45 @@ public class PatientChartsFragment extends PatientDashboardFragment implements P
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentPatientChartsBinding.inflate(inflater, container, false);
+        View root = inflater.inflate(R.layout.fragment_patient_charts, null, false);
 
+        mEmptyListView = root.findViewById(R.id.vitalEmpty);
+        FontsUtil.setFont(mEmptyListView, FontsUtil.OpenFonts.OPEN_SANS_BOLD);
+        mListView = root.findViewById(R.id.vitalList);
+        mListView.setEmptyView(mEmptyListView);
         setEmptyListVisibility(false);
-        return binding.getRoot();
+
+        mListView.setOnItemClickListener((parent, view, position, id) -> {
+            Intent intent = new Intent(getActivity(), ChartsViewActivity.class);
+            Bundle mBundle = new Bundle();
+            String vitalName = chartsListAdapter.getItem(position);
+            try {
+                mBundle.putString("vitalName", observationList.getJSONObject(vitalName).toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            intent.putExtra("bundle", mBundle);
+            startActivity(intent);
+        });
+        return root;
     }
+
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         // This method is intentionally empty
     }
 
+    public static PatientChartsFragment newInstance() {
+        return new PatientChartsFragment();
+    }
+
     @Override
     public void setEmptyListVisibility(boolean visibility) {
         if (visibility) {
-            binding.vitalEmpty.setVisibility(View.VISIBLE);
+            mEmptyListView.setVisibility(View.VISIBLE);
         } else {
-            binding.vitalEmpty.setVisibility(View.GONE);
+            mEmptyListView.setVisibility(View.GONE);
         }
     }
 
@@ -133,6 +151,7 @@ public class PatientChartsFragment extends PatientDashboardFragment implements P
                                         e.printStackTrace();
                                     }
                                 }
+
                             } else {
                                 JSONObject chartData = new JSONObject();
                                 JSONArray obsValue = new JSONArray();
@@ -147,51 +166,28 @@ public class PatientChartsFragment extends PatientDashboardFragment implements P
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
+
                             }
                         }
                     }
                 }
             }
-            chartsListAdapter = new PatientChartsRecyclerViewAdapter(this.getActivity(), observationList, this);
-            binding.vitalList.setHasFixedSize(true);
-            binding.vitalList.setLayoutManager(new LinearLayoutManager(getContext()));
-            binding.vitalList.setAdapter(chartsListAdapter);
+            chartsListAdapter = new PatientChartsListAdapter(this.getActivity(), observationList);
+            mListView.setAdapter(chartsListAdapter);
         }
+
+
     }
 
     @Override
-    public void showChartActivity(String vitalName) {
-        try {
-            JSONObject chartData = observationList.getJSONObject(vitalName);
-            Iterator<String> dates = chartData.keys();
-            ArrayList<String> dateList = Lists.newArrayList(dates);
-
-            if (dateList.size() == 0)
-                ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.ERROR, getString(R.string.data_not_available_for_this_field));
-            else {
-                JSONArray dataArray = chartData.getJSONArray(dateList.get(0));
-                String entry = (String) dataArray.get(0);
-                try {
-                    Float entryValue = Float.parseFloat(entry);
-                    Intent intent = new Intent(getActivity(), ChartsViewActivity.class);
-                    Bundle mBundle = new Bundle();
-                    mBundle.putString("vitalName", chartData.toString());
-                    intent.putExtra("bundle", mBundle);
-                    startActivity(intent);
-                } catch (NumberFormatException e) {
-                    ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.ERROR, getString(R.string.data_type_not_available_for_this_field));
-                }
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            try {
+                PatientDashboardActivity.hideFABs(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-            ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
     }
 }

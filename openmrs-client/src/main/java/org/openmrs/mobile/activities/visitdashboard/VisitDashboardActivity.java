@@ -19,55 +19,48 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.widget.Toolbar;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
 import org.openmrs.mobile.bundle.CustomDialogBundle;
-import org.openmrs.mobile.databinding.ActivityVisitDashboardBinding;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.ApplicationConstants;
 
 public class VisitDashboardActivity extends ACBaseActivity {
-    public VisitDashboardPresenter presenter;
+
+    public VisitDashboardPresenter mPresenter;
+
     public Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        ActivityVisitDashboardBinding binding= ActivityVisitDashboardBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle(R.string.visit_dashboard_label);
-        }
+        setContentView(R.layout.activity_visit_dashboard);
 
         Intent intent = getIntent();
 
         // Create fragment
         VisitDashboardFragment visitDashboardFragment =
-            (VisitDashboardFragment) getSupportFragmentManager().findFragmentById(R.id.visitDashboardContentFrame);
+                (VisitDashboardFragment) getSupportFragmentManager().findFragmentById(R.id.visitDashboardContentFrame);
         if (visitDashboardFragment == null) {
             visitDashboardFragment = VisitDashboardFragment.newInstance();
         }
         if (!visitDashboardFragment.isActive()) {
             addFragmentToActivity(getSupportFragmentManager(),
-                visitDashboardFragment, R.id.visitDashboardContentFrame);
+                    visitDashboardFragment, R.id.visitDashboardContentFrame);
         }
 
         // Create the presenter
-        presenter = new VisitDashboardPresenter(visitDashboardFragment, intent.getLongExtra(ApplicationConstants.BundleKeys.VISIT_ID, 0));
-        presenter.updatePatientName();
+        mPresenter = new VisitDashboardPresenter(visitDashboardFragment, intent.getLongExtra(ApplicationConstants.BundleKeys.VISIT_ID, 0));
+        mPresenter.updatePatientName();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         this.menu = menu;
-        presenter.checkIfVisitActive();
+        mPresenter.checkIfVisitActive();
         return true;
     }
 
@@ -78,7 +71,7 @@ public class VisitDashboardActivity extends ACBaseActivity {
                 this.finish();
                 break;
             case R.id.actionFillForm:
-                presenter.fillForm();
+                mPresenter.fillForm();
                 break;
             case R.id.actionEndVisit:
                 CustomDialogBundle bundle = new CustomDialogBundle();

@@ -27,21 +27,23 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.openmrs.android_sdk.library.dao.PatientDAO;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.DateUtils;
 import com.google.common.base.Objects;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
-import com.openmrs.android_sdk.library.api.repository.VisitRepository;
+import org.openmrs.mobile.api.repository.VisitRepository;
+import org.openmrs.mobile.dao.PatientDAO;
+import org.openmrs.mobile.models.Patient;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.DateUtils;
+import org.openmrs.mobile.utilities.FontsUtil;
 
 import java.util.List;
 
 import rx.android.schedulers.AndroidSchedulers;
 
 public class SimilarPatientsRecyclerViewAdapter extends RecyclerView.Adapter<SimilarPatientsRecyclerViewAdapter.PatientViewHolder> {
+
     private List<Patient> patientList;
     private Patient newPatient;
     private Activity mContext;
@@ -56,6 +58,7 @@ public class SimilarPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sim
     @Override
     public PatientViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_similar_patient, parent, false);
+        FontsUtil.setFont((ViewGroup) itemView);
         return new PatientViewHolder(itemView);
     }
 
@@ -89,6 +92,7 @@ public class SimilarPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sim
     }
 
     public class PatientViewHolder extends RecyclerView.ViewHolder {
+
         private LinearLayout mRowLayout;
         private TextView mGivenName;
         private TextView mMiddleName;
@@ -113,15 +117,16 @@ public class SimilarPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sim
             mCity = itemView.findViewById(R.id.patientCity);
             mCountry = itemView.findViewById(R.id.patientCountry);
         }
+
     }
 
     private void downloadPatient(Patient patient) {
         new PatientDAO().savePatient(patient)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(id -> {
-                new VisitRepository().syncVisitsData(patient);
-                new VisitRepository().syncLastVitals(patient.getUuid());
-            });
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(id -> {
+                    new VisitRepository().syncVisitsData(patient);
+                    new VisitRepository().syncLastVitals(patient.getUuid());
+                });
     }
 
     private void setBirthdate(PatientViewHolder holder, Patient patient) {

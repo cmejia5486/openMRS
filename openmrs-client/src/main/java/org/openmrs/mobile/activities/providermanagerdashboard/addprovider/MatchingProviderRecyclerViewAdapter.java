@@ -9,15 +9,14 @@ import android.widget.TextView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.openmrs.android_sdk.library.models.Provider;
-
-import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.R;
+import org.openmrs.mobile.models.Provider;
+import org.openmrs.mobile.utilities.FontsUtil;
 
 import java.util.List;
 
 public class MatchingProviderRecyclerViewAdapter extends
-    RecyclerView.Adapter<MatchingProviderRecyclerViewAdapter.SimilarProviderViewHolder> {
+        RecyclerView.Adapter<MatchingProviderRecyclerViewAdapter.SimilarProviderViewHolder> {
     private List<Provider> mItems;
     private Context context;
 
@@ -26,15 +25,15 @@ public class MatchingProviderRecyclerViewAdapter extends
         this.mItems = items;
     }
 
-    @NotNull
     @Override
     public SimilarProviderViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_matching_provider, parent, false);
+        FontsUtil.setFont((ViewGroup) itemView);
         return new SimilarProviderViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NotNull SimilarProviderViewHolder holder, int position) {
+    public void onBindViewHolder(SimilarProviderViewHolder holder, int position) {
         final Provider provider = mItems.get(position);
         if (provider.getPerson().getDisplay() != null) {
             holder.mName.setText(provider.getPerson().getDisplay());
@@ -48,12 +47,14 @@ public class MatchingProviderRecyclerViewAdapter extends
         holder.providerDetailsCL.setOnClickListener(view -> {
             // Action
         });
+
     }
 
     @Override
     public int getItemCount() {
         return mItems.size();
     }
+
 
     class SimilarProviderViewHolder extends RecyclerView.ViewHolder {
         private TextView mIdentifier;
@@ -65,6 +66,7 @@ public class MatchingProviderRecyclerViewAdapter extends
             providerDetailsCL = itemView.findViewById(R.id.providerManagementCL);
             mIdentifier = itemView.findViewById(R.id.providerManagementIdentifier);
             mName = itemView.findViewById(R.id.providerManagementName);
+
         }
     }
 

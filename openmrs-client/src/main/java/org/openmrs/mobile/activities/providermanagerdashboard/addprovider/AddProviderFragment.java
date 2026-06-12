@@ -26,13 +26,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.openmrs.android_sdk.library.models.Person;
-import com.openmrs.android_sdk.library.models.Provider;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseFragment;
-import org.openmrs.mobile.databinding.FragmentAddProviderBinding;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
+import org.openmrs.mobile.models.Person;
+import org.openmrs.mobile.models.Provider;
+import org.openmrs.mobile.utilities.ApplicationConstants;
 import org.openmrs.mobile.utilities.ViewUtils;
 
 import java.util.ArrayList;
@@ -43,9 +45,13 @@ import static android.app.Activity.RESULT_OK;
 
 public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Presenter>
         implements AddProviderContract.View {
+
+    private FloatingActionButton doneFAB;
+    private TextInputEditText firstNameEt, lastNameEt, identifierEt;
+    private TextInputLayout firstNameTIL, lastNameTIL, identifierTIL;
+
     private Provider editProvider = null;
     private ArrayList<Provider> existingProviders;
-    private FragmentAddProviderBinding binding;
 
     public static AddProviderFragment newInstance() {
         return new AddProviderFragment();
@@ -55,18 +61,26 @@ public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Pres
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        binding = FragmentAddProviderBinding.inflate(inflater, container, false);
+        View root = inflater.inflate(R.layout.fragment_add_provider, container, false);
 
-        editProvider = (Provider) (requireActivity().getIntent()
+        editProvider = (Provider) (Objects.requireNonNull(getActivity()).getIntent()
                 .getSerializableExtra(ApplicationConstants.BundleKeys.PROVIDER_ID_BUNDLE));
 
-        existingProviders = (ArrayList<Provider>) (requireActivity().getIntent()
+        existingProviders = (ArrayList<Provider>) (Objects.requireNonNull(getActivity()).getIntent()
                 .getSerializableExtra(ApplicationConstants.BundleKeys.EXISTING_PROVIDERS_BUNDLE));
-        setupUI();
-        return binding.getRoot();
+
+        setupUI(root);
+        return root;
     }
 
-    void setupUI() {
+    void setupUI(View root) {
+        doneFAB = root.findViewById(R.id.add_provider_done_fab);
+        firstNameEt = root.findViewById(R.id.add_provider_firstname_tiet);
+        lastNameEt = root.findViewById(R.id.add_provider_lastname_tiet);
+        identifierEt = root.findViewById(R.id.add_provider_identifier_tiet);
+        firstNameTIL = root.findViewById(R.id.add_provider_firstname_til);
+        lastNameTIL = root.findViewById(R.id.add_provider_lastname_til);
+        identifierTIL = root.findViewById(R.id.add_provider_identifier_til);
 
         if (editProvider != null) {
             String displayName = editProvider.getPerson().getDisplay();
@@ -75,23 +89,21 @@ public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Pres
             if (displayName == null) {
                 firstName = editProvider.getPerson().getName().getGivenName();
                 lastName = editProvider.getPerson().getName().getFamilyName();
-                displayName = firstName + " " + lastName;
             } else {
                 firstName = displayName.substring(0, displayName.indexOf(' '));
                 lastName = displayName.substring(displayName.lastIndexOf(' ') + 1);
             }
 
-            binding.firstNameEditText.setText(firstName);
-            binding.lastNameEditText.setText(lastName);
-            binding.identifierEditText.setText(editProvider.getIdentifier());
-            editProvider.getPerson().setDisplay(displayName);
+            firstNameEt.setText(firstName);
+            lastNameEt.setText(lastName);
+            identifierEt.setText(editProvider.getIdentifier());
         }
 
-        binding.submitButton.setOnClickListener(v -> {
+        doneFAB.setOnClickListener(v -> {
             if (validateFields()) {
-                String firstName = Objects.requireNonNull(binding.firstNameEditText.getText()).toString();
-                String lastName = Objects.requireNonNull(binding.lastNameEditText.getText()).toString();
-                String identifier = Objects.requireNonNull(binding.identifierEditText.getText()).toString();
+                String firstName = Objects.requireNonNull(firstNameEt.getText()).toString();
+                String lastName = Objects.requireNonNull(lastNameEt.getText()).toString();
+                String identifier = Objects.requireNonNull(identifierEt.getText()).toString();
 
                 Person person = mPresenter.createPerson(firstName, lastName);
                 Provider provider;
@@ -105,14 +117,15 @@ public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Pres
                     } else {
                         setProviderResult(provider);
                     }
+
                 } else {
                     provider = mPresenter.editExistingProvider(editProvider, person, identifier);
                     setProviderResult(provider);
                 }
-            }
-        });
 
-        binding.cancelButton.setOnClickListener(v -> getActivity().finish());
+            }
+
+        });
     }
 
     @Override
@@ -125,46 +138,47 @@ public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Pres
         String familyNameError = getString(R.string.lname_invalid_error);
 
         // First name validation
-        if (ViewUtils.isEmpty(binding.firstNameEditText)) {
-            binding.firstNameTextLayout.setErrorEnabled(true);
-            binding.firstNameTextLayout.setError(emptyError);
+        if (ViewUtils.isEmpty(firstNameEt)) {
+            firstNameTIL.setErrorEnabled(true);
+            firstNameTIL.setError(emptyError);
             return false;
-        } else if (!ViewUtils.validateText(ViewUtils.getInput(binding.firstNameEditText), ViewUtils.ILLEGAL_CHARACTERS)) {
-            binding.firstNameTextLayout.setErrorEnabled(true);
-            binding.firstNameTextLayout.setError(givenNameError);
+        } else if (!ViewUtils.validateText(ViewUtils.getInput(firstNameEt), ViewUtils.ILLEGAL_CHARACTERS)) {
+            firstNameTIL.setErrorEnabled(true);
+            firstNameTIL.setError(givenNameError);
             return false;
         } else {
-            binding.firstNameTextLayout.setErrorEnabled(false);
+            firstNameTIL.setErrorEnabled(false);
         }
 
+
         // Family name validation
-        if (ViewUtils.isEmpty(binding.lastNameEditText)) {
-            binding.lastNameTextLayout.setErrorEnabled(true);
-            binding.lastNameTextLayout.setError(emptyError);
+        if (ViewUtils.isEmpty(lastNameEt)) {
+            lastNameTIL.setErrorEnabled(true);
+            lastNameTIL.setError(emptyError);
             return false;
-        } else if (!ViewUtils.validateText(ViewUtils.getInput(binding.lastNameEditText), ViewUtils.ILLEGAL_CHARACTERS)) {
-            binding.lastNameTextLayout.setErrorEnabled(true);
-            binding.lastNameTextLayout.setError(familyNameError);
+        } else if (!ViewUtils.validateText(ViewUtils.getInput(lastNameEt), ViewUtils.ILLEGAL_CHARACTERS)) {
+            lastNameTIL.setErrorEnabled(true);
+            lastNameTIL.setError(familyNameError);
             return false;
         } else {
-            binding.lastNameTextLayout.setErrorEnabled(false);
+            lastNameTIL.setErrorEnabled(false);
         }
 
         // identifier validation
-        if (ViewUtils.isEmpty(binding.identifierEditText)) {
-            binding.identifierTextLayout.setErrorEnabled(true);
-            binding.identifierTextLayout.setError(emptyError);
+        if (ViewUtils.isEmpty(identifierEt)) {
+            identifierTIL.setErrorEnabled(true);
+            identifierTIL.setError(emptyError);
             return false;
         } else {
-            binding.identifierTextLayout.setErrorEnabled(false);
+            identifierTIL.setErrorEnabled(false);
         }
         return true;
     }
 
     public void showMatchingProvidersDialog(List<Provider> matchingProviders, Provider provider) {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle(requireActivity().getString(R.string.title_dialog_matching_provider));
+        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
+        builder.setTitle(Objects.requireNonNull(getActivity()).getString(R.string.title_dialog_matching_provider));
 
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.custom_matching_provider_alert_dialog, null);
@@ -181,6 +195,7 @@ public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Pres
 
         builder.setPositiveButton(getActivity().getString(R.string.dialog_matching_provider_positive_btn), (dialog, which) -> {
             setProviderResult(provider);
+
         }).setNegativeButton(getActivity().getString(R.string.dialog_button_cancel), (dialog, which) -> {
             // Do nothing and cancel the dialog box
         });
@@ -191,20 +206,13 @@ public class AddProviderFragment extends ACBaseFragment<AddProviderContract.Pres
 
     /**
      * This will set the Intent result with new/existing providers
-     *
      * @param provider
      */
     public void setProviderResult(Provider provider) {
         Intent intent = new Intent();
         intent.putExtra(ApplicationConstants.BundleKeys.PROVIDER_ID_BUNDLE, provider);
-        requireActivity().setResult(RESULT_OK, intent);
+        Objects.requireNonNull(getActivity()).setResult(RESULT_OK, intent);
 
         getActivity().finish();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
     }
 }

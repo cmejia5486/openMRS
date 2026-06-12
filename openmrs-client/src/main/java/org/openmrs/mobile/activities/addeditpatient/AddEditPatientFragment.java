@@ -19,9 +19,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -30,11 +28,11 @@ import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -42,57 +40,52 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.StringDef;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
 
-import com.openmrs.android_sdk.library.OpenMRSLogger;
-import com.openmrs.android_sdk.library.models.ConceptAnswers;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.library.models.PersonAddress;
-import com.openmrs.android_sdk.library.models.PersonName;
-import com.openmrs.android_sdk.library.models.Resource;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.DateUtils;
-import com.openmrs.android_sdk.utilities.ImageUtils;
-import com.openmrs.android_sdk.utilities.StringUtils;
-import com.openmrs.android_sdk.utilities.ToastUtil;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.libraries.places.api.model.AutocompletePrediction;
-import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
-import com.google.android.libraries.places.api.model.TypeFilter;
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
-import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.yalantis.ucrop.UCrop;
+import com.google.android.material.textfield.TextInputLayout;
+import com.hbb20.CountryCodePicker;
 
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseFragment;
-import org.openmrs.mobile.activities.dialog.CustomDialogModel;
+import org.openmrs.mobile.activities.dialog.CameraOrGalleryPickerDialog;
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
-import org.openmrs.mobile.activities.dialog.CustomPickerDialog;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.details.PatientPhotoActivity;
+import org.openmrs.mobile.application.OpenMRSLogger;
 import org.openmrs.mobile.bundle.CustomDialogBundle;
-import org.openmrs.mobile.databinding.FragmentPatientInfoBinding;
 import org.openmrs.mobile.listeners.watcher.PatientBirthdateValidatorWatcher;
+import org.openmrs.mobile.models.Patient;
+import org.openmrs.mobile.models.PersonAddress;
+import org.openmrs.mobile.models.PersonName;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.DateUtils;
+import org.openmrs.mobile.utilities.ImageUtils;
+import org.openmrs.mobile.utilities.StringUtils;
+import org.openmrs.mobile.utilities.ToastUtil;
 import org.openmrs.mobile.utilities.ViewUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.annotation.Retention;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -106,50 +99,75 @@ import permissions.dispatcher.OnShowRationale;
 import permissions.dispatcher.PermissionRequest;
 import permissions.dispatcher.RuntimePermissions;
 
-import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 @RuntimePermissions
-public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContract.Presenter> implements AddEditPatientContract.View, CustomPickerDialog.onInputSelected {
-    AlertDialog alertDialog;
-    private FragmentPatientInfoBinding binding;
-    private LocalDate birthDate;
+public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContract.Presenter> implements AddEditPatientContract.View {
+
+    private RelativeLayout relativeLayout;
+    private LocalDate birthdate;
     private DateTime bdt;
-    private Boolean isPatientUnidentified = false;
+
+    private TextInputLayout firstNameTIL;
+    private TextInputLayout middleNameTIL;
+    private TextInputLayout lastNameTIL;
+    private TextInputLayout address1TIL;
+    private TextInputLayout countryTIL;
+
+    private EditText edfname;
+    private EditText edmname;
+    private EditText edlname;
+    private EditText eddob;
+    private EditText edyr;
+    private EditText edmonth;
+    private EditText edaddr1;
+    private EditText edaddr2;
+    private EditText edcity;
+    private AutoCompleteTextView edstate;
+    private CountryCodePicker mCountryCodePicker;
+    private EditText edpostal;
+
+    private RadioGroup gen;
+    private ProgressBar progressBar;
+
+    private TextView fnameerror;
+    private TextView lnameerror;
+    private TextView doberror;
+    private TextView gendererror;
+    private TextView addrerror;
+    private TextView countryerror;
+
+    private Button datePicker;
+
     private DateTimeFormatter dateTimeFormatter;
-    private ArrayList<String> cityList = new ArrayList<>();
-    private PlacesClient placesClient;
+
+    private ImageView patientImageView;
+
+    private FloatingActionButton capturePhotoBtn;
     private Bitmap patientPhoto = null;
+    private Bitmap resizedPatientPhoto = null;
     private String patientName;
     private File output = null;
+    private final static int IMAGE_REQUEST = 1;
+    private final static int GALLERY_IMAGE_REQUEST = 2;
     private OpenMRSLogger logger = new OpenMRSLogger();
+
     private boolean isUpdatePatient = false;
     private Patient updatedPatient;
-    private String causeOfDeathUUID = "";
-    private Resource causeOfDeath;
-    private List<CustomDialogModel> dialogList = new ArrayList<>();
-
-    public static AddEditPatientFragment newInstance() {
-        return new AddEditPatientFragment();
-    }
 
     @Override
-    public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        binding = FragmentPatientInfoBinding.inflate(inflater, container, false);
+        View root = inflater.inflate(R.layout.fragment_patient_info, container, false);
         setHasOptionsMenu(true);
+        resolveViews(root);
         addListeners();
-        initializePlaces(mPresenter.getPlaces());
         fillFields(mPresenter.getPatientToUpdate());
-        return binding.getRoot();
-    }
-
-    private void initializePlaces(PlacesClient places) {
-        placesClient = places;
+        return root;
     }
 
     @Override
     public void finishPatientInfoActivity() {
-        requireActivity().finish();
+        getActivity().finish();
     }
 
     @Override
@@ -166,146 +184,142 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
         // Only two dedicated text views will be visible for error messages.
         // Rest error messages will be displayed in dedicated TextInputLayouts.
         if (dayOfBirthError) {
-            binding.dobError.setVisibility(View.VISIBLE);
+            doberror.setVisibility(View.VISIBLE);
 
             dateTimeFormatter = DateTimeFormat.forPattern(DateUtils.DEFAULT_DATE_FORMAT);
             String minimumDate = DateTime.now().minusYears(
-                ApplicationConstants.RegisterPatientRequirements.MAX_PATIENT_AGE)
-                .toString(dateTimeFormatter);
+                    ApplicationConstants.RegisterPatientRequirements.MAX_PATIENT_AGE)
+                    .toString(dateTimeFormatter);
             String maximumDate = DateTime.now().toString(dateTimeFormatter);
-            if (binding.unidentifiedCheckbox.isChecked()) {
-                binding.dobError.setText(getString(R.string.dob_error_for_unidentified));
-            } else {
-                binding.dobError.setText(getString(R.string.dob_error, minimumDate, maximumDate));
-            }
+
+            doberror.setText(getString(R.string.dob_error, minimumDate, maximumDate));
         } else {
-            binding.dobError.setVisibility(View.GONE);
+            doberror.setVisibility(View.GONE);
         }
 
         if (genderError) {
-            this.binding.gendererror.setVisibility(View.VISIBLE);
+            gendererror.setVisibility(View.VISIBLE);
         } else {
-            this.binding.gendererror.setVisibility(View.GONE);
-        }
-
-        if(addressError) {
-            this.binding.addressError.setVisibility(View.VISIBLE);
-        } else {
-            this.binding.addressError.setVisibility(View.GONE);
+            gendererror.setVisibility(View.GONE);
         }
     }
 
     @Override
     public void scrollToTop() {
-        binding.scrollView.smoothScrollTo(0, binding.scrollView.getPaddingTop());
+        ScrollView scrollView = this.getActivity().findViewById(R.id.scrollView);
+        scrollView.smoothScrollTo(0, scrollView.getPaddingTop());
     }
+
 
     private Patient updatePatientWithData(Patient patient) {
         String emptyError = getString(R.string.emptyerror);
 
-        // errors for the empty fields must be filtered
-        if (binding.unidentifiedCheckbox.isChecked()) {
+        // Validate address
+        if (ViewUtils.isEmpty(edaddr1)
+                && ViewUtils.isEmpty(edaddr2)
+                && ViewUtils.isEmpty(edcity)
+                && ViewUtils.isEmpty(edpostal)
+                && ViewUtils.isCountryCodePickerEmpty(mCountryCodePicker)
+                && ViewUtils.isEmpty(edstate)) {
 
-            PersonName name = new PersonName();
-            name.setFamilyName(getString(R.string.unidentified_patient_name));
-            name.setGivenName(getString(R.string.unidentified_patient_name));
-            List<PersonName> names = new ArrayList<>();
-            names.add(name);
-            patient.setNames(names);
+            addrerror.setText(R.string.atleastone);
+            address1TIL.setErrorEnabled(true);
+            address1TIL.setError(getString(R.string.atleastone));
+        } else if (!ViewUtils.validateText(ViewUtils.getInput(edaddr1), ViewUtils.ILLEGAL_ADDRESS_CHARACTERS)
+                || !ViewUtils.validateText(ViewUtils.getInput(edaddr2), ViewUtils.ILLEGAL_ADDRESS_CHARACTERS)) {
 
-            List<PersonAddress> addresses = new ArrayList<>();
-            patient.setAddresses(addresses);
+            addrerror.setText(getString(R.string.addr_invalid_error));
+            address1TIL.setErrorEnabled(true);
+            address1TIL.setError(getString(R.string.addr_invalid_error));
         } else {
-            // Validate address
-            if (ViewUtils.isEmpty(binding.addressOne)
-                && ViewUtils.isEmpty(binding.addressTwo)
-                && ViewUtils.isEmpty(binding.cityAutoComplete)
-                && ViewUtils.isEmpty(binding.postalCode)
-                && ViewUtils.isCountryCodePickerEmpty(binding.countryCodeSpinner)
-                && ViewUtils.isEmpty(binding.stateAutoComplete)) {
-
-                binding.addressError.setText(R.string.atleastone);
-                binding.textInputLayoutAddress.setErrorEnabled(true);
-                binding.textInputLayoutAddress.setError(getString(R.string.atleastone));
-            } else if (!ViewUtils.validateText(ViewUtils.getInput(binding.addressOne), ViewUtils.ILLEGAL_ADDRESS_CHARACTERS)
-                || !ViewUtils.validateText(ViewUtils.getInput(binding.addressTwo), ViewUtils.ILLEGAL_ADDRESS_CHARACTERS)) {
-
-                binding.addressError.setText(getString(R.string.addr_invalid_error));
-                binding.textInputLayoutAddress.setErrorEnabled(true);
-                binding.textInputLayoutAddress.setError(getString(R.string.addr_invalid_error));
-            } else {
-                binding.textInputLayoutAddress.setErrorEnabled(false);
-            }
-
-            // Add address
-            PersonAddress address = new PersonAddress();
-            address.setAddress1(ViewUtils.getInput(binding.addressOne));
-            address.setAddress2(ViewUtils.getInput(binding.addressTwo));
-            address.setCityVillage(ViewUtils.getInput(binding.cityAutoComplete));
-            address.setPostalCode(ViewUtils.getInput(binding.postalCode));
-            address.setCountry(binding.countryCodeSpinner.getSelectedCountryName());
-            address.setStateProvince(ViewUtils.getInput(binding.stateAutoComplete));
-            address.setPreferred(true);
-
-            List<PersonAddress> addresses = new ArrayList<>();
-            addresses.add(address);
-            patient.setAddresses(addresses);
-
-            // Invalid characters for given name only
-            String givenNameError = getString(R.string.fname_invalid_error);
-            // Invalid characters for the middle name
-            String middleNameError = getString(R.string.midname_invalid_error);
-            // Invalid family name
-            String familyNameError = getString(R.string.lname_invalid_error);
-
-            // First name validation
-            if (ViewUtils.isEmpty(binding.firstName)) {
-                binding.textInputLayoutFirstName.setErrorEnabled(true);
-                binding.textInputLayoutFirstName.setError(emptyError);
-            } else if (!ViewUtils.validateText(ViewUtils.getInput(binding.firstName), ViewUtils.ILLEGAL_CHARACTERS)) {
-                binding.textInputLayoutFirstName.setErrorEnabled(true);
-                binding.textInputLayoutFirstName.setError(givenNameError);
-            } else {
-                binding.textInputLayoutFirstName.setErrorEnabled(false);
-            }
-
-            // Middle name validation (can be empty)
-            if (!ViewUtils.validateText(ViewUtils.getInput(binding.middlename), ViewUtils.ILLEGAL_CHARACTERS)) {
-                binding.textInputLayoutMiddlename.setErrorEnabled(true);
-                binding.textInputLayoutMiddlename.setError(middleNameError);
-            } else {
-                binding.textInputLayoutMiddlename.setErrorEnabled(false);
-            }
-
-            // Family name validation
-            if (ViewUtils.isEmpty(binding.surname)) {
-                binding.textInputLayoutSurname.setErrorEnabled(true);
-                binding.textInputLayoutSurname.setError(emptyError);
-            } else if (!ViewUtils.validateText(ViewUtils.getInput(binding.surname), ViewUtils.ILLEGAL_CHARACTERS)) {
-                binding.textInputLayoutSurname.setErrorEnabled(true);
-                binding.textInputLayoutSurname.setError(familyNameError);
-            } else {
-                binding.textInputLayoutSurname.setErrorEnabled(false);
-            }
-
-            // Add names
-            PersonName name = new PersonName();
-            name.setFamilyName(ViewUtils.getInput(binding.surname));
-            name.setGivenName(ViewUtils.getInput(binding.firstName));
-            name.setMiddleName(ViewUtils.getInput(binding.middlename));
-
-            List<PersonName> names = new ArrayList<>();
-            names.add(name);
-            patient.setNames(names);
+            address1TIL.setErrorEnabled(false);
         }
+
+        // Add address
+        PersonAddress address = new PersonAddress();
+        address.setAddress1(ViewUtils.getInput(edaddr1));
+        address.setAddress2(ViewUtils.getInput(edaddr2));
+        address.setCityVillage(ViewUtils.getInput(edcity));
+        address.setPostalCode(ViewUtils.getInput(edpostal));
+        address.setCountry(mCountryCodePicker.getSelectedCountryName());
+        address.setStateProvince(ViewUtils.getInput(edstate));
+        address.setPreferred(true);
+
+        List<PersonAddress> addresses = new ArrayList<>();
+        addresses.add(address);
+        patient.setAddresses(addresses);
+
+        // Validate names
+        String givenNameEmpty = getString(R.string.fname_empty_error);
+        // Invalid characters for given name only
+        String givenNameError = getString(R.string.fname_invalid_error);
+        // Invalid characters for the middle name
+        String middleNameError = getString(R.string.midname_invalid_error);
+        // Invalid family name
+        String familyNameError = getString(R.string.lname_invalid_error);
+
+        // First name validation
+        if (ViewUtils.isEmpty(edfname)) {
+            fnameerror.setText(emptyError);
+            firstNameTIL.setErrorEnabled(true);
+            firstNameTIL.setError(emptyError);
+        } else if (!ViewUtils.validateText(ViewUtils.getInput(edfname), ViewUtils.ILLEGAL_CHARACTERS)) {
+            lnameerror.setText(familyNameError);
+            firstNameTIL.setErrorEnabled(true);
+            firstNameTIL.setError(givenNameError);
+        } else {
+            firstNameTIL.setErrorEnabled(false);
+        }
+
+        // Middle name validation (can be empty)
+        if (!ViewUtils.validateText(ViewUtils.getInput(edmname), ViewUtils.ILLEGAL_CHARACTERS)) {
+            lnameerror.setText(familyNameError);
+            middleNameTIL.setErrorEnabled(true);
+            middleNameTIL.setError(middleNameError);
+        } else {
+            middleNameTIL.setErrorEnabled(false);
+        }
+
+        // Family name validation
+        if (ViewUtils.isEmpty(edlname)) {
+            lnameerror.setText(emptyError);
+            lastNameTIL.setErrorEnabled(true);
+            lastNameTIL.setError(emptyError);
+        } else if (!ViewUtils.validateText(ViewUtils.getInput(edlname), ViewUtils.ILLEGAL_CHARACTERS)) {
+            lnameerror.setText(familyNameError);
+            lastNameTIL.setErrorEnabled(true);
+            lastNameTIL.setError(familyNameError);
+        } else {
+            lastNameTIL.setErrorEnabled(false);
+        }
+
+        // Add names
+        PersonName name = new PersonName();
+        name.setFamilyName(ViewUtils.getInput(edlname));
+        name.setGivenName(ViewUtils.getInput(edfname));
+        name.setMiddleName(ViewUtils.getInput(edmname));
+
+        List<PersonName> names = new ArrayList<>();
+        names.add(name);
+        patient.setNames(names);
+
+        // Add gender
+        String[] genderChoices = {"M", "F"};
+        int index = gen.indexOfChild(getActivity().findViewById(gen.getCheckedRadioButtonId()));
+        if (index != -1) {
+            patient.setGender(genderChoices[index]);
+        } else {
+            patient.setGender(null);
+        }
+
         // Add birthdate
         String birthdate = null;
-        if (ViewUtils.isEmpty(binding.dobEditText)) {
-            if (!StringUtils.isBlank(ViewUtils.getInput(binding.estimatedYear)) || !StringUtils.isBlank(ViewUtils.getInput(binding.estimatedMonth))) {
+        if (ViewUtils.isEmpty(eddob)) {
+            if (!StringUtils.isBlank(ViewUtils.getInput(edyr)) || !StringUtils.isBlank(ViewUtils.getInput(edmonth))) {
                 dateTimeFormatter = DateTimeFormat.forPattern(DateUtils.OPEN_MRS_REQUEST_PATIENT_FORMAT);
 
-                int yeardiff = ViewUtils.isEmpty(binding.estimatedYear) ? 0 : Integer.parseInt(binding.estimatedYear.getText().toString());
-                int mondiff = ViewUtils.isEmpty(binding.estimatedMonth) ? 0 : Integer.parseInt(binding.estimatedMonth.getText().toString());
+                int yeardiff = ViewUtils.isEmpty(edyr) ? 0 : Integer.parseInt(edyr.getText().toString());
+                int mondiff = ViewUtils.isEmpty(edmonth) ? 0 : Integer.parseInt(edmonth.getText().toString());
                 LocalDate now = new LocalDate();
                 bdt = now.toDateTimeAtStartOfDay().toDateTime();
                 bdt = bdt.minusYears(yeardiff);
@@ -314,10 +328,10 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
                 birthdate = dateTimeFormatter.print(bdt);
             }
         } else {
-            String unvalidatedDate = binding.dobEditText.getText().toString().trim();
+            String unvalidatedDate = eddob.getText().toString().trim();
 
             DateTime minDateOfBirth = DateTime.now().minusYears(
-                ApplicationConstants.RegisterPatientRequirements.MAX_PATIENT_AGE);
+                    ApplicationConstants.RegisterPatientRequirements.MAX_PATIENT_AGE);
             DateTime maxDateOfBirth = DateTime.now();
 
             if (DateUtils.validateDate(unvalidatedDate, minDateOfBirth, maxDateOfBirth)) {
@@ -330,29 +344,12 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
         }
         patient.setBirthdate(birthdate);
 
-        // Validating gender
-        String[] genderChoices = {StringValue.MALE, StringValue.FEMALE};
-        int index = binding.gender.indexOfChild(getActivity().findViewById(binding.gender.getCheckedRadioButtonId()));
-        if (index != -1) {
-            patient.setGender(genderChoices[index]);
-        } else {
-            patient.setGender(null);
-        }
-
-        // Add patient photo
-        if (patientPhoto != null) {
+        if (patientPhoto != null)
             patient.setPhoto(patientPhoto);
-        }
 
-        if (binding.deceasedCheckbox.isChecked() && !causeOfDeathUUID.isEmpty()) {
-            patient.setDeceased(true);
-            patient.setCauseOfDeath(causeOfDeath);
-        } else {
-            patient.setDeceased(false);
-            patient.setCauseOfDeath(new Resource());
-        }
         return patient;
     }
+
 
     private Patient createPatient() {
         Patient patient = new Patient();
@@ -377,7 +374,7 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
 
     @Override
     public void setProgressBarVisibility(boolean visibility) {
-        binding.progressBar.setVisibility(visibility ? View.VISIBLE : View.GONE);
+        progressBar.setVisibility(visibility ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -408,76 +405,61 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
 
     @Override
     public boolean areFieldsNotEmpty() {
-        return (!ViewUtils.isEmpty(binding.firstName) ||
-            (!ViewUtils.isEmpty(binding.middlename)) ||
-            (!ViewUtils.isEmpty(binding.surname)) ||
-            (!ViewUtils.isEmpty(binding.dobEditText)) ||
-            (!ViewUtils.isEmpty(binding.estimatedYear)) ||
-            (!ViewUtils.isEmpty(binding.addressOne)) ||
-            (!ViewUtils.isEmpty(binding.addressTwo)) ||
-            (!ViewUtils.isEmpty(binding.cityAutoComplete)) ||
-            (!ViewUtils.isEmpty(binding.stateAutoComplete)) ||
-            (!ViewUtils.isCountryCodePickerEmpty(binding.countryCodeSpinner)) ||
-            (!ViewUtils.isEmpty(binding.postalCode)));
+        return (!ViewUtils.isEmpty(edfname) ||
+                (!ViewUtils.isEmpty(edmname)) ||
+                (!ViewUtils.isEmpty(edlname)) ||
+                (!ViewUtils.isEmpty(eddob)) ||
+                (!ViewUtils.isEmpty(edyr)) ||
+                (!ViewUtils.isEmpty(edaddr1)) ||
+                (!ViewUtils.isEmpty(edaddr2)) ||
+                (!ViewUtils.isEmpty(edcity)) ||
+                (!ViewUtils.isEmpty(edstate)) ||
+                (!ViewUtils.isCountryCodePickerEmpty(mCountryCodePicker)) ||
+                (!ViewUtils.isEmpty(edpostal)));
     }
 
-    @Override
-    public void cannotMarkDeceased(String message) {
-        binding.deceasedProgressBar.setVisibility(View.GONE);
-        binding.deceasedSpinner.setVisibility(View.GONE);
-        binding.deceasedCheckbox.setChecked(false);
-        if (message.isEmpty()) {
-            ToastUtil.error(getString(R.string.no_death_concepts_in_server));
-        } else {
-            ToastUtil.error(message);
-        }
+    public static AddEditPatientFragment newInstance() {
+        return new AddEditPatientFragment();
     }
 
-    @Override
-    public void cannotMarkDeceased(int messageID) {
-        binding.deceasedProgressBar.setVisibility(View.GONE);
-        binding.deceasedSpinner.setVisibility(View.GONE);
-        binding.deceasedCheckbox.setChecked(false);
-        ToastUtil.error(getString(messageID));
-    }
+    private void resolveViews(View v) {
+        relativeLayout = v.findViewById(R.id.addEditRelativeLayout);
+        edfname = v.findViewById(R.id.firstname);
+        edmname = v.findViewById(R.id.middlename);
+        edlname = v.findViewById(R.id.surname);
+        eddob = v.findViewById(R.id.dob);
+        edyr = v.findViewById(R.id.estyr);
+        edmonth = v.findViewById(R.id.estmonth);
+        edaddr1 = v.findViewById(R.id.addr1);
+        edaddr2 = v.findViewById(R.id.addr2);
+        edcity = v.findViewById(R.id.city);
+        edstate = v.findViewById(R.id.state);
+        mCountryCodePicker=v.findViewById(R.id.ccp);
+        edpostal = v.findViewById(R.id.postal);
 
-    @Override
-    public void updateCauseOfDeathSpinner(ConceptAnswers concept) {
-        binding.deceasedProgressBar.setVisibility(View.GONE);
-        binding.deceasedSpinner.setVisibility(View.VISIBLE);
-        List<Resource> answers = concept.getAnswers();
-        String[] answerDisplays = new String[answers.size()];
-        for (int i = 0; i < answers.size(); i++) {
-            answerDisplays[i] = answers.get(i).getDisplay();
-        }
-        ArrayAdapter<String> adapterAnswers = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, answerDisplays);
-        binding.deceasedSpinner.setAdapter(adapterAnswers);
-        binding.deceasedSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long l) {
-                String display = binding.deceasedSpinner.getSelectedItem().toString();
-                for (int i = 0; i < answers.size(); i++) {
-                    if (display.equals(answers.get(i).getDisplay())) {
-                        causeOfDeathUUID = answers.get(i).getUuid();
-                        causeOfDeath = answers.get(i);
-                    }
-                }
-            }
+        gen = v.findViewById(R.id.gender);
+        progressBar = v.findViewById(R.id.progress_bar);
 
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
+        fnameerror = v.findViewById(R.id.fnameerror);
+        lnameerror = v.findViewById(R.id.lnameerror);
+        doberror = v.findViewById(R.id.doberror);
+        gendererror = v.findViewById(R.id.gendererror);
+        addrerror = v.findViewById(R.id.addrerror);
+        countryerror = v.findViewById(R.id.countryerror);
 
-            }
-        });
+        datePicker = v.findViewById(R.id.btn_datepicker);
+        capturePhotoBtn = v.findViewById(R.id.capture_photo);
+        patientImageView = v.findViewById(R.id.patientPhoto);
+
+        firstNameTIL = v.findViewById(R.id.textInputLayoutFirstName);
+        middleNameTIL = v.findViewById(R.id.textInputLayoutMiddlename);
+        lastNameTIL = v.findViewById(R.id.textInputLayoutSurname);
+        address1TIL = v.findViewById(R.id.textInputLayoutAddress);
+        countryTIL = v.findViewById(R.id.textInputLayoutCountry);
     }
 
     private void fillFields(final Patient patient) {
         if (patient != null) {
-            //no need for un-identification option once the patient is registered
-            binding.unidentifiedCheckbox.setVisibility(View.GONE);
-            // show deceased option only when patient is registered
-            binding.deceasedCardview.setVisibility(View.VISIBLE);
-
             //Change to Update Patient Form
             String updatePatientStr = getResources().getString(R.string.action_update_patient_data);
             this.getActivity().setTitle(updatePatientStr);
@@ -485,44 +467,40 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
             isUpdatePatient = true;
             updatedPatient = patient;
 
-            binding.firstName.setText(patient.getName().getGivenName());
-            binding.middlename.setText(patient.getName().getMiddleName());
-            binding.surname.setText(patient.getName().getFamilyName());
+            edfname.setText(patient.getName().getGivenName());
+            edmname.setText(patient.getName().getMiddleName());
+            edlname.setText(patient.getName().getFamilyName());
 
             patientName = patient.getName().getNameString();
 
             if (StringUtils.notNull(patient.getBirthdate()) || StringUtils.notEmpty(patient.getBirthdate())) {
                 bdt = DateUtils.convertTimeString(patient.getBirthdate());
-                binding.dobEditText.setText(DateUtils.convertTime(DateUtils.convertTime(bdt.toString(), DateUtils.OPEN_MRS_REQUEST_FORMAT),
-                    DateUtils.DEFAULT_DATE_FORMAT));
+                eddob.setText(DateUtils.convertTime(DateUtils.convertTime(bdt.toString(), DateUtils.OPEN_MRS_REQUEST_FORMAT),
+                        DateUtils.DEFAULT_DATE_FORMAT));
             }
 
-            if ((StringValue.MALE).equals(patient.getGender())) {
-                binding.gender.check(R.id.male);
-            } else if ((StringValue.FEMALE).equals(patient.getGender())) {
-                binding.gender.check(R.id.female);
+            if (("M").equals(patient.getGender())) {
+                gen.check(R.id.male);
+            } else if (("F").equals(patient.getGender())) {
+                gen.check(R.id.female);
             }
 
-            binding.addressOne.setText(patient.getAddress().getAddress1());
-            binding.addressTwo.setText(patient.getAddress().getAddress2());
-            binding.cityAutoComplete.setText(patient.getAddress().getCityVillage());
-            binding.stateAutoComplete.setText(patient.getAddress().getStateProvince());
-            binding.postalCode.setText(patient.getAddress().getPostalCode());
+            edaddr1.setText(patient.getAddress().getAddress1());
+            edaddr2.setText(patient.getAddress().getAddress2());
+            edcity.setText(patient.getAddress().getCityVillage());
+            edstate.setText(patient.getAddress().getStateProvince());
+            edpostal.setText(patient.getAddress().getPostalCode());
 
             if (patient.getPhoto() != null) {
                 patientPhoto = patient.getPhoto();
-                Bitmap resizedPatientPhoto = patient.getResizedPhoto();
-                binding.patientPhoto.setImageBitmap(resizedPatientPhoto);
-            }
-
-            if (patient.isDeceased()) {
-                binding.deceasedCheckbox.setChecked(true);
+                resizedPatientPhoto = patient.getResizedPhoto();
+                patientImageView.setImageBitmap(resizedPatientPhoto);
             }
         }
     }
 
     private void addSuggestionsToCities() {
-        String country_name = binding.countryCodeSpinner.getSelectedCountryName();
+        String country_name = mCountryCodePicker.getSelectedCountryName();
         country_name = country_name.replace("(", "");
         country_name = country_name.replace(")", "");
         country_name = country_name.replace(" ", "");
@@ -533,8 +511,8 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
         if (resourceId != 0) {
             String[] states = getContext().getResources().getStringArray(resourceId);
             ArrayAdapter<String> state_adapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_dropdown_item_1line, states);
-            binding.stateAutoComplete.setAdapter(state_adapter);
+                    android.R.layout.simple_dropdown_item_1line, states);
+            edstate.setAdapter(state_adapter);
         }
     }
 
@@ -545,10 +523,10 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
     }
 
     private void addListeners() {
-        binding.gender.setOnCheckedChangeListener((radioGroup, checkedId) -> binding.gendererror.setVisibility(View.GONE));
-        binding.stateAutoComplete.setOnFocusChangeListener((view, hasFocus) -> addSuggestionsToCities());
+        gen.setOnCheckedChangeListener((radioGroup, checkedId) -> gendererror.setVisibility(View.GONE));
+        edstate.setOnFocusChangeListener((view, hasFocus) -> addSuggestionsToCities());
 
-        binding.dobEditText.addTextChangedListener(new TextWatcher() {
+        eddob.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 // Only needs afterTextChanged method from TextWacher
@@ -561,15 +539,15 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
 
             @Override
             public void afterTextChanged(Editable s) {
-                // If a considerable amount of text is filled in edDob, then remove 'Estimated age' fields.
+                // If a considerable amount of text is filled in eddob, then remove 'Estimated age' fields.
                 if (s.length() >= 8) {
-                    binding.estimatedMonth.getText().clear();
-                    binding.estimatedYear.getText().clear();
+                    edmonth.getText().clear();
+                    edyr.getText().clear();
                 }
             }
         });
 
-        binding.datePicker.setOnClickListener(v -> {
+        datePicker.setOnClickListener(v -> {
             int cYear;
             int cMonth;
             int cDay;
@@ -585,176 +563,68 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
                 cDay = bdt.getDayOfMonth();
             }
 
-            binding.estimatedMonth.getText().clear();
-            binding.estimatedYear.getText().clear();
+            edmonth.getText().clear();
+            edyr.getText().clear();
 
             DatePickerDialog mDatePicker = new DatePickerDialog(AddEditPatientFragment.this.getActivity(), (datePicker, selectedYear, selectedMonth, selectedDay) -> {
                 int adjustedMonth = selectedMonth + 1;
-                binding.dobEditText.setText(selectedDay + "/" + adjustedMonth + "/" + selectedYear);
-                birthDate = new LocalDate(selectedYear, adjustedMonth, selectedDay);
-                bdt = birthDate.toDateTimeAtStartOfDay().toDateTime();
+                eddob.setText(selectedDay + "/" + adjustedMonth + "/" + selectedYear);
+                birthdate = new LocalDate(selectedYear, adjustedMonth, selectedDay);
+                bdt = birthdate.toDateTimeAtStartOfDay().toDateTime();
             }, cYear, cMonth, cDay);
             mDatePicker.getDatePicker().setMaxDate(System.currentTimeMillis());
             mDatePicker.setTitle(getString(R.string.date_picker_title));
             mDatePicker.show();
         });
 
-        binding.capturePhoto.setOnClickListener(view -> {
-            dialogList.clear();
-            dialogList.add(new CustomDialogModel(getString(R.string.dialog_take_photo), R.drawable.ic_photo_camera));
-            dialogList.add(new CustomDialogModel(getString(R.string.dialog_choose_photo), R.drawable.ic_photo_library));
-            if (patientPhoto != null) {
-                dialogList.add(new CustomDialogModel(getString(R.string.dialog_remove_photo), R.drawable.ic_photo_delete));
-            }
-            CustomPickerDialog customPickerDialog = new CustomPickerDialog(dialogList);
-            customPickerDialog.setTargetFragment(AddEditPatientFragment.this, 1000);
-            customPickerDialog.show(getFragmentManager(), "tag");
-        });
+        capturePhotoBtn.setOnClickListener(view -> {
 
-        binding.patientPhoto.setOnClickListener(view -> {
+            CameraOrGalleryPickerDialog dialog = CameraOrGalleryPickerDialog.getInstance(
+                    (dialog1, which) -> {
+                                if (which == 0) {
+                                    StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                                    StrictMode.setVmPolicy(builder.build());
+                                    AddEditPatientFragmentPermissionsDispatcher.capturePhotoWithCheck(AddEditPatientFragment.this);
+                                } else if (which == 1) {
+                                    Intent i;
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT)
+                                        i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                                    else
+                                        i = new Intent(Intent.ACTION_GET_CONTENT);
+                                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                                    i.setType("image/*");
+                                    startActivityForResult(i, GALLERY_IMAGE_REQUEST);
+                                } else {
+                                    patientImageView.setImageResource(R.drawable.ic_person_grey_500_48dp);
+                                    patientImageView.invalidate();
+                                    patientPhoto = BitmapFactory.decodeResource(getResources(), R.drawable.ic_person_grey_500_48dp);
+                                }
+                            }
+                        );
+                dialog.show(getChildFragmentManager(), null);
+            }
+        );
+
+
+        patientImageView.setOnClickListener(view -> {
             if (output != null) {
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setDataAndType(Uri.fromFile(output), ApplicationConstants.IMAGE_JPEG);
+                i.setDataAndType(Uri.fromFile(output), "image/jpeg");
                 startActivity(i);
             } else if (patientPhoto != null) {
                 Intent intent = new Intent(getContext(), PatientPhotoActivity.class);
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 patientPhoto.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
-                intent.putExtra(ApplicationConstants.INTENT_KEY_PHOTO, byteArrayOutputStream.toByteArray());
-                intent.putExtra(ApplicationConstants.INTENT_KEY_NAME, patientName);
+                intent.putExtra("photo", byteArrayOutputStream.toByteArray());
+                intent.putExtra("name", patientName);
                 startActivity(intent);
-            }
-        });
-
-        TextWatcher textWatcher = new PatientBirthdateValidatorWatcher(binding.dobEditText, binding.estimatedMonth, binding.estimatedYear);
-        binding.estimatedMonth.addTextChangedListener(textWatcher);
-        binding.estimatedYear.addTextChangedListener(textWatcher);
-
-        //check for cities available on searching
-        binding.cityAutoComplete.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                binding.cityProgressBar.setVisibility(View.VISIBLE);
-                cityList.clear();
-
-                AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
-
-                FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                    .setCountry(binding.countryCodeSpinner.getSelectedCountryNameCode().toLowerCase())
-                    .setTypeFilter(TypeFilter.CITIES)
-                    .setSessionToken(token)
-                    .setQuery(binding.cityAutoComplete.getText().toString())
-                    .build();
-
-                placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
-                    binding.cityProgressBar.setVisibility(View.GONE);
-                    for (AutocompletePrediction autocompletePrediction : response.getAutocompletePredictions())
-                        cityList.add(autocompletePrediction.getFullText(null).toString());
-
-                    //creating an array from ArrayList to create adapter
-                    String[] address = new String[cityList.size()];
-                    for (int in = 0; in < cityList.size(); in++)
-                        address[in] = cityList.get(in);
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.select_dialog_item, address);
-
-                    binding.cityAutoComplete.setAdapter(adapter);
-
-                    binding.cityAutoComplete.setOnItemClickListener((parent, view, position, id) -> {
-                        String primary_text = response.getAutocompletePredictions().get(position).getPrimaryText(null).toString();
-                        String secondary_text = response.getAutocompletePredictions().get(position).getSecondaryText(null).toString();
-
-                        binding.cityAutoComplete.setText(primary_text);
-
-                        /**
-                         * if it is a city , then format received will be :
-                         *      CITY, STATE, COUNTRY
-                         * else it is a union territory, then it will show :
-                         *      CITY, COUNTRY
-                         */
-
-                        if (secondary_text.contains(",")) {
-                            int index = secondary_text.indexOf(',');
-                            String state = secondary_text.substring(0, index);
-                            binding.stateAutoComplete.setText(state);
-                        } else {
-                            binding.stateAutoComplete.setText(primary_text);
-                        }
-                    });
-                }).addOnFailureListener((exception) -> {
-                    if (exception instanceof ApiException) {
-                        ApiException apiException = (ApiException) exception;
-                        Log.i("Place API", "Place not found: " + apiException.getStatusCode());
-                    }
-                    binding.cityProgressBar.setVisibility(View.GONE);
-                });
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
 
             }
         });
 
-        binding.unidentifiedCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (binding.unidentifiedCheckbox.isChecked()) {
-                binding.linearLayoutName.setVisibility(View.GONE);
-                binding.constraintLayoutDOB.setVisibility(View.GONE);
-                binding.linearLayoutContactInfo.setVisibility(View.GONE);
-                isPatientUnidentified = true;
-            } else {
-                binding.linearLayoutName.setVisibility(View.VISIBLE);
-                binding.constraintLayoutDOB.setVisibility(View.VISIBLE);
-                binding.linearLayoutContactInfo.setVisibility(View.VISIBLE);
-                isPatientUnidentified = false;
-            }
-        });
-
-        binding.deceasedCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (binding.deceasedCheckbox.isChecked()) {
-                    binding.deceasedProgressBar.setVisibility(View.VISIBLE);
-                    binding.deceasedSpinner.setVisibility(View.GONE);
-                    mPresenter.getCauseOfDeathGlobalID();
-                } else {
-                    binding.deceasedProgressBar.setVisibility(View.GONE);
-                    binding.deceasedSpinner.setVisibility(View.GONE);
-                }
-            }
-        });
-    }
-
-    @Override
-    public void performFunction(int position) {
-        if (position == 0) {
-            StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
-            StrictMode.setVmPolicy(builder.build());
-            AddEditPatientFragmentPermissionsDispatcher.capturePhotoWithPermissionCheck(AddEditPatientFragment.this);
-        } else if (position == 1) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, ApplicationConstants.RequestCodes.GALLERY_IMAGE_REQUEST);
-            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-
-            Intent i;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            } else {
-                i = new Intent(Intent.ACTION_GET_CONTENT);
-            }
-            i.addCategory(Intent.CATEGORY_OPENABLE);
-            i.setType("image/*");
-            startActivityForResult(i, ApplicationConstants.RequestCodes.GALLERY_IMAGE_REQUEST);
-        } else {
-            binding.patientPhoto.setImageResource(R.drawable.ic_person_grey_500_48dp);
-            binding.patientPhoto.invalidate();
-            patientPhoto = null;
-        }
+        TextWatcher textWatcher = new PatientBirthdateValidatorWatcher(eddob, edmonth, edyr);
+        edmonth.addTextChangedListener(textWatcher);
+        edyr.addTextChangedListener(textWatcher);
     }
 
     @NeedsPermission({Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE})
@@ -764,33 +634,33 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
             File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
             output = new File(dir, getUniqueImageFileName());
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(output));
-            startActivityForResult(takePictureIntent, ApplicationConstants.RequestCodes.IMAGE_REQUEST);
+            startActivityForResult(takePictureIntent, IMAGE_REQUEST);
         }
     }
 
     @OnShowRationale({Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE})
     public void showRationaleForCamera(final PermissionRequest request) {
         new AlertDialog.Builder(getActivity())
-            .setMessage(R.string.permission_camera_rationale)
-            .setPositiveButton(R.string.button_allow, (dialog, which) -> request.proceed())
-            .setNegativeButton(R.string.button_deny, (dialog, button) -> request.cancel())
-            .show();
+                .setMessage(R.string.permission_camera_rationale)
+                .setPositiveButton(R.string.button_allow, (dialog, which) -> request.proceed())
+                .setNegativeButton(R.string.button_deny, (dialog, button) -> request.cancel())
+                .show();
     }
 
     @OnPermissionDenied({Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE})
     public void showDeniedForCamera() {
         createSnackbarLong(R.string.permission_camera_denied)
-            .show();
+                .show();
     }
 
     @OnNeverAskAgain({Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE})
     public void showNeverAskForCamera() {
         createSnackbarLong(R.string.permission_camera_neverask)
-            .show();
+                .show();
     }
 
     private Snackbar createSnackbarLong(int stringId) {
-        Snackbar snackbar = Snackbar.make(binding.addEditConstraintLayout, stringId, Snackbar.LENGTH_LONG);
+        Snackbar snackbar = Snackbar.make(relativeLayout, stringId, Snackbar.LENGTH_LONG);
         View sbView = snackbar.getView();
         TextView textView = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
         textView.setTextColor(Color.WHITE);
@@ -799,41 +669,32 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == ApplicationConstants.RequestCodes.IMAGE_REQUEST) {
-            if (resultCode == Activity.RESULT_OK) {
-                Uri sourceUri = Uri.fromFile(output);
-                openCropActivity(sourceUri, sourceUri);
-            } else {
-                output = null;
-            }
-        } else if (requestCode == ApplicationConstants.RequestCodes.GALLERY_IMAGE_REQUEST) {
-            if (resultCode == Activity.RESULT_OK) {
-                Uri sourceUri = data.getData();
-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-                output = new File(dir, getUniqueImageFileName());
-                Uri destinationUri = Uri.fromFile(output);
-                openCropActivity(sourceUri, destinationUri);
-            } else {
-                output = null;
-            }
-        } else if (requestCode == UCrop.REQUEST_CROP) {
+        if (requestCode == IMAGE_REQUEST) {
             if (resultCode == Activity.RESULT_OK) {
                 patientPhoto = getResizedPortraitImage(output.getPath());
-                Bitmap bitmap = ThumbnailUtils.extractThumbnail(patientPhoto, binding.patientPhoto.getWidth(), binding.patientPhoto.getHeight());
-                binding.patientPhoto.setImageBitmap(bitmap);
-                binding.patientPhoto.invalidate();
+                Bitmap bitmap = ThumbnailUtils.extractThumbnail(patientPhoto, patientImageView.getWidth(), patientImageView.getHeight());
+                patientImageView.setImageBitmap(bitmap);
+                patientImageView.invalidate();
             } else {
                 output = null;
             }
-        } else if (requestCode == UCrop.RESULT_ERROR) {
-            ToastUtil.error(String.valueOf(UCrop.getError(data)));
-        }
-    }
+        } else if (requestCode == GALLERY_IMAGE_REQUEST && resultCode == Activity.RESULT_OK) {
 
-    private void openCropActivity(Uri sourceUri, Uri destinationUri) {
-        UCrop.of(sourceUri, destinationUri)
-            .withAspectRatio(ApplicationConstants.ASPECT_RATIO_FOR_CROPPING, ApplicationConstants.ASPECT_RATIO_FOR_CROPPING)
-            .start(getActivity(), AddEditPatientFragment.this);
+            try {
+                ParcelFileDescriptor parcelFileDescriptor =
+                        getActivity().getContentResolver().openFileDescriptor(data.getData(), "r");
+                FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+                Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+                parcelFileDescriptor.close();
+
+                patientPhoto = image;
+                Bitmap bitmap = ThumbnailUtils.extractThumbnail(patientPhoto, patientImageView.getWidth(), patientImageView.getHeight());
+                patientImageView.setImageBitmap(bitmap);
+                patientImageView.invalidate();
+            } catch (Exception e) {
+                logger.e("Error getting image from gallery.", e);
+            }
+        }
     }
 
     private String getUniqueImageFileName() {
@@ -874,7 +735,7 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
     }
 
     @Override
-    public void onCreateOptionsMenu(@NotNull Menu menu, @NotNull MenuInflater inflater) {
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.submit_done_menu, menu);
     }
@@ -885,15 +746,7 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
         switch (id) {
             case R.id.actionSubmit:
                 submitAction();
-                break;
-            case R.id.actionReset:
-                new AlertDialog.Builder(getActivity())
-                    .setTitle(R.string.dialog_title_reset_patient)
-                    .setMessage(R.string.reset_dialog_message)
-                    .setPositiveButton(R.string.dialog_button_ok, (DialogInterface dialogInterface, int i) -> resetAction())
-                    .setNegativeButton(R.string.dialog_button_cancel, null)
-                    .show();
-                break;
+                return true;
             default:
                 // Do nothing
                 break;
@@ -903,73 +756,9 @@ public class AddEditPatientFragment extends ACBaseFragment<AddEditPatientContrac
 
     private void submitAction() {
         if (isUpdatePatient) {
-            if (binding.deceasedCheckbox.isChecked() && !causeOfDeathUUID.isEmpty()) {
-                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getContext(),R.style.AlertDialogTheme);
-                alertDialogBuilder.setTitle(R.string.mark_patient_deceased);
-                // set dialog message
-                alertDialogBuilder
-                    .setMessage(R.string.mark_patient_deceased_notice)
-                    .setCancelable(false)
-                    .setPositiveButton(R.string.mark_patient_deceased_proceed, (dialog, id) -> {
-                        dialog.cancel();
-                        mPresenter.confirmUpdate(updatePatient(updatedPatient));
-                    })
-                    .setNegativeButton(R.string.dialog_button_cancel, (dialog, id) -> {
-                        alertDialog.cancel();
-                    });
-                alertDialog = alertDialogBuilder.create();
-                alertDialog.show();
-            } else {
-                mPresenter.confirmUpdate(updatePatient(updatedPatient));
-            }
+            mPresenter.confirmUpdate(updatePatient(updatedPatient));
         } else {
-            mPresenter.confirmRegister(createPatient(), isPatientUnidentified);
+            mPresenter.confirmRegister(createPatient());
         }
-    }
-
-    private void resetAction() {
-
-        binding.firstName.setText("");
-        binding.middlename.setText("");
-        binding.surname.setText("");
-        binding.dobEditText.setText("");
-        binding.estimatedYear.setText("");
-        binding.estimatedMonth.setText("");
-        binding.addressOne.setText("");
-        binding.addressTwo.setText("");
-        binding.countryCodeSpinner.resetToDefaultCountry();
-        binding.cityAutoComplete.setText("");
-        binding.stateAutoComplete.setText("");
-        binding.postalCode.setText("");
-        binding.gender.clearCheck();
-
-        binding.dobError.setText("");
-        binding.gendererror.setText("");
-        binding.addressError.setText("");
-
-        binding.textInputLayoutFirstName.setError("");
-        binding.textInputLayoutMiddlename.setError("");
-        binding.textInputLayoutSurname.setError("");
-        binding.textInputLayoutAddress.setError("");
-
-        binding.patientPhoto.setImageResource(R.drawable.ic_person_grey_500_48dp);
-        patientPhoto = null;
-        patientName = null;
-        isUpdatePatient = false;
-        updatedPatient = null;
-        output = null;
-    }
-
-    @Retention(SOURCE)
-    @StringDef({StringValue.MALE, StringValue.FEMALE})
-    public @interface StringValue {
-        String FEMALE = "F";
-        String MALE = "M";
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
     }
 }

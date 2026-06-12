@@ -29,28 +29,23 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.openmrs.android_sdk.library.OpenmrsAndroid;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.library.models.Visit;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.ToastUtil;
-
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardFragment;
 import org.openmrs.mobile.activities.visitdashboard.VisitDashboardActivity;
-import org.openmrs.mobile.databinding.FragmentPatientVisitBinding;
+import org.openmrs.mobile.models.Visit;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.util.List;
 
 public class PatientVisitsFragment extends PatientDashboardFragment implements PatientDashboardContract.ViewPatientVisits {
+
     private RecyclerView visitRecyclerView;
     private TextView emptyList;
-    private FragmentPatientVisitBinding binding =null;
-    private PatientDashboardActivity mPatientDashboardActivity;
+
     public static final int REQUEST_CODE_FOR_VISIT = 1;
-    private Patient patient;
 
     public static PatientVisitsFragment newInstance() {
         return new PatientVisitsFragment();
@@ -73,11 +68,7 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
         int id = item.getItemId();
         switch (id) {
             case R.id.actionStartVisit:
-                if (OpenmrsAndroid.getSyncState()) {
-                    ((PatientDashboardVisitsPresenter) mPresenter).syncVisits();
-                } else {
-                    ToastUtil.notify(getString(R.string.offline_mode_not_supported));
-                }
+                ((PatientDashboardVisitsPresenter) mPresenter).syncVisits();
                 break;
             default:
                 // Do nothing
@@ -92,30 +83,21 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
     }
 
     @Override
-    public void showErrorToast(int messageId) {
-        ToastUtil.error(getString(messageId));
-    }
-
-    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentPatientVisitBinding.inflate(inflater, null, false);
 
+        View root = inflater.inflate(R.layout.fragment_patient_visit, null, false);
+        visitRecyclerView = root.findViewById(R.id.patientVisitRecyclerView);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
-        visitRecyclerView = binding.patientVisitRecyclerView;
         visitRecyclerView.setHasFixedSize(true);
         visitRecyclerView.setLayoutManager(linearLayoutManager);
 
-        emptyList = binding.emptyVisitsList;
-        return binding.getRoot();
+        emptyList = root.findViewById(R.id.emptyVisitsList);
 
+        return root;
     }
 
     public void startVisit() {
-        if (patient.isDeceased()) {
-            ToastUtil.error(getString(R.string.cannot_start_visit_for_deceased));
-        } else {
-            ((PatientDashboardVisitsPresenter) mPresenter).startVisit();
-        }
+        ((PatientDashboardVisitsPresenter) mPresenter).startVisit();
     }
 
     @Override
@@ -128,7 +110,8 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
         if (isVisible) {
             visitRecyclerView.setVisibility(View.VISIBLE);
             emptyList.setVisibility(View.GONE);
-        } else {
+        }
+        else {
             visitRecyclerView.setVisibility(View.GONE);
             emptyList.setVisibility(View.VISIBLE);
         }
@@ -154,7 +137,8 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
         if (activity.getSupportActionBar() != null) {
             if (isVisitPossible) {
                 activity.showStartVisitDialog(activity.getSupportActionBar().getTitle());
-            } else {
+            }
+            else {
                 activity.showStartVisitImpossibleDialog(activity.getSupportActionBar().getTitle());
             }
         }
@@ -166,25 +150,14 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
     }
 
     @Override
-    public void setPatient(Patient mPatient) {
-        patient = mPatient;
-    }
-
-    @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         if (isVisibleToUser) {
             try {
-                mPatientDashboardActivity.hideFABs(true);
+                PatientDashboardActivity.hideFABs(true);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
     }
 }

@@ -3,9 +3,11 @@
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
+
 package org.openmrs.mobile.activities.formdisplay;
 
 import android.content.res.Resources;
@@ -29,29 +31,27 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
-import com.openmrs.android_sdk.library.models.Answer;
-import com.openmrs.android_sdk.library.models.Question;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.InputField;
-import com.openmrs.android_sdk.utilities.RangeEditText;
-import com.openmrs.android_sdk.utilities.SelectOneField;
-import com.openmrs.android_sdk.utilities.ToastUtil;
-
 import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseFragment;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.bundle.FormFieldsWrapper;
-import org.openmrs.mobile.databinding.FragmentFormDisplayBinding;
+import org.openmrs.mobile.models.Answer;
+import org.openmrs.mobile.models.Question;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.InputField;
+import org.openmrs.mobile.utilities.RangeEditText;
+import org.openmrs.mobile.utilities.SelectOneField;
+import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.Presenter.PagePresenter> implements FormDisplayContract.View.PageView {
-    private FragmentFormDisplayBinding binding = null;
-    private List<InputField> inputFields = new ArrayList<>();
+
+    private List<InputField> inputFields =new ArrayList<>();
     private List<SelectOneField> selectOneFields = new ArrayList<>();
-    private LinearLayout parent;
+    private LinearLayout mParent;
 
     public static FormDisplayPageFragment newInstance() {
         return new FormDisplayPageFragment();
@@ -60,14 +60,12 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        binding = FragmentFormDisplayBinding.inflate(inflater, container, false);
-
+        View root = inflater.inflate(R.layout.fragment_form_display, container, false);
         getActivity().getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-        parent = binding.sectionContainer;
-        return binding.getRoot();
+        mParent = root.findViewById(R.id.sectionContainer);
+        return root;
     }
 
     @Override
@@ -84,14 +82,14 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
             FormFieldsWrapper formFieldsWrapper = (FormFieldsWrapper) savedInstanceState.getSerializable(ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE);
             inputFields = formFieldsWrapper.getInputFields();
 
-            for (InputField field : inputFields) {
-                View v = getActivity().findViewById(field.id);
-                if (v != null && v instanceof DiscreteSeekBar) {
+            for(InputField field:inputFields){
+                View v = getActivity().findViewById(field.getId());
+                if(v != null && v instanceof DiscreteSeekBar) {
                     DiscreteSeekBar sb = (DiscreteSeekBar) v;
-                    sb.setProgress(Double.valueOf(field.value).intValue());
+                    sb.setProgress(field.getValue().intValue());
                 }
-                if (field.isRed) {
-                    RangeEditText ed = getActivity().findViewById(field.id);
+                if(field.isRed()){
+                    RangeEditText ed = getActivity().findViewById(field.getId());
                     ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
                 }
             }
@@ -101,7 +99,7 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
 
     @Override
     public void attachSectionToView(LinearLayout linearLayout) {
-        parent.addView(linearLayout);
+        mParent.addView(linearLayout);
     }
 
     @Override
@@ -117,21 +115,22 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         RangeEditText ed = new RangeEditText(getActivity());
         DiscreteSeekBar dsb = new DiscreteSeekBar(getActivity());
         InputField field = new InputField(question.getQuestionOptions().getConcept());
-        InputField inputField = getInputField(field.concept);
+        InputField inputField = getInputField(field.getConcept());
         if (inputField != null) {
-            inputField.id = field.id;
+            inputField.setId(field.getId());
         } else {
-            field.concept = question.getQuestionOptions().getConcept();
+            field.setConcept(question.getQuestionOptions().getConcept());
             inputFields.add(field);
         }
         sectionLinearLayout.addView(generateTextView(question.getLabel()));
 
-        if ((question.getQuestionOptions().getMax() != null) && (!(question.getQuestionOptions().isAllowDecimal()))) {
+        if ((question.getQuestionOptions().getMax() != null) && (!(question.getQuestionOptions().isAllowDecimal())) ){
             dsb.setMax((int) Double.parseDouble(question.getQuestionOptions().getMax()));
             dsb.setMin((int) Double.parseDouble(question.getQuestionOptions().getMin()));
-            dsb.setId(field.id);
-            sectionLinearLayout.addView(dsb, layoutParams);
-        } else {
+            dsb.setId(field.getId());
+            sectionLinearLayout.addView(dsb,layoutParams);
+        }
+        else {
             ed.setName(question.getLabel());
             ed.setSingleLine(true);
             ed.setHint(question.getLabel());
@@ -143,33 +142,34 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
             } else {
                 ed.setInputType(InputType.TYPE_CLASS_NUMBER);
             }
-            ed.setId(field.id);
+            ed.setId(field.getId());
             sectionLinearLayout.addView(ed, layoutParams);
         }
+
     }
 
     private View generateTextView(String text) {
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        layoutParams.setMargins(10, 0, 0, 0);
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(10,0,0,0);
         TextView textView = new TextView(getActivity());
         textView.setText(text);
         textView.setLayoutParams(layoutParams);
         return textView;
     }
 
-    public InputField getInputField(String concept) {
+    public InputField getInputField(String concept){
         for (InputField inputField : inputFields) {
-            if (concept.equals(inputField.concept)) {
+            if(concept.equals(inputField.getConcept())){
                 return inputField;
             }
         }
         return null;
     }
 
-    public SelectOneField getSelectOneField(String concept) {
-        for (SelectOneField selectOneField : selectOneFields) {
-            if (concept.equals(selectOneField.getConcept())) {
+    public SelectOneField getSelectOneField(String concept){
+        for (SelectOneField selectOneField: selectOneFields) {
+            if(concept.equals(selectOneField.getConcept())){
                 return selectOneField;
             }
         }
@@ -179,7 +179,7 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
     @Override
     public void createAndAttachSelectQuestionDropdown(Question question, LinearLayout sectionLinearLayout) {
         TextView textView = new TextView(getActivity());
-        textView.setPadding(20, 0, 0, 0);
+        textView.setPadding(20,0,0,0);
         textView.setText(question.getLabel());
         Spinner spinner = (Spinner) getActivity().getLayoutInflater().inflate(R.layout.form_dropdown, null);
 
@@ -211,7 +211,7 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         sectionLinearLayout.addView(questionLinearLayout);
 
         SelectOneField selectOneField = getSelectOneField(spinnerField.getConcept());
-        if (selectOneField != null) {
+        if(selectOneField != null) {
             spinner.setSelection(selectOneField.getChosenAnswerPosition());
             setOnItemSelectedListener(spinner, selectOneField);
         } else {
@@ -237,11 +237,12 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
     @Override
     public void createAndAttachSelectQuestionRadioButton(Question question, LinearLayout sectionLinearLayout) {
         TextView textView = new TextView(getActivity());
-        textView.setPadding(20, 0, 0, 0);
+        textView.setPadding(20,0,0,0);
         textView.setText(question.getLabel());
 
         RadioGroup radioGroup = new RadioGroup(getActivity());
 
+        
         for (Answer answer : question.getQuestionOptions().getAnswers()) {
             RadioButton radioButton = new RadioButton(getActivity());
             radioButton.setText(answer.getLabel());
@@ -260,7 +261,7 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         sectionLinearLayout.setLayoutParams(linearLayoutParams);
 
         SelectOneField selectOneField = getSelectOneField(radioGroupField.getConcept());
-        if (selectOneField != null) {
+        if(selectOneField != null){
             if (selectOneField.getChosenAnswerPosition() != -1) {
                 RadioButton radioButton = (RadioButton) radioGroup.getChildAt(selectOneField.getChosenAnswerPosition());
                 radioButton.setChecked(true);
@@ -285,11 +286,11 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         LinearLayout questionLinearLayout = new LinearLayout(getActivity());
         LinearLayout.LayoutParams layoutParams = getAndAdjustLinearLayoutParams(questionLinearLayout);
 
-        TextView tv = new TextView(getActivity());
+        TextView tv=new TextView(getActivity());
         tv.setText(questionLabel);
-        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP,18);
         tv.setTextColor(ContextCompat.getColor(getActivity(), R.color.primary));
-        questionLinearLayout.addView(tv, layoutParams);
+        questionLinearLayout.addView(tv,layoutParams);
 
         return questionLinearLayout;
     }
@@ -299,12 +300,12 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         LinearLayout sectionLinearLayout = new LinearLayout(getActivity());
         LinearLayout.LayoutParams layoutParams = getAndAdjustLinearLayoutParams(sectionLinearLayout);
 
-        TextView tv = new TextView(getActivity());
+        TextView tv=new TextView(getActivity());
         tv.setText(sectionLabel);
         tv.setGravity(Gravity.CENTER_HORIZONTAL);
-        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-        tv.setTextColor(ContextCompat.getColor(getActivity(), R.color.primary));
-        sectionLinearLayout.addView(tv, layoutParams);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP,22);
+        tv.setTextColor(ContextCompat.getColor(getActivity(),R.color.primary));
+        sectionLinearLayout.addView(tv,layoutParams);
 
         return sectionLinearLayout;
     }
@@ -332,19 +333,21 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
 
     @Override
     public List<InputField> getInputFields() {
-        for (InputField field : inputFields) {
-            try {
-                RangeEditText ed = getActivity().findViewById(field.id);
-                if (!isEmpty(ed)) {
-                    field.value = Double.parseDouble(ed.getText().toString());
-                    boolean isRed = (ed.getCurrentTextColor() == ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
-                    field.isRed = isRed;
-                } else {
-                    field.value = -1.0;
-                }
-            } catch (ClassCastException e) {
-                DiscreteSeekBar dsb = getActivity().findViewById(field.id);
-                field.value = (double) dsb.getProgress();
+        for (InputField field:inputFields) {
+            try{
+                RangeEditText ed = getActivity().findViewById(field.getId());
+            if(!isEmpty(ed)){
+                field.setValue(Double.parseDouble(ed.getText().toString()));
+                boolean isRed = (ed.getCurrentTextColor()==ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
+                field.setIsRed(isRed);
+            }
+            else{
+                field.setValue(-1.0);
+            }
+        }
+            catch (ClassCastException e ) {
+                DiscreteSeekBar dsb = getActivity().findViewById(field.getId());
+                field.setValue((double) dsb.getProgress());
             }
         }
 
@@ -363,25 +366,26 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
 
     public boolean checkInputFields() {
         boolean allEmpty = true;
-        boolean valid = true;
-        for (InputField field : inputFields) {
+        boolean valid=true;
+        for (InputField field:inputFields) {
             try {
-                RangeEditText ed = getActivity().findViewById(field.id);
-                if (!isEmpty(ed)) {
-                    allEmpty = false;
-                    if (ed.getText().toString().charAt(0) != '.') {
-                        Double inp = Double.parseDouble(ed.getText().toString());
-                        if (ed.getUpperlimit() != -1.0 && ed.getUpperlimit() != -1.0 && (ed.getUpperlimit() < inp || ed.getLowerlimit() > inp)) {
-                            ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
-                            valid = false;
-                        }
-                    } else {
+                RangeEditText ed = getActivity().findViewById(field.getId());
+            if (!isEmpty(ed)) {
+                allEmpty = false;
+                if (ed.getText().toString().charAt(0) != '.') {
+                    Double inp = Double.parseDouble(ed.getText().toString());
+                    if (ed.getUpperlimit() != -1.0 && ed.getUpperlimit() != -1.0 && (ed.getUpperlimit() < inp || ed.getLowerlimit() > inp)) {
                         ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
                         valid = false;
                     }
                 }
-            } catch (ClassCastException e) {
-                DiscreteSeekBar dsb = getActivity().findViewById(field.id);
+                else {
+                    ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
+                    valid = false;
+                }
+            }}
+            catch (ClassCastException e){
+                DiscreteSeekBar dsb = getActivity().findViewById(field.getId());
                 if (dsb.getProgress() > dsb.getMin()) {
                     allEmpty = false;
                 }
@@ -395,7 +399,7 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         }
 
         if (allEmpty) {
-            ToastUtil.error(getString(R.string.all_fields_empty_error_message));
+            ToastUtil.error("All fields cannot be empty");
             return false;
         }
         return valid;
@@ -405,9 +409,4 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         return etText.getText().toString().trim().length() == 0;
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
 }

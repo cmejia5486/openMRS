@@ -14,24 +14,21 @@
 
 package org.openmrs.mobile.test.presenters;
 
-import com.openmrs.android_sdk.library.OpenMRSLogger;
-import com.openmrs.android_sdk.library.dao.EncounterDAO;
-import com.openmrs.android_sdk.library.dao.LocationDAO;
-import com.openmrs.android_sdk.library.dao.VisitDAO;
-import com.openmrs.android_sdk.library.models.Encounter;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.utilities.NetworkUtils;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.vitals.PatientDashboardVitalsPresenter;
-import com.openmrs.android_sdk.library.api.RestApi;
-import com.openmrs.android_sdk.library.api.repository.VisitRepository;
-import org.openmrs.mobile.application.OpenMRS;
+import org.openmrs.mobile.api.RestApi;
+import org.openmrs.mobile.api.repository.VisitRepository;
+import org.openmrs.mobile.dao.EncounterDAO;
+import org.openmrs.mobile.dao.LocationDAO;
+import org.openmrs.mobile.dao.VisitDAO;
+import org.openmrs.mobile.models.Encounter;
+import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.test.ACUnitTestBaseRx;
+import org.openmrs.mobile.utilities.NetworkUtils;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
@@ -46,20 +43,18 @@ import static org.mockito.Mockito.verify;
 
 @PrepareForTest(NetworkUtils.class)
 public class PatientDashboardVitalsPresenterTest extends ACUnitTestBaseRx {
-    @Mock
-    private OpenMRS openMRS;
-    @Mock
-    private OpenMRSLogger openMRSLogger;
+
     @Mock
     private PatientDashboardContract.ViewPatientVitals viewPatientVitals;
     @Mock
-    private EncounterDAO encounterDAO;
+    private  EncounterDAO encounterDAO;
     @Mock
     private RestApi restApi;
     @Mock
     private VisitDAO visitDAO;
     @Mock
     private LocationDAO locationDAO;
+
     private PatientDashboardVitalsPresenter presenter;
     private Patient patient;
 
@@ -67,7 +62,7 @@ public class PatientDashboardVitalsPresenterTest extends ACUnitTestBaseRx {
     public void setUp() {
         super.setUp();
         patient = createPatient(1L);
-        VisitRepository visitRepository = new VisitRepository(openMRSLogger, restApi, visitDAO, locationDAO, encounterDAO);
+        VisitRepository visitRepository = new VisitRepository(restApi, visitDAO, locationDAO, encounterDAO);
         presenter = new PatientDashboardVitalsPresenter(patient, viewPatientVitals, encounterDAO, visitRepository);
         PowerMockito.mockStatic(NetworkUtils.class);
     }
@@ -76,7 +71,7 @@ public class PatientDashboardVitalsPresenterTest extends ACUnitTestBaseRx {
     public void subscribe_allOk() {
         PowerMockito.when(NetworkUtils.isOnline()).thenReturn(true);
         Mockito.lenient().when(restApi.getLastVitals(anyString(), anyString(), anyString(), anyInt(), anyString()))
-            .thenReturn(mockSuccessCall(Collections.singletonList(new Encounter())));
+                .thenReturn(mockSuccessCall(Collections.singletonList(new Encounter())));
         Encounter encounter = new Encounter();
         Mockito.lenient().when(encounterDAO.getLastVitalsEncounter(patient.getUuid())).thenReturn(Observable.just(encounter));
         presenter.subscribe();
@@ -88,7 +83,7 @@ public class PatientDashboardVitalsPresenterTest extends ACUnitTestBaseRx {
     public void subscribe_nullEncounter() {
         PowerMockito.when(NetworkUtils.isOnline()).thenReturn(true);
         Mockito.lenient().when(restApi.getLastVitals(anyString(), anyString(), anyString(), anyInt(), anyString()))
-            .thenReturn(mockSuccessCall(Collections.singletonList(new Encounter())));
+                .thenReturn(mockSuccessCall(Collections.singletonList(new Encounter())));
         Mockito.lenient().when(encounterDAO.getLastVitalsEncounter(patient.getUuid())).thenReturn(Observable.just(null));
         presenter.subscribe();
         verify(encounterDAO, times(2)).getLastVitalsEncounter(patient.getUuid());

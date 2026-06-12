@@ -15,21 +15,22 @@
 package org.openmrs.mobile.activities.patientdashboard;
 
 import org.openmrs.mobile.activities.BasePresenter;
-import com.openmrs.android_sdk.library.dao.PatientDAO;
-import com.openmrs.android_sdk.library.dao.VisitDAO;
-import com.openmrs.android_sdk.library.models.Patient;
+import org.openmrs.mobile.dao.PatientDAO;
+import org.openmrs.mobile.dao.VisitDAO;
+import org.openmrs.mobile.models.Patient;
 
 import rx.schedulers.Schedulers;
 
 public abstract class PatientDashboardMainPresenterImpl extends BasePresenter implements PatientDashboardContract.PatientDashboardMainPresenter {
+
     protected Patient mPatient;
 
     @Override
     public void deletePatient() {
         new PatientDAO().deletePatient(mPatient.getId());
         addSubscription(new VisitDAO().deleteVisitsByPatientId(mPatient.getId())
-            .observeOn(Schedulers.io())
-            .subscribe());
+                .observeOn(Schedulers.io())
+                .subscribe());
     }
 
     @Override

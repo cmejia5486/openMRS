@@ -14,10 +14,12 @@
 
 package org.openmrs.mobile.activities;
 
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 public abstract class ACBaseFragment<T extends BasePresenterContract> extends Fragment implements BaseView<T> {
+
     protected T mPresenter;
 
     @Override

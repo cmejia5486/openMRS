@@ -18,19 +18,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -38,35 +34,29 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.openmrs.android_sdk.library.OpenMRSLogger;
-import com.openmrs.android_sdk.library.OpenmrsAndroid;
-import com.openmrs.android_sdk.library.dao.LocationDAO;
-import com.openmrs.android_sdk.library.databases.AppDatabase;
-import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.NetworkUtils;
-import com.openmrs.android_sdk.utilities.ToastUtil;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.community.contact.AboutActivity;
-import org.openmrs.mobile.activities.community.contact.ContactUsActivity;
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
-import org.openmrs.mobile.activities.introduction.SplashActivity;
 import org.openmrs.mobile.activities.login.LoginActivity;
 import org.openmrs.mobile.activities.settings.SettingsActivity;
 import org.openmrs.mobile.application.OpenMRS;
+import org.openmrs.mobile.application.OpenMRSLogger;
 import org.openmrs.mobile.bundle.CustomDialogBundle;
+import org.openmrs.mobile.dao.LocationDAO;
+import org.openmrs.mobile.databases.OpenMRSDBOpenHelper;
+import org.openmrs.mobile.models.Location;
+import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.net.AuthorizationManager;
+import org.openmrs.mobile.utilities.ApplicationConstants;
 import org.openmrs.mobile.utilities.ForceClose;
-import org.openmrs.mobile.utilities.LanguageUtils;
+import org.openmrs.mobile.utilities.NetworkUtils;
 import org.openmrs.mobile.utilities.ThemeUtils;
+import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import rx.Observable;
 import rx.Observer;
@@ -76,22 +66,16 @@ import rx.schedulers.Schedulers;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class ACBaseActivity extends AppCompatActivity {
-    protected final OpenMRS mOpenMRS = OpenMRS.getInstance();
-    protected final OpenMRSLogger mOpenMRSLogger = OpenmrsAndroid.getOpenMRSLogger();
+
     protected FragmentManager mFragmentManager;
+    protected final OpenMRS mOpenMRS = OpenMRS.getInstance();
+    protected final OpenMRSLogger mOpenMRSLogger = mOpenMRS.getOpenMRSLogger();
     protected AuthorizationManager mAuthorizationManager;
     protected CustomFragmentDialog mCustomFragmentDialog;
-    protected Snackbar mSnackbar;
     private MenuItem mSyncbutton;
     private List<String> locationList;
+    private Snackbar snackbar;
     private IntentFilter mIntentFilter;
-    private AlertDialog alertDialog;
-    private BroadcastReceiver mPasswordChangedReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            showCredentialChangedDialog();
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,15 +83,14 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new ForceClose(this));
 
         setupTheme();
-        setupLanguage();
 
         mFragmentManager = getSupportFragmentManager();
         mAuthorizationManager = new AuthorizationManager();
         locationList = new ArrayList<>();
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            Boolean flag = extras.getBoolean(ApplicationConstants.FLAG);
-            String errorReport = extras.getString(ApplicationConstants.ERROR);
+            Boolean flag = extras.getBoolean("flag");
+            String errorReport = extras.getString("error");
             if (flag) {
                 showAppCrashDialog(errorReport);
             }
@@ -116,14 +99,18 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         mIntentFilter.addAction(ApplicationConstants.BroadcastActions.AUTHENTICATION_CHECK_BROADCAST_ACTION);
     }
 
+    private BroadcastReceiver mPasswordChangedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            showCredentialChangedDialog();
+        }
+    };
+
     @Override
     protected void onResume() {
         super.onResume();
-        setupTheme();
-        setupLanguage();
         invalidateOptionsMenu();
-        if (!(this instanceof LoginActivity) && !mAuthorizationManager.isUserLoggedIn()
-                && !(this instanceof ContactUsActivity) && !(this instanceof SplashActivity)) {
+        if (!(this instanceof LoginActivity) && !mAuthorizationManager.isUserLoggedIn()) {
             mAuthorizationManager.moveToLoginActivity();
         }
         registerReceiver(mPasswordChangedReceiver, mIntentFilter);
@@ -149,7 +136,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         mSyncbutton = menu.findItem(R.id.syncbutton);
         MenuItem logoutMenuItem = menu.findItem(R.id.actionLogout);
         if (logoutMenuItem != null) {
-            logoutMenuItem.setTitle(getString(R.string.action_logout) + " " + OpenmrsAndroid.getUsername());
+            logoutMenuItem.setTitle(getString(R.string.action_logout) + " " + mOpenMRS.getUsername());
         }
         if (mSyncbutton != null) {
             final Boolean syncState = NetworkUtils.isOnline();
@@ -167,14 +154,6 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK && requestCode == ApplicationConstants.RequestCodes.START_SETTINGS_REQ_CODE) {
-            recreate();
-        }
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -182,10 +161,8 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.actionSettings:
-                startActivityForResult(new Intent(this, SettingsActivity.class), ApplicationConstants.RequestCodes.START_SETTINGS_REQ_CODE);
-                return true;
-            case R.id.actionContact:
-                startActivity(new Intent(this, ContactUsActivity.class));
+                Intent i = new Intent(this, SettingsActivity.class);
+                startActivity(i);
                 return true;
             case R.id.actionSearchLocal:
                 return true;
@@ -193,43 +170,41 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 this.showLogoutDialog();
                 return true;
             case R.id.syncbutton:
-                boolean syncState = OpenmrsAndroid.getSyncState();
+                boolean syncState = OpenMRS.getInstance().getSyncState();
                 if (syncState) {
-                    OpenmrsAndroid.setSyncState(false);
+                    OpenMRS.getInstance().setSyncState(false);
                     setSyncButtonState(false);
                     showNoInternetConnectionSnackbar();
                     ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.NOTICE, R.string.disconn_server);
                 } else if (NetworkUtils.hasNetwork()) {
-                    OpenmrsAndroid.setSyncState(true);
+                    OpenMRS.getInstance().setSyncState(true);
                     setSyncButtonState(true);
                     Intent intent = new Intent("org.openmrs.mobile.intent.action.SYNC_PATIENTS");
                     getApplicationContext().sendBroadcast(intent);
                     ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.NOTICE, R.string.reconn_server);
-                    if (mSnackbar != null) {
-                        mSnackbar.dismiss();
-                    }
+                    if (snackbar != null)
+                        snackbar.dismiss();
                     ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.connected_to_server_message);
+
                 } else {
                     showNoInternetConnectionSnackbar();
                 }
                 return true;
+
             case R.id.actionLocation:
                 if (!locationList.isEmpty()) {
                     locationList.clear();
                 }
-                Observable<List<LocationEntity>> observableList = new LocationDAO().getLocations();
+                Observable<List<Location>> observableList = new LocationDAO().getLocations();
                 observableList.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(getLocationList());
-                return true;
-            case R.id.actionAbout:
-                startActivity(new Intent(this, AboutActivity.class));
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private Observer<List<LocationEntity>> getLocationList() {
-        return new Observer<List<LocationEntity>>() {
+    private Observer<List<Location>> getLocationList() {
+        return new Observer<List<Location>>() {
             @Override
             public void onCompleted() {
                 showLocationDialog(locationList);
@@ -241,28 +216,29 @@ public abstract class ACBaseActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNext(List<LocationEntity> locations) {
-                for (LocationEntity locationItem : locations) {
+            public void onNext(List<Location> locations) {
+                for (Location locationItem : locations) {
                     locationList.add(locationItem.getName());
                 }
+
             }
         };
     }
 
     public void showNoInternetConnectionSnackbar() {
-        mSnackbar = Snackbar.make(findViewById(android.R.id.content),
+        snackbar = Snackbar.make(findViewById(android.R.id.content),
                 getString(R.string.no_internet_connection_message), Snackbar.LENGTH_INDEFINITE);
-        View sbView = mSnackbar.getView();
+        View sbView = snackbar.getView();
         TextView textView = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
         textView.setTextColor(Color.WHITE);
-        mSnackbar.show();
+        snackbar.show();
     }
 
     public void logout() {
-        OpenmrsAndroid.clearUserPreferencesData();
+        mOpenMRS.clearUserPreferencesData();
         mAuthorizationManager.moveToLoginActivity();
         ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.logout_success);
-        AppDatabase.getDatabase(getApplicationContext()).close();
+        OpenMRSDBOpenHelper.getInstance().closeDatabases();
     }
 
     private void showCredentialChangedDialog() {
@@ -316,21 +292,10 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         bundle.setRightButtonText(getString(R.string.dialog_button_confirm));
         bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
         bundle.setLeftButtonText(getString(R.string.dialog_button_cancel));
-        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.DELETE_PATIENT_DIALOG_TAG);
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.DELET_PATIENT_DIALOG_TAG);
     }
 
-    public void showDeleteProviderDialog() {
-        CustomDialogBundle bundle = new CustomDialogBundle();
-        bundle.setTitleViewMessage(getString(R.string.dialog_title_are_you_sure));
-        bundle.setTextViewMessage(getString(R.string.dialog_provider_retired));
-        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.DELETE_PROVIDER);
-        bundle.setRightButtonText(getString(R.string.dialog_button_confirm));
-        bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
-        bundle.setLeftButtonText(getString(R.string.dialog_button_cancel));
-        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.DELETE_PROVIDER_DIALOG_TAG);
-    }
-
-    public void showMultiDeletePatientDialog(ArrayList<Patient> selectedItems) {
+    public void showMultiDeletePatientDialog(ArrayList<Patient> selectedItems){
         CustomDialogBundle bundle = new CustomDialogBundle();
         bundle.setTitleViewMessage(getString(org.openmrs.mobile.R.string.delete_multiple_patients));
         bundle.setTextViewMessage(getString(org.openmrs.mobile.R.string.delete_multiple_patients_dialog_message));
@@ -345,7 +310,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     private void showLocationDialog(List<String> locationList) {
         CustomDialogBundle bundle = new CustomDialogBundle();
         bundle.setTitleViewMessage(getString(R.string.location_dialog_title));
-        bundle.setTextViewMessage(getString(R.string.location_dialog_current_location) + " " + OpenmrsAndroid.getLocation());
+        bundle.setTextViewMessage(getString(R.string.location_dialog_current_location) + mOpenMRS.getLocation());
         bundle.setLocationList(locationList);
         bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.SELECT_LOCATION);
         bundle.setRightButtonText(getString(R.string.dialog_button_select_location));
@@ -360,8 +325,8 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     }
 
     public void moveUnauthorizedUserToLoginScreen() {
-        AppDatabase.getDatabase(getApplicationContext()).close();
-        OpenmrsAndroid.clearUserPreferencesData();
+        OpenMRSDBOpenHelper.getInstance().closeDatabases();
+        mOpenMRS.clearUserPreferencesData();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         this.startActivity(intent);
@@ -398,7 +363,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     public void showAppCrashDialog(String error) {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                this,R.style.AlertDialogTheme);
+                this);
         alertDialogBuilder.setTitle(R.string.crash_dialog_title);
         // set dialog message
         alertDialogBuilder
@@ -407,44 +372,27 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.crash_dialog_positive_button, (dialog, id) -> dialog.cancel())
                 .setNegativeButton(R.string.crash_dialog_negative_button, (dialog, id) -> finishAffinity())
                 .setNeutralButton(R.string.crash_dialog_neutral_button, (dialog, id) -> {
-                    String filename = OpenmrsAndroid.getOpenMRSDir()
+                    String filename = OpenMRS.getInstance().getOpenMRSDir()
                             + File.separator + mOpenMRSLogger.getLogFilename();
                     Intent email = new Intent(Intent.ACTION_SEND);
                     email.putExtra(Intent.EXTRA_SUBJECT, R.string.error_email_subject_app_crashed);
                     email.putExtra(Intent.EXTRA_TEXT, error);
-                    email.putExtra(Intent.EXTRA_STREAM, Uri.parse(ApplicationConstants.URI_FILE + filename));
+                    email.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + filename));
                     //need this to prompts email client only
-                    email.setType(ApplicationConstants.MESSAGE_RFC_822);
+                    email.setType("message/rfc822");
 
                     startActivity(Intent.createChooser(email, getString(R.string.choose_a_email_client)));
                 });
-        alertDialog = alertDialogBuilder.create();
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
         alertDialog.show();
     }
 
-    public void setupTheme() {
-        if (ThemeUtils.isDarkModeActivated()) {
+    public void setupTheme(){
+        if(ThemeUtils.isDarkModeActivated()){
             getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else {
+        } else{
             getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
-    }
-
-    private void setupLanguage() {
-        String lang = LanguageUtils.getLanguage();
-        Locale myLocale = new Locale(lang);
-        Resources res = getResources();
-        DisplayMetrics dm = res.getDisplayMetrics();
-        Configuration conf = res.getConfiguration();
-        conf.locale = myLocale;
-        res.updateConfiguration(conf, dm);
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (alertDialog != null && alertDialog.isShowing()) {
-            alertDialog.cancel();
-        }
-        super.onDestroy();
     }
 }

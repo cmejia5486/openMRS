@@ -14,54 +14,52 @@
 
 package org.openmrs.mobile.activities.providermanagerdashboard;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.widget.SearchView;
 
-import com.openmrs.android_sdk.utilities.StringUtils;
-import com.google.android.material.snackbar.Snackbar;
-
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
-import org.openmrs.mobile.databinding.ActivityProviderManagementBinding;
+import org.openmrs.mobile.utilities.StringUtils;
 
 public class ProviderManagerDashboardActivity extends ACBaseActivity {
+    private ProviderManagerDashboardPresenter mPresenter;
     ProviderManagerDashboardFragment providerManagerDashboardFragment;
+
     private SearchView searchView;
     private String query;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        ActivityProviderManagementBinding binding = ActivityProviderManagementBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
+        setContentView(R.layout.activity_provider_management);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             getSupportActionBar().setElevation(0);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle(R.string.provider_manager);
         }
 
         // Create fragment
         providerManagerDashboardFragment =
-            (ProviderManagerDashboardFragment) getSupportFragmentManager().findFragmentById(binding.providerManagementContentFrame.getId());
+                (ProviderManagerDashboardFragment) getSupportFragmentManager().findFragmentById(R.id.providerManagementContentFrame);
         if (providerManagerDashboardFragment == null) {
             providerManagerDashboardFragment = ProviderManagerDashboardFragment.newInstance();
         }
         if (!providerManagerDashboardFragment.isActive()) {
             addFragmentToActivity(getSupportFragmentManager(),
-                providerManagerDashboardFragment, binding.providerManagementContentFrame.getId());
+                    providerManagerDashboardFragment, R.id.providerManagementContentFrame);
         }
 
-        ProviderManagerDashboardPresenter mPresenter = new ProviderManagerDashboardPresenter(providerManagerDashboardFragment);
+        if (savedInstanceState != null) {
+
+            mPresenter = new ProviderManagerDashboardPresenter(providerManagerDashboardFragment);
+        } else {
+            mPresenter = new ProviderManagerDashboardPresenter(providerManagerDashboardFragment);
+        }
+
     }
 
     @Override
@@ -77,16 +75,6 @@ public class ProviderManagerDashboardActivity extends ACBaseActivity {
                 break;
         }
         return true;
-    }
-
-    @Override
-    public void showNoInternetConnectionSnackbar() {
-        mSnackbar = Snackbar.make(providerManagerDashboardFragment.addProviderFab,
-            getString(R.string.no_internet_connection_message), Snackbar.LENGTH_INDEFINITE);
-        View sbView = mSnackbar.getView();
-        TextView textView = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
-        textView.setTextColor(Color.WHITE);
-        mSnackbar.show();
     }
 
     @Override

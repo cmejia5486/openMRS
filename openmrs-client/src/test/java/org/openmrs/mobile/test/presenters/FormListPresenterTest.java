@@ -1,22 +1,20 @@
 package org.openmrs.mobile.test.presenters;
 
-import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity;
-import com.openmrs.android_sdk.library.models.EncounterType;
 import com.google.gson.Gson;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.openmrs.mobile.activities.formlist.FormListContract;
 import org.openmrs.mobile.activities.formlist.FormListPresenter;
-import com.openmrs.android_sdk.library.dao.EncounterDAO;
+import org.openmrs.mobile.dao.EncounterDAO;
+import org.openmrs.mobile.models.EncounterType;
+import org.openmrs.mobile.models.FormResource;
 import org.openmrs.mobile.test.ACUnitTestBase;
-import com.openmrs.android_sdk.utilities.FormService;
+import org.openmrs.mobile.utilities.FormService;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,12 +23,14 @@ import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.verify;
 
 @PrepareForTest(FormService.class)
-@RunWith(PowerMockRunner.class)
 public class FormListPresenterTest extends ACUnitTestBase {
+
     @Mock
     private FormListContract.View view;
+
     @Mock
     private EncounterDAO encounterDAO;
+
     private FormListPresenter presenter;
     private final int patientId = 1;
 
@@ -42,7 +42,7 @@ public class FormListPresenterTest extends ACUnitTestBase {
 
     @Test
     public void showResourceList_shouldLoadListWhenFormWithJsonValueReferenceIsPresent() {
-        List<FormResourceEntity> formList = new ArrayList<>();
+        List<FormResource> formList = new ArrayList<>();
 
         formList.add(createExampleFormResourceWithoutResourceList("firstForm"));
         formList.add(createExampleFormResourceWithoutResourceList("secondForm"));
@@ -59,7 +59,7 @@ public class FormListPresenterTest extends ACUnitTestBase {
 
     @Test
     public void showResourceList_shouldNotLoadListWhenFormWithJsonValueReferenceIsNotPresent() {
-        List<FormResourceEntity> formList = new ArrayList<>();
+        List<FormResource> formList = new ArrayList<>();
 
         formList.add(createExampleFormResourceWithoutResourceList("firstForm"));
         formList.add(createExampleFormResourceWithoutResourceList("secondForm"));
@@ -80,16 +80,16 @@ public class FormListPresenterTest extends ACUnitTestBase {
         final String encounterTypeUuid = "15789573219881759238790";
         final int clickedPosition = 0;
 
-        List<FormResourceEntity> formList = new ArrayList<>();
+        List<FormResource> formList = new ArrayList<>();
         formList.add(createExampleFormResourceWithResourceList(formName, "json"));
-        String childValueReference = formList.get(clickedPosition).getResources().get(0).getValueReference();
+        String childValueReference = formList.get(clickedPosition).getResourceList().get(0).getValueReference();
 
         PowerMockito.mockStatic(FormService.class);
         Mockito.lenient().when(FormService.getFormResourceList()).thenReturn(formList);
 
         presenter.loadFormResourceList();
 
-        EncounterType encounterType = new EncounterType(EncounterType.VISIT_NOTE);
+        EncounterType encounterType = new EncounterType();
         encounterType.setUuid(encounterTypeUuid);
         Mockito.lenient().when(encounterDAO.getEncounterTypeByFormName(formName)).thenReturn(encounterType);
 
@@ -104,50 +104,54 @@ public class FormListPresenterTest extends ACUnitTestBase {
         final String encounterTypeUuid = "15789573219881759238790";
         final int clickedPosition = 0;
 
-        List<FormResourceEntity> formList = new ArrayList<>();
+        List<FormResource> formList = new ArrayList<>();
         formList.add(createExampleFormResourceWithResourceList(formName, "json"));
         PowerMockito.mockStatic(FormService.class);
         Mockito.lenient().when(FormService.getFormResourceList()).thenReturn(formList);
 
         presenter.loadFormResourceList();
 
-        EncounterType encounterType = new EncounterType(EncounterType.VISIT_NOTE);
+        EncounterType encounterType = new EncounterType();
         encounterType.setUuid(encounterTypeUuid);
         Mockito.lenient().when(encounterDAO.getEncounterTypeByFormName(formName)).thenReturn(null);
+
         presenter.listItemClicked(clickedPosition, formName);
+
         verify(view).showError(contains(formName));
     }
 
-    private FormResourceEntity createExampleFormResourceWithoutResourceList(String formName) {
+    private FormResource createExampleFormResourceWithoutResourceList(String formName) {
         final String exampleJson = getExampleFormResourceJson(formName);
-        FormResourceEntity formResourceEntity = new Gson().fromJson(exampleJson, FormResourceEntity.class);
-        formResourceEntity.setValueReference(exampleJson);
-        formResourceEntity.getResources();
-        return formResourceEntity;
+        FormResource formResource = new Gson().fromJson(exampleJson, FormResource.class);
+        formResource.setValueReference(exampleJson);
+        formResource.setResourcelist();
+        return formResource;
     }
 
-    private FormResourceEntity createExampleFormResourceWithResourceList(String formName, String resName) {
+    private FormResource createExampleFormResourceWithResourceList(String formName, String resName) {
         final String exampleJson = getExampleFormResourceJson(formName);
         final String exampleJson1 = getExampleFormResourceJson(resName);
-        FormResourceEntity formResourceEntity = new Gson().fromJson(exampleJson, FormResourceEntity.class);
+        FormResource formResource = new Gson().fromJson(exampleJson, FormResource.class);
 
-        List<FormResourceEntity> formResources = new ArrayList<>();
-        formResources.add(new Gson().fromJson(exampleJson1, FormResourceEntity.class));
-        formResourceEntity.setResources(formResources);
+        List<FormResource> formResources = new ArrayList<>();
+        formResources.add(new Gson().fromJson(exampleJson1, FormResource.class));
+        formResource.setResources(formResources);
+        formResource.setResourcelist();
 
-        formResourceEntity.setValueReference(exampleJson1);
-        return formResourceEntity;
+        formResource.setValueReference(exampleJson1);
+        return formResource;
     }
 
     private String getExampleFormResourceJson(String name) {
-        return "{" +
-            "\"display\":\"json\"," +
-            "\"name\":\"" + name + "\"," +
-            "\"valueReference\":\"" +
-            "{" +
-            "\\\"name\\\":\\\"Some Form\\\"," +
-            "\\\"uuid\\\":\\\"77174d67-954f-45c4-a782-d157e70d59f4\\\"" +
-            "}\"" +
-            "}";
+        return  "{" +
+                "\"display\":\"json\"," +
+                "\"name\":\"" + name + "\"," +
+                "\"valueReference\":\"" +
+                    "{" +
+                    "\\\"name\\\":\\\"Some Form\\\"," +
+                    "\\\"uuid\\\":\\\"77174d67-954f-45c4-a782-d157e70d59f4\\\"" +
+                    "}\"" +
+                "}";
     }
+
 }

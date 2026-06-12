@@ -18,6 +18,7 @@ import rx.Subscription;
 import rx.subscriptions.CompositeSubscription;
 
 public abstract class BasePresenter implements BasePresenterContract {
+
     private CompositeSubscription mSubscription;
 
     public BasePresenter() {
@@ -25,14 +26,14 @@ public abstract class BasePresenter implements BasePresenterContract {
     }
 
     public void addSubscription(Subscription subscription) {
-        if (mSubscription != null) {
+        if(mSubscription != null) {
             mSubscription.add(subscription);
         }
     }
 
     @Override
     public void unsubscribe() {
-        if (mSubscription != null) {
+        if(mSubscription != null) {
             mSubscription.clear();
         }
     }

@@ -12,13 +12,15 @@ import androidx.fragment.app.Fragment;
 import org.openmrs.mobile.R;
 
 public class ProviderRelationshipFragment extends Fragment {
-    public ProviderRelationshipFragment() {
+
+    public ProviderRelationshipFragment(){
 
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_provider_relationship, null);
+        View root = inflater.inflate(R.layout.fragment_provider_relationship,null);
+        return root;
     }
 }
