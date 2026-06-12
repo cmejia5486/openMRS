@@ -1,0 +1,74 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "register-patient",
+  "title": "Register Patient",
+  "status": "active",
+  "item": [
+    {
+      "linkId": "first_name",
+      "type": "string",
+      "text": "First Name"
+    },
+    {
+      "linkId": "last_name",
+      "type": "string",
+      "text": "Last Name"
+    },
+    {
+      "linkId": "gender",
+      "type": "choice",
+      "text": "Gender",
+      "answerOption": [
+        {
+          "valueCoding": {
+            "code": "male",
+            "display": "Male"
+          }
+        },
+        {
+          "valueCoding": {
+            "code": "female",
+            "display": "Female"
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "birth_date",
+      "type": "date",
+      "text": "Date of Birth"
+    },
+    {
+      "linkId": "nin",
+      "type": "string",
+      "text": "National Identification Number (NIN)"
+    },
+    {
+      "linkId": "address",
+      "type": "group",
+      "text": "Address",
+      "item": [
+        {
+          "linkId": "village",
+          "type": "string",
+          "text": "Village"
+        },
+        {
+          "linkId": "parish",
+          "type": "string",
+          "text": "Parish"
+        },
+        {
+          "linkId": "sub_county",
+          "type": "string",
+          "text": "Sub-County"
+        },
+        {
+          "linkId": "district",
+          "type": "string",
+          "text": "District"
+        }
+      ]
+    }
+  ]
+}

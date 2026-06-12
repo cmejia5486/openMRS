@@ -1,0 +1,37 @@
+{
+  "source_label": "SOURCE_CODE_OPENMRS",
+  "project": {
+    "name": "OpenMRS Android Client"
+  },
+  "detectors": {
+    "os_time_source": {
+      "preferred_evidence": [],
+      "preferred_path_hints": []
+    },
+    "password_hashing": {
+      "preferred_path_hints": []
+    },
+    "logout_session": {
+      "path_hints": []
+    },
+    "endpoint_auth": {
+      "path_hints": []
+    }
+  },
+  "flag_overrides": {
+    "has_supports_manual_logout": {
+      "state": "pass",
+      "summary": "has_supports_manual_logout = YES",
+      "notes": "Manual auditor determination. The application provides a user-accessible logout action.",
+      "evidence": [
+        {
+          "source": "AUDIT_TEAM",
+          "path": "manual_assessment/logout_review",
+          "rule_id": "manual_override",
+          "excerpt": "The auditor verified a user-accessible logout action in the application flow."
+        }
+      ],
+      "evidence_count_override": 1
+    }
+  }
+}

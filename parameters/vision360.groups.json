@@ -1,0 +1,358 @@
+[
+  {
+    "id": "ORG",
+    "title": "Organizational & Governance",
+    "description": "Políticas, estándares y procesos organizacionales relacionados con seguridad y privacidad.",
+    "flags": [
+      "has_org_policy_embedding_data_type",
+      "has_org_api_responses_schema",
+      "has_org_client_processing_policy",
+      "has_defined_password_policy",
+      "has_defined_account_lock_policy",
+      "has_defined_session_timeout_policy",
+      "has_defined_rbac_model",
+      "has_defined_authorization_policy",
+      "has_defined_identity_lifecycle_policy",
+      "has_defined_privilege_management_policy",
+      "has_defined_log_retention_policy",
+      "has_defined_log_review_process",
+      "has_defined_key_rotation_policy",
+      "has_defined_key_revocation_process",
+      "has_defined_certificate_management_policy",
+      "has_defined_secrets_management_policy",
+      "has_defined_api_key_rotation_policy",
+      "has_policy_documentation_gaps",
+      "has_org_has_formal_security_testing_program",
+      "has_org_runs_static_analysis_in_cicd",
+      "has_org_runs_pentest_before_production",
+      "has_org_runs_periodic_security_assessments",
+      "has_org_tracks_security_findings_to_closure",
+      "has_org_requires_secure_code_review_for_critical_releases",
+      "has_org_has_threat_model_for_mobile_app",
+      "has_org_has_binary_protection_policy",
+      "has_org_has_formal_patch_management_policy",
+      "has_org_notifies_users_of_security_updates",
+      "has_org_registers_admin_for_security_alerts",
+      "has_org_tracks_component_vulnerabilities",
+      "has_org_documents_security_updates",
+      "has_org_app_deprecation_policy",
+      "has_org_app_deprecation_user_notification_process",
+      "has_org_app_deprecation_communication_plan",
+      "has_org_requires_fips_validated_crypto_for_sensitive_data",
+      "has_org_requires_nist_approved_key_management",
+      "has_org_requires_dod_approved_ca_for_tls",
+      "has_org_has_crypto_key_lifecycle_policy",
+      "has_org_password_policy_meets_stig_requirements",
+      "has_org_account_lockout_policy_meets_stig_requirements",
+      "has_org_session_timeout_policy_meets_stig_requirements",
+      "has_device_access_policy_enforced",
+      "has_org_log_retention_at_least_one_year",
+      "has_org_log_retention_at_least_five_years_for_sami",
+      "has_org_has_audit_reporting_and_forensic_procedures",
+      "has_org_supports_audit_reduction_and_filtering",
+      "has_org_protects_audit_log_integrity_cryptographically",
+      "has_org_protects_audit_tools_and_log_access",
+      "has_org_validates_audit_tool_integrity_periodically",
+      "has_org_notifies_isso_on_audit_failures",
+      "has_org_has_emergency_access_procedure_for_ephi",
+      "has_org_logs_and_reviews_emergency_access_events",
+      "has_org_has_data_classification_policy",
+      "has_org_has_data_retention_policy_for_pii_phi",
+      "has_org_minimizes_pii_collection_by_design",
+      "has_org_has_formal_privacy_notice_and_consent_process",
+      "has_org_has_device_loss_response_process",
+      "has_org_monitors_resource_exhaustion_and_alerts_admins",
+      "has_org_has_incident_response_plan_for_app",
+      "has_org_has_data_recovery_and_backup_for_ephi",
+      "has_org_notifies_admin_on_account_lifecycle_events",
+      "has_org_has_formal_account_lifecycle_process",
+      "has_org_complies_with_ficam_profiles"
+    ]
+  },
+  {
+    "id": "SECRETS",
+    "title": "Secrets & Credentials",
+    "description": "Gestión de secretos, credenciales, API keys y signing keys.",
+    "flags": [
+      "has_hardcoded_credentials",
+      "has_secrets_secure_keystore_env_vars",
+      "has_signing_creds_not_hardcoded",
+      "has_exposes_signing_keys_in_source_or_ci",
+      "has_api_keys_in_version_control",
+      "has_env_specific_api_credentials_configured",
+      "has_secure_cicd_key_management",
+      "has_ci_cd_uses_encrypted_keys",
+      "has_secrets_generic_found",
+      "has_secrets_count",
+      "has_uses_os_level_update_mechanisms"
+    ]
+  },
+  {
+    "id": "TLS",
+    "title": "TLS & Network Security",
+    "description": "Seguridad de transporte, configuración de TLS y protección frente a MITM.",
+    "flags": [
+      "has_tls_ssl_pinning_implemented",
+      "has_ssl_cert_pinning_implemented",
+      "has_ssl_pinning_findings_severity_good",
+      "has_android_ssl_pinning_present",
+      "has_android_ssl_pinning_detected",
+      "has_network_security_config_present",
+      "has_https_with_cert_pinning",
+      "has_approved_ports_and_protocols",
+      "has_os_time_source",
+      "has_backend_replay_protection",
+      "has_backend_has_dos_protection_and_rate_limiting",
+      "has_backend_is_deployed_with_redundancy_for_ha",
+      "has_dos_vulnerabilities",
+      "has_soap_uses_tls",
+      "has_soap_uses_mutual_tls"
+    ]
+  },
+  {
+    "id": "CRYPTO",
+    "title": "Cryptography",
+    "description": "Uso de criptografía, certificados y parámetros criptográficos.",
+    "flags": [
+      "has_cert_signed_with_code_signing_cert",
+      "has_cert_v1_signature_present_janus_risk",
+      "has_cert_signed_with_debug_certificate",
+      "has_cert_uses_sha1_signature_algorithm",
+      "has_cert_x509_subject_android_debug",
+      "has_cert_validity_long_term",
+      "has_os_secure_key_storage",
+      "has_client_side_crypto_for_sensitive_data",
+      "has_android_insecure_random_rng"
+    ]
+  },
+  {
+    "id": "AUTH",
+    "title": "Authentication & Authorization",
+    "description": "Autenticación, autorización y protección de tokens.",
+    "flags": [
+      "has_sensitive_data_encrypted_with_os_keystore",
+      "has_auth_keys_stored_in_secure_hardware",
+      "has_oauth2_authentication",
+      "has_jwt_tokens",
+      "has_token_based_auth",
+      "has_sso_mechanisms",
+      "has_rbac_enforced_on_api",
+      "has_server_side_authz_for_sensitive_actions",
+      "has_server_side_authz_enforced",
+      "has_endpoint_requires_user_authentication",
+      "has_access_tokens_weak_or_unpredictable",
+      "has_backend_token_validation",
+      "has_backend_rbac_enforcement",
+      "has_iaa_supports_mfa_for_privileged_accounts",
+      "has_iaa_supports_mfa_for_sensitive_ephi_access"
+    ]
+  },
+  {
+    "id": "SESSION",
+    "title": "Session Management",
+    "description": "Gestión de sesiones, logout y lifecycle de credenciales.",
+    "flags": [
+      "has_iaa_supports_out_of_band_authentication",
+      "has_iaa_enforces_account_lifecycle_controls",
+      "has_session_ids_reused",
+      "has_logout_invalidates_server_session",
+      "has_clears_local_session_data_on_logout",
+      "has_clears_auth_data_on_logout",
+      "has_session_id_assigned_from_server_cookie",
+      "has_supports_manual_logout"
+    ]
+  },
+  {
+    "id": "INPUT_OUTPUT",
+    "title": "Input/Output Validation",
+    "description": "Validación y sanitización de datos de entrada/salida.",
+    "flags": [
+      "has_clears_cookies_on_logout",
+      "has_backend_input_validation"
+    ]
+  },
+  {
+    "id": "LOGGING",
+    "title": "Logging & Monitoring",
+    "description": "Registro de eventos, auditoría y monitorización.",
+    "flags": [
+      "has_data_format_strictly_controlled",
+      "has_log_input_sanitization_present",
+      "has_log_injection_vulnerabilities",
+      "has_logs_privileged_actions_with_timestamp",
+      "has_error_messages_disclose_internal_details",
+      "has_error_messages_are_generic",
+      "has_error_messages_sent_to_unauthorized_destinations",
+      "has_server_side_audit_trail",
+      "has_secure_backend_log_storage",
+      "has_audit_event_correlation",
+      "has_audit_failure_alerting"
+    ]
+  },
+  {
+    "id": "BINARY",
+    "title": "Binary Hardening & Malware",
+    "description": "Endurecimiento del binario, certificados y malware.",
+    "flags": [
+      "has_logs_offloaded_to_secure_siem",
+      "has_malware_detections",
+      "has_protection_against_tampered_executables",
+      "has_controls_protecting_temporary_compiled_data",
+      "has_temporary_compiled_data_securely_deleted",
+      "has_android_debuggable_enabled",
+      "has_manifest_debuggable_true",
+      "has_manifest_backup_enabled",
+      "has_manifest_allow_clear_text_traffic_true",
+      "has_manifest_exports_components_insecurely",
+      "has_manifest_services_explicit_accessibility_attributes",
+      "has_manifest_custom_permission_defined",
+      "has_prevention_against_reverse_engineering"
+    ]
+  },
+  {
+    "id": "DEPENDENCIES",
+    "title": "Dependencies & Backend Resilience",
+    "description": "Dependencias de terceros y resiliencia del backend.",
+    "flags": [
+      "has_android_dynamic_code_loading",
+      "has_libraries_stored_in_secure_app_dir",
+      "has_backend_policy_dependencies",
+      "has_buffer_overflow_vulnerabilities",
+      "has_race_condition_vulnerabilities"
+    ]
+  },
+  {
+    "id": "ROBUSTNESS",
+    "title": "Robustness & Memory Safety",
+    "description": "Robustez, condiciones de carrera y seguridad de memoria.",
+    "flags": [
+      "has_out_of_bounds_vulnerabilities",
+      "has_memory_corruption_vulnerabilities",
+      "has_integer_arithmetic_vulnerabilities",
+      "has_null_pointer_protection_implemented",
+      "has_initializes_params_on_startup",
+      "has_fails_safe_on_init_failure",
+      "has_runtime_global_kill_switch_for_security_incidents",
+      "has_safe_mode_degraded_functionality_design",
+      "has_workmanager_for_resilient_network_tasks",
+      "has_transaction_recovery_logs",
+      "has_ipc_bindservice_secure",
+      "has_requests_only_minimum_permissions",
+      "has_supports_runtime_permission_management"
+    ]
+  },
+  {
+    "id": "IPC_PERMS",
+    "title": "Android IPC & Permissions",
+    "description": "IPC, permisos y exposición de componentes.",
+    "flags": [
+      "has_permissions_protected_with_signature_level",
+      "has_content_provider_actively_exposed",
+      "has_exported_broadcast_receivers_without_permission",
+      "has_android_read_write_external_storage",
+      "has_webview_components",
+      "has_webview_javascript",
+      "has_webview_addjavascriptinterface_present",
+      "has_webview_javascript_interface_limited_to_trusted_content",
+      "has_webview_javascript_interface_exposes_sensitive_functionality",
+      "has_webview_javascript_interface_leaks_sensitive_data",
+      "has_webview_remote_content",
+      "has_webview_file_scheme",
+      "has_insecure_http_based_webview_communication",
+      "has_displays_sensitive_data_unmasked",
+      "has_ui_data_masking",
+      "has_blocks_screenshots_flag_secure",
+      "has_clears_ui_on_background"
+    ]
+  },
+  {
+    "id": "WEBVIEW",
+    "title": "WebView & Remote Content",
+    "description": "Uso de WebViews, notificaciones y canales de exposición.",
+    "flags": [
+      "has_secure_notifications",
+      "has_notification_leaks_sensitive_data",
+      "has_notification_uses_public_channels"
+    ]
+  },
+  {
+    "id": "UI_PRIVACY",
+    "title": "UI / Storage / Privacy UX",
+    "description": "Tratamiento de datos sensibles en UI y almacenamiento local.",
+    "flags": [
+      "has_stores_sensitive_data_on_device",
+      "has_uses_encrypted_local_database",
+      "has_uses_encrypted_shared_preferences",
+      "has_uses_encrypted_filesystem_storage",
+      "has_stores_pii_in_plaintext",
+      "has_stores_auth_tokens_in_plaintext",
+      "has_stores_keys_in_plaintext",
+      "has_clears_local_data_on_uninstall",
+      "has_clears_local_data_on_logout_or_switch_user",
+      "has_local_caching_of_ephi",
+      "has_encrypted_local_caching_of_ephi",
+      "has_stores_ephi_on_external_storage",
+      "has_sends_ephi_to_third_party_services",
+      "has_uses_push_notifications_for_ephi",
+      "has_uses_secure_push_channel_for_ephi",
+      "has_supports_patient_consent_workflows",
+      "has_supports_patient_data_export",
+      "has_supports_patient_data_deletion",
+      "has_enforces_data_minimization_on_client",
+      "has_secure_sync_for_offline_ephi",
+      "has_collects_telemetry_for_security_events",
+      "has_android_extra_risky_permissions_present",
+      "has_password_hashing_uses_salts",
+      "has_password_hashing_uses_kdf"
+    ]
+  },
+  {
+    "id": "SOAP_SAML",
+    "title": "SOAP / SAML / Enterprise Security",
+    "description": "Integraciones SOAP/SAML y controles de seguridad empresarial.",
+    "flags": [
+      "has_soap_api_usage",
+      "has_saml_based_sso",
+      "has_uses_xml_signatures",
+      "has_uses_xml_encryption",
+      "has_proper_ws_security_headers",
+      "has_soap_message_level_encryption",
+      "has_soap_message_level_signatures",
+      "has_soap_prevents_replay_attacks",
+      "has_soap_validates_saml_token_audience",
+      "has_soap_validates_saml_token_expiry",
+      "has_soap_uses_strict_schema_validation",
+      "has_soap_masks_sensitive_data_in_logs"
+    ]
+  },
+  {
+    "id": "HEALTH_EHR",
+    "title": "Health Domain & EHR",
+    "description": "Aspectos específicos de EHR y datos clínicos.",
+    "flags": [
+      "has_handles_patient_identifier_correctly",
+      "has_maps_patient_ids_consistently"
+    ]
+  },
+  {
+    "id": "PATCHING",
+    "title": "Patching, Updates & Lifecycle",
+    "description": "Gestión de parches, eventos clínicos y ciclo de vida.",
+    "flags": [
+      "has_logs_clinically_relevant_events",
+      "has_tracks_clinician_user_actions"
+    ]
+  },
+  {
+    "id": "ANDROID_EXTRA",
+    "title": "Extra Android / MobSF-derived",
+    "description": "Controles adicionales relacionados con clínica y flujo asistencial.",
+    "flags": [
+      "has_supports_ephi_access_auditing",
+      "has_supports_patient_access_to_audit_trail",
+      "has_ensures_data_integrity_for_clinical_records",
+      "has_supports_versioning_of_clinical_records",
+      "has_ensures_atomic_updates_to_clinical_records"
+    ]
+  }
+]

@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "source_label": "SOURCE_CODE_REPOSITORY",
+  "project": {
+    "name": "Portable Vision360 Project"
+  },
+  "inputs": {
+    "mobsf_static_zip": "mobsf-report.zip",
+    "mobsf_dynamic_zip": "mobsf-dynamic-report.zip",
+    "source_zip": "openMRS.zip",
+    "sast_zip": "sast-findings.zip",
+    "trivy_zip": "trivy-payload.zip"
+  },
+  "metadata_overrides": {
+    "titles": {
+      "has_android_insecure_random_rng": "Uses Insecure Random Number Generator",
+      "has_exported_broadcast_receivers_without_permission": "Exported Broadcast Receivers Without Permission"
+    },
+    "descriptions": {
+      "has_android_insecure_random_rng": "Detects insecure random number generator usage, typically reported by MobSF.",
+      "has_exported_broadcast_receivers_without_permission": "Detects any exported receiver without permission protection."
+    },
+    "rationales": {
+      "has_android_insecure_random_rng": "Weak RNG can break cryptographic guarantees.",
+      "has_exported_broadcast_receivers_without_permission": "Exported receivers without permission can allow intent spoofing and unauthorized invocation."
+    },
+    "primary_sources": {
+      "has_android_insecure_random_rng": [
+        "MobSF_STATIC"
+      ],
+      "has_exported_broadcast_receivers_without_permission": [
+        "SOURCE_CODE_REPOSITORY"
+      ]
+    }
+  },
+  "classification": {
+    "positive_flags": [
+      "has_tls_ssl_pinning_implemented",
+      "has_ssl_cert_pinning_implemented",
+      "has_android_ssl_pinning_present",
+      "has_android_ssl_pinning_detected",
+      "has_supports_runtime_permission_management",
+      "has_os_time_source",
+      "has_manifest_services_explicit_accessibility_attributes",
+      "has_password_hashing_uses_salts",
+      "has_password_hashing_uses_kdf",
+      "has_secure_cicd_key_management",
+      "has_secrets_secure_keystore_env_vars",
+      "has_signing_creds_not_hardcoded",
+      "has_supports_manual_logout",
+      "has_clears_local_session_data_on_logout",
+      "has_clears_cookies_on_logout",
+      "has_session_id_assigned_from_server_cookie",
+      "has_logout_invalidates_server_session",
+      "has_endpoint_requires_user_authentication",
+      "has_manifest_custom_permission_defined",
+      "has_permissions_protected_with_signature_level",
+      "has_prevention_against_reverse_engineering"
+    ],
+    "negative_flags": [
+      "has_hardcoded_credentials",
+      "has_android_debuggable_enabled",
+      "has_manifest_debuggable_true",
+      "has_manifest_backup_enabled",
+      "has_manifest_allow_clear_text_traffic_true",
+      "has_manifest_exports_components_insecurely",
+      "has_exported_broadcast_receivers_without_permission",
+      "has_release_minify_disabled",
+      "has_android_read_write_external_storage",
+      "has_android_extra_risky_permissions_present",
+      "has_android_insecure_random_rng"
+    ]
+  },
+  "manifest_scoring": {
+    "application_weight": 1000,
+    "service_weight": 50,
+    "activity_weight": 20,
+    "path_bonus_tokens": [
+      {
+        "token": "app/",
+        "weight": 150
+      },
+      {
+        "token": "android",
+        "weight": 10
+      }
+    ]
+  },
+  "detectors": {
+    "os_time_source": {
+      "preferred_evidence": [],
+      "preferred_path_hints": [],
+      "patterns": [
+        {
+          "rule_id": "System.currentTimeMillis",
+          "regex": "\\bSystem\\.currentTimeMillis\\s*\\("
+        },
+        {
+          "rule_id": "SystemClock.elapsedRealtime",
+          "regex": "\\bSystemClock\\.elapsedRealtime\\s*\\("
+        },
+        {
+          "rule_id": "SystemClock.uptimeMillis",
+          "regex": "\\bSystemClock\\.uptimeMillis\\s*\\("
+        },
+        {
+          "rule_id": "Instant.now",
+          "regex": "\\bInstant\\.now\\s*\\("
+        },
+        {
+          "rule_id": "LocalDateTime.now",
+          "regex": "\\bLocalDateTime\\.now\\s*\\("
+        },
+        {
+          "rule_id": "Calendar.getInstance",
+          "regex": "\\bCalendar\\.getInstance\\s*\\("
+        },
+        {
+          "rule_id": "new Date",
+          "regex": "\\bnew\\s+Date\\s*\\("
+        },
+        {
+          "rule_id": "OffsetDateTime.now",
+          "regex": "\\bOffsetDateTime\\.now\\s*\\("
+        },
+        {
+          "rule_id": "ZonedDateTime.now",
+          "regex": "\\bZonedDateTime\\.now\\s*\\("
+        },
+        {
+          "rule_id": "DateUtils.convertTime(System.currentTimeMillis)",
+          "regex": "\\bconvertTime\\s*\\(\\s*System\\.currentTimeMillis\\s*\\("
+        }
+      ]
+    },
+    "password_hashing": {
+      "preferred_path_hints": [],
+      "kdf_patterns": [
+        {
+          "algorithm": "bcrypt",
+          "regex": "\\bBCrypt\\s*\\.\\s*hashpw\\s*\\("
+        },
+        {
+          "algorithm": "bcrypt",
+          "regex": "\\bBCrypt\\s*\\.\\s*gensalt\\s*\\("
+        },
+        {
+          "algorithm": "pbkdf2",
+          "regex": "PBKDF2WithHmacSHA\\d+"
+        },
+        {
+          "algorithm": "pbkdf2",
+          "regex": "\\bSecretKeyFactory\\s*\\.\\s*getInstance\\s*\\(\\s*\\\"PBKDF2"
+        },
+        {
+          "algorithm": "scrypt",
+          "regex": "\\bscrypt\\b"
+        },
+        {
+          "algorithm": "argon2",
+          "regex": "\\bargon2\\b"
+        },
+        {
+          "algorithm": "bcrypt",
+          "regex": "\\bBCryptPasswordEncoder\\b"
+        },
+        {
+          "algorithm": "pbkdf2",
+          "regex": "\\bPBEKeySpec\\b"
+        }
+      ],
+      "salt_patterns": [
+        {
+          "algorithm": "bcrypt_salt",
+          "regex": "\\bBCrypt\\s*\\.\\s*gensalt\\s*\\("
+        },
+        {
+          "algorithm": "salt_var",
+          "regex": "\\bsalt\\s*=\\s*"
+        },
+        {
+          "algorithm": "secure_random_salt",
+          "regex": "\\bSecureRandom\\b.*\\bnextBytes\\s*\\("
+        }
+      ]
+    },
+    "logout_session": {
+      "path_hints": [],
+      "logout_method_patterns": [
+        "void logout\\s*\\(",
+        "public void logout\\s*\\(",
+        "\\bshowLogoutDialog\\s*\\("
+      ],
+      "local_cleanup_patterns": [
+        "clearuserpreferencesdata\\s*\\(",
+        "clear.*session",
+        "clear.*preferences",
+        "logout.*clear",
+        "\\bremove\\s*\\(\\s*ApplicationConstants\\.[A-Za-z0-9_\\.]+\\s*\\)",
+        "\\bmoveToLoginActivity\\s*\\("
+      ],
+      "cookie_cleanup_patterns": [
+        "removeallcookies",
+        "clearcookies",
+        "CookieManager\\.getInstance\\(\\)\\.removeAllCookies",
+        "\\bdeleteAllCookies\\b",
+        "\\bclearCookie[s]?\\b"
+      ],
+      "session_cookie_patterns": [
+        "jsessionid",
+        "sessionid",
+        "CookieManager\\.getInstance\\(\\)\\.setCookie",
+        "CookieHandler\\.setDefault"
+      ],
+      "logout_endpoint_patterns": [
+        "\\\"/logout\\\"",
+        "'/logout'"
+      ]
+    },
+    "endpoint_auth": {
+      "path_hints": [],
+      "basic_auth_patterns": [
+        "\\.header\\(\\s*\\\"Authorization\\\"\\s*,\\s*basic\\s*\\)",
+        "Basic\\s+[A-Za-z0-9+/=]+",
+        "\\.addHeader\\(\\s*\\\"Authorization\\\"\\s*,",
+        "setRequestProperty\\(\\s*\\\"Authorization\\\"\\s*,"
+      ],
+      "any_authorization_patterns": [
+        "\\\"Authorization\\\"",
+        "authorization\\s*:",
+        "bearer",
+        "basic",
+        "\\.addHeader\\(\\s*\\\"Authorization\\\"",
+        "setRequestProperty\\(\\s*\\\"Authorization\\\"",
+        "\\baddNetworkInterceptor\\b",
+        "\\baddInterceptor\\b"
+      ]
+    },
+    "signing": {
+      "gradle_file_extensions": [
+        ".gradle",
+        ".gradle.kts"
+      ],
+      "env_var_names": [
+        "KEYSTORE_PASSWORD",
+        "KEYSTORE_ALIAS_NAME",
+        "KEYSTORE_ALIAS_PASS"
+      ]
+    },
+    "permissions": {
+      "special_os_permissions": [
+        "android.permission.WRITE_SETTINGS",
+        "android.permission.WRITE_SECURE_SETTINGS",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.MANAGE_EXTERNAL_STORAGE"
+      ],
+      "risky_permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.MANAGE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.READ_SMS",
+        "android.permission.RECEIVE_SMS",
+        "android.permission.SEND_SMS",
+        "android.permission.READ_CALL_LOG",
+        "android.permission.WRITE_CALL_LOG",
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.WRITE_SETTINGS",
+        "android.permission.WRITE_SECURE_SETTINGS"
+      ]
+    }
+  },
+  "org_flag_patterns": {}
+}

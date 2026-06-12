@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "default_profile": "openai_default",
+  "profiles": {
+    "openai_default": {
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "litellm_model": "gpt-5.4",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "",
+      "api_version": "",
+      "api_version_env_var": "",
+      "reasoning_effort": "high",
+      "max_output_tokens": 4000,
+      "batch_size": 20,
+      "timeout_s": 30,
+      "temperature": null,
+      "extra_headers": {}
+    },
+    "openai_fast": {
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "litellm_model": "gpt-5.4",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "",
+      "api_version": "",
+      "api_version_env_var": "",
+      "reasoning_effort": "low",
+      "max_output_tokens": 2000,
+      "batch_size": 20,
+      "timeout_s": 20,
+      "temperature": null,
+      "extra_headers": {}
+    },
+    "azure_openai": {
+      "provider": "azure",
+      "model": "gpt-4.1-mini",
+      "litellm_model": "azure/gpt-4.1-mini",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "AZURE_OPENAI_ENDPOINT",
+      "api_version": "2024-12-01-preview",
+      "api_version_env_var": "AZURE_OPENAI_API_VERSION",
+      "reasoning_effort": "medium",
+      "max_output_tokens": 4000,
+      "batch_size": 20,
+      "timeout_s": 30,
+      "temperature": null,
+      "extra_headers": {}
+    },
+    "anthropic": {
+      "provider": "anthropic",
+      "model": "claude-3-7-sonnet-latest",
+      "litellm_model": "anthropic/claude-3-7-sonnet-latest",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "",
+      "api_version": "",
+      "api_version_env_var": "",
+      "reasoning_effort": "medium",
+      "max_output_tokens": 4000,
+      "batch_size": 20,
+      "timeout_s": 30,
+      "temperature": null,
+      "extra_headers": {}
+    },
+    "gemini": {
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "litellm_model": "gemini/gemini-2.5-pro",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "",
+      "api_version": "",
+      "api_version_env_var": "",
+      "reasoning_effort": "medium",
+      "max_output_tokens": 4000,
+      "batch_size": 20,
+      "timeout_s": 30,
+      "temperature": null,
+      "extra_headers": {}
+    },
+    "mistral": {
+      "provider": "mistral",
+      "model": "mistral-large-latest",
+      "litellm_model": "mistral/mistral-large-latest",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "",
+      "api_version": "",
+      "api_version_env_var": "",
+      "reasoning_effort": "medium",
+      "max_output_tokens": 4000,
+      "batch_size": 20,
+      "timeout_s": 30,
+      "temperature": null,
+      "extra_headers": {}
+    },
+    "openai_compatible": {
+      "provider": "openai_compatible",
+      "model": "custom-model-name",
+      "litellm_model": "openai/custom-model-name",
+      "api_key_env_var": "OPENAI_API_KEY",
+      "api_base": "",
+      "api_base_env_var": "AI_COMPAT_BASE_URL",
+      "api_version": "",
+      "api_version_env_var": "",
+      "reasoning_effort": "medium",
+      "max_output_tokens": 4000,
+      "batch_size": 20,
+      "timeout_s": 30,
+      "temperature": null,
+      "extra_headers": {}
+    }
+  },
+  "tasks": {
+    "ai_requirements_excel": {
+      "profile": "openai_default",
+      "reasoning_effort": "high",
+      "max_output_tokens": 5000,
+      "batch_size": 20
+    },
+    "audit_summary_docx": {
+      "profile": "openai_default",
+      "reasoning_effort": "high",
+      "max_output_tokens": 6000
+    },
+    "ai_correlate": {
+      "profile": "openai_default",
+      "reasoning_effort": "high",
+      "max_output_tokens": 900,
+      "timeout_s": 25
+    }
+  }
+}
