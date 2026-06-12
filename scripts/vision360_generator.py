@@ -178,7 +178,9 @@ def read_all_source_texts(zip_path: Path) -> Dict[str, str]:
     if not zip_path.exists():
         return texts
     suffixes = (
-        ".java", ".kt", ".gradle", ".gradle.kts", ".xml", ".yml", ".yaml", ".md", ".txt", ".pro"
+        ".java", ".kt", ".kts", ".gradle", ".gradle.kts", ".xml", ".yml", ".yaml",
+        ".json", ".properties", ".conf", ".cfg", ".ini", ".md", ".txt", ".pro",
+        ".html", ".htm", ".js", ".ts"
     )
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
@@ -191,6 +193,16 @@ def read_all_source_texts(zip_path: Path) -> Dict[str, str]:
     except Exception:
         return {}
     return texts
+
+
+def list_zip_members(zip_path: Path) -> List[str]:
+    if not zip_path.exists():
+        return []
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            return sorted(zf.namelist())
+    except Exception:
+        return []
 
 
 # ------------------------------------------------------------
@@ -294,6 +306,7 @@ def load_inputs(input_dir: Path, cfg: Dict[str, Any]) -> Dict[str, Any]:
         "trivy": read_json_from_zip(trivy_zip, "trivy.json") or {},
         "agent_payload": read_json_from_zip(trivy_zip, "agent_payload.json") or {},
         "source_texts": read_all_source_texts(source_zip),
+        "source_zip_members": list_zip_members(source_zip),
         "source_zip_name": source_zip.name,
         "source_label": source_label,
     }
@@ -1693,6 +1706,571 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+
+# ------------------------------------------------------------
+# Scanner-backed dynamic flag population
+# ------------------------------------------------------------
+
+DYNAMIC_NEGATIVE_FLAGS = {
+    "has_api_keys_in_version_control",
+    "has_exposes_signing_keys_in_source_or_ci",
+    "has_secrets_generic_found",
+    "has_dos_vulnerabilities",
+    "has_log_injection_vulnerabilities",
+    "has_malware_detections",
+    "has_android_dynamic_code_loading",
+    "has_buffer_overflow_vulnerabilities",
+    "has_race_condition_vulnerabilities",
+    "has_out_of_bounds_vulnerabilities",
+    "has_memory_corruption_vulnerabilities",
+    "has_integer_arithmetic_vulnerabilities",
+    "has_content_provider_actively_exposed",
+    "has_webview_addjavascriptinterface_present",
+    "has_webview_javascript_interface_exposes_sensitive_functionality",
+    "has_webview_javascript_interface_leaks_sensitive_data",
+    "has_webview_remote_content",
+    "has_webview_file_scheme",
+    "has_insecure_http_based_webview_communication",
+    "has_displays_sensitive_data_unmasked",
+    "has_notification_leaks_sensitive_data",
+    "has_notification_uses_public_channels",
+    "has_stores_sensitive_data_on_device",
+    "has_stores_pii_in_plaintext",
+    "has_stores_auth_tokens_in_plaintext",
+    "has_stores_keys_in_plaintext",
+    "has_local_caching_of_ephi",
+    "has_stores_ephi_on_external_storage",
+    "has_sends_ephi_to_third_party_services",
+    "has_uses_push_notifications_for_ephi",
+    "has_access_tokens_weak_or_unpredictable",
+    "has_error_messages_disclose_internal_details",
+    "has_error_messages_sent_to_unauthorized_destinations",
+}
+
+DYNAMIC_APPLICABILITY_FLAGS = {
+    "has_webview_components",
+    "has_webview_javascript",
+    "has_soap_api_usage",
+    "has_saml_based_sso",
+}
+
+
+def _as_list(value: Any) -> List[Any]:
+    if isinstance(value, list):
+        return value
+    if value is None:
+        return []
+    return [value]
+
+
+def _safe_lower(value: Any) -> str:
+    return str(value or "").lower()
+
+
+def _compact_text(*parts: Any, max_len: int = 240) -> str:
+    out = " ".join(str(p or "").strip() for p in parts if str(p or "").strip())
+    out = re.sub(r"\s+", " ", out).strip()
+    return out[:max_len] + ("..." if len(out) > max_len else "")
+
+
+def _path_looks_runtime_source(path: str) -> bool:
+    norm = normalize_path(path)
+    if any(tok in norm for tok in ["/src/test/", "/src/androidtest/", "/test/", "/tests/", "/build/", "/generated/", "/.github/"]):
+        return False
+    return True
+
+
+def _iter_sarif_results(sarif: Dict[str, Any], source_name: str) -> List[Tuple[str, Dict[str, Any], Dict[str, Any]]]:
+    out: List[Tuple[str, Dict[str, Any], Dict[str, Any]]] = []
+    if not isinstance(sarif, dict):
+        return out
+    for run in sarif.get("runs", []) or []:
+        if not isinstance(run, dict):
+            continue
+        rules_by_id: Dict[str, Dict[str, Any]] = {}
+        driver = ((run.get("tool") or {}).get("driver") or {}) if isinstance(run.get("tool"), dict) else {}
+        for rule in driver.get("rules", []) or []:
+            if isinstance(rule, dict) and rule.get("id"):
+                rules_by_id[str(rule.get("id"))] = rule
+        for result in run.get("results", []) or []:
+            if not isinstance(result, dict):
+                continue
+            rid = str(result.get("ruleId") or result.get("rule_id") or "")
+            out.append((source_name, result, rules_by_id.get(rid, {})))
+    return out
+
+
+def _sarif_result_blob(result: Dict[str, Any], rule: Dict[str, Any]) -> str:
+    parts = [
+        result.get("ruleId"),
+        ((result.get("message") or {}).get("text") if isinstance(result.get("message"), dict) else result.get("message")),
+        rule.get("id"),
+        rule.get("name"),
+        ((rule.get("shortDescription") or {}).get("text") if isinstance(rule.get("shortDescription"), dict) else ""),
+        ((rule.get("fullDescription") or {}).get("text") if isinstance(rule.get("fullDescription"), dict) else ""),
+        rule.get("helpUri"),
+    ]
+    return _safe_lower(" ".join(str(p or "") for p in parts))
+
+
+def _sarif_result_path(result: Dict[str, Any]) -> str:
+    locs = result.get("locations") or []
+    if not locs or not isinstance(locs, list):
+        return "sarif:unknown"
+    loc = locs[0] if isinstance(locs[0], dict) else {}
+    phys = loc.get("physicalLocation") or {}
+    art = phys.get("artifactLocation") or {}
+    region = phys.get("region") or {}
+    uri = str(art.get("uri") or "unknown")
+    line = region.get("startLine")
+    return f"{uri}:line{line}" if line else uri
+
+
+def _sarif_to_evidence(source_name: str, result: Dict[str, Any], rule: Dict[str, Any], rule_id: str = "sarif_match") -> Dict[str, str]:
+    msg = result.get("message") or {}
+    msg_text = msg.get("text") if isinstance(msg, dict) else str(msg or "")
+    rid = str(result.get("ruleId") or rule.get("id") or rule_id)
+    return ev(source_name, _sarif_result_path(result), rid, _compact_text(msg_text or rule.get("name") or rid))
+
+
+def _collect_sarif_evidence(data: Dict[str, Any], any_tokens: List[str], all_tokens: List[str] | None = None, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    all_tokens = all_tokens or []
+    any_low = [t.lower() for t in any_tokens if t]
+    all_low = [t.lower() for t in all_tokens if t]
+    for source_name, sarif in [("SAST_MERGED", data.get("sast_merged") or {}), ("SAST_SEMGREP", data.get("sast_semgrep") or {})]:
+        for src, result, rule in _iter_sarif_results(sarif, source_name):
+            blob = _sarif_result_blob(result, rule)
+            if all_low and not all(t in blob for t in all_low):
+                continue
+            if any_low and not any(t in blob for t in any_low):
+                continue
+            hits.append(_sarif_to_evidence(src, result, rule))
+            if len(hits) >= max_hits:
+                return hits
+    return hits
+
+
+def _collect_source_evidence(data: Dict[str, Any], regexes: List[str], rule_id: str, max_hits: int = 8, runtime_only: bool = True) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    texts = data.get("source_texts") or {}
+    source_zip_name = data.get("source_zip_name") or "source.zip"
+    source_label = data.get("source_label") or "SOURCE_CODE_REPOSITORY"
+    for path in sort_paths_by_hints(list(texts.keys()), ["app/", "src/main/", "java/", "kotlin/", "res/"]):
+        if runtime_only and not _path_looks_runtime_source(path):
+            continue
+        text = texts.get(path, "") or ""
+        for regex in regexes:
+            try:
+                m = re.search(regex, text, flags=re.IGNORECASE | re.MULTILINE)
+            except re.error:
+                continue
+            if m:
+                hits.append(ev(source_label, f"{source_zip_name}:{path}", rule_id, excerpt_at(text, m.start())))
+                break
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _collect_member_evidence(data: Dict[str, Any], regexes: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    source_zip_name = data.get("source_zip_name") or "source.zip"
+    source_label = data.get("source_label") or "SOURCE_CODE_REPOSITORY"
+    for member in data.get("source_zip_members") or []:
+        norm = normalize_path(member)
+        for regex in regexes:
+            if re.search(regex, norm, flags=re.IGNORECASE):
+                hits.append(ev(source_label, f"{source_zip_name}:{member}", rule_id, member))
+                break
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _iter_urls(data: Dict[str, Any]) -> List[Tuple[str, str, str]]:
+    out: List[Tuple[str, str, str]] = []
+    mobsf_static = data.get("mobsf_static") or {}
+    mobsf_dynamic = data.get("mobsf_dynamic") or {}
+
+    for idx, item in enumerate(_as_list(mobsf_static.get("urls"))):
+        if isinstance(item, dict):
+            value = item.get("url") or item.get("URL") or item.get("value") or item.get("path")
+        else:
+            value = item
+        if value:
+            out.append(("MobSF_STATIC", f"mobsf_results.json:urls[{idx}]", str(value)))
+
+    for idx, item in enumerate(_as_list(mobsf_dynamic.get("urls"))):
+        if isinstance(item, dict):
+            value = item.get("url") or item.get("URL") or item.get("value") or item.get("path")
+        else:
+            value = item
+        if value:
+            out.append(("MobSF_DYNAMIC", f"mobsf_dynamic_results.json:urls[{idx}]", str(value)))
+
+    for source_name, obj, root in [("MobSF_STATIC", mobsf_static.get("domains"), "mobsf_results.json:domains"), ("MobSF_DYNAMIC", mobsf_dynamic.get("domains"), "mobsf_dynamic_results.json:domains")]:
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                out.append((source_name, f"{root}.{key}", str(key)))
+                if isinstance(value, str):
+                    out.append((source_name, f"{root}.{key}", value))
+        elif isinstance(obj, list):
+            for idx, item in enumerate(obj):
+                out.append((source_name, f"{root}[{idx}]", str(item)))
+    return out
+
+
+def _url_evidence(data: Dict[str, Any], predicate, rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits = []
+    for source, path, value in _iter_urls(data):
+        if predicate(str(value)):
+            hits.append(ev(source, path, rule_id, str(value)))
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _sca_findings_matching(sca: Dict[str, Any], tokens: List[str], cwes: List[str] | None = None, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    cwes_low = {c.lower() for c in (cwes or [])}
+    tokens_low = [t.lower() for t in tokens if t]
+    for finding in sca.get("findings") or []:
+        cwe_values = [str(x).lower() for x in (finding.get("cwe") or finding.get("CweIDs") or finding.get("CWEIDs") or [])]
+        blob = _safe_lower(" ".join([
+            str(finding.get("id") or ""),
+            str(finding.get("pkg") or ""),
+            str(finding.get("title") or ""),
+            str(finding.get("description") or ""),
+            " ".join(cwe_values),
+        ]))
+        if cwes_low and any(c in cwe_values or c in blob for c in cwes_low):
+            hits.append(_sca_finding_evidence(finding))
+        elif tokens_low and any(t in blob for t in tokens_low):
+            hits.append(_sca_finding_evidence(finding))
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _mobsf_text_evidence(data: Dict[str, Any], tokens: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    tokens_low = [t.lower() for t in tokens if t]
+    def walk(obj: Any, path: str) -> None:
+        if len(hits) >= max_hits:
+            return
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                walk(v, f"{path}.{k}" if path else str(k))
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj):
+                walk(v, f"{path}[{i}]")
+        else:
+            text = str(obj or "")
+            low = text.lower()
+            if any(t in low for t in tokens_low):
+                hits.append(ev("MobSF_STATIC", f"mobsf_results.json:{path}", rule_id, text))
+    for key in ["code_analysis", "manifest_analysis", "niap_analysis", "binary_analysis", "file_analysis", "malware_permissions", "appsec", "network_security", "trackers"]:
+        walk((data.get("mobsf_static") or {}).get(key), key)
+    return hits
+
+
+def _dynamic_storage_evidence(data: Dict[str, Any], tokens: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    tokens_low = [t.lower() for t in tokens if t]
+    dyn = data.get("mobsf_dynamic") or {}
+    for key in ["sqlite", "xml", "others", "clipboard", "base64_strings", "droidmon", "apimon", "frida_logs"]:
+        value = dyn.get(key)
+        items = value if isinstance(value, list) else [value] if value else []
+        for idx, item in enumerate(items):
+            text = json.dumps(item, ensure_ascii=False) if isinstance(item, (dict, list)) else str(item or "")
+            low = text.lower()
+            if not tokens_low or any(t in low for t in tokens_low):
+                hits.append(ev("MobSF_DYNAMIC", f"mobsf_dynamic_results.json:{key}[{idx}]", rule_id, text))
+            if len(hits) >= max_hits:
+                return hits
+    return hits
+
+
+def _packages_matching(sca: Dict[str, Any], tokens: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    tokens_low = [t.lower() for t in tokens if t]
+    for pkg in sca.get("packages") or []:
+        name = " ".join(str(pkg.get(k) or "") for k in ["Name", "PkgName", "ID", "PkgID", "name", "pkg", "pkg_id"])
+        if any(t in name.lower() for t in tokens_low):
+            hits.append(ev("TRIVY", "trivy.json:Results[].Packages", rule_id, name))
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _known_dynamic_flag_ids() -> set[str]:
+    return set(DYNAMIC_FLAG_DEFINITIONS.keys())
+
+
+def _build_dynamic_verdict(flag_id: str, has_feature: bool, evidence: List[Dict[str, str]], kind: str, notes_yes: str, notes_no: str, evidence_count: int | None = None) -> Dict[str, Any]:
+    if kind == "negative":
+        state = "fail" if has_feature else "pass"
+    elif kind == "applicability":
+        state = "pass" if has_feature else "not_applicable"
+    else:
+        state = "pass" if has_feature else "fail"
+    out: Dict[str, Any] = {
+        "state": state,
+        "summary": f"{flag_id} = {'YES' if has_feature else 'NO'}",
+        "notes": notes_yes if has_feature else notes_no,
+        "evidence": evidence[:12],
+    }
+    if evidence_count is not None:
+        out["evidence_count_override"] = evidence_count
+    return out
+
+
+def detect_dynamic_flags(data: Dict[str, Any], features: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    sca = features.get("sca") or {}
+    tls_pinning = features.get("tls_pinning") or {}
+    permissions = features.get("permissions") or {}
+    out: Dict[str, Dict[str, Any]] = {}
+
+    def put(flag_id: str, has_feature: bool, evidence: List[Dict[str, str]], kind: str | None = None, yes: str = "Scanner-backed evidence was found.", no: str = "Scanner-backed detector executed and did not find matching evidence.", count: int | None = None) -> None:
+        k = kind or ("negative" if flag_id in DYNAMIC_NEGATIVE_FLAGS else "applicability" if flag_id in DYNAMIC_APPLICABILITY_FLAGS else "positive")
+        out[flag_id] = _build_dynamic_verdict(flag_id, has_feature, evidence, k, yes, no, count)
+
+    # Secrets and signing exposure.
+    secret_evidence = []
+    secret_evidence.extend(_mobsf_text_evidence(data, ["secret", "api key", "apikey", "password", "token"], "mobsf_secret_indicator", 4))
+    secret_evidence.extend(_collect_sarif_evidence(data, ["secret", "api key", "apikey", "password", "credential", "private key"], max_hits=4))
+    secret_evidence.extend(_collect_source_evidence(data, [r"(?i)(api[_-]?key|apikey|secret|token|password)\s*[:=]\s*['\"][^'\"]{8,}", r"(?i)AIza[0-9A-Za-z_\-]{20,}", r"(?i)-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"], "source_secret_literal", 4, runtime_only=False))
+    signing_member_evidence = _collect_member_evidence(data, [r"\.(jks|keystore|p12|pfx)$", r"release\.keystore", r"signing"], "signing_key_or_config_in_source", 8)
+    put("has_secrets_generic_found", bool(secret_evidence), secret_evidence, "negative", "Secrets or credential-like literals were detected by scan artifacts or source scanning.", "No scanner-backed secret indicators were found.", len(secret_evidence))
+    put("has_secrets_count", bool(secret_evidence), secret_evidence, "negative", f"Scanner-backed secret indicators found: {len(secret_evidence)}.", "No scanner-backed secret indicators were found.", len(secret_evidence))
+    put("has_api_keys_in_version_control", bool(secret_evidence), secret_evidence, "negative", "API key or credential-like evidence was found in repository-scanned artifacts.", "No API key indicator was found in repository-scanned artifacts.", len(secret_evidence))
+    put("has_exposes_signing_keys_in_source_or_ci", bool(signing_member_evidence), signing_member_evidence, "negative", "Signing key or signing credential file/config evidence was found in source inventory.", "No signing key file exposure was found in source inventory.", len(signing_member_evidence))
+
+    ci_env = _collect_source_evidence(data, [r"\$\{\{\s*secrets\.", r"System\.getenv\s*\(", r"getenv\s*\("], "ci_or_env_secret_usage", 8, runtime_only=False)
+    put("has_env_specific_api_credentials_configured", bool(ci_env), ci_env, "positive", "Environment or CI secret references were found for API credentials.", "No environment-specific API credential reference was found.", len(ci_env))
+    put("has_ci_cd_uses_encrypted_keys", bool(ci_env), ci_env, "positive", "CI secret references indicate encrypted key handling through the CI secret store.", "No CI secret-store reference for encrypted key handling was found.", len(ci_env))
+
+    # Network security and TLS.
+    nsc_evidence = []
+    nsc_evidence.extend(_collect_source_evidence(data, [r"android\s*:\s*networkSecurityConfig\s*=", r"network_security_config"], "network_security_config_reference", 4, runtime_only=False))
+    nsc_evidence.extend(_collect_member_evidence(data, [r"res/xml/.+network.*security.*\.xml$", r"network_security_config\.xml$"], "network_security_config_file", 4))
+    if (data.get("mobsf_static") or {}).get("network_security"):
+        nsc_evidence.append(ev("MobSF_STATIC", "mobsf_results.json:network_security", "network_security_section", "MobSF network_security section is present"))
+    put("has_network_security_config_present", bool(nsc_evidence), nsc_evidence, "positive", "Network security configuration evidence was found.", "No network security configuration evidence was found.", len(nsc_evidence))
+
+    https_evidence = _url_evidence(data, lambda u: u.lower().startswith("https://"), "https_endpoint", 8)
+    http_bad = _url_evidence(data, lambda u: u.lower().startswith("http://") and "localhost" not in u.lower() and "127.0.0.1" not in u.lower(), "unapproved_http_endpoint", 8)
+    pinning_evidence = (tls_pinning.get("evidence") or []) if tls_pinning.get("has_pinning") else []
+    put("has_https_with_cert_pinning", bool(https_evidence and pinning_evidence), (https_evidence + pinning_evidence)[:12], "positive", "HTTPS endpoints and certificate pinning evidence were both found.", "HTTPS plus certificate pinning was not confirmed from scan artifacts.", len((https_evidence + pinning_evidence)[:12]))
+    put("has_approved_ports_and_protocols", not bool(http_bad) and bool(_iter_urls(data)), http_bad or https_evidence[:4], "positive", "Observed endpoints use approved HTTP(S)-family protocols without unapproved cleartext HTTP findings.", "Unapproved or cleartext protocol evidence was found, or no endpoint evidence was available.", len(http_bad or https_evidence[:4]))
+
+    # Vulnerability semantic flags from Trivy, SARIF, MobSF.
+    vuln_specs = {
+        "has_dos_vulnerabilities": (["denial of service", "dos", "resource exhaustion"], ["cwe-400", "cwe-770"]),
+        "has_log_injection_vulnerabilities": (["log injection", "log forging", "cwe-117"], ["cwe-117"]),
+        "has_buffer_overflow_vulnerabilities": (["buffer overflow"], ["cwe-120", "cwe-121", "cwe-122"]),
+        "has_race_condition_vulnerabilities": (["race condition", "time-of-check", "time of check"], ["cwe-362", "cwe-367"]),
+        "has_out_of_bounds_vulnerabilities": (["out-of-bounds", "out of bounds"], ["cwe-125", "cwe-787"]),
+        "has_memory_corruption_vulnerabilities": (["memory corruption", "use after free", "use-after-free", "double free", "double-free"], ["cwe-416", "cwe-415"]),
+        "has_integer_arithmetic_vulnerabilities": (["integer overflow", "integer underflow", "wraparound", "numeric overflow"], ["cwe-190", "cwe-191", "cwe-681"]),
+    }
+    for flag_id, (tokens, cwes) in vuln_specs.items():
+        evidence = []
+        evidence.extend(_sca_findings_matching(sca, tokens, cwes, 8))
+        evidence.extend(_collect_sarif_evidence(data, tokens + cwes, max_hits=max(0, 8 - len(evidence))))
+        evidence.extend(_mobsf_text_evidence(data, tokens + cwes, flag_id, max_hits=max(0, 8 - len(evidence))))
+        put(flag_id, bool(evidence), evidence, "negative", f"Scanner findings matched {flag_id}.", f"No scanner findings matched {flag_id}.", len(evidence))
+
+    malware_evidence = []
+    if (data.get("mobsf_static") or {}).get("malware_permissions"):
+        malware_evidence.append(ev("MobSF_STATIC", "mobsf_results.json:malware_permissions", "malware_permissions", json.dumps((data.get("mobsf_static") or {}).get("malware_permissions"), ensure_ascii=False)[:200]))
+    malware_evidence.extend(_mobsf_text_evidence(data, ["malware", "trojan", "spyware", "virus", "ransomware", "adware"], "malware_indicator", 8 - len(malware_evidence)))
+    malware_evidence.extend(_collect_sarif_evidence(data, ["malware", "trojan", "spyware", "virus", "ransomware", "adware"], max_hits=8 - len(malware_evidence)))
+    put("has_malware_detections", bool(malware_evidence), malware_evidence, "negative", "Malware-like indicators were reported by scan artifacts.", "No malware-like indicators were reported by scan artifacts.", len(malware_evidence))
+
+    tamper_evidence = []
+    tamper_evidence.extend(_collect_source_evidence(data, [r"SafetyNet", r"PlayIntegrity", r"IntegrityManager", r"isDeviceRooted", r"rootbeer", r"signature.*verify", r"getPackageInfo\s*\("], "tamper_or_integrity_protection", 8))
+    tamper_evidence.extend(_collect_sarif_evidence(data, ["tamper", "integrity", "root", "signature verification"], max_hits=4))
+    put("has_protection_against_tampered_executables", bool(tamper_evidence), tamper_evidence, "positive", "Tamper, integrity, root, or signature verification evidence was found.", "No tamper or executable integrity protection evidence was found.", len(tamper_evidence))
+
+    dynamic_code_evidence = []
+    dynamic_code_evidence.extend(_collect_source_evidence(data, [r"DexClassLoader", r"PathClassLoader", r"loadDex\s*\(", r"dalvik\.system", r"System\.load\s*\(", r"System\.loadLibrary\s*\(", r"Runtime\.getRuntime\s*\(\)\.exec"], "dynamic_code_loading", 8))
+    dynamic_code_evidence.extend(_collect_sarif_evidence(data, ["dynamic code", "dexclassloader", "pathclassloader", "loadlibrary"], max_hits=4))
+    dynamic_code_evidence.extend(_mobsf_text_evidence(data, ["dynamic code loading", "dexclassloader", "pathclassloader"], "dynamic_code_loading", 4))
+    put("has_android_dynamic_code_loading", bool(dynamic_code_evidence), dynamic_code_evidence, "negative", "Dynamic code loading evidence was found.", "No dynamic code loading evidence was found.", len(dynamic_code_evidence))
+
+    native_lib_members = _collect_member_evidence(data, [r"\.so$", r"/jni/", r"/jniLibs/"], "native_library_inventory", 8)
+    unsafe_native = [e for e in native_lib_members if "/data/local/tmp" in e.get("path", "").lower() or "download" in e.get("path", "").lower()]
+    put("has_libraries_stored_in_secure_app_dir", bool(native_lib_members) and not unsafe_native, native_lib_members[:8], "positive", "Native libraries were found only in packaged application paths.", "Native library secure app-directory placement was not confirmed.", len(native_lib_members[:8]))
+
+    # IPC, providers, WebView.
+    provider_evidence = []
+    providers = (data.get("mobsf_static") or {}).get("providers") or []
+    if providers:
+        provider_evidence.append(ev("MobSF_STATIC", "mobsf_results.json:providers", "providers_present", json.dumps(providers, ensure_ascii=False)[:200]))
+    provider_evidence.extend(_collect_sarif_evidence(data, ["content provider", "exported provider", "provider exported"], max_hits=4))
+    put("has_content_provider_actively_exposed", bool(provider_evidence), provider_evidence, "negative", "Content provider exposure evidence was found.", "No content provider exposure evidence was found.", len(provider_evidence))
+
+    bind_evidence = _collect_source_evidence(data, [r"bindService\s*\(", r"android:permission\s*=", r"BIND_"], "bindservice_or_service_permission", 8)
+    put("has_ipc_bindservice_secure", bool(bind_evidence), bind_evidence, "positive", "Service binding or permission protection evidence was found.", "No explicit secure bindService or service permission evidence was found.", len(bind_evidence))
+
+    webview_components = _collect_source_evidence(data, [r"\bWebView\b", r"android\.webkit\.WebView"], "webview_component", 8)
+    webview_js = _collect_source_evidence(data, [r"setJavaScriptEnabled\s*\(\s*true\s*\)"], "webview_javascript_enabled", 8)
+    webview_bridge = _collect_source_evidence(data, [r"addJavascriptInterface\s*\("], "webview_addjavascriptinterface", 8)
+    webview_file = _collect_source_evidence(data, [r"setAllowFileAccess\s*\(\s*true\s*\)", r"setAllowFileAccessFromFileURLs\s*\(\s*true\s*\)", r"setAllowUniversalAccessFromFileURLs\s*\(\s*true\s*\)", r"file://"], "webview_file_scheme", 8)
+    webview_remote = _collect_source_evidence(data, [r"\.loadUrl\s*\(\s*['\"]https?://", r"WebViewClient", r"shouldOverrideUrlLoading"], "webview_remote_content", 8)
+    webview_http = _collect_source_evidence(data, [r"\.loadUrl\s*\(\s*['\"]http://", r"WebView[^\n]{0,120}http://", r"shouldOverrideUrlLoading[^\n]{0,240}http://"], "webview_http_content", 8)
+    put("has_webview_components", bool(webview_components), webview_components, "applicability", "WebView component evidence was found.", "No WebView component evidence was found.", len(webview_components))
+    put("has_webview_javascript", bool(webview_js), webview_js, "applicability", "WebView JavaScript enablement evidence was found.", "No WebView JavaScript enablement evidence was found.", len(webview_js))
+    put("has_webview_addjavascriptinterface_present", bool(webview_bridge), webview_bridge, "negative", "WebView JavaScript interface bridge evidence was found.", "No WebView JavaScript interface bridge evidence was found.", len(webview_bridge))
+    put("has_webview_file_scheme", bool(webview_file), webview_file, "negative", "WebView file-scheme or file-access evidence was found.", "No WebView file-scheme or file-access evidence was found.", len(webview_file))
+    put("has_webview_remote_content", bool(webview_remote), webview_remote, "negative", "WebView remote content loading evidence was found.", "No WebView remote content loading evidence was found.", len(webview_remote))
+    put("has_insecure_http_based_webview_communication", bool(webview_http), webview_http, "negative", "WebView cleartext HTTP loading evidence was found.", "No WebView cleartext HTTP loading evidence was found.", len(webview_http))
+    put("has_webview_javascript_interface_limited_to_trusted_content", bool(webview_bridge) and not bool(webview_http), (webview_bridge + webview_http)[:12], "positive", "JavaScript bridge evidence exists without cleartext HTTP WebView loading evidence.", "Trusted-content restriction for JavaScript interfaces was not confirmed.", len((webview_bridge + webview_http)[:12]))
+    sensitive_bridge = webview_bridge and _collect_source_evidence(data, [r"addJavascriptInterface[\s\S]{0,500}(patient|token|password|credential|secret|ephi|phi|medical|obs|encounter)"], "webview_sensitive_bridge", 8)
+    put("has_webview_javascript_interface_exposes_sensitive_functionality", bool(sensitive_bridge), sensitive_bridge if isinstance(sensitive_bridge, list) else [], "negative", "WebView JavaScript bridge appears near sensitive functionality tokens.", "No sensitive-functionality WebView bridge evidence was found.", len(sensitive_bridge if isinstance(sensitive_bridge, list) else []))
+    put("has_webview_javascript_interface_leaks_sensitive_data", bool(sensitive_bridge and webview_http), ((sensitive_bridge if isinstance(sensitive_bridge, list) else []) + webview_http)[:12], "negative", "Sensitive WebView bridge evidence and cleartext HTTP WebView loading were both found.", "No combined sensitive WebView bridge and cleartext HTTP evidence was found.", len(((sensitive_bridge if isinstance(sensitive_bridge, list) else []) + webview_http)[:12]))
+
+    # Crypto, auth, token, SOAP/SAML/XML.
+    key_store = _collect_source_evidence(data, [r"AndroidKeyStore", r"KeyStore\.getInstance\s*\(\s*['\"]AndroidKeyStore", r"MasterKey\b", r"MasterKeys\b"], "android_keystore_usage", 8)
+    crypto = _collect_source_evidence(data, [r"Cipher\.getInstance\s*\(", r"AES/GCM", r"EncryptedSharedPreferences", r"EncryptedFile", r"SQLCipher", r"SecretKeySpec", r"KeyGenParameterSpec"], "client_crypto_usage", 8)
+    strongbox = _collect_source_evidence(data, [r"setIsStrongBoxBacked\s*\(\s*true\s*\)", r"isInsideSecureHardware", r"StrongBox"], "hardware_backed_key_storage", 8)
+    put("has_os_secure_key_storage", bool(key_store), key_store, "positive", "Android Keystore or Jetpack security key storage evidence was found.", "No Android secure key storage evidence was found.", len(key_store))
+    put("has_client_side_crypto_for_sensitive_data", bool(crypto), crypto, "positive", "Client-side cryptographic storage or encryption API usage was found.", "No client-side cryptographic storage or encryption API usage was found.", len(crypto))
+    put("has_sensitive_data_encrypted_with_os_keystore", bool(key_store and crypto), (key_store + crypto)[:12], "positive", "Android Keystore and encryption API evidence were both found.", "Encryption tied to Android Keystore was not confirmed.", len((key_store + crypto)[:12]))
+    put("has_auth_keys_stored_in_secure_hardware", bool(strongbox), strongbox, "positive", "Hardware-backed key storage evidence was found.", "No hardware-backed key storage evidence was found.", len(strongbox))
+
+    oauth = _collect_source_evidence(data, [r"OAuth", r"AuthorizationService", r"AuthorizationRequest", r"AppAuth", r"oauth2"], "oauth2_usage", 8)
+    jwt = _collect_source_evidence(data, [r"\bJWT\b", r"JsonWebToken", r"io\.jsonwebtoken", r"com\.auth0\.jwt", r"jose4j"], "jwt_usage", 8)
+    token = _collect_source_evidence(data, [r"Bearer\s+", r"access[_-]?token", r"refresh[_-]?token", r"Authorization\"\s*,\s*\"Bearer", r"Authorization\""], "token_auth_usage", 8)
+    weak_token = _collect_source_evidence(data, [r"(token|session|nonce)[\s\S]{0,120}(Math\.random|java\.util\.Random|UUID\.randomUUID)", r"Random\s*\([^)]*\)[\s\S]{0,120}(token|session|nonce)"], "weak_token_generation", 8)
+    put("has_oauth2_authentication", bool(oauth), oauth, "positive", "OAuth2/AppAuth evidence was found.", "No OAuth2/AppAuth evidence was found.", len(oauth))
+    put("has_jwt_tokens", bool(jwt), jwt, "positive", "JWT evidence was found.", "No JWT evidence was found.", len(jwt))
+    put("has_token_based_auth", bool(token or jwt or oauth), (token + jwt + oauth)[:12], "positive", "Token-based authentication evidence was found.", "No token-based authentication evidence was found.", len((token + jwt + oauth)[:12]))
+    put("has_access_tokens_weak_or_unpredictable", bool(weak_token), weak_token, "negative", "Weak or predictable token generation evidence was found.", "No weak or predictable token generation evidence was found.", len(weak_token))
+
+    soap = _collect_source_evidence(data, [r"\bSOAP\b", r"SoapObject", r"SoapSerializationEnvelope", r"ksoap", r"javax\.xml\.soap"], "soap_usage", 8)
+    soap_https = _collect_source_evidence(data, [r"https://[^\s'\"]*(soap|wsdl|saml|service)", r"(soap|wsdl|saml)[^\n]{0,200}https://"], "soap_tls_endpoint", 8)
+    soap_http = _collect_source_evidence(data, [r"http://[^\s'\"]*(soap|wsdl|saml|service)", r"(soap|wsdl|saml)[^\n]{0,200}http://"], "soap_cleartext_endpoint", 8)
+    mtls = _collect_source_evidence(data, [r"KeyManagerFactory", r"SSLContext\.init\s*\([^,]+,\s*keyManagers", r"client certificate", r"mutual tls", r"mTLS"], "mutual_tls_usage", 8)
+    saml = _collect_source_evidence(data, [r"\bSAML\b", r"saml2", r"OpenSAML", r"SecurityAssertion"], "saml_usage", 8)
+    xml_sig = _collect_source_evidence(data, [r"XMLSignature", r"javax\.xml\.crypto\.dsig", r"SignedInfo", r"SignatureMethod"], "xml_signature_usage", 8)
+    xml_enc = _collect_source_evidence(data, [r"XMLCipher", r"EncryptedData", r"XML Encryption", r"xenc:"], "xml_encryption_usage", 8)
+    wssec = _collect_source_evidence(data, [r"WS-Security", r"wsse:", r"WSSec", r"UsernameToken", r"Timestamp"], "ws_security_usage", 8)
+    xsd = _collect_source_evidence(data, [r"SchemaFactory", r"XMLConstants\.W3C_XML_SCHEMA_NS_URI", r"setSchema\s*\("], "xml_schema_validation", 8)
+    put("has_soap_api_usage", bool(soap), soap, "applicability", "SOAP client evidence was found.", "No SOAP client evidence was found.", len(soap))
+    put("has_soap_uses_tls", bool(soap_https) and not bool(soap_http), (soap_https + soap_http)[:12], "positive", "SOAP endpoints appear to use HTTPS and no SOAP cleartext endpoint was found.", "SOAP TLS usage was not confirmed, or a cleartext SOAP endpoint was found.", len((soap_https + soap_http)[:12]))
+    put("has_soap_uses_mutual_tls", bool(mtls), mtls, "positive", "Mutual TLS client-certificate evidence was found.", "No mutual TLS client-certificate evidence was found.", len(mtls))
+    put("has_saml_based_sso", bool(saml), saml, "applicability", "SAML/SSO evidence was found.", "No SAML/SSO evidence was found.", len(saml))
+    put("has_uses_xml_signatures", bool(xml_sig), xml_sig, "positive", "XML digital signature evidence was found.", "No XML digital signature evidence was found.", len(xml_sig))
+    put("has_uses_xml_encryption", bool(xml_enc), xml_enc, "positive", "XML encryption evidence was found.", "No XML encryption evidence was found.", len(xml_enc))
+    put("has_proper_ws_security_headers", bool(wssec), wssec, "positive", "WS-Security header evidence was found.", "No WS-Security header evidence was found.", len(wssec))
+    put("has_soap_message_level_encryption", bool(xml_enc and soap), (xml_enc + soap)[:12], "positive", "SOAP and XML message encryption evidence were both found.", "SOAP message-level encryption was not confirmed.", len((xml_enc + soap)[:12]))
+    put("has_soap_message_level_signatures", bool(xml_sig and soap), (xml_sig + soap)[:12], "positive", "SOAP and XML signature evidence were both found.", "SOAP message-level signatures were not confirmed.", len((xml_sig + soap)[:12]))
+    put("has_soap_prevents_replay_attacks", bool(wssec and _collect_source_evidence(data, [r"Nonce", r"Timestamp", r"Created", r"Expires"], "soap_replay_prevention", 8)), wssec[:8], "positive", "WS-Security timestamp/nonce evidence was found.", "SOAP replay-prevention evidence was not confirmed.", len(wssec[:8]))
+    put("has_soap_validates_saml_token_audience", bool(saml and _collect_source_evidence(data, [r"AudienceRestriction", r"audience"], "saml_audience_validation", 8)), saml[:8], "positive", "SAML audience validation evidence was found.", "SAML audience validation evidence was not confirmed.", len(saml[:8]))
+    put("has_soap_validates_saml_token_expiry", bool(saml and _collect_source_evidence(data, [r"NotOnOrAfter", r"Conditions", r"expiry", r"expiration"], "saml_expiry_validation", 8)), saml[:8], "positive", "SAML expiry validation evidence was found.", "SAML expiry validation evidence was not confirmed.", len(saml[:8]))
+    put("has_soap_uses_strict_schema_validation", bool(xsd), xsd, "positive", "XML schema validation evidence was found.", "No XML schema validation evidence was found.", len(xsd))
+    put("has_soap_masks_sensitive_data_in_logs", bool(soap and _collect_source_evidence(data, [r"mask", r"redact", r"sanitize"], "soap_log_masking", 8)), soap[:8], "positive", "SOAP and masking/redaction evidence were found.", "SOAP log masking evidence was not confirmed.", len(soap[:8]))
+
+    # Logging, resilience, UI and local storage.
+    log_sanitize = _collect_source_evidence(data, [r"sanitize.*log", r"mask.*log", r"redact", r"escape.*log", r"Logger"], "log_sanitization_or_logging", 8)
+    log_injection = _collect_sarif_evidence(data, ["log injection", "log forging", "cwe-117"], max_hits=8)
+    err_internal = _collect_source_evidence(data, [r"printStackTrace\s*\(", r"Log\.(e|w|d|i)\s*\([^\n]{0,160}(exception|stack|Throwable|getMessage\s*\(\))", r"Toast\.[^\n]{0,160}(Exception|getMessage\s*\(\))"], "error_disclosure", 8)
+    generic_err = _collect_source_evidence(data, [r"try\s*\{", r"catch\s*\([^)]*Exception", r"show.*error", r"generic.*error"], "generic_error_handling", 8)
+    priv_logs = _collect_source_evidence(data, [r"audit", r"privileged", r"timestamp", r"System\.currentTimeMillis", r"Instant\.now"], "audit_or_timestamp_logging", 8)
+    put("has_data_format_strictly_controlled", bool(_collect_source_evidence(data, [r"@SerializedName", r"Moshi", r"Gson", r"JsonAdapter", r"SchemaFactory"], "structured_data_format", 8)), _collect_source_evidence(data, [r"@SerializedName", r"Moshi", r"Gson", r"JsonAdapter", r"SchemaFactory"], "structured_data_format", 8), "positive", "Structured serialization or schema validation evidence was found.", "No structured data-format control evidence was found.")
+    put("has_log_input_sanitization_present", bool(log_sanitize), log_sanitize, "positive", "Log sanitization/masking evidence was found.", "No log sanitization/masking evidence was found.", len(log_sanitize))
+    put("has_log_injection_vulnerabilities", bool(log_injection), log_injection, "negative", "Log injection findings were reported by SAST.", "No log injection findings were reported by SAST.", len(log_injection))
+    put("has_logs_privileged_actions_with_timestamp", bool(priv_logs), priv_logs, "positive", "Audit/timestamp logging evidence was found.", "No privileged-action timestamp logging evidence was found.", len(priv_logs))
+    put("has_error_messages_disclose_internal_details", bool(err_internal), err_internal, "negative", "Internal exception or stack detail disclosure evidence was found.", "No internal exception or stack detail disclosure evidence was found.", len(err_internal))
+    put("has_error_messages_are_generic", bool(generic_err) and not bool(err_internal), (generic_err + err_internal)[:12], "positive", "Generic error-handling evidence was found without direct internal disclosure matches.", "Generic error handling was not confirmed.", len((generic_err + err_internal)[:12]))
+    put("has_error_messages_sent_to_unauthorized_destinations", bool(_url_evidence(data, lambda u: any(x in u.lower() for x in ["sentry", "crashlytics", "bugsnag", "datadog"]), "external_error_destination", 8)), _url_evidence(data, lambda u: any(x in u.lower() for x in ["sentry", "crashlytics", "bugsnag", "datadog"]), "external_error_destination", 8), "negative", "External error reporting destination evidence was found.", "No external error reporting destination evidence was found.")
+
+    null_protection = _collect_source_evidence(data, [r"Objects\.requireNonNull", r"requireNotNull", r"checkNotNull", r"Optional<", r"\?\.", r"?:"], "null_safety_or_guard", 8)
+    startup_params = _collect_source_evidence(data, [r"onCreate\s*\(", r"init\w*\s*\(", r"initialize\w*\s*\(", r"ApplicationConstants"], "startup_initialization", 8)
+    fail_safe = _collect_source_evidence(data, [r"catch\s*\([^)]*Exception", r"fallback", r"failSafe", r"safe mode", r"return false"], "fail_safe_handling", 8)
+    killswitch = _collect_source_evidence(data, [r"kill.?switch", r"feature.?flag", r"remote.?config", r"disable.*feature"], "kill_switch_or_feature_flag", 8)
+    workmanager = _collect_source_evidence(data, [r"WorkManager", r"OneTimeWorkRequest", r"PeriodicWorkRequest", r"enqueueUniqueWork"], "workmanager_resilience", 8)
+    recovery = _collect_source_evidence(data, [r"transaction", r"rollback", r"retry", r"recovery", r"journal"], "transaction_recovery", 8)
+    put("has_null_pointer_protection_implemented", bool(null_protection), null_protection, "positive", "Null-safety or null-guard evidence was found.", "No null-safety or null-guard evidence was found.", len(null_protection))
+    put("has_initializes_params_on_startup", bool(startup_params), startup_params, "positive", "Startup initialization evidence was found.", "No startup initialization evidence was found.", len(startup_params))
+    put("has_fails_safe_on_init_failure", bool(fail_safe), fail_safe, "positive", "Fail-safe or fallback handling evidence was found.", "No fail-safe initialization evidence was found.", len(fail_safe))
+    put("has_runtime_global_kill_switch_for_security_incidents", bool(killswitch), killswitch, "positive", "Runtime kill-switch or feature-flag evidence was found.", "No runtime global kill-switch evidence was found.", len(killswitch))
+    put("has_safe_mode_degraded_functionality_design", bool(killswitch or fail_safe), (killswitch + fail_safe)[:12], "positive", "Safe-mode, feature-flag, or fallback evidence was found.", "No safe-mode or degraded-functionality evidence was found.", len((killswitch + fail_safe)[:12]))
+    put("has_workmanager_for_resilient_network_tasks", bool(workmanager), workmanager, "positive", "WorkManager resilient background task evidence was found.", "No WorkManager resilient task evidence was found.", len(workmanager))
+    put("has_transaction_recovery_logs", bool(recovery), recovery, "positive", "Transaction recovery, retry, or rollback evidence was found.", "No transaction recovery evidence was found.", len(recovery))
+
+    flag_secure = _collect_source_evidence(data, [r"FLAG_SECURE", r"setFlags\s*\([^\n]*FLAG_SECURE"], "android_flag_secure", 8)
+    masking = _collect_source_evidence(data, [r"PasswordTransformationMethod", r"inputType\s*=\s*['\"][^'\"]*textPassword", r"TYPE_TEXT_VARIATION_PASSWORD", r"mask", r"redact"], "ui_masking", 8)
+    clear_background = _collect_source_evidence(data, [r"onPause\s*\(", r"onStop\s*\(", r"onUserLeaveHint\s*\(", r"clear.*screen", r"hide.*sensitive"], "ui_background_clear", 8)
+    notification = _collect_source_evidence(data, [r"NotificationCompat", r"NotificationManager", r"FirebaseMessagingService", r"RemoteMessage"], "notification_usage", 8)
+    notif_secure = _collect_source_evidence(data, [r"VISIBILITY_SECRET", r"VISIBILITY_PRIVATE", r"setVisibility\s*\(\s*NotificationCompat\.VISIBILITY_(PRIVATE|SECRET)"], "secure_notification_visibility", 8)
+    notif_sensitive = _collect_source_evidence(data, [r"Notification[^\n]{0,240}(patient|ephi|phi|medical|diagnosis|encounter|obs|token|password)"], "sensitive_notification_content", 8)
+    public_channel = _collect_source_evidence(data, [r"IMPORTANCE_HIGH", r"CATEGORY_MESSAGE", r"setPublicVersion", r"VISIBILITY_PUBLIC"], "public_notification_channel", 8)
+    put("has_blocks_screenshots_flag_secure", bool(flag_secure), flag_secure, "positive", "FLAG_SECURE evidence was found.", "No FLAG_SECURE evidence was found.", len(flag_secure))
+    put("has_ui_data_masking", bool(masking), masking, "positive", "UI masking or password transformation evidence was found.", "No UI masking evidence was found.", len(masking))
+    put("has_displays_sensitive_data_unmasked", bool(_dynamic_storage_evidence(data, ["screenshot", "patient", "password", "token"], "dynamic_sensitive_ui", 4) and not masking), _dynamic_storage_evidence(data, ["screenshot", "patient", "password", "token"], "dynamic_sensitive_ui", 4), "negative", "Sensitive UI display evidence without matching masking evidence was found.", "No unmasked sensitive UI display evidence was found.")
+    put("has_clears_ui_on_background", bool(clear_background), clear_background, "positive", "UI clearing or lifecycle hiding evidence was found.", "No UI clearing on background evidence was found.", len(clear_background))
+    put("has_secure_notifications", bool(notif_secure), notif_secure, "positive", "Secure notification visibility evidence was found.", "No secure notification visibility evidence was found.", len(notif_secure))
+    put("has_notification_leaks_sensitive_data", bool(notif_sensitive), notif_sensitive, "negative", "Sensitive notification content evidence was found.", "No sensitive notification content evidence was found.", len(notif_sensitive))
+    put("has_notification_uses_public_channels", bool(public_channel and not notif_secure), (public_channel + notif_secure)[:12], "negative", "Public notification channel or visibility evidence was found without secure visibility evidence.", "No insecure public notification channel evidence was found.", len((public_channel + notif_secure)[:12]))
+
+    clear_storage = []
+    clear_storage.extend(_collect_sarif_evidence(data, ["cleartext-storage", "shared-prefs", "shared preferences", "plaintext"], max_hits=8))
+    clear_storage.extend(_dynamic_storage_evidence(data, ["password", "token", "patient", "secret", "ephi", "phi", "credential"], "dynamic_sensitive_storage", 8 - len(clear_storage)))
+    encrypted_storage = []
+    encrypted_storage.extend(_collect_source_evidence(data, [r"EncryptedSharedPreferences", r"EncryptedFile", r"SQLCipher", r"net\.sqlcipher", r"androidx\.security\.crypto"], "encrypted_storage", 8))
+    encrypted_storage.extend(_packages_matching(sca, ["sqlcipher", "androidx.security", "security-crypto"], "encrypted_storage_dependency", 4))
+    ext_storage = []
+    ext_storage.extend(_collect_source_evidence(data, [r"Environment\.getExternalStorage", r"getExternalFilesDir\s*\(", r"WRITE_EXTERNAL_STORAGE", r"READ_EXTERNAL_STORAGE", r"MANAGE_EXTERNAL_STORAGE"], "external_storage_usage", 8))
+    if permissions.get("requested_permissions"):
+        for p in permissions.get("requested_permissions") or []:
+            if p in {"android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.MANAGE_EXTERNAL_STORAGE"}:
+                ext_storage.append(ev("MobSF_STATIC", f"mobsf_results.json:permissions.{p}", "external_storage_permission", p))
+    third_party = _url_evidence(data, lambda u: any(x in u.lower() for x in ["googleapis", "firebase", "sentry", "crashlytics", "analytics", "facebook", "mixpanel", "amplitude"]), "third_party_endpoint", 8)
+    push = _collect_source_evidence(data, [r"FirebaseMessagingService", r"RemoteMessage", r"FCM", r"push notification"], "push_notification_usage", 8)
+    secure_push = _collect_source_evidence(data, [r"RemoteMessage", r"data\s*\.", r"encrypted", r"decrypt", r"https://"], "secure_push_channel", 8)
+    put("has_stores_sensitive_data_on_device", bool(clear_storage or encrypted_storage or ext_storage), (clear_storage + encrypted_storage + ext_storage)[:12], "negative", "Local sensitive data storage evidence was found.", "No local sensitive data storage evidence was found.", len((clear_storage + encrypted_storage + ext_storage)[:12]))
+    put("has_stores_pii_in_plaintext", bool(clear_storage), clear_storage, "negative", "Plaintext or cleartext local storage evidence was found.", "No plaintext PII local storage evidence was found.", len(clear_storage))
+    put("has_stores_auth_tokens_in_plaintext", bool([e for e in clear_storage if "token" in e.get("excerpt", "").lower() or "credential" in e.get("excerpt", "").lower()]), clear_storage, "negative", "Plaintext token or credential storage evidence was found.", "No plaintext token storage evidence was found.", len(clear_storage))
+    put("has_stores_keys_in_plaintext", bool([e for e in clear_storage if "key" in e.get("excerpt", "").lower() or "secret" in e.get("excerpt", "").lower()]), clear_storage, "negative", "Plaintext key or secret storage evidence was found.", "No plaintext key storage evidence was found.", len(clear_storage))
+    put("has_uses_encrypted_local_database", bool(_packages_matching(sca, ["sqlcipher"], "sqlcipher_dependency", 4) or _collect_source_evidence(data, [r"SQLCipher", r"net\.sqlcipher"], "sqlcipher_usage", 4)), (_packages_matching(sca, ["sqlcipher"], "sqlcipher_dependency", 4) + _collect_source_evidence(data, [r"SQLCipher", r"net\.sqlcipher"], "sqlcipher_usage", 4))[:8], "positive", "Encrypted local database evidence was found.", "No encrypted local database evidence was found.")
+    put("has_uses_encrypted_shared_preferences", bool(_collect_source_evidence(data, [r"EncryptedSharedPreferences"], "encrypted_shared_preferences", 8)), _collect_source_evidence(data, [r"EncryptedSharedPreferences"], "encrypted_shared_preferences", 8), "positive", "EncryptedSharedPreferences evidence was found.", "No EncryptedSharedPreferences evidence was found.")
+    put("has_uses_encrypted_filesystem_storage", bool(_collect_source_evidence(data, [r"EncryptedFile", r"androidx\.security\.crypto"], "encrypted_file_storage", 8)), _collect_source_evidence(data, [r"EncryptedFile", r"androidx\.security\.crypto"], "encrypted_file_storage", 8), "positive", "Encrypted filesystem storage evidence was found.", "No encrypted filesystem storage evidence was found.")
+    put("has_local_caching_of_ephi", bool(_dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 8)), _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 8), "negative", "Local clinical/ePHI cache evidence was found.", "No local clinical/ePHI cache evidence was found.")
+    put("has_encrypted_local_caching_of_ephi", bool(encrypted_storage and _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 4)), (encrypted_storage + _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 4))[:12], "positive", "Encrypted storage and local clinical/ePHI cache evidence were both found.", "Encrypted local ePHI caching was not confirmed.", len((encrypted_storage + _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 4))[:12]))
+    put("has_stores_ephi_on_external_storage", bool(ext_storage and _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 4)), (ext_storage + _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 4))[:12], "negative", "External storage and clinical/ePHI cache evidence were both found.", "No ePHI on external storage evidence was found.", len((ext_storage + _dynamic_storage_evidence(data, ["patient", "encounter", "obs", "ephi", "phi", "medical"], "ephi_cache", 4))[:12]))
+    put("has_sends_ephi_to_third_party_services", bool(third_party and _collect_source_evidence(data, [r"patient", r"encounter", r"obs", r"ephi", r"medical"], "clinical_data_tokens", 4)), (third_party + _collect_source_evidence(data, [r"patient", r"encounter", r"obs", r"ephi", r"medical"], "clinical_data_tokens", 4))[:12], "negative", "Third-party endpoint and clinical/ePHI token evidence were both found.", "No ePHI third-party transmission evidence was found.", len((third_party + _collect_source_evidence(data, [r"patient", r"encounter", r"obs", r"ephi", r"medical"], "clinical_data_tokens", 4))[:12]))
+    put("has_uses_push_notifications_for_ephi", bool(push and _collect_source_evidence(data, [r"patient", r"encounter", r"obs", r"ephi", r"medical"], "clinical_data_tokens", 4)), (push + _collect_source_evidence(data, [r"patient", r"encounter", r"obs", r"ephi", r"medical"], "clinical_data_tokens", 4))[:12], "negative", "Push notification and clinical/ePHI token evidence were both found.", "No push-notification ePHI evidence was found.", len((push + _collect_source_evidence(data, [r"patient", r"encounter", r"obs", r"ephi", r"medical"], "clinical_data_tokens", 4))[:12]))
+    put("has_uses_secure_push_channel_for_ephi", bool(secure_push and not notif_sensitive), (secure_push + notif_sensitive)[:12], "positive", "Secure push-channel indicators were found without sensitive notification leak evidence.", "Secure push-channel use for ePHI was not confirmed.", len((secure_push + notif_sensitive)[:12]))
+    put("has_secure_sync_for_offline_ephi", bool(workmanager and https_evidence and encrypted_storage), (workmanager + https_evidence + encrypted_storage)[:12], "positive", "Offline sync resilience, HTTPS, and encrypted storage evidence were found.", "Secure offline ePHI sync was not confirmed.", len((workmanager + https_evidence + encrypted_storage)[:12]))
+    put("has_collects_telemetry_for_security_events", bool(_collect_source_evidence(data, [r"analytics", r"telemetry", r"audit", r"security event", r"crashlytics"], "security_telemetry", 8)), _collect_source_evidence(data, [r"analytics", r"telemetry", r"audit", r"security event", r"crashlytics"], "security_telemetry", 8), "positive", "Security telemetry or audit event collection evidence was found.", "No security telemetry collection evidence was found.")
+
+    return out
+
+
+def build_dynamic_flag_verdict(flag_id: str, dynamic_flags: Dict[str, Dict[str, Any]]) -> Dict[str, Any] | None:
+    verdict = dynamic_flags.get(flag_id)
+    if not isinstance(verdict, dict):
+        return None
+    return verdict
+
+
+# Flags that are now backed by scanner, SARIF, or source-code detectors instead of fallback.
+DYNAMIC_FLAG_DEFINITIONS = {flag_id: True for flag_id in (
+    "has_api_keys_in_version_control", "has_exposes_signing_keys_in_source_or_ci", "has_secrets_generic_found", "has_secrets_count",
+    "has_env_specific_api_credentials_configured", "has_ci_cd_uses_encrypted_keys", "has_network_security_config_present", "has_https_with_cert_pinning", "has_approved_ports_and_protocols",
+    "has_dos_vulnerabilities", "has_log_injection_vulnerabilities", "has_malware_detections", "has_protection_against_tampered_executables", "has_android_dynamic_code_loading", "has_libraries_stored_in_secure_app_dir",
+    "has_buffer_overflow_vulnerabilities", "has_race_condition_vulnerabilities", "has_out_of_bounds_vulnerabilities", "has_memory_corruption_vulnerabilities", "has_integer_arithmetic_vulnerabilities", "has_ipc_bindservice_secure", "has_content_provider_actively_exposed",
+    "has_webview_components", "has_webview_javascript", "has_webview_addjavascriptinterface_present", "has_webview_javascript_interface_limited_to_trusted_content", "has_webview_javascript_interface_exposes_sensitive_functionality", "has_webview_javascript_interface_leaks_sensitive_data", "has_webview_remote_content", "has_webview_file_scheme", "has_insecure_http_based_webview_communication",
+    "has_os_secure_key_storage", "has_client_side_crypto_for_sensitive_data", "has_sensitive_data_encrypted_with_os_keystore", "has_auth_keys_stored_in_secure_hardware", "has_oauth2_authentication", "has_jwt_tokens", "has_token_based_auth", "has_access_tokens_weak_or_unpredictable",
+    "has_soap_api_usage", "has_soap_uses_tls", "has_soap_uses_mutual_tls", "has_saml_based_sso", "has_uses_xml_signatures", "has_uses_xml_encryption", "has_proper_ws_security_headers", "has_soap_message_level_encryption", "has_soap_message_level_signatures", "has_soap_prevents_replay_attacks", "has_soap_validates_saml_token_audience", "has_soap_validates_saml_token_expiry", "has_soap_uses_strict_schema_validation", "has_soap_masks_sensitive_data_in_logs",
+    "has_data_format_strictly_controlled", "has_log_input_sanitization_present", "has_logs_privileged_actions_with_timestamp", "has_error_messages_disclose_internal_details", "has_error_messages_are_generic", "has_error_messages_sent_to_unauthorized_destinations", "has_null_pointer_protection_implemented", "has_initializes_params_on_startup", "has_fails_safe_on_init_failure", "has_runtime_global_kill_switch_for_security_incidents", "has_safe_mode_degraded_functionality_design", "has_workmanager_for_resilient_network_tasks", "has_transaction_recovery_logs",
+    "has_displays_sensitive_data_unmasked", "has_ui_data_masking", "has_blocks_screenshots_flag_secure", "has_clears_ui_on_background", "has_secure_notifications", "has_notification_leaks_sensitive_data", "has_notification_uses_public_channels", "has_stores_sensitive_data_on_device", "has_uses_encrypted_local_database", "has_uses_encrypted_shared_preferences", "has_uses_encrypted_filesystem_storage", "has_stores_pii_in_plaintext", "has_stores_auth_tokens_in_plaintext", "has_stores_keys_in_plaintext", "has_local_caching_of_ephi", "has_encrypted_local_caching_of_ephi", "has_stores_ephi_on_external_storage", "has_sends_ephi_to_third_party_services", "has_uses_push_notifications_for_ephi", "has_uses_secure_push_channel_for_ephi", "has_secure_sync_for_offline_ephi", "has_collects_telemetry_for_security_events",
+)}
+
 # ------------------------------------------------------------
 # Verdict engine
 # ------------------------------------------------------------
@@ -2128,6 +2706,10 @@ def compute_flag_verdict(flag_id: str, data: Dict[str, Any], features: Dict[str,
         has_feature = total > 0
         return {"state": "fail" if has_feature else "pass", "summary": f"{flag_id} = {'YES' if has_feature else 'NO'}", "notes": "MobSF reports android_insecure_random." if has_feature else "MobSF does not report android_insecure_random.", "evidence": evidence, "evidence_count_override": total}
 
+    dynamic_verdict = build_dynamic_flag_verdict(flag_id, features.get("dynamic_flags") or {})
+    if dynamic_verdict is not None:
+        return dynamic_verdict
+
     if flag_id.startswith("has_org_") or flag_id.startswith("has_defined_"):
         found, sources, org_evidence = find_org_evidence_for_flag(flag_id, features["org_index"], cfg)
         evidence.extend(org_evidence)
@@ -2257,6 +2839,7 @@ def build_outputs(cfg: Dict[str, Any], app_metadata: Dict[str, Any], data: Dict[
             "certificate_analysis": features["certificate_analysis"],
             "manifest_debuggable_signal": features["manifest_debuggable_signal"],
             "sca": features["sca"],
+            "dynamic_flags": features.get("dynamic_flags", {}),
         },
         "code_inventory": {
             path: {
@@ -2351,6 +2934,7 @@ def main() -> None:
         "org_index": build_org_text_index(data["source_texts"]),
         "sca": detect_sca_trivy(data),
     }
+    features["dynamic_flags"] = detect_dynamic_flags(data, features)
 
     fingerprint, output, trace = build_outputs(effective_cfg, app_metadata, data, features, groups)
 
