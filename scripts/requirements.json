@@ -8660,11 +8660,9 @@
       "Validation criteria": "Certificate Pinning Validation Test:\nTest: Verify the app only accepts connections to backend servers using the pinned certificates.\nExpected Result: The app rejects connections with unpinned or invalid certificates.\nFallback Handling Test:\nTest: Simulate a scenario where the pinned certificate is revoked or expired.\nExpected Result: The app fails securely and provides an appropriate error message to users.\nCleartext Traffic Prevention Test:\nTest: Attempt to establish a connection over HTTP instead of HTTPS.\nExpected Result: The app rejects the connection and logs the event.\nDynamic Certificate Update Test:\nTest: Replace the backend server certificate with an updated pinned certificate.\nExpected Result: The app seamlessly transitions to the new certificate without requiring user intervention.\nAudit of Trust Anchors:\nTest: Review the app's trust store to ensure it only includes pinned certificates or keys for trusted endpoints.\nExpected Result: Only the expected certificates or public keys are listed in the trust store.",
       "controles": "Mobile health applications must implement certificate pinning to restrict trusted certificates to a predefined set, ensuring secure communication with backend servers and mitigating risks from compromised Certificate Authorities.",
       "Flags": [
-		"has_tls_ssl_pinning_implemented",
-		"has_ssl_cert_pinning_implemented",
-		"has_android_ssl_pinning_present",
-		"has_android_ssl_pinning_detected",
-		"has_ssl_pinning_findings_severity_good"
+		"has_manifest_allow_clear_text_traffic_true",
+		"has_insecure_http_based_webview_communication",
+		"has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -11300,7 +11298,8 @@
       "Validation criteria": "Random Number Source Validation:\nTest: Inspect the application's random number generation methods to ensure the use of a secure generator like SecureRandom.\nExpected Result: The application consistently uses secure random number generators for all cryptographic operations.\nEntropy Verification:\nTest: Evaluate the entropy of generated random values using statistical tests to ensure high randomness.\nExpected Result: Random values exhibit high entropy and do not follow predictable patterns.\nKey Generation Audit:\nTest: Verify that all cryptographic keys are initialized using a secure random number generator.\nExpected Result: Keys are securely generated with no predictable or reused values.\nToken Security Test:\nTest: Analyze generated tokens or nonces for randomness and resistance to replay or guessing attacks.\nExpected Result: Tokens are unpredictable and unique for each session or operation.\nPenetration Testing for Randomness Weakness:\nTest: Conduct security testing to identify potential weaknesses in the application’s random value generation process.\nExpected Result: The application demonstrates resilience to attacks targeting randomness vulnerabilities.\nLogging and Monitoring of Randomness Failures:\nTest: Verify that the application logs and alerts on any detected failures in random number generation.\nExpected Result: Failures or abnormalities in randomness generation are logged and trigger security alerts.",
       "controles": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
       "Flags": [
-         "has_android_insecure_random_rng"
+        "has_android_insecure_random_rng",
+		"has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -11322,7 +11321,8 @@
       "Validation criteria": "Randomness Audit:\nTest: Verify that IVs or counters are generated using secure random number generators, such as SecureRandom.\nExpected Result: Generated IVs and counters exhibit cryptographic randomness and high entropy.\nReplay Attack Simulation:\nTest: Simulate a replay attack to ensure the application does not accept reused IVs or counters.\nExpected Result: The application rejects reused IVs or counters, ensuring data integrity.\nCode Review for Counter Reuse:\nTest: Conduct a thorough review of the codebase to ensure no instances of counter reuse exist.\nExpected Result: All counters and IVs are unique and securely generated for each operation.\nDynamic Encryption Testing:\nTest: Perform runtime testing of the encryption module to observe IV/counter generation during operations.\nExpected Result: Encryption consistently generates unique, random IVs or counters without reuse.\nIntegrity Validation Post-Encryption:\nTest: Verify the integrity and security of encrypted data when processed using CTR mode with generated IVs/counters.\nExpected Result: Data remains secure and resistant to cryptographic analysis or attacks.",
       "controles": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
       "Flags": [
-         "has_android_insecure_random_rng"
+        "has_android_insecure_random_rng",
+		"has_client_side_crypto_for_sensitive_data"
       ]
     }
   ]
