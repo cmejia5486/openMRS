@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ The contents of this file are subject to the OpenMRS Public License
   ~ Version 1.0 (the "License"); you may not use this file except in
   ~ compliance with the License. You may obtain a copy of the License at
@@ -34,10 +33,7 @@
     <string name="forgot_button_ok">Dismiss</string>
     <string name="login_offline">Offline</string>
     <string name="login_online">Online</string>
-    <string name="login_error">Error with login</string>
-    <string name="invalid_URL_message">Invalid URL</string>
 
-    <!-- AddEditPatient -->
     <string name="emptyerror">Required</string>
     <string name="fname_invalid_error">Given name cannot contain symbols or numbers</string>
     <string name="midname_invalid_error">Middle name cannot contain symbols or numbers</string>
@@ -55,15 +51,12 @@
     <string name="addr2_hint">Address Line 2</string>
     <string name="addr_invalid_error">Address cannot contain invalid characters</string>
     <string name="atleastone">Fill at least one address field</string>
+
     <string name="male">Male</string>
     <string name="female">Female</string>
     <string name="dob_hint">Date of Birth (dd/MM/yyyy)</string>
     <string name="estyr">Estimated Years</string>
     <string name="estmonth">Estimated Months</string>
-    <string name="age_out_of_bounds_message">Patient\'s age must be between 0 and %d</string>
-    <string name="register_patient_error">Patient cannot be registered due to server error</string>
-    <string name="update_patient_success">Patient %s updated</string>
-    <string name="update_patient_error">Patient %s cannot be updated due to server error</string>
 
     <!-- Offline Mode -->
     <string name="offline_mode_unsupported_in_first_login">Offline mode is not supported during first login.Enable online mode and then try again.</string>
@@ -120,6 +113,7 @@
     <string name="action_find_patients">Find Patients</string>
     <string name="action_synced_patients">Synced Patients</string>
     <string name="action_download_patients">Download Patients</string>
+    <string name="action_add_patients">Add Patients</string>
     <string name="search_patient_hint">Patient name</string>
     <string name="search_patient_no_results">No patients exist in database</string>
     <string name="search_patient_no_result_for_query">No results found for query \"%1$s\"</string>
@@ -143,8 +137,6 @@
     <string name="synchronize_patient_successful">Successfully synchronized patient data.</string>
     <string name="synchronize_patient_error">Synchronizing patient data was unsuccessful</string>
     <string name="synchronize_patient_network_error">Cannot synchronize in offline mode</string>
-    <string name="delete_patient_successful">Patient deleted successfully</string>
-    <string name="delete_patient_error">Error with deleting patient</string>
     <string name="get_patient_from_database_error">Failed to fetch patient from database</string>
     <string name="action_start_visit">Start visit</string>
     <string name="action_create_allergy">Create Allergy</string>
@@ -156,7 +148,6 @@
     <string name="patient_scroll_tab_charts_label">Charts</string>
     <string name="download_started">"Downloading…"</string>
     <string name="action_starting_visit">"Starting Visit"</string>
-    <string name="visit_start_error">Failed to start a visit</string>
 
     <!--SyncedPatient Activity-->
     <string name="patient_update_successful">Patient %1$s Updated</string>
@@ -179,7 +170,7 @@
     <string name="action_active_visits">Active Visits</string>
     <string name="action_form_entry">Form Entry</string>
     <string name="action_find_visits">Find Active Visits</string>
-    <string name="search_visits_no_results">No active visits in database</string>
+    <string name="search_visits_no_results">No visits in database</string>
 
     <!-- ACBase activity -->
     <string name="error_email_subject_app_crashed">OpenMRS android client crashed</string>
@@ -219,10 +210,6 @@
     <string name="list_visit_selector_show">show details</string>
     <string name="list_visit_selector_hide">hide details</string>
     <string name="visit_exp_list_empty">Visit has no encounters yet.</string>
-    <string name="visit_fetching_error">Error with fetching the visit</string>
-    <string name="visit_ending_not_online_error">Cannot end visit without internet connection or in offline mode</string>
-    <string name="visit_ending_error">Error ending this visit</string>
-    <string name="patient_not_yet_registered">Patient not yet registered, cannot create encounter.</string>
 
     <!-- Capture Vitals activity -->
     <string name="action_delete_patient">Delete Patient</string>
@@ -247,10 +234,6 @@
     <string name="patient_registered_locally">Patient registered locally</string>
     <string name="similar_patients_on_server">Similar patients exist on server</string>
     <string name="registration_core_info">To use faster and more accurate similar patient resolution, upgrade the Registration Core Module to 1.7 or higher</string>
-    <string name="patient_register_success">Patient registered successfully</string>
-    <string name="patient_register_fail">Failed to register the patient</string>
-    <string name="patient_merge_success">Patient merged successfully</string>
-    <string name="patient_merge_fail">Failed to merge the patient</string>
 
     <!--ChartsView Activity-->
     <string name="charts_view_toolbar_title">Charts View</string>
@@ -268,13 +251,13 @@
     <string name="invalid_login_or_password_message">Invalid login or password, please try again.</string>
     <string name="snackbar_no_internet_connection">No internet connection</string>
 
-    <!-- Permissions -->
-    <string name="permissions_camera_storage_rationale">Camera and storage write permissions are needed to capture and save a photo.</string>
-    <string name="permissions_camera_storage_denied">Camera or storage write permission was denied. Consider granting them to take a photo.</string>
-    <string name="permissions_camera_storage_neverask">Camera or storage write permission was denied with Never ask again.</string>
-    <string name="permission_storage_neverask">Storage write permission was denied with Never ask again, this permission is needed.</string>
+    <!--permissions-->
+    <string name="permission_camera_rationale">Camera permission is needed to capture photo.</string>
+    <string name="permission_camera_denied">Camera permission was denied. Please consider granting it in order to access the camera</string>
+    <string name="permission_camera_neverask">Camera permission was denied with never ask again</string>
     <string name="button_allow">Allow</string>
     <string name="button_deny">Deny</string>
+    <string name="patient_not_yet_registered">Patient not yet registered, cannot create encounter.</string>
 
     <!-- Layout strings -->
     <string name="sync">Sync</string>
@@ -299,6 +282,7 @@
     <string name="dialog_message_data_lost">All patient information entered will be lost.</string>
     <string name="dialog_button_stay">Stay</string>
     <string name="dialog_button_leave">Leave</string>
+    <string name="snackbar_nonvisitting_patients">Vitals can only be captured for patients currently in a visit.</string>
 
     <string name="logout_success">Logged out successfully!</string>
     <string name="url_privacy_policy">https://github.com/openmrs/openmrs-contrib-android-client/blob/master/privacy_policy.md#privacy-policy</string>
@@ -324,11 +308,14 @@
     <string name="action_find_providers">Find Providers</string>
     <string name="delete_provider_success_msg">Successfully deleted the provider!</string>
     <string name="delete_provider_failure_msg">Failed to delete provider.</string>
-    <string name="offline_provider_delete">Provider will be removed from the server when you\'re back online</string>
     <string name="first_name_hint">First Name</string>
     <string name="last_name_hint">Last Name</string>
     <string name="identifier_hint">Identifier</string>
     <string name="identifier_description">* Identifier can be anything. Eg. Doctor, Nurse, Clerk, etc</string>
+    <string name="add_provider_success_msg">Successfully added provider.</string>
+    <string name="add_provider_failure_msg">Failed to add provider.</string>
+    <string name="edit_provider_success_msg">Successfully edited provider.</string>
+    <string name="edit_provider_failure_msg">Failed to edit provider.</string>
     <string name="title_provider_info">Provider Info</string>
     <string name="dialog_provider_retired">Provider will be retired.</string>
     <string name="title_dialog_matching_provider">Found Similar Providers</string>
@@ -341,17 +328,10 @@
 
     <!--activity_provider_dashboard  -->
     <string name="surgeon">Surgeon</string>
-    <string name="providers_fetching_error">Error fetching providers</string>
-    <string name="providers_fetching_no_results">No providers found.</string>
-    <string name="offline_provider_fetch">offline providers fetched couldn\'t sync with the database device offline</string>
-
-    <!-- AddEditProvider -->
-    <string name="add_provider_success_msg">Successfully added provider.</string>
-    <string name="add_provider_failure_msg">Failed to add provider.</string>
-    <string name="edit_provider_success_msg">Successfully edited provider.</string>
-    <string name="edit_provider_failure_msg">Failed to edit provider.</string>
-    <string name="offline_provider_add">Provider will be synced to the server when device gets connected to network</string>
-    <string name="offline_provider_edit">Updated provider will be synced to the server when device gets connected to network</string>
+    <string name="offline_provider_fetch">offline providers fetched couldnt sync with the database device offline</string>
+    <string name="offline_provider_add">provider will be synced to the server when device gets connected to network</string>
+    <string name="offline_provider_edit">updated provider will be synced to the server when device gets connected to network</string>
+    <string name="offline_provider_delete">Provider will be removed from the server when you\'re back online</string>
 
     <!--fragment_patient_relationship-->
     <string name="provider_patient">Provider - Patient Relationship</string>
@@ -397,21 +377,22 @@
     <!--CustomFragment Dialog-->
     <string name="application_exit_logger_message">Exit application</string>
 
-    <!--FormDisplay-->
-    <string name="form_data_sync_is_off_message">Form submitted locally and can\'t be viewed now. Turn on sync and internet connection to upload it.</string>
-    <string name="form_data_submit_error">Form submission error</string>
-    <string name="invalid_inputs">Some inputs are invalid</string>
+    <!--FormDisplay presenter-->
+    <string name="form_data_will_be_synced_later_error_message">\"Patient not yet registered. No internet connection. Form data is saved locally and will sync when internet connection is restored. \"</string>
+    <string name="form_data_sync_is_off_message">Sync is off. Turn on sync to save form data.</string>
+
+    <!--FormDisplayPage Fragment-->
     <string name="all_fields_empty_error_message">All fields cannot be empty</string>
     <string name="no_such_form_name_error_message">There is no encounter type called %1$s</string>
 
-    <!--LastViewPatients Fragment-->
-    <string name="use_search_to_find_patients">Use the search button to find patients</string>
-    <string name="fetch_patients_remote_error">Error with loading patients</string>
-    <string name="search_patient_remote_error">Error with searching for the patient</string>
-    <string name="search_patient_remote_no_results">No patients found.</string>
-
     <!--LastViewedPatientRecyclerViewAdapter-->
     <string name="failed_fetching_patient_data_error_message">Failed to fetch patient data</string>
+
+    <!--Login Fragment-->
+    <string name="invalid_URL_message">Invalid URL</string>
+
+    <!--Login presenter-->
+    <string name="failed_fetching_visit_type_error_message">Failed to fetch visit type</string>
 
     <!--Logs Fragment-->
     <string name="logs_copied_to_clipboard_message">Logs copied to clipboard</string>
@@ -419,7 +400,7 @@
     <!--MergePatientsRecyclerView Adapter-->
     <string name="only_one_patient_can_be_selected_notification_message">You can select only one similar patient</string>
 
-    <!--PatientDashboardVisits-->
+    <!--PatinetDashboardVisits presenter-->
     <string name="offline_mode_not_supported">Cannot start a patient visit manually in offline mode.</string>
 
     <!--PatientRepository-->
@@ -481,33 +462,34 @@
     <string name="admission_fields_required">Please Select Required Field</string>
     <string name="admission_date">Admission Date :</string>
     <string name="admission_admitted_by">Admitted By :</string>
-    <string name="admission_encounter_role">Encounter Role :</string>
+    <string name="admission_provider_role">Provider Role :</string>
     <string name="admission_admitted_to">Admitted To :</string>
     <string name="admission_location_in_list" translatable="false">Admitted To %1$s</string>
     <string name="discharge_location_in_list" translatable="false">Discharged From %1$s</string>
-    <string name="form_submitted_successfully">Form submitted successfully, sync patient to view it.</string>
+    <string name="form_submitted_successfully" translatable="false">Form Submitted Successfully</string>
 
     <!--Marking Patient Deceased -->
-    <string name="mark_patient_deceased_no_concepts">Please add a valid deceased concept UUID and possible causes of death in the server</string>
+    <string name="no_death_concepts_in_server">Please add the possible causes of death in the server</string>
     <string name="mark_patient_deceased">Mark Patient Deceased?</string>
     <string name="mark_patient_deceased_notice">The patient will be marked deceased and no further visit will be possible.</string>
     <string name="mark_patient_deceased_proceed">Proceed</string>
+    <string name="mark_patient_deceased_invalid_uuid">Please add a valid concept UUID in the server </string>
+    <string name="mark_patient_deceased_concept_has_no_answer">No possible causes of death found for this setting</string>
     <string name="marked_patient_deceased_successfully">Patient is marked deceased — %1$s</string>
     <string name="cannot_start_visit_for_deceased">Cannot start visit for deceased patient</string>
 
     <!--Allergies -->
-    <string name="new_allergy_title">New Allergy</string>
-    <string name="update_allergy_title">Update Allergy</string>
     <string name="allergy_comment">Comment</string>
     <string name="allergy_severity">Severity</string>
     <string name="allergy_reactions">Reactions</string>
-    <string name="allergies_empty">Patient has no allergies, or hasn\'t been tested yet.</string>
+    <string name="empty_allergy_list">Patient has no allergies yet.</string>
     <string name="unable_to_fetch_allergies">Unable to get the latest recorded allergies!</string>
     <string name="delete_allergy_title">Delete %1$s?</string>
     <string name="delete_allergy_description">The patient\'s allergy will be removed from server. Are you sure you want to continue?</string>
     <string name="delete_allergy_success">Allergy successfully deleted.</string>
     <string name="delete_allergy_failure">Unable to delete allergy</string>
     <string name="delete_allergy_offline">Allergy will be removed from the server when you are back online.</string>
+    <string name="allergy_heading">New Allergy</string>
     <string name="choose_category">Choose\na category</string>
     <string name="allergen_drug">Drug</string>
     <string name="allergen_food">Food</string>
@@ -521,9 +503,8 @@
     <string name="create_allergy_title">Create Allergy?</string>
     <string name="create_allergy_description">The patient\'s allergy will be added to server. Are you sure you want to continue?</string>
     <string name="warning_select_allergen">Please select an Allergen before proceeding</string>
-    <string name="error_creating_allergy">An error or similar existing allergy may be found when submitting the allergy.</string>
+    <string name="error_creating_allergy">There was an unexpected error while creating the allergy. Please try again!</string>
     <string name="success_creating_allergy">Allergy successfully added.</string>
-    <string name="allergy_concepts_fetch_error">Error fetching allergy concepts from server</string>
     <string name="delete_allergy_dialog">Delete Allergy</string>
     <string name="update_allergy_dialog">Update Allergy</string>
     <string name="allergy_already_selected">Allergy already selected !</string>
@@ -536,5 +517,4 @@
     <string name="about_openmrs_1">OpenMRS is a global community of truly dedicated, talented, and generous contributors who build and maintain the OpenMRS platform and other, foundational OpenMRS technical products.</string>
     <string name="about_openmrs_2">OpenMRS is a platform that countries and implementers use to create a customized EMR system in response to actual needs on the ground.</string>
     <string name="more_about_openmrs"><![CDATA[more]]></string>
-
 </resources>

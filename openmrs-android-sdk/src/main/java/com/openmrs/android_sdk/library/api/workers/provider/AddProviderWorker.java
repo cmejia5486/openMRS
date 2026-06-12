@@ -14,35 +14,34 @@
 
 package com.openmrs.android_sdk.library.api.workers.provider;
 
-import java.io.IOException;
-
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedInject;
-import retrofit2.Response;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
-import androidx.hilt.work.HiltWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.openmrs.android_sdk.R;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.RestServiceBuilder;
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO;
+import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.models.Provider;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
+import java.io.IOException;
+
+import retrofit2.Response;
+
 /**
  * The type Add provider worker.
  */
-@HiltWorker
 public class AddProviderWorker extends Worker {
-    private final ProviderRoomDAO providerRoomDao;
-    private final RestApi restApi;
+    ProviderRoomDAO providerRoomDao;
+    RestApi restApi;
 
     /**
      * Instantiates a new Add provider worker.
@@ -50,13 +49,10 @@ public class AddProviderWorker extends Worker {
      * @param context      the context
      * @param workerParams the worker params
      */
-    @AssistedInject
-    public AddProviderWorker(@Assisted @NonNull Context context,
-                             @Assisted @NonNull WorkerParameters workerParams,
-                             ProviderRoomDAO providerRoomDao, RestApi restApi) {
+    public AddProviderWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
-        this.providerRoomDao = providerRoomDao;
-        this.restApi = restApi;
+        restApi = RestServiceBuilder.createService(RestApi.class);
+        providerRoomDao = AppDatabase.getDatabase(getApplicationContext()).providerRoomDAO();
     }
 
     @NonNull
@@ -73,7 +69,7 @@ public class AddProviderWorker extends Worker {
             if (addProvider(restApi, provider)) {
                 new Handler(Looper.getMainLooper()).post(() -> {
                     ToastUtil.success(OpenmrsAndroid.getInstance().getString(R.string.add_provider_success_msg));
-                    OpenmrsAndroid.getOpenMRSLogger().i(OpenmrsAndroid.getInstance().getString(R.string.add_provider_success_msg));
+                    OpenmrsAndroid.getOpenMRSLogger().e(OpenmrsAndroid.getInstance().getString(R.string.add_provider_success_msg));
                 });
                 return Result.success();
             } else {

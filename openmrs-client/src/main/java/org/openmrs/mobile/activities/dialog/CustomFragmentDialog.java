@@ -14,10 +14,6 @@
 
 package org.openmrs.mobile.activities.dialog;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -64,7 +60,6 @@ import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
-import org.openmrs.mobile.activities.addeditpatient.AddEditPatientFragment;
 import org.openmrs.mobile.activities.addeditpatient.SimilarPatientsRecyclerViewAdapter;
 import org.openmrs.mobile.activities.login.LoginActivity;
 import org.openmrs.mobile.activities.login.LoginFragment;
@@ -72,9 +67,13 @@ import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.visits.PatientVisitsFragment;
 import org.openmrs.mobile.activities.providerdashboard.ProviderDashboardActivity;
 import org.openmrs.mobile.activities.syncedpatients.SyncedPatientsActivity;
-import org.openmrs.mobile.activities.visitdashboard.VisitDashboardFragment;
+import org.openmrs.mobile.activities.visitdashboard.VisitDashboardActivity;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.bundle.CustomDialogBundle;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * General class for creating dialog fragment instances
@@ -118,7 +117,7 @@ public class CustomFragmentDialog extends DialogFragment {
         } else if (mCustomDialogBundle.hasPatientList()) {
             this.setStyle(DialogFragment.STYLE_NO_TITLE, R.style.SimilarPatients_DialogTheme);
         } else {
-            this.setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
+            this.setStyle(DialogFragment.STYLE_NO_TITLE, R.style.DialogTheme);
         }
         this.setRetainInstance(true);
     }
@@ -414,9 +413,7 @@ public class CustomFragmentDialog extends DialogFragment {
                     dismiss();
                     break;
                 case END_VISIT:
-                    ((VisitDashboardFragment) getParentFragmentManager()
-                            .findFragmentById(R.id.visitDashboardContentFrame))
-                            .endVisit();
+                    ((VisitDashboardActivity) getActivity()).presenter.endVisit();
                     dismiss();
                     break;
                 case START_VISIT:
@@ -424,28 +421,30 @@ public class CustomFragmentDialog extends DialogFragment {
                     dismiss();
                     break;
                 case REGISTER_PATIENT:
-                    ((AddEditPatientFragment) getParentFragmentManager()
-                            .findFragmentById(R.id.patientInfoContentFrame))
-                            .registerPatient();
+                    ((AddEditPatientActivity) getActivity()).mPresenter.registerPatient();
                     dismiss();
                     break;
                 case CANCEL_REGISTERING:
-                    ((AddEditPatientActivity) getActivity()).finish();
+                    ((AddEditPatientActivity) getActivity()).mPresenter.finishPatientInfoActivity();
                     dismiss();
                     break;
                 case DELETE_PATIENT:
-                    ((PatientDashboardActivity) getActivity()).deletePatient();
+                    PatientDashboardActivity activity = (PatientDashboardActivity) getActivity();
+                    activity.mPresenter.deletePatient();
                     dismiss();
+                    activity.finish();
                     break;
                 case DELETE_PROVIDER:
-                    ((ProviderDashboardActivity) getActivity()).deleteProvider();
+                    ProviderDashboardActivity providerDashboardActivity = (ProviderDashboardActivity) getActivity();
+                    providerDashboardActivity.mPresenter.deleteProvider();
                     dismiss();
+                    providerDashboardActivity.finish();
                     break;
                 case MULTI_DELETE_PATIENT:
                     SyncedPatientsActivity syncedPatientsActivity = (SyncedPatientsActivity) getActivity();
                     for (Patient patientItem : itemsToDelete) {
                         if (syncedPatientsActivity != null) {
-                            syncedPatientsActivity.deletePatient(patientItem);
+                            syncedPatientsActivity.presenter.deletePatient(patientItem);
                         }
                     }
                     dismiss();

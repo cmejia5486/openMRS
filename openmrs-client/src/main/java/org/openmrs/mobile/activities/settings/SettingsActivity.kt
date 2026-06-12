@@ -17,13 +17,10 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
 
-@AndroidEntryPoint
 class SettingsActivity : ACBaseActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -43,6 +40,8 @@ class SettingsActivity : ACBaseActivity() {
             addFragmentToActivity(supportFragmentManager,
                     settingsFragment, R.id.settingsContentFrame)
         }
+        // Create the presenter
+        SettingsPresenter(settingsFragment, mOpenMRSLogger)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
