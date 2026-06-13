@@ -536,8 +536,12 @@
       "controles": "If tampering or fraud is detected, the application backend server should take the appropriate action based on the integrity check result to implement preventive measures, block potential attacks, and help reduce abuse.",
       "Flags": [
         "has_protection_against_tampered_executables",
+<<<<<<< HEAD
         "has_backend_token_validation",
         "has_android_debuggable_enabled"
+=======
+        "has_backend_token_validation"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -1475,8 +1479,12 @@
       "controles": "The application must detect and mitigate interactions from untrustworthy environments, such as rooted or jailbroken devices, and ensure operation only on secure, verified Android-powered devices.",
       "Flags": [
         "has_protection_against_tampered_executables",
+<<<<<<< HEAD
         "has_device_access_policy_enforced",
         "has_android_debuggable_enabled"
+=======
+        "has_device_access_policy_enforced"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -5441,8 +5449,12 @@
         "has_soap_message_level_signatures",
         "has_uses_xml_signatures",
         "has_proper_ws_security_headers",
+<<<<<<< HEAD
         "has_soap_message_level_encryption",
         "has_data_format_strictly_controlled"
+=======
+        "has_soap_message_level_encryption"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -5710,7 +5722,11 @@
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
         "has_insecure_http_based_webview_communication",
+<<<<<<< HEAD
         "has_approved_ports_and_protocols"
+=======
+        "has_endpoint_requires_user_authentication"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -7711,8 +7727,12 @@
       "controles": "The mobile health application must integrate with the Play Integrity API to ensure that interactions and server requests originate from a legitimate, untampered app binary running on a genuine Android device.",
       "Flags": [
         "has_protection_against_tampered_executables",
+<<<<<<< HEAD
         "has_backend_token_validation",
         "has_android_debuggable_enabled"
+=======
+        "has_backend_token_validation"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -9942,8 +9962,12 @@
         "has_clears_local_data_on_uninstall",
         "has_android_read_write_external_storage",
         "has_uses_encrypted_filesystem_storage",
+<<<<<<< HEAD
         "has_android_extra_risky_permissions_present",
         "has_encrypted_local_caching_of_ephi"
+=======
+        "has_android_extra_risky_permissions_present"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -10161,7 +10185,11 @@
       "Validation criteria": "Temporary File Deletion on Termination:\nTest: Terminate the application and inspect the designated temporary file directories.\nExpected result: No temporary files created by the application remain accessible after termination.\nSecure Deletion Method:\nTest: Verify that temporary files are securely deleted, not merely unlinked, to prevent data recovery.\nExpected result: Deleted temporary files cannot be recovered using standard data recovery tools.\nRuntime File Management:\nTest: Ensure that the application removes unnecessary temporary files during runtime as soon as they are no longer needed.\nExpected result: Temporary files are deleted immediately after use to minimize risk.\nLogging and Debug Data Clearance:\nTest: Verify that no sensitive debug or log data remains in temporary file locations post-termination.\nExpected result: All debug and log data is securely removed.\nPlatform Compliance:\nTest: Confirm that the app adheres to platform-specific guidelines for temporary file storage and removal (e.g., Android cache directories, iOS sandboxing rules).\nExpected result: Temporary file handling complies with platform security best practices.",
       "controles": "Ensure the mobile health application removes all temporary files upon termination to prevent unauthorized access to sensitive data.",
       "Flags": [
+<<<<<<< HEAD
         "has_dynamic_storage_evidence"
+=======
+        "has_clears_local_session_data_on_logout"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -11093,7 +11121,13 @@
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
         "has_insecure_http_based_webview_communication",
+<<<<<<< HEAD
         "has_approved_ports_and_protocols"
+=======
+        "has_endpoint_requires_user_authentication",
+        "has_android_ssl_pinning_present",
+        "has_android_ssl_pinning_detected"
+>>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
