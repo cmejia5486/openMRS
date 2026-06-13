@@ -14,17 +14,20 @@
 
 package org.openmrs.mobile.activities.providermanagerdashboard.addprovider;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 
-    public class AddProviderActivity extends ACBaseActivity {
-
-        private AddProviderPresenter mPresenter;
-        AddProviderFragment addProviderFragment;
+public class AddProviderActivity extends ACBaseActivity {
+    AddProviderFragment addProviderFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,25 +38,20 @@ import org.openmrs.mobile.activities.ACBaseActivity;
         if (actionBar != null) {
             getSupportActionBar().setElevation(0);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle(R.string.title_provider_info);
         }
 
         // Create fragment
         addProviderFragment =
-                (AddProviderFragment) getSupportFragmentManager().findFragmentById(R.id.activity_add_provider_content_frame);
+            (AddProviderFragment) getSupportFragmentManager().findFragmentById(R.id.activity_add_provider_content_frame);
         if (addProviderFragment == null) {
             addProviderFragment = AddProviderFragment.newInstance();
         }
         if (!addProviderFragment.isActive()) {
             addFragmentToActivity(getSupportFragmentManager(),
-                    addProviderFragment, R.id.activity_add_provider_content_frame);
+                addProviderFragment, R.id.activity_add_provider_content_frame);
         }
 
-        if (savedInstanceState != null) {
-
-            mPresenter = new AddProviderPresenter(addProviderFragment);
-        } else {
-            mPresenter = new AddProviderPresenter(addProviderFragment);
-        }
-
+        AddProviderPresenter mPresenter = new AddProviderPresenter(addProviderFragment);
     }
 }

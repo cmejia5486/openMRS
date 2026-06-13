@@ -14,19 +14,19 @@
 
 package org.openmrs.mobile.activities.patientdashboard.details;
 
+import com.openmrs.android_sdk.library.dao.PatientDAO;
+import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.DefaultResponseCallback;
+import com.openmrs.android_sdk.library.listeners.retrofitcallbacks.DownloadPatientCallback;
+import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.utilities.NetworkUtils;
+
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardMainPresenterImpl;
-import org.openmrs.mobile.api.repository.PatientRepository;
-import org.openmrs.mobile.api.repository.VisitRepository;
-import org.openmrs.mobile.dao.PatientDAO;
-import org.openmrs.mobile.listeners.retrofit.DefaultResponseCallbackListener;
-import org.openmrs.mobile.listeners.retrofit.DownloadPatientCallbackListener;
-import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.utilities.NetworkUtils;
+import com.openmrs.android_sdk.library.api.repository.PatientRepository;
+import com.openmrs.android_sdk.library.api.repository.VisitRepository;
 
 public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresenterImpl implements PatientDashboardContract.PatientDetailsPresenter {
-
     private PatientDashboardContract.ViewPatientDetails mPatientDetailsView;
     private VisitRepository visitRepository;
     private PatientRepository patientRepository;
@@ -55,20 +55,19 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
 
     @Override
     public void synchronizePatient() {
-        if(NetworkUtils.isOnline()) {
+        if (NetworkUtils.isOnline()) {
             mPatientDetailsView.showDialog(R.string.action_synchronize_patients);
             syncDetailsData();
             syncVisitsData();
             syncVitalsData();
-        }
-        else {
+        } else {
             reloadPatientData(mPatient);
             mPatientDetailsView.showToast(R.string.synchronize_patient_network_error, true);
         }
-      }
+    }
 
-    public void updatePatientDataFromServer(){
-        if(NetworkUtils.isOnline()) {
+    public void updatePatientDataFromServer() {
+        if (NetworkUtils.isOnline()) {
             syncDetailsData();
             syncVisitsData();
             syncVitalsData();
@@ -98,21 +97,20 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
         if (!NetworkUtils.isOnline()) {
             mPatientDetailsView.attachSnackbarToActivity();
         }
-
     }
 
     /*
-    * Sync Vitals
-    */
+     * Sync Vitals
+     */
     private void syncVitalsData() {
         visitRepository.syncLastVitals(mPatient.getUuid());
     }
 
     /*
-    * Sync Visits
-    */
+     * Sync Visits
+     */
     private void syncVisitsData() {
-        visitRepository.syncVisitsData(mPatient, new DefaultResponseCallbackListener() {
+        visitRepository.syncVisitsData(mPatient, new DefaultResponseCallback() {
             @Override
             public void onResponse() {
                 mPatientDetailsView.showToast(R.string.synchronize_patient_successful, false);
@@ -128,10 +126,10 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
     }
 
     /*
-    * Download Patient
-    */
+     * Download Patient
+     */
     private void syncDetailsData() {
-        patientRepository.downloadPatientByUuid(mPatient.getUuid(), new DownloadPatientCallbackListener() {
+        patientRepository.downloadPatientByUuid(mPatient.getUuid(), new DownloadPatientCallback() {
             @Override
             public void onPatientDownloaded(Patient patient) {
                 updatePatientData(patient);
@@ -146,11 +144,11 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
             public void onResponse() {
                 // This method is intentionally empty
             }
+
             @Override
             public void onErrorResponse(String errorMessage) {
                 mPatientDetailsView.showToast(R.string.synchronize_patient_error, true);
             }
         });
     }
-
 }

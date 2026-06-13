@@ -1,38 +1,48 @@
 package org.openmrs.mobile.services;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.IBinder;
-
-import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.settings.SettingsActivity;
-import org.openmrs.mobile.api.RestApi;
-import org.openmrs.mobile.api.RestServiceBuilder;
-import org.openmrs.mobile.dao.ConceptDAO;
-import org.openmrs.mobile.models.Concept;
-import org.openmrs.mobile.models.Link;
-import org.openmrs.mobile.models.Results;
-import org.openmrs.mobile.models.SystemSetting;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-
-import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.openmrs.android_sdk.library.databases.entities.ConceptEntity;
+import com.openmrs.android_sdk.library.models.Link;
+import com.openmrs.android_sdk.library.models.Results;
+import com.openmrs.android_sdk.library.models.SystemSetting;
+
+import org.openmrs.mobile.R;
+import org.openmrs.mobile.activities.settings.SettingsActivity;
+import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.RestServiceBuilder;
+import org.openmrs.mobile.application.OpenMRS;
+import com.openmrs.android_sdk.library.dao.ConceptRoomDAO;
+import com.openmrs.android_sdk.library.databases.AppDatabase;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
+
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.openmrs.android_sdk.utilities.ApplicationConstants.ConceptDownloadService.CHANNEL_DESC;
+import static com.openmrs.android_sdk.utilities.ApplicationConstants.ConceptDownloadService.CHANNEL_ID;
+import static com.openmrs.android_sdk.utilities.ApplicationConstants.ConceptDownloadService.CHANNEL_NAME;
+
 public class ConceptDownloadService extends Service {
-
     private int downloadedConcepts;
-
     private int maxConceptsInOneQuery = 100;
 
     @Override
@@ -77,10 +87,17 @@ public class ConceptDownloadService extends Service {
                 downloadConcepts(0);
             }
         });
-
     }
 
     private void showNotification(int downloadedConcepts) {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channelPayment = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
+            channelPayment.setDescription(CHANNEL_DESC);
+            notificationManager.createNotificationChannel(channelPayment);
+        }
+
         Intent notificationIntent = new Intent(this, SettingsActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         notificationIntent.putExtra(ApplicationConstants.BroadcastActions.CONCEPT_DOWNLOAD_BROADCAST_INTENT_KEY_COUNT, downloadedConcepts);
@@ -88,13 +105,12 @@ public class ConceptDownloadService extends Service {
 
         Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_openmrs);
 
-        Notification notification = new NotificationCompat.Builder(this)
-                .setContentTitle("Downloading Concepts")
-                .setTicker("OpenMRS Android Client")
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(getString(R.string.downloading_concepts_notification_message))
+                .setTicker(getString(R.string.app_name))
                 .setContentText(String.valueOf(downloadedConcepts))
                 .setSmallIcon(R.drawable.ic_stat_notify_download)
-                .setLargeIcon(
-                        Bitmap.createScaledBitmap(icon, 128, 128, false))
+                .setLargeIcon(Bitmap.createScaledBitmap(icon, 128, 128, false))
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
                 .build();
@@ -104,15 +120,15 @@ public class ConceptDownloadService extends Service {
 
     private void downloadConcepts(int startIndex) {
         RestApi service = RestServiceBuilder.createService(RestApi.class);
-        Call<Results<Concept>> call = service.getConcepts(maxConceptsInOneQuery, startIndex);
-        call.enqueue(new Callback<Results<Concept>>() {
+        Call<Results<ConceptEntity>> call = service.getConcepts(maxConceptsInOneQuery, startIndex);
+        call.enqueue(new Callback<Results<ConceptEntity>>() {
             @Override
-            public void onResponse(@NonNull Call<Results<Concept>> call, @NonNull Response<Results<Concept>> response) {
+            public void onResponse(@NonNull Call<Results<ConceptEntity>> call, @NonNull Response<Results<ConceptEntity>> response) {
                 if (response.isSuccessful()) {
-                    ConceptDAO conceptDAO = new ConceptDAO();
+                    ConceptRoomDAO conceptDAO = AppDatabase.getDatabase(OpenMRS.getInstance().getApplicationContext()).conceptRoomDAO();
                     if (response.body() != null) {
-                        for (Concept concept : response.body().getResults()) {
-                            conceptDAO.saveOrUpdate(concept);
+                        for (ConceptEntity concept : response.body().getResults()) {
+                            conceptDAO.addConcept(concept);
                             downloadedConcepts++;
                         }
                     }
@@ -139,7 +155,7 @@ public class ConceptDownloadService extends Service {
             }
 
             @Override
-            public void onFailure(@NonNull Call<Results<Concept>> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<Results<ConceptEntity>> call, @NonNull Throwable t) {
                 stopSelf();
             }
         });

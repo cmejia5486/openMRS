@@ -14,20 +14,18 @@
 
 package org.openmrs.mobile.activities.login;
 
+import androidx.annotation.NonNull;
+
+import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
+import com.openmrs.android_sdk.utilities.ToastUtil;
+
 import org.openmrs.mobile.activities.BasePresenterContract;
 import org.openmrs.mobile.activities.BaseView;
-import org.openmrs.mobile.models.Location;
-import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.util.List;
 
-import androidx.annotation.NonNull;
-
 public interface LoginContract {
-
     interface View extends BaseView<Presenter> {
-
-
         void hideSoftKeys();
 
         void setPresenter(@NonNull Presenter presenter);
@@ -46,6 +44,8 @@ public interface LoginContract {
 
         void showInvalidURLSnackbar(String message);
 
+        void showInvalidURLSnackbar(int messageID);
+
         void showInvalidLoginOrPasswordSnackbar();
 
         void setLocationErrorOccurred(boolean errorOccurred);
@@ -54,25 +54,22 @@ public interface LoginContract {
 
         void showToast(int textId, ToastUtil.ToastType toastType);
 
-        void initLoginForm(List<Location> locationList, String url);
+        void initLoginForm(List<LocationEntity> locationList, String url);
 
         void userAuthenticated();
 
         void startFormListService();
-
     }
 
     interface Presenter extends BasePresenterContract {
-
         void authenticateUser(final String username, final String password, final String url);
 
         void authenticateUser(final String username, final String password, final String url, boolean wipeDatabase);
 
         void login(String username, String password, String url, String oldUrl);
 
-        void saveLocationsToDatabase(List<Location> locationList, String selectedLocation);
+        void saveLocationsToDatabase(List<LocationEntity> locationList, String selectedLocation);
 
         void loadLocations(String url);
-
     }
 }

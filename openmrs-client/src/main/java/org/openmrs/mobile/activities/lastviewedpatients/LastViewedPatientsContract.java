@@ -18,14 +18,12 @@ import android.os.Bundle;
 
 import org.openmrs.mobile.activities.BasePresenterContract;
 import org.openmrs.mobile.activities.BaseView;
-import org.openmrs.mobile.models.Patient;
+import com.openmrs.android_sdk.library.models.Patient;
 
 import java.util.List;
 
 public interface LastViewedPatientsContract {
-
     interface View extends BaseView<Presenter> {
-
         void enableSwipeRefresh(boolean enabled);
 
         void setProgressBarVisibility(boolean visibility);
@@ -52,7 +50,6 @@ public interface LastViewedPatientsContract {
     }
 
     interface Presenter extends BasePresenterContract {
-
         void refresh();
 
         void updateLastViewedList(String query);

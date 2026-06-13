@@ -19,59 +19,70 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseActivity;
-import org.openmrs.mobile.activities.lastviewedpatients.LastViewedPatientsActivity;
-import org.openmrs.mobile.application.OpenMRS;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.StringUtils;
-
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.widget.SearchView;
 
-public class SyncedPatientsActivity extends ACBaseActivity {
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
+import com.openmrs.android_sdk.utilities.StringUtils;
 
-    public SyncedPatientsPresenter mPresenter;
+import org.jetbrains.annotations.NotNull;
+import org.openmrs.mobile.R;
+import org.openmrs.mobile.activities.ACBaseActivity;
+import org.openmrs.mobile.activities.lastviewedpatients.LastViewedPatientsActivity;
+import org.openmrs.mobile.databinding.ActivityFindPatientsBinding;
+
+public class SyncedPatientsActivity extends ACBaseActivity {
+    public SyncedPatientsPresenter presenter;
     private SearchView searchView;
     private String query;
-
-    //Menu Items
-    private MenuItem mAddPatientMenuItem;
+    private MenuItem addPatientMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_find_patients);
+
+        ActivityFindPatientsBinding binding = ActivityFindPatientsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             getSupportActionBar().setElevation(0);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle(R.string.action_synced_patients);
         }
 
         // Create fragment
         SyncedPatientsFragment syncedPatientsFragment =
-                (SyncedPatientsFragment) getSupportFragmentManager().findFragmentById(R.id.syncedPatientsContentFrame);
+            (SyncedPatientsFragment) getSupportFragmentManager().findFragmentById(R.id.syncedPatientsContentFrame);
         if (syncedPatientsFragment == null) {
             syncedPatientsFragment = SyncedPatientsFragment.newInstance();
         }
         if (!syncedPatientsFragment.isActive()) {
             addFragmentToActivity(getSupportFragmentManager(),
-                    syncedPatientsFragment, R.id.syncedPatientsContentFrame);
+                syncedPatientsFragment, R.id.syncedPatientsContentFrame);
         }
 
-        if(savedInstanceState != null){
+        if (savedInstanceState != null) {
             query = savedInstanceState.getString(ApplicationConstants.BundleKeys.PATIENT_QUERY_BUNDLE, "");
-            mPresenter = new SyncedPatientsPresenter(syncedPatientsFragment, query);
+            presenter = new SyncedPatientsPresenter(syncedPatientsFragment, query);
         } else {
-            mPresenter = new SyncedPatientsPresenter(syncedPatientsFragment);
+            presenter = new SyncedPatientsPresenter(syncedPatientsFragment);
         }
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NotNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        String query = searchView.getQuery().toString();
-        outState.putString(ApplicationConstants.BundleKeys.PATIENT_QUERY_BUNDLE, query);
+
+        /*
+         * searchView takes up null value in dark mode of operation in absence of ActionBar
+         * thus onCreateOptionsMenu never gets called
+         */
+        if (searchView != null) {
+            String query = searchView.getQuery().toString();
+            outState.putString(ApplicationConstants.BundleKeys.PATIENT_QUERY_BUNDLE, query);
+        }
     }
 
     @Override
@@ -80,7 +91,7 @@ public class SyncedPatientsActivity extends ACBaseActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.syncbutton:
-                enableAddPatient(OpenMRS.getInstance().getSyncState());
+                enableAddPatient(OpenmrsAndroid.getSyncState());
                 break;
             case R.id.actionAddPatients:
                 Intent intent = new Intent(this, LastViewedPatientsActivity.class);
@@ -101,14 +112,13 @@ public class SyncedPatientsActivity extends ACBaseActivity {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.find_locally_and_add_patients_menu, menu);
 
-        mAddPatientMenuItem = menu.findItem(R.id.actionAddPatients);
-        enableAddPatient(OpenMRS.getInstance().getSyncState());
+        addPatientMenuItem = menu.findItem(R.id.actionAddPatients);
+        enableAddPatient(OpenmrsAndroid.getSyncState());
 
-        // Search function
         MenuItem searchMenuItem = menu.findItem(R.id.actionSearchLocal);
         searchView = (SearchView) searchMenuItem.getActionView();
 
-        if(StringUtils.notEmpty(query)){
+        if (StringUtils.notEmpty(query)) {
             searchMenuItem.expandActionView();
             searchView.setQuery(query, true);
             searchView.clearFocus();
@@ -122,8 +132,8 @@ public class SyncedPatientsActivity extends ACBaseActivity {
 
             @Override
             public boolean onQueryTextChange(String query) {
-                mPresenter.setQuery(query);
-                mPresenter.updateLocalPatientsList();
+                presenter.setQuery(query);
+                presenter.updateLocalPatientsList();
                 return true;
             }
         });
@@ -133,8 +143,7 @@ public class SyncedPatientsActivity extends ACBaseActivity {
 
     private void enableAddPatient(boolean enabled) {
         int resId = enabled ? R.drawable.ic_add : R.drawable.ic_add_disabled;
-        mAddPatientMenuItem.setEnabled(enabled);
-        mAddPatientMenuItem.setIcon(resId);
+        addPatientMenuItem.setEnabled(enabled);
+        addPatientMenuItem.setIcon(resId);
     }
-
 }

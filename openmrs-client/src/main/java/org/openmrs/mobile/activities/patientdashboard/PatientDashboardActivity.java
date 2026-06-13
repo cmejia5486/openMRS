@@ -19,20 +19,29 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Menu;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.appcompat.app.ActionBar;
+import androidx.fragment.app.Fragment;
+import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 
+import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
+import org.openmrs.mobile.activities.addeditallergy.AddEditAllergyActivity;
 import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
+import org.openmrs.mobile.activities.patientdashboard.allergy.PatientAllergyFragment;
+import org.openmrs.mobile.activities.patientdashboard.allergy.PatientDashboardAllergyPresenter;
 import org.openmrs.mobile.activities.patientdashboard.charts.PatientChartsFragment;
 import org.openmrs.mobile.activities.patientdashboard.charts.PatientDashboardChartsPresenter;
 import org.openmrs.mobile.activities.patientdashboard.details.PatientDashboardDetailsPresenter;
@@ -43,29 +52,30 @@ import org.openmrs.mobile.activities.patientdashboard.visits.PatientDashboardVis
 import org.openmrs.mobile.activities.patientdashboard.visits.PatientVisitsFragment;
 import org.openmrs.mobile.activities.patientdashboard.vitals.PatientDashboardVitalsPresenter;
 import org.openmrs.mobile.activities.patientdashboard.vitals.PatientVitalsFragment;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.ImageUtils;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import org.openmrs.mobile.utilities.TabUtil;
-
-import androidx.fragment.app.Fragment;
-import androidx.viewpager.widget.ViewPager;
+import org.openmrs.mobile.utilities.ThemeUtils;
 
 public class PatientDashboardActivity extends ACBaseActivity {
-
     private String mId;
-
     public PatientDashboardContract.PatientDashboardMainPresenter mPresenter;
-
-    static boolean isActionFABOpen = false;
+    public boolean isActionFABOpen = false;
     public static FloatingActionButton additionalActionsFAB, updateFAB, deleteFAB;
-    public static LinearLayout deleteFabLayout, updateFabLayout;
+    public LinearLayout deleteFabLayout, updateFabLayout;
     public static Resources resources;
+    ViewPager viewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_patient_dashboard);
-        getSupportActionBar().setElevation(0);
+        viewPager = findViewById(R.id.pager);
+
+        ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null) {
+            getSupportActionBar().setElevation(0);
+            getSupportActionBar().setTitle(R.string.app_name);
+        }
         Bundle patientBundle = savedInstanceState;
         if (null != patientBundle) {
             patientBundle.getString(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE);
@@ -80,18 +90,18 @@ public class PatientDashboardActivity extends ACBaseActivity {
     }
 
     @Override
-    public void onAttachFragment(Fragment fragment) {
+    public void onAttachFragment(@NotNull Fragment fragment) {
         attachPresenterToFragment(fragment);
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NotNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE, mId);
     }
 
     @Override
-    public void onConfigurationChanged(final Configuration config) {
+    public void onConfigurationChanged(@NotNull final Configuration config) {
         super.onConfigurationChanged(config);
         TabUtil.setHasEmbeddedTabs(getSupportActionBar(), getWindowManager(), TabUtil.MIN_SCREEN_WIDTH_FOR_PATIENTDASHBOARDACTIVITY);
     }
@@ -115,11 +125,36 @@ public class PatientDashboardActivity extends ACBaseActivity {
     }
 
     private void initViewPager(PatientDashboardPagerAdapter adapter) {
-        final ViewPager viewPager = findViewById(R.id.pager);
         TabLayout tabHost = findViewById(R.id.tabhost);
+        if(ThemeUtils.isDarkModeActivated()) {
+            tabHost.setBackgroundColor(getResources().getColor(R.color.black_dark_mode));
+        }
         viewPager.setOffscreenPageLimit(adapter.getCount() - 1);
         viewPager.setAdapter(adapter);
         tabHost.setupWithViewPager(viewPager);
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                if(position == 1) {
+                    additionalActionsFAB.hide();
+                    additionalActionsFAB.setImageResource(R.drawable.ic_add);
+                }
+                else {
+                    additionalActionsFAB.setImageResource(R.drawable.ic_edit_white_24dp);
+                }
+                additionalActionsFAB.show();
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
     }
 
     private void attachPresenterToFragment(Fragment fragment) {
@@ -135,28 +170,32 @@ public class PatientDashboardActivity extends ACBaseActivity {
             mPresenter = new PatientDashboardVitalsPresenter(id, ((PatientVitalsFragment) fragment));
         } else if (fragment instanceof PatientChartsFragment) {
             mPresenter = new PatientDashboardChartsPresenter(id, ((PatientChartsFragment) fragment));
+        } else if (fragment instanceof PatientAllergyFragment) {
+            mPresenter = new PatientDashboardAllergyPresenter(id, ((PatientAllergyFragment) fragment));
         }
     }
 
-    public void setBackdropImage(Bitmap backdropImage, String patientName) {
-        ImageView imageView = findViewById(R.id.activity_patient_dashboard_backdrop);
-        imageView.setImageBitmap(backdropImage);
-        imageView.setOnClickListener(view -> ImageUtils.showPatientPhoto(this, backdropImage, patientName));
-    }
-
     public void setupUpdateDeleteActionFAB() {
-        additionalActionsFAB = findViewById(R.id.activity_patient_dashboard_action_fab);
-        updateFAB = findViewById(R.id.activity_patient_dashboard_update_fab);
-        deleteFAB = findViewById(R.id.activity_patient_dashboard_delete_fab);
+        additionalActionsFAB = findViewById(R.id.activity_dashboard_action_fab);
+        updateFAB = findViewById(R.id.activity_dashboard_update_fab);
+        deleteFAB = findViewById(R.id.activity_dashboard_delete_fab);
         updateFabLayout = findViewById(R.id.custom_fab_update_ll);
         deleteFabLayout = findViewById(R.id.custom_fab_delete_ll);
 
         additionalActionsFAB.setOnClickListener(v -> {
-            animateFAB(isActionFABOpen);
-            if (!isActionFABOpen) {
-                showFABMenu();
+            int position = viewPager.getCurrentItem();
+            if(position == 1) {
+                Intent intent = new Intent(this, AddEditAllergyActivity.class);
+                intent.putExtra(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE, mPresenter.getPatientId());
+                intent.putExtra(ApplicationConstants.BundleKeys.ALLERGY_UUID, ApplicationConstants.EMPTY_STRING);
+                startActivity(intent);
             } else {
-                closeFABMenu();
+                animateFAB(isActionFABOpen);
+                if (!isActionFABOpen) {
+                    showFABMenu();
+                } else {
+                    closeFABMenu();
+                }
             }
         });
 
@@ -164,7 +203,17 @@ public class PatientDashboardActivity extends ACBaseActivity {
         updateFAB.setOnClickListener(v -> startPatientUpdateActivity(mPresenter.getPatientId()));
     }
 
-    public static void showFABMenu() {
+    @Override
+    public void showNoInternetConnectionSnackbar() {
+        mSnackbar = Snackbar.make(additionalActionsFAB,
+            getString(R.string.no_internet_connection_message), Snackbar.LENGTH_INDEFINITE);
+        View sbView = mSnackbar.getView();
+        TextView textView = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
+        textView.setTextColor(Color.WHITE);
+        mSnackbar.show();
+    }
+
+    public void showFABMenu() {
         isActionFABOpen = true;
         deleteFabLayout.setVisibility(View.VISIBLE);
         updateFabLayout.setVisibility(View.VISIBLE);
@@ -172,7 +221,7 @@ public class PatientDashboardActivity extends ACBaseActivity {
         updateFabLayout.animate().translationY(-resources.getDimension(R.dimen.custom_fab_bottom_margin_105));
     }
 
-    public static void closeFABMenu() {
+    public void closeFABMenu() {
         isActionFABOpen = false;
         deleteFabLayout.animate().translationY(0);
         updateFabLayout.animate().translationY(0);
@@ -183,7 +232,7 @@ public class PatientDashboardActivity extends ACBaseActivity {
     public void startPatientUpdateActivity(long patientId) {
         Intent updatePatient = new Intent(this, AddEditPatientActivity.class);
         updatePatient.putExtra(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE,
-                String.valueOf(patientId));
+            String.valueOf(patientId));
         startActivity(updatePatient);
     }
 
@@ -193,7 +242,7 @@ public class PatientDashboardActivity extends ACBaseActivity {
      * @param hide To hide the FAB menu depending on the Fragment visible
      */
     @SuppressLint("RestrictedApi")
-    public static void hideFABs(boolean hide) {
+    public void hideFABs(boolean hide) {
         closeFABMenu();
         if (hide) {
             additionalActionsFAB.setVisibility(View.GONE);
@@ -203,7 +252,7 @@ public class PatientDashboardActivity extends ACBaseActivity {
             // will animate back the icon back to its original angle instantaneously
             ObjectAnimator.ofFloat(additionalActionsFAB, "rotation", 180f, 0f).setDuration(0).start();
             additionalActionsFAB.setImageDrawable(resources
-                    .getDrawable(R.drawable.ic_edit_white_24dp));
+                .getDrawable(R.drawable.ic_edit_white_24dp));
         }
     }
 
@@ -212,14 +261,13 @@ public class PatientDashboardActivity extends ACBaseActivity {
             ObjectAnimator.ofFloat(additionalActionsFAB, "rotation", 0f, 180f).setDuration(500).start();
             final Handler handler = new Handler();
             handler.postDelayed(() -> additionalActionsFAB.setImageDrawable(resources
-                    .getDrawable(R.drawable.ic_close_white_24dp)), 400);
+                .getDrawable(R.drawable.ic_close_white_24dp)), 400);
         } else {
             ObjectAnimator.ofFloat(additionalActionsFAB, "rotation", 180f, 0f).setDuration(500).start();
 
             final Handler handler = new Handler();
             handler.postDelayed(() -> additionalActionsFAB.setImageDrawable(resources
-                    .getDrawable(R.drawable.ic_edit_white_24dp)), 400);
+                .getDrawable(R.drawable.ic_edit_white_24dp)), 400);
         }
-
     }
 }

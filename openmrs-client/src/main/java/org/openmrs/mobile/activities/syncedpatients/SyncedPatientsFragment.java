@@ -29,52 +29,57 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.google.android.material.snackbar.Snackbar;
 
+import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseFragment;
 import org.openmrs.mobile.activities.lastviewedpatients.LastViewedPatientsActivity;
-import org.openmrs.mobile.application.OpenMRS;
-import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.utilities.FontsUtil;
-import org.openmrs.mobile.utilities.NetworkUtils;
+import org.openmrs.mobile.databinding.FragmentSyncedPatientsBinding;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SyncedPatientsFragment extends ACBaseFragment<SyncedPatientsContract.Presenter> implements SyncedPatientsContract.View {
-
-    // Fragment components
-    private TextView mEmptyList;
-    private RecyclerView mSyncedPatientRecyclerView;
-
-    //Initialization Progress bar
-    private ProgressBar mProgressBar;
-
-    private MenuItem mAddPatientMenuItem;
+    private FragmentSyncedPatientsBinding binding = null;
+    private TextView emptyList;
+    private RecyclerView syncedPatientRecyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar progressBar;
+    private MenuItem addPatientMenuItem;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_synced_patients, container, false);
+        binding = FragmentSyncedPatientsBinding.inflate(inflater,container,false);
 
-        // Patient list config
-        mSyncedPatientRecyclerView = root.findViewById(R.id.syncedPatientRecyclerView);
-        mSyncedPatientRecyclerView.setHasFixedSize(true);
-        mSyncedPatientRecyclerView.setAdapter(new SyncedPatientsRecyclerViewAdapter(this,
-                new ArrayList<>()));
-        mSyncedPatientRecyclerView.setVisibility(View.GONE);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(root.getContext());
-        mSyncedPatientRecyclerView.setLayoutManager(linearLayoutManager);
+        syncedPatientRecyclerView = binding.syncedPatientRecyclerView;
+        syncedPatientRecyclerView.setHasFixedSize(true);
+        syncedPatientRecyclerView.setAdapter(new SyncedPatientsRecyclerViewAdapter(this, new ArrayList<>()));
+        syncedPatientRecyclerView.setVisibility(View.GONE);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(binding.getRoot().getContext());
+        syncedPatientRecyclerView.setLayoutManager(linearLayoutManager);
 
-        mEmptyList = root.findViewById(R.id.emptySyncedPatientList);
-        mProgressBar = root.findViewById(R.id.syncedPatientsInitialProgressBar);
+        emptyList = binding.emptySyncedPatientList;
+        progressBar = binding.syncedPatientsInitialProgressBar;
 
-        // Font config
-        FontsUtil.setFont(this.getActivity().findViewById(android.R.id.content));
+        swipeRefreshLayout = binding.swipeLayout;
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            refreshUI();
+            swipeRefreshLayout.setRefreshing(false);
+        });
+        return binding.getRoot();
+    }
 
-        return root;
+    private void refreshUI() {
+        progressBar.setVisibility(View.VISIBLE);
+        syncedPatientRecyclerView.setVisibility(View.GONE);
+        mPresenter.updateLocalPatientsList();
     }
 
     @Override
@@ -82,13 +87,13 @@ public class SyncedPatientsFragment extends ACBaseFragment<SyncedPatientsContrac
         int id = item.getItemId();
         switch (id) {
             case R.id.syncbutton:
-                enableAddPatient(OpenMRS.getInstance().getSyncState());
+                enableAddPatient(OpenmrsAndroid.getSyncState());
                 break;
             case R.id.actionAddPatients:
                 if (NetworkUtils.hasNetwork()) {
                     Intent intent = new Intent(getActivity(), LastViewedPatientsActivity.class);
                     startActivity(intent);
-                }else {
+                } else {
                     NoInternetConnectionSnackbar();
                 }
                 break;
@@ -110,49 +115,50 @@ public class SyncedPatientsFragment extends ACBaseFragment<SyncedPatientsContrac
     public void updateAdapter(List<Patient> patientList) {
         SyncedPatientsRecyclerViewAdapter adapter = new SyncedPatientsRecyclerViewAdapter(this, patientList);
         adapter.notifyDataSetChanged();
-        mSyncedPatientRecyclerView.setAdapter(adapter);
+        syncedPatientRecyclerView.setAdapter(adapter);
     }
 
     @Override
     public void updateListVisibility(boolean isVisible) {
-        mProgressBar.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
         if (isVisible) {
-            mSyncedPatientRecyclerView.setVisibility(View.VISIBLE);
-            mEmptyList.setVisibility(View.GONE);
+            syncedPatientRecyclerView.setVisibility(View.VISIBLE);
+            emptyList.setVisibility(View.GONE);
         } else {
-            mSyncedPatientRecyclerView.setVisibility(View.GONE);
-            mEmptyList.setVisibility(View.VISIBLE);
-            mEmptyList.setText(getString(R.string.search_patient_no_results));
+            syncedPatientRecyclerView.setVisibility(View.GONE);
+            emptyList.setVisibility(View.VISIBLE);
+            emptyList.setText(getString(R.string.search_patient_no_results));
         }
     }
 
     @Override
     public void updateListVisibility(boolean isVisible, @NonNull String replacementWord) {
         if (isVisible) {
-            mSyncedPatientRecyclerView.setVisibility(View.VISIBLE);
-            mEmptyList.setVisibility(View.GONE);
+            syncedPatientRecyclerView.setVisibility(View.VISIBLE);
+            emptyList.setVisibility(View.GONE);
         } else {
-            mSyncedPatientRecyclerView.setVisibility(View.GONE);
-            mEmptyList.setVisibility(View.VISIBLE);
-            mEmptyList.setText(getString(R.string.search_patient_no_result_for_query, replacementWord));
+            syncedPatientRecyclerView.setVisibility(View.GONE);
+            emptyList.setVisibility(View.VISIBLE);
+            emptyList.setText(getString(R.string.search_patient_no_result_for_query, replacementWord));
         }
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
+    public void onCreateOptionsMenu(@NotNull Menu menu, @NotNull MenuInflater menuInflater) {
         super.onCreateOptionsMenu(menu, menuInflater);
-        mAddPatientMenuItem = menu.findItem(R.id.actionAddPatients);
-        enableAddPatient(OpenMRS.getInstance().getSyncState());
+        addPatientMenuItem = menu.findItem(R.id.actionAddPatients);
+        enableAddPatient(OpenmrsAndroid.getSyncState());
     }
 
     private void enableAddPatient(boolean enabled) {
         int resId = enabled ? R.drawable.ic_add : R.drawable.ic_add_disabled;
-        mAddPatientMenuItem.setEnabled(enabled);
-        mAddPatientMenuItem.setIcon(resId);
+        addPatientMenuItem.setEnabled(enabled);
+        addPatientMenuItem.setIcon(resId);
     }
+
     private void NoInternetConnectionSnackbar() {
         Snackbar mSnackbar = Snackbar.make(getActivity().findViewById(android.R.id.content),
-                R.string.snackbar_no_internet_connection, Snackbar.LENGTH_SHORT);
+            R.string.snackbar_no_internet_connection, Snackbar.LENGTH_SHORT);
         View sbView = mSnackbar.getView();
         TextView textView = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
         textView.setTextColor(Color.WHITE);
@@ -166,4 +172,9 @@ public class SyncedPatientsFragment extends ACBaseFragment<SyncedPatientsContrac
         return new SyncedPatientsFragment();
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
 }

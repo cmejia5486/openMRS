@@ -1,2 +1,5 @@
-- Add Dark mode to the app
-- Provider management: admins can now find, add, edit and delete providers
+- Added and homogenised offline strategy for provider patients and some operations in allergy section
+- Fixed Memory leak in fragments.
+- architectural overhaul encapsulation of codebase in a sdk published to jitpack.
+- Used view binding in all the packages.
+- NPE exception and crashes fixed.

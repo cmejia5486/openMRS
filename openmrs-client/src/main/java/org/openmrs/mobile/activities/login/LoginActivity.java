@@ -18,17 +18,25 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 
+import androidx.appcompat.app.ActionBar;
+
+import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 
 public class LoginActivity extends ACBaseActivity {
-
     public LoginContract.Presenter mPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            getSupportActionBar().setElevation(0);
+            getSupportActionBar().setTitle(R.string.app_name);
+        }
 
         // Create fragment
         LoginFragment loginFragment =
@@ -45,7 +53,7 @@ public class LoginActivity extends ACBaseActivity {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NotNull Bundle outState) {
         super.onSaveInstanceState(outState);
     }
 
@@ -61,5 +69,4 @@ public class LoginActivity extends ACBaseActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         return true;
     }
-
 }

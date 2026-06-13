@@ -16,13 +16,12 @@ package org.openmrs.mobile.activities.patientdashboard.charts;
 
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardMainPresenterImpl;
-import org.openmrs.mobile.dao.PatientDAO;
-import org.openmrs.mobile.dao.VisitDAO;
+import com.openmrs.android_sdk.library.dao.PatientDAO;
+import com.openmrs.android_sdk.library.dao.VisitDAO;
 
 import rx.android.schedulers.AndroidSchedulers;
 
 public class PatientDashboardChartsPresenter extends PatientDashboardMainPresenterImpl implements PatientDashboardContract.PatientChartsPresenter {
-
     private PatientDashboardContract.ViewPatientCharts mPatientChartsView;
     private VisitDAO visitDAO;
 
@@ -36,9 +35,8 @@ public class PatientDashboardChartsPresenter extends PatientDashboardMainPresent
     @Override
     public void subscribe() {
         addSubscription(visitDAO.getVisitsByPatientID(mPatient.getId())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(visits -> mPatientChartsView.populateList(visits)
-                ));
-
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(visits -> mPatientChartsView.populateList(visits)
+            ));
     }
 }

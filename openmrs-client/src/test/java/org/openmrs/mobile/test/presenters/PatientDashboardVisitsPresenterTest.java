@@ -14,25 +14,30 @@
 
 package org.openmrs.mobile.test.presenters;
 
+import com.openmrs.android_sdk.library.OpenMRSLogger;
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.library.dao.EncounterDAO;
+import com.openmrs.android_sdk.library.dao.LocationDAO;
+import com.openmrs.android_sdk.library.dao.VisitDAO;
+import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
+import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.library.models.Visit;
+import com.openmrs.android_sdk.utilities.NetworkUtils;
+
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.visits.PatientDashboardVisitsPresenter;
-import org.openmrs.mobile.api.RestApi;
-import org.openmrs.mobile.api.repository.VisitRepository;
+import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.repository.VisitRepository;
 import org.openmrs.mobile.application.OpenMRS;
-import org.openmrs.mobile.dao.EncounterDAO;
-import org.openmrs.mobile.dao.LocationDAO;
-import org.openmrs.mobile.dao.VisitDAO;
-import org.openmrs.mobile.models.Location;
-import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.models.Visit;
 import org.openmrs.mobile.test.ACUnitTestBaseRx;
-import org.openmrs.mobile.utilities.NetworkUtils;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,15 +45,20 @@ import java.util.List;
 
 import rx.Observable;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 
-@PrepareForTest({NetworkUtils.class, OpenMRS.class})
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({NetworkUtils.class, OpenMRS.class, OpenmrsAndroid.class})
 public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
-
+    @Mock
+    private OpenMRS openMRS;
+    @Mock
+    private OpenMRSLogger openMRSLogger;
     @Mock
     private PatientDashboardContract.ViewPatientVisits view;
     @Mock
@@ -56,25 +66,24 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
     @Mock
     private LocationDAO locationDAO;
     @Mock
-    private RestApi restApi;
+    private EncounterDAO encounterDAO;
     @Mock
-    private OpenMRS openMRS;
+    private RestApi restApi;
 
     private PatientDashboardVisitsPresenter presenter;
     private Patient patient;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         super.setUp();
         patient = createPatient(1L);
-        VisitRepository visitRepository = new VisitRepository(restApi, visitDAO, locationDAO, new EncounterDAO());
+        VisitRepository visitRepository = new VisitRepository(openMRSLogger, restApi, visitDAO, locationDAO, encounterDAO);
         presenter = new PatientDashboardVisitsPresenter(patient, view, visitDAO, visitRepository);
-        PowerMockito.mockStatic(NetworkUtils.class);
-        PowerMockito.mockStatic(OpenMRS.class);
+        mockStaticMethods();
     }
 
     @Test
-    public void shouldShowPatientsVisitsOnStartUp_allOK(){
+    public void shouldShowPatientsVisitsOnStartUp_allOK() {
         List<Visit> visitsList = createVisitsList();
         Mockito.lenient().when(visitDAO.getVisitsByPatientID(patient.getId())).thenReturn(Observable.just(visitsList));
         presenter.subscribe();
@@ -83,30 +92,29 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void shouldShowPatientsVisitsOnStartUp_noVisits(){
+    public void shouldShowPatientsVisitsOnStartUp_noVisits() {
         Mockito.lenient().when(visitDAO.getVisitsByPatientID(patient.getId())).thenReturn(Observable.just(Arrays.asList()));
         presenter.subscribe();
         verify(view, atLeast(1)).toggleRecyclerListVisibility(false);
     }
 
-
     @Test
-    public void shouldShowStartVisitDialog_patientOnVisit(){
+    public void shouldShowStartVisitDialog_patientOnVisit() {
         Mockito.lenient().when(visitDAO.getActiveVisitByPatientId(patient.getId())).thenReturn(Observable.just(new Visit()));
         presenter.showStartVisitDialog();
         verify(view).showStartVisitDialog(false);
     }
 
     @Test
-    public void shouldShowStartVisitDialog_noNetwork(){
+    public void shouldShowStartVisitDialog_noNetwork() {
         PowerMockito.when(NetworkUtils.isOnline()).thenReturn(false);
         Mockito.lenient().when(visitDAO.getActiveVisitByPatientId(patient.getId())).thenReturn(Observable.just(null));
         presenter.showStartVisitDialog();
-        verify(view).showErrorToast(anyString());
+        verify(view).showErrorToast(anyInt());
     }
 
     @Test
-    public void shouldShowStartVisitDialog_allOk(){
+    public void shouldShowStartVisitDialog_allOk() {
         PowerMockito.when(NetworkUtils.isOnline()).thenReturn(true);
         Mockito.lenient().when(visitDAO.getActiveVisitByPatientId(patient.getId())).thenReturn(Observable.just(null));
         presenter.showStartVisitDialog();
@@ -114,7 +122,7 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void shouldSyncVisits_allOK(){
+    public void shouldSyncVisits_allOK() {
         Mockito.lenient().when(visitDAO.saveOrUpdate(any(), anyLong())).thenReturn(Observable.just(1L));
         List<Visit> visitsList = createVisitsList();
         Mockito.lenient().when(restApi.findVisitsByPatientUUID(any(), any())).thenReturn(mockSuccessCall(visitsList));
@@ -126,21 +134,21 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void shouldSyncVisits_errorResponse(){
+    public void shouldSyncVisits_errorResponse() {
         Mockito.lenient().when(restApi.findVisitsByPatientUUID(any(), any())).thenReturn(mockErrorCall(401));
         presenter.syncVisits();
         verify(view).showErrorToast(anyString());
     }
 
     @Test
-    public void shouldSyncVisits_failure(){
+    public void shouldSyncVisits_failure() {
         Mockito.lenient().when(restApi.findVisitsByPatientUUID(any(), any())).thenReturn(mockFailureCall());
         presenter.syncVisits();
         verify(view).showErrorToast(Mockito.any());
     }
 
     @Test
-    public void shouldStartVisit_allOK(){
+    public void shouldStartVisit_allOK() {
         createMocksForStartVisit();
         Mockito.lenient().when(visitDAO.saveOrUpdate(any(), anyLong())).thenReturn(Observable.just(1L));
         Mockito.lenient().when(restApi.startVisit(any())).thenReturn(mockSuccessCall(new Visit()));
@@ -150,7 +158,7 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void shouldStartVisit_errorResponse(){
+    public void shouldStartVisit_errorResponse() {
         createMocksForStartVisit();
         Mockito.lenient().when(visitDAO.saveOrUpdate(any(), anyLong())).thenReturn(Observable.just(1L));
         Mockito.lenient().when(restApi.startVisit(any())).thenReturn(mockErrorCall(401));
@@ -160,7 +168,7 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void shouldStartVisit_failure(){
+    public void shouldStartVisit_failure() {
         createMocksForStartVisit();
         Mockito.lenient().when(visitDAO.saveOrUpdate(any(), anyLong())).thenReturn(Observable.just(1L));
         Mockito.lenient().when(restApi.startVisit(any())).thenReturn(mockFailureCall());
@@ -169,19 +177,24 @@ public class PatientDashboardVisitsPresenterTest extends ACUnitTestBaseRx {
         verify(view).dismissCurrentDialog();
     }
 
-
     private void createMocksForStartVisit() {
         PowerMockito.when(OpenMRS.getInstance()).thenReturn(openMRS);
-        PowerMockito.when(locationDAO.findLocationByName(anyString())).thenReturn(new Location());
+        PowerMockito.when(locationDAO.findLocationByName(anyString())).thenReturn(new LocationEntity("location"));
 
-        Mockito.lenient().when(openMRS.getLocation()).thenReturn("location");
-        Mockito.lenient().when(openMRS.getVisitTypeUUID()).thenReturn("visitTypeUuid");
+        Mockito.lenient().when(OpenmrsAndroid.getLocation()).thenReturn("location");
+        Mockito.lenient().when(OpenmrsAndroid.getVisitTypeUUID()).thenReturn("visitTypeUuid");
     }
 
-    private List<Visit> createVisitsList(){
+    private List<Visit> createVisitsList() {
         List<Visit> visits = new ArrayList<>();
         visits.add(new Visit());
         visits.add(new Visit());
         return visits;
+    }
+
+    private void mockStaticMethods() {
+        PowerMockito.mockStatic(NetworkUtils.class);
+        PowerMockito.mockStatic(OpenMRS.class);
+        PowerMockito.mockStatic(OpenmrsAndroid.class);
     }
 }

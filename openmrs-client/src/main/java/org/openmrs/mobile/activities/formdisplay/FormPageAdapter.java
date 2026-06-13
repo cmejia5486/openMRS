@@ -17,19 +17,20 @@ package org.openmrs.mobile.activities.formdisplay;
 import android.util.SparseArray;
 import android.view.ViewGroup;
 
-import org.openmrs.mobile.models.Form;
-import org.openmrs.mobile.models.Page;
-import org.openmrs.mobile.utilities.FormService;
-
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
-class FormPageAdapter extends FragmentPagerAdapter {
+import com.openmrs.android_sdk.library.models.Form;
+import com.openmrs.android_sdk.library.models.Page;
 
+import org.jetbrains.annotations.NotNull;
+import com.openmrs.android_sdk.utilities.FormService;
+
+import java.util.List;
+
+class FormPageAdapter extends FragmentPagerAdapter {
     private List<Page> mPageList;
     private SparseArray<Fragment> mRegisteredFragments = new SparseArray<>();
 
@@ -39,6 +40,7 @@ class FormPageAdapter extends FragmentPagerAdapter {
         mPageList = form.getPages();
     }
 
+    @NotNull
     @Override
     public Fragment getItem(int position) {
         FormDisplayPageFragment fragment = FormDisplayPageFragment.newInstance();

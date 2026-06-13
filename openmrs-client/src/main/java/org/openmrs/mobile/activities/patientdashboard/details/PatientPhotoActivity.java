@@ -14,7 +14,6 @@
 
 package org.openmrs.mobile.activities.patientdashboard.details;
 
-
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -24,24 +23,31 @@ import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import org.openmrs.mobile.R;
+import org.openmrs.mobile.databinding.ActivityPatientPhotoBinding;
 
 import java.io.ByteArrayInputStream;
 
 public class PatientPhotoActivity extends AppCompatActivity {
-
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_patient_photo);
+
+        ActivityPatientPhotoBinding binding = ActivityPatientPhotoBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
         byte[] photo = getIntent().getByteArrayExtra("photo");
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(photo);
         Bitmap patientPhoto = BitmapFactory.decodeStream(inputStream);
-        ImageView patientImageView = findViewById(R.id.patientPhoto);
-        patientImageView.setImageBitmap(patientPhoto);
+        ImageView patientImageView = null;
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        if(binding.patientPhoto!=null) {
+            patientImageView = binding.patientPhoto;
+            patientImageView.setImageBitmap(patientPhoto);
+        }
+
+        Toolbar toolbar = binding.toolbar;
         if (toolbar != null) {
             String patientName = getIntent().getStringExtra("name");
             setSupportActionBar(toolbar);

@@ -26,36 +26,34 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.openmrs.android_sdk.library.models.Provider;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseFragment;
 import org.openmrs.mobile.activities.providermanagerdashboard.addprovider.AddProviderActivity;
-import org.openmrs.mobile.models.Provider;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.FontsUtil;
+import org.openmrs.mobile.databinding.FragmentProviderManagementBinding;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static android.app.Activity.RESULT_OK;
-import static org.openmrs.mobile.utilities.ApplicationConstants.RequestCodes.ADD_PROVIDER_REQ_CODE;
-import static org.openmrs.mobile.utilities.ApplicationConstants.RequestCodes.EDIT_PROVIDER_REQ_CODE;
+import static com.openmrs.android_sdk.utilities.ApplicationConstants.RequestCodes.ADD_PROVIDER_REQ_CODE;
+import static com.openmrs.android_sdk.utilities.ApplicationConstants.RequestCodes.EDIT_PROVIDER_REQ_CODE;
 
 public class ProviderManagerDashboardFragment extends ACBaseFragment<ProviderManagerDashboardContract.Presenter>
-        implements ProviderManagerDashboardContract.View {
-    // Fragment components
-    private TextView mEmptyList;
-    private RecyclerView mProviderManagementRecyclerView;
+    implements ProviderManagerDashboardContract.View {
+
+    private FragmentProviderManagementBinding binding;
+    private TextView emptyList;
+    private RecyclerView providerManagementRecyclerView;
     private ProviderManagerDashboardRecyclerViewAdapter providersAdapter;
-    private FloatingActionButton addProviderFab;
-
-    //Initialization Progress bar
-    private ProgressBar mProgressBar;
-
+    private SwipeRefreshLayout refreshList;
+    private ProgressBar progressBar;
     private List<Provider> providerList;
+    public FloatingActionButton addProviderFab;
 
     /**
      * @return New instance of ProviderManagerDashboardFragment
@@ -67,20 +65,22 @@ public class ProviderManagerDashboardFragment extends ACBaseFragment<ProviderMan
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_provider_management, container, false);
+        binding = FragmentProviderManagementBinding.inflate(inflater, container, false);
+        View root = binding.getRoot();
         providerList = new ArrayList<>();
 
         providersAdapter = new ProviderManagerDashboardRecyclerViewAdapter(this, mPresenter, providerList);
 
-        mProviderManagementRecyclerView = root.findViewById(R.id.providerManagementRecyclerView);
-        mProviderManagementRecyclerView.setHasFixedSize(true);
-        mProviderManagementRecyclerView.setAdapter(providersAdapter);
+        providerManagementRecyclerView = binding.providerManagementRecyclerView;
+        providerManagementRecyclerView.setHasFixedSize(true);
+        providerManagementRecyclerView.setAdapter(providersAdapter);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(root.getContext());
-        mProviderManagementRecyclerView.setLayoutManager(linearLayoutManager);
+        providerManagementRecyclerView.setLayoutManager(linearLayoutManager);
 
-        mEmptyList = root.findViewById(R.id.emptyProviderManagementList);
-        mProgressBar = root.findViewById(R.id.providerManagementInitialProgressBar);
-        addProviderFab = root.findViewById(R.id.providerManagementFragAddFAB);
+        emptyList = binding.emptyProviderManagementList;
+        progressBar = binding.providerManagementInitialProgressBar;
+        addProviderFab = binding.providerManagementFragAddFAB;
+        refreshList = binding.swipeLayout;
 
         refreshUI();
 
@@ -91,17 +91,17 @@ public class ProviderManagerDashboardFragment extends ACBaseFragment<ProviderMan
             startActivityForResult(intent, ADD_PROVIDER_REQ_CODE);
         });
 
-        // Font config
-        FontsUtil.setFont(Objects.requireNonNull(this.getActivity()).findViewById(android.R.id.content));
-
+        refreshList.setOnRefreshListener(() -> {
+            refreshUI();
+            refreshList.setRefreshing(false);
+        });
         return root;
     }
 
     @Override
     public void refreshUI() {
-        mProviderManagementRecyclerView.setVisibility(View.GONE);
-        mProgressBar.setVisibility(View.VISIBLE);
-
+        providerManagementRecyclerView.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
         mPresenter.getProviders(this);
     }
 
@@ -114,14 +114,14 @@ public class ProviderManagerDashboardFragment extends ACBaseFragment<ProviderMan
 
     @Override
     public void updateVisibility(boolean visibility, String text) {
-        mProgressBar.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
         if (visibility) {
-            mProviderManagementRecyclerView.setVisibility(View.VISIBLE);
-            mEmptyList.setVisibility(View.GONE);
+            providerManagementRecyclerView.setVisibility(View.VISIBLE);
+            emptyList.setVisibility(View.GONE);
         } else {
-            mProviderManagementRecyclerView.setVisibility(View.GONE);
-            mEmptyList.setVisibility(View.VISIBLE);
-            mEmptyList.setText(text);
+            providerManagementRecyclerView.setVisibility(View.GONE);
+            emptyList.setVisibility(View.VISIBLE);
+            emptyList.setText(text);
         }
     }
 
@@ -153,14 +153,21 @@ public class ProviderManagerDashboardFragment extends ACBaseFragment<ProviderMan
         } else if (requestCode == EDIT_PROVIDER_REQ_CODE) {
             if (resultCode == RESULT_OK) {
                 Provider provider = (Provider) data.getSerializableExtra(ApplicationConstants.BundleKeys.PROVIDER_ID_BUNDLE);
-                mPresenter.editProvider(provider);
+                mPresenter.updateProvider(provider);
             }
         }
+        providersAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         refreshUI();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 }

@@ -15,23 +15,25 @@
 package org.openmrs.mobile.test.presenters;
 
 
+import androidx.annotation.NonNull;
+
+import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
+import com.openmrs.android_sdk.library.models.Visit;
+import com.openmrs.android_sdk.library.models.VisitType;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.openmrs.mobile.activities.activevisits.ActiveVisitPresenter;
 import org.openmrs.mobile.activities.activevisits.ActiveVisitsContract;
-import org.openmrs.mobile.dao.VisitDAO;
-import org.openmrs.mobile.models.Location;
-import org.openmrs.mobile.models.Visit;
-import org.openmrs.mobile.models.VisitType;
+import com.openmrs.android_sdk.library.dao.VisitDAO;
 import org.openmrs.mobile.test.ACUnitTestBaseRx;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import rx.Observable;
 
 import static org.mockito.Matchers.anyInt;
@@ -51,14 +53,14 @@ public class ActiveVisitPresenterTest extends ACUnitTestBaseRx {
     private List<Visit> visitList;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         super.setUp();
         presenter = new ActiveVisitPresenter(view, visitDAO);
         visitList = createVisitList();
     }
 
     @Test
-    public void updateVisitsFromDB_allOK(){
+    public void updateVisitsFromDB_allOK() {
         Mockito.lenient().when(visitDAO.getActiveVisits()).thenReturn(Observable.just(visitList));
         presenter.subscribe();
         verify(view).setEmptyListText(anyInt());
@@ -66,14 +68,14 @@ public class ActiveVisitPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void updateVisitsFromDB_error(){
+    public void updateVisitsFromDB_error() {
         Mockito.lenient().when(visitDAO.getActiveVisits()).thenReturn(Observable.error(new Throwable("error")));
         presenter.subscribe();
         verify(view, atLeast(2)).setEmptyListText(anyInt());
     }
 
     @Test
-    public void updateVisitsFromDBWithQuery_allOK(){
+    public void updateVisitsFromDBWithQuery_allOK() {
         Mockito.lenient().when(visitDAO.getActiveVisits()).thenReturn(Observable.just(visitList));
         String query = "visit1";
         presenter.updateVisitsInDatabaseList(query);
@@ -82,7 +84,7 @@ public class ActiveVisitPresenterTest extends ACUnitTestBaseRx {
     }
 
     @Test
-    public void updateVisitsFromDBWithQuery_error(){
+    public void updateVisitsFromDBWithQuery_error() {
         Mockito.lenient().when(visitDAO.getActiveVisits()).thenReturn(Observable.error(new Throwable("error")));
         String query = "visit1";
         presenter.updateVisitsInDatabaseList(query);
@@ -99,7 +101,7 @@ public class ActiveVisitPresenterTest extends ACUnitTestBaseRx {
     @NonNull
     private Visit createVisit(String display) {
         Visit visit = new Visit();
-        visit.setLocation(new Location(display));
+        visit.setLocation(new LocationEntity(display));
         visit.setVisitType(new VisitType(display));
         visit.setPatient(createPatient(1l));
         return visit;
