@@ -17,16 +17,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="org.openmrs.mobile.activities.syncedpatients.SyncedPatientsActivity" >
-    <item android:id="@+id/actionAddPatients"
-        android:title="@string/action_add_patients"
-        android:icon="@drawable/ic_add"
-        app:showAsAction="always"/>
 
     <item android:id="@+id/actionSearchLocal"
         android:title="@string/action_find_patients"
         android:icon="@drawable/ic_search"
-        app:showAsAction="ifRoom|collapseActionView"
-        android:actionViewClass="android.support.v7.widget.SearchView"
-        app:actionViewClass="android.support.v7.widget.SearchView"/>
+        app:showAsAction="always"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"/>
+
+    <item android:id="@+id/actionAddPatients"
+        android:title="@string/action_download_patients"
+        android:icon="@drawable/ic_add"
+        app:showAsAction="ifRoom|collapseActionView"/>
 
 </menu>

@@ -205,6 +205,40 @@ def list_zip_members(zip_path: Path) -> List[str]:
         return []
 
 
+def artifact_status(zip_path: Path, required_members: List[str] | None = None) -> Dict[str, Any]:
+    """Return a compact availability record for a scanner artifact.
+
+    The generator must distinguish absence of evidence from absence of an
+    artifact. This helper keeps that distinction visible in the trace and lets
+    downstream flag rules return UNKNOWN/NOT_APPLICABLE instead of silently
+    converting missing coverage into NO.
+    """
+    required_members = required_members or []
+    status: Dict[str, Any] = {
+        "path": str(zip_path),
+        "filename": zip_path.name,
+        "exists": zip_path.exists(),
+        "is_zip": False,
+        "members_count": 0,
+        "missing_required_members": list(required_members),
+    }
+    if not zip_path.exists():
+        return status
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            members = zf.namelist()
+        members_norm = {m.replace("\\", "/").strip("/").lower() for m in members}
+        required_norm = [m.replace("\\", "/").strip("/").lower() for m in required_members]
+        status.update({
+            "is_zip": True,
+            "members_count": len(members),
+            "missing_required_members": [required_members[i] for i, m in enumerate(required_norm) if m not in members_norm],
+        })
+    except Exception as exc:
+        status["error"] = f"{type(exc).__name__}: {exc}"
+    return status
+
+
 # ------------------------------------------------------------
 # Configuration and metadata loading
 # ------------------------------------------------------------
@@ -309,6 +343,13 @@ def load_inputs(input_dir: Path, cfg: Dict[str, Any]) -> Dict[str, Any]:
         "source_zip_members": list_zip_members(source_zip),
         "source_zip_name": source_zip.name,
         "source_label": source_label,
+        "artifact_status": {
+            "mobsf_static_zip": artifact_status(mobsf_static_zip, ["mobsf_results.json"]),
+            "mobsf_dynamic_zip": artifact_status(mobsf_dynamic_zip, ["mobsf_dynamic_results.json"]),
+            "source_zip": artifact_status(source_zip, []),
+            "sast_zip": artifact_status(sast_zip, ["merged.sarif", "semgrep.sarif"]),
+            "trivy_zip": artifact_status(trivy_zip, ["trivy.json", "agent_payload.json"]),
+        },
     }
 
     manifest_path, manifest_text = choose_source_manifest(
@@ -1519,8 +1560,17 @@ def detect_sca_trivy(data: Dict[str, Any]) -> Dict[str, Any]:
             )
         )
 
+    inventory_available = packages_detected > 0 or bool(targets) or bool(packages)
+    vulnerability_scan_conclusive = bool(agent_payload or trivy) and inventory_available
+    license_inventory_available = license_entries_detected > 0
+    scan_status = "complete" if vulnerability_scan_conclusive else ("no_dependency_inventory" if (agent_payload or trivy) else "missing_artifact")
+
     return {
         "available": bool(agent_payload or trivy),
+        "scan_status": scan_status,
+        "inventory_available": inventory_available,
+        "vulnerability_scan_conclusive": vulnerability_scan_conclusive,
+        "license_inventory_available": license_inventory_available,
         "packages_detected": packages_detected,
         "license_entries_detected": license_entries_detected,
         "targets": targets,
@@ -1568,6 +1618,20 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
     unfixed_total = int(sca.get("unfixed_total") or 0)
     packages_detected = int(sca.get("packages_detected") or 0)
     license_entries = int(sca.get("license_entries_detected") or 0)
+    inventory_available = bool(sca.get("inventory_available"))
+    vulnerability_scan_conclusive = bool(sca.get("vulnerability_scan_conclusive"))
+    license_inventory_available = bool(sca.get("license_inventory_available"))
+    scan_status = str(sca.get("scan_status") or "unknown")
+
+    def inconclusive_verdict(reason: str) -> Dict[str, Any]:
+        evidence = sca.get("coverage_evidence", []) or []
+        return {
+            "state": "unknown",
+            "summary": f"{flag_id} = UNKNOWN",
+            "notes": f"SCA evidence is inconclusive for this flag: {reason}. scan_status={scan_status}.",
+            "evidence": evidence,
+            "evidence_count_override": 0,
+        }
 
     if flag_id == "has_sca_dependency_inventory":
         has_feature = packages_detected > 0
@@ -1582,6 +1646,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     if flag_id == "has_sca_known_vulnerable_dependencies":
+        if not vulnerability_scan_conclusive and total == 0:
+            return inconclusive_verdict("no dependency inventory was available, so zero vulnerabilities cannot be interpreted as a clean result")
         has_feature = total > 0
         evidence = sca.get("finding_evidence", []) or sca.get("coverage_evidence", []) or []
         return bool_verdict(
@@ -1602,6 +1668,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
     if flag_id in severity_flag_map:
         sev = severity_flag_map[flag_id]
         count = int(by_severity.get(sev, 0) or 0)
+        if not vulnerability_scan_conclusive and count == 0:
+            return inconclusive_verdict(f"no dependency inventory was available, so absence of {sev.lower()} vulnerabilities is not conclusive")
         evidence = [
             _sca_finding_evidence(finding)
             for finding in (sca.get("findings") or [])
@@ -1617,6 +1685,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     if flag_id == "has_sca_fixable_vulnerabilities":
+        if not vulnerability_scan_conclusive and fixable_total == 0:
+            return inconclusive_verdict("no dependency inventory was available, so absence of fixable vulnerabilities is not conclusive")
         evidence = [
             _sca_finding_evidence(finding)
             for finding in (sca.get("findings") or [])
@@ -1632,6 +1702,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     if flag_id == "has_sca_unfixed_vulnerabilities":
+        if not vulnerability_scan_conclusive and unfixed_total == 0:
+            return inconclusive_verdict("no dependency inventory was available, so absence of unfixed vulnerabilities is not conclusive")
         evidence = [
             _sca_finding_evidence(finding)
             for finding in (sca.get("findings") or [])
@@ -1648,6 +1720,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
 
     if flag_id == "has_sca_security_sensitive_outdated_libraries":
         sensitive = sca.get("sensitive_findings") or []
+        if not vulnerability_scan_conclusive and not sensitive:
+            return inconclusive_verdict("no dependency inventory was available, so absence of vulnerable security-sensitive libraries is not conclusive")
         evidence = [_sca_finding_evidence(finding) for finding in sensitive[:12]]
         packages = sorted({str(finding.get("pkg") or "unknown") for finding in sensitive})
         return bool_verdict(
@@ -1661,6 +1735,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
 
     if flag_id == "has_sca_license_inventory":
         evidence = sca.get("license_evidence", []) or sca.get("coverage_evidence", []) or []
+        if not license_inventory_available and not inventory_available:
+            return inconclusive_verdict("no dependency or license inventory was available")
         return bool_verdict(
             license_entries > 0,
             negative=False,
@@ -1672,6 +1748,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
 
     if flag_id == "has_sca_restrictive_licenses":
         restrictive = sca.get("restrictive_licenses") or []
+        if not license_inventory_available and not restrictive:
+            return inconclusive_verdict("no license inventory was available, so absence of restrictive licenses is not conclusive")
         evidence = []
         for item in restrictive[:8]:
             evidence.append(ev("TRIVY", "agent_payload.json:licenses", "sca_restrictive_license", f"{_sca_license_pkg(item) or 'unknown-package'}: {_sca_license_name(item) or 'unknown'}"))
@@ -1686,6 +1764,8 @@ def build_sca_flag_verdict(flag_id: str, sca: Dict[str, Any]) -> Dict[str, Any]:
 
     if flag_id == "has_sca_unknown_licenses":
         unknown = sca.get("unknown_licenses") or []
+        if not license_inventory_available and not unknown:
+            return inconclusive_verdict("no license inventory was available, so absence of unknown licenses is not conclusive")
         evidence = []
         for item in unknown[:8]:
             evidence.append(ev("TRIVY", "agent_payload.json:licenses", "sca_unknown_license", f"{_sca_license_pkg(item) or 'unknown-package'}: {_sca_license_name(item) or 'unknown'}"))
@@ -1745,6 +1825,17 @@ DYNAMIC_NEGATIVE_FLAGS = {
     "has_access_tokens_weak_or_unpredictable",
     "has_error_messages_disclose_internal_details",
     "has_error_messages_sent_to_unauthorized_destinations",
+    "has_third_party_trackers",
+    "has_crash_reporting_tracker",
+    "has_analytics_tracker",
+    "has_privacy_relevant_tracker",
+    "has_min_sdk_below_security_baseline",
+    "has_target_sdk_below_security_baseline",
+    "has_sast_security_findings",
+    "has_codeql_security_findings",
+    "has_semgrep_security_findings",
+    "has_sast_high_confidence_security_findings",
+    "has_dynamic_http_traffic_detected",
 }
 
 DYNAMIC_APPLICABILITY_FLAGS = {
@@ -1753,6 +1844,119 @@ DYNAMIC_APPLICABILITY_FLAGS = {
     "has_soap_api_usage",
     "has_saml_based_sso",
 }
+
+
+def _iter_json_nodes(obj: Any, path: str = "") -> List[Tuple[str, Any]]:
+    """Flatten dict/list JSON-like data into (path, value) nodes."""
+    nodes: List[Tuple[str, Any]] = []
+    stack: List[Tuple[str, Any]] = [(path, obj)]
+    while stack:
+        cur_path, cur = stack.pop()
+        nodes.append((cur_path, cur))
+        if isinstance(cur, dict):
+            for key, value in cur.items():
+                child_path = f"{cur_path}.{key}" if cur_path else str(key)
+                stack.append((child_path, value))
+        elif isinstance(cur, list):
+            for idx, value in enumerate(cur):
+                child_path = f"{cur_path}[{idx}]" if cur_path else f"[{idx}]"
+                stack.append((child_path, value))
+    return nodes
+
+
+def _first_numeric_signal(obj: Any, key_tokens: List[str]) -> int | None:
+    tokens = [t.lower() for t in key_tokens]
+    for path, value in _iter_json_nodes(obj):
+        path_low = path.lower()
+        if not all(t in path_low for t in tokens):
+            continue
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return int(value)
+        if isinstance(value, str):
+            m = re.search(r"\d+", value)
+            if m:
+                return int(m.group(0))
+    return None
+
+
+def _collect_json_text_evidence(source: str, obj: Any, tokens: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    tokens_low = [t.lower() for t in tokens if t]
+    for path, value in _iter_json_nodes(obj):
+        if isinstance(value, (dict, list)):
+            continue
+        text = str(value)
+        blob = f"{path} {text}".lower()
+        if any(tok in blob for tok in tokens_low):
+            hits.append(ev(source, path or source, rule_id, text))
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _sast_security_level(result: Dict[str, Any], rule: Dict[str, Any]) -> str:
+    blob = _sarif_result_blob(result, rule)
+    level = str(result.get("level") or rule.get("defaultConfiguration", {}).get("level") or "").lower()
+    security_tokens = [
+        "security", "cwe-", "injection", "xss", "csrf", "ssrf", "crypto", "cryptographic",
+        "cleartext", "plaintext", "credential", "secret", "token", "password", "path traversal",
+        "deserialization", "redos", "denial of service", "buffer overflow", "sql", "command injection",
+        "unsafe", "weak", "certificate", "ssl", "tls", "permission", "webview", "content uri",
+    ]
+    quality_tokens = ["detekt.style", "detekt.naming", "magicnumber", "formatting", "complexity", "unused", "comment"]
+    if any(t in blob for t in security_tokens):
+        return "security"
+    if any(t in blob for t in quality_tokens):
+        return "quality"
+    if level in {"error", "warning"}:
+        return "unknown"
+    return "quality"
+
+
+def _collect_sast_bucket_evidence(data: Dict[str, Any], bucket: str, max_hits: int = 12) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    for source_name, result, rule in _iter_sarif_results(data.get("sast_merged") or {}, "SAST_MERGED") + _iter_sarif_results(data.get("sast_semgrep") or {}, "SAST_SEMGREP"):
+        if _sast_security_level(result, rule) != bucket:
+            continue
+        hits.append(_sarif_to_evidence(source_name, result, rule, f"sast_{bucket}_finding"))
+        if len(hits) >= max_hits:
+            break
+    return hits
+
+
+def _collect_tracker_evidence(data: Dict[str, Any], tokens: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    hits: List[Dict[str, str]] = []
+    mobsf_static = data.get("mobsf_static") or {}
+    hits.extend(_collect_json_text_evidence("MobSF_STATIC", mobsf_static.get("trackers") or {}, tokens, rule_id, max_hits))
+    if len(hits) < max_hits:
+        hits.extend(_collect_json_text_evidence("MobSF_STATIC", mobsf_static, tokens + ["tracker"], rule_id, max_hits - len(hits)))
+    if len(hits) < max_hits:
+        hits.extend(_collect_source_evidence(data, [re.escape(t) for t in tokens], rule_id, max_hits - len(hits), runtime_only=False))
+    return hits[:max_hits]
+
+
+def _sdk_metadata(data: Dict[str, Any]) -> Dict[str, Any]:
+    mobsf_static = data.get("mobsf_static") or {}
+    min_sdk = _first_numeric_signal(mobsf_static, ["min", "sdk"])
+    target_sdk = _first_numeric_signal(mobsf_static, ["target", "sdk"])
+    manifest_text = data.get("source_manifest_text") or ""
+    if min_sdk is None:
+        m = re.search(r"minSdkVersion\s*=\s*['\"]?(\d+)", manifest_text, flags=re.IGNORECASE)
+        min_sdk = int(m.group(1)) if m else None
+    if target_sdk is None:
+        m = re.search(r"targetSdkVersion\s*=\s*['\"]?(\d+)", manifest_text, flags=re.IGNORECASE)
+        target_sdk = int(m.group(1)) if m else None
+    evidence: List[Dict[str, str]] = []
+    if min_sdk is not None:
+        evidence.append(ev("MobSF_STATIC", "mobsf_results.json:sdk/min_sdk", "android_min_sdk", f"min_sdk={min_sdk}"))
+    if target_sdk is not None:
+        evidence.append(ev("MobSF_STATIC", "mobsf_results.json:sdk/target_sdk", "android_target_sdk", f"target_sdk={target_sdk}"))
+    return {"min_sdk": min_sdk, "target_sdk": target_sdk, "evidence": evidence}
+
+
+def _artifact_available(data: Dict[str, Any], key: str) -> bool:
+    status = ((data.get("artifact_status") or {}).get(key) or {})
+    return bool(status.get("exists") and status.get("is_zip") and not status.get("missing_required_members"))
 
 
 def _as_list(value: Any) -> List[Any]:
@@ -2248,6 +2452,48 @@ def detect_dynamic_flags(data: Dict[str, Any], features: Dict[str, Any]) -> Dict
     put("has_secure_sync_for_offline_ephi", bool(workmanager and https_evidence and encrypted_storage), (workmanager + https_evidence + encrypted_storage)[:12], "positive", "Offline sync resilience, HTTPS, and encrypted storage evidence were found.", "Secure offline ePHI sync was not confirmed.", len((workmanager + https_evidence + encrypted_storage)[:12]))
     put("has_collects_telemetry_for_security_events", bool(_collect_source_evidence(data, [r"analytics", r"telemetry", r"audit", r"security event", r"crashlytics"], "security_telemetry", 8)), _collect_source_evidence(data, [r"analytics", r"telemetry", r"audit", r"security event", r"crashlytics"], "security_telemetry", 8), "positive", "Security telemetry or audit event collection evidence was found.", "No security telemetry collection evidence was found.")
 
+    # Tracker and privacy telemetry flags, backed by MobSF tracker output and source evidence.
+    tracker_tokens = ["tracker", "firebase analytics", "google analytics", "crashlytics", "sentry", "mixpanel", "amplitude", "facebook"]
+    third_party_trackers = _collect_tracker_evidence(data, tracker_tokens, "third_party_tracker", 12)
+    crash_trackers = _collect_tracker_evidence(data, ["crashlytics", "sentry", "crash reporting"], "crash_reporting_tracker", 8)
+    analytics_trackers = _collect_tracker_evidence(data, ["firebase analytics", "google analytics", "analytics", "mixpanel", "amplitude"], "analytics_tracker", 8)
+    put("has_third_party_trackers", bool(third_party_trackers), third_party_trackers, "negative", "Third-party tracker evidence was found in MobSF or source artifacts.", "No third-party tracker evidence was found.", len(third_party_trackers))
+    put("has_crash_reporting_tracker", bool(crash_trackers), crash_trackers, "negative", "Crash reporting tracker evidence was found.", "No crash reporting tracker evidence was found.", len(crash_trackers))
+    put("has_analytics_tracker", bool(analytics_trackers), analytics_trackers, "negative", "Analytics tracker evidence was found.", "No analytics tracker evidence was found.", len(analytics_trackers))
+    put("has_privacy_relevant_tracker", bool(third_party_trackers), third_party_trackers, "negative", "Privacy-relevant third-party telemetry evidence was found.", "No privacy-relevant tracker evidence was found.", len(third_party_trackers))
+
+    # Android SDK baseline flags. These remain dynamic because they come from MobSF or manifest/Gradle metadata.
+    sdk = _sdk_metadata(data)
+    min_sdk = sdk.get("min_sdk")
+    target_sdk = sdk.get("target_sdk")
+    sdk_evidence = sdk.get("evidence") or []
+    put("has_min_sdk_below_security_baseline", min_sdk is not None and int(min_sdk) < 23, sdk_evidence, "negative", "Minimum SDK is below the configured security baseline.", "Minimum SDK is at or above the configured baseline, or no SDK metadata was available.", len(sdk_evidence))
+    put("has_target_sdk_below_security_baseline", target_sdk is not None and int(target_sdk) < 30, sdk_evidence, "negative", "Target SDK is below the configured security baseline.", "Target SDK is at or above the configured baseline, or no SDK metadata was available.", len(sdk_evidence))
+    put("has_modern_android_security_baseline", bool(min_sdk is not None and target_sdk is not None and int(min_sdk) >= 23 and int(target_sdk) >= 30), sdk_evidence, "positive", "SDK metadata satisfies the configured Android security baseline.", "SDK metadata does not satisfy the configured Android security baseline or was unavailable.", len(sdk_evidence))
+
+    # SAST coverage flags. These do not make quality/style findings security failures.
+    sast_security = _collect_sast_bucket_evidence(data, "security", 12)
+    sast_quality = _collect_sast_bucket_evidence(data, "quality", 12)
+    codeql_security = [e for e in sast_security if e.get("source") == "SAST_MERGED"]
+    semgrep_security = [e for e in sast_security if e.get("source") == "SAST_SEMGREP"]
+    put("has_sast_security_findings", bool(sast_security), sast_security, "negative", "SAST findings with security semantics were found.", "No high-confidence security SAST finding was found.", len(sast_security))
+    put("has_codeql_security_findings", bool(codeql_security), codeql_security, "negative", "CodeQL/SAST merged security findings were found.", "No CodeQL/SAST merged security finding was found.", len(codeql_security))
+    put("has_semgrep_security_findings", bool(semgrep_security), semgrep_security, "negative", "Semgrep security findings were found.", "No Semgrep security finding was found.", len(semgrep_security))
+    put("has_sast_high_confidence_security_findings", bool(sast_security), sast_security, "negative", "High-confidence SAST security findings were found.", "No high-confidence SAST security finding was found.", len(sast_security))
+    put("has_sast_quality_only_findings", bool(sast_quality and not sast_security), sast_quality, "positive", "Only quality/style SAST examples were found among sampled findings.", "SAST quality-only status was not confirmed.", len(sast_quality))
+
+    # Dynamic coverage flags, to prevent empty dynamic reports from being read as compliance.
+    dyn_available = _artifact_available(data, "mobsf_dynamic_zip") and bool(data.get("mobsf_dynamic"))
+    dyn_tls = _dynamic_storage_evidence(data, ["tls", "ssl", "https", "certificate", "pinning"], "dynamic_tls_evidence", 8)
+    dyn_storage = _dynamic_storage_evidence(data, ["sqlite", "xml", "shared", "preferences", "database", "file"], "dynamic_storage_evidence", 8)
+    dyn_session = _dynamic_storage_evidence(data, ["session", "token", "logout", "cookie", "authorization"], "dynamic_session_evidence", 8)
+    dyn_http = _dynamic_storage_evidence(data, ["http://", "cleartext"], "dynamic_http_traffic", 8)
+    put("has_dynamic_runtime_evidence", bool(dyn_available), [ev("MobSF_DYNAMIC", "mobsf_dynamic_results.json", "dynamic_report_available", "MobSF dynamic report artifact parsed")] if dyn_available else [], "positive", "MobSF dynamic runtime evidence was available.", "MobSF dynamic runtime evidence was unavailable or empty.", 1 if dyn_available else 0)
+    put("has_dynamic_tls_evidence", bool(dyn_tls), dyn_tls, "positive", "Dynamic TLS evidence was found.", "No dynamic TLS evidence was found.", len(dyn_tls))
+    put("has_dynamic_storage_evidence", bool(dyn_storage), dyn_storage, "positive", "Dynamic storage evidence was found.", "No dynamic storage evidence was found.", len(dyn_storage))
+    put("has_dynamic_session_evidence", bool(dyn_session), dyn_session, "positive", "Dynamic session evidence was found.", "No dynamic session evidence was found.", len(dyn_session))
+    put("has_dynamic_http_traffic_detected", bool(dyn_http), dyn_http, "negative", "Dynamic HTTP or cleartext traffic evidence was found.", "No dynamic HTTP or cleartext traffic evidence was found.", len(dyn_http))
+
     return out
 
 
@@ -2269,6 +2515,10 @@ DYNAMIC_FLAG_DEFINITIONS = {flag_id: True for flag_id in (
     "has_soap_api_usage", "has_soap_uses_tls", "has_soap_uses_mutual_tls", "has_saml_based_sso", "has_uses_xml_signatures", "has_uses_xml_encryption", "has_proper_ws_security_headers", "has_soap_message_level_encryption", "has_soap_message_level_signatures", "has_soap_prevents_replay_attacks", "has_soap_validates_saml_token_audience", "has_soap_validates_saml_token_expiry", "has_soap_uses_strict_schema_validation", "has_soap_masks_sensitive_data_in_logs",
     "has_data_format_strictly_controlled", "has_log_input_sanitization_present", "has_logs_privileged_actions_with_timestamp", "has_error_messages_disclose_internal_details", "has_error_messages_are_generic", "has_error_messages_sent_to_unauthorized_destinations", "has_null_pointer_protection_implemented", "has_initializes_params_on_startup", "has_fails_safe_on_init_failure", "has_runtime_global_kill_switch_for_security_incidents", "has_safe_mode_degraded_functionality_design", "has_workmanager_for_resilient_network_tasks", "has_transaction_recovery_logs",
     "has_displays_sensitive_data_unmasked", "has_ui_data_masking", "has_blocks_screenshots_flag_secure", "has_clears_ui_on_background", "has_secure_notifications", "has_notification_leaks_sensitive_data", "has_notification_uses_public_channels", "has_stores_sensitive_data_on_device", "has_uses_encrypted_local_database", "has_uses_encrypted_shared_preferences", "has_uses_encrypted_filesystem_storage", "has_stores_pii_in_plaintext", "has_stores_auth_tokens_in_plaintext", "has_stores_keys_in_plaintext", "has_local_caching_of_ephi", "has_encrypted_local_caching_of_ephi", "has_stores_ephi_on_external_storage", "has_sends_ephi_to_third_party_services", "has_uses_push_notifications_for_ephi", "has_uses_secure_push_channel_for_ephi", "has_secure_sync_for_offline_ephi", "has_collects_telemetry_for_security_events",
+    "has_third_party_trackers", "has_crash_reporting_tracker", "has_analytics_tracker", "has_privacy_relevant_tracker",
+    "has_min_sdk_below_security_baseline", "has_target_sdk_below_security_baseline", "has_modern_android_security_baseline",
+    "has_sast_security_findings", "has_codeql_security_findings", "has_semgrep_security_findings", "has_sast_high_confidence_security_findings", "has_sast_quality_only_findings",
+    "has_dynamic_runtime_evidence", "has_dynamic_tls_evidence", "has_dynamic_storage_evidence", "has_dynamic_session_evidence", "has_dynamic_http_traffic_detected",
 )}
 
 # ------------------------------------------------------------
@@ -2329,6 +2579,17 @@ DEFAULT_NEGATIVE_FINDING_FLAGS = {
     "has_stores_auth_tokens_in_plaintext",
     "has_stores_keys_in_plaintext",
     "has_stores_ephi_on_external_storage",
+    "has_third_party_trackers",
+    "has_crash_reporting_tracker",
+    "has_analytics_tracker",
+    "has_privacy_relevant_tracker",
+    "has_min_sdk_below_security_baseline",
+    "has_target_sdk_below_security_baseline",
+    "has_sast_security_findings",
+    "has_codeql_security_findings",
+    "has_semgrep_security_findings",
+    "has_sast_high_confidence_security_findings",
+    "has_dynamic_http_traffic_detected",
 }
 
 
@@ -2358,7 +2619,9 @@ def classify_fallback(flag_id: str, cfg: Dict[str, Any]) -> Tuple[bool, str]:
     elif flag_id in positive:
         state = "pass" if has_feature else "fail"
     else:
-        state = "fail"
+        # Evidence-first policy: unmapped flags must not become silent NO/fail.
+        # They become UNKNOWN unless explicitly classified through configuration.
+        state = "unknown"
     return has_feature, state
 
 
@@ -2825,6 +3088,14 @@ def build_outputs(cfg: Dict[str, Any], app_metadata: Dict[str, Any], data: Dict[
         "source_manifest_path": data.get("source_manifest_path", ""),
         "source_zip_name": data.get("source_zip_name", ""),
         "source_label": data.get("source_label", ""),
+        "artifact_status": data.get("artifact_status", {}),
+        "scan_quality_summary": {
+            "sca_scan_status": (features.get("sca") or {}).get("scan_status", "unknown"),
+            "sca_inventory_available": bool((features.get("sca") or {}).get("inventory_available")),
+            "sca_license_inventory_available": bool((features.get("sca") or {}).get("license_inventory_available")),
+            "source_files_indexed": len(data.get("source_texts", {}) or {}),
+            "source_zip_members": len(data.get("source_zip_members", []) or []),
+        },
         "effective_features": {
             "os_time_source": features["os_time_source"],
             "password_hashing": features["password_hashing"],

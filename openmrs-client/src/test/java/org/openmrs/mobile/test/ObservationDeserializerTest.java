@@ -14,6 +14,7 @@
 
 package org.openmrs.mobile.test;
 
+import com.openmrs.android_sdk.library.models.Observation;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -22,9 +23,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.openmrs.mobile.models.Observation;
-import org.openmrs.mobile.utilities.ObservationDeserializer;
+import org.mockito.junit.MockitoJUnitRunner;
+import com.openmrs.android_sdk.utilities.ObservationDeserializer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,7 +35,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ObservationDeserializerTest {
 
     private static final String DIAGNOSIS_LIST = "Chronic intractable pain";

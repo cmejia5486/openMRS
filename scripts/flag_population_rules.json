@@ -1,0 +1,76 @@
+{
+  "schema": "vision360-flag-population-rules-v1",
+  "purpose": "Evidence-first rules for populating Vision360 flags without changing requirement-to-flag assignments.",
+  "principles": [
+    "Do not treat missing scanner coverage as a clean NO.",
+    "Keep requirement-to-flag mappings stable.",
+    "Route scanner evidence into existing flags when semantics match.",
+    "Expose newly normalized signals as optional flags for future catalog use.",
+    "Preserve traceability through source, rule_id, evidence_count and notes."
+  ],
+  "patched_existing_rules": {
+    "has_sca_known_vulnerable_dependencies": {
+      "source": "Trivy agent_payload.json and trivy.json",
+      "change": "Returns UNKNOWN when no dependency inventory is available and vulnerability count is zero."
+    },
+    "has_sca_critical_vulnerabilities": {
+      "source": "Trivy severity counters",
+      "change": "Returns UNKNOWN when absence of critical vulnerabilities is not conclusive due to missing dependency inventory."
+    },
+    "has_sca_high_vulnerabilities": {
+      "source": "Trivy severity counters",
+      "change": "Returns UNKNOWN when absence of high vulnerabilities is not conclusive due to missing dependency inventory."
+    },
+    "has_sca_medium_vulnerabilities": {
+      "source": "Trivy severity counters",
+      "change": "Returns UNKNOWN when absence of medium vulnerabilities is not conclusive due to missing dependency inventory."
+    },
+    "has_sca_low_vulnerabilities": {
+      "source": "Trivy severity counters",
+      "change": "Returns UNKNOWN when absence of low vulnerabilities is not conclusive due to missing dependency inventory."
+    },
+    "has_sca_fixable_vulnerabilities": {
+      "source": "Trivy fixed version metadata",
+      "change": "Returns UNKNOWN when no dependency inventory is available."
+    },
+    "has_sca_unfixed_vulnerabilities": {
+      "source": "Trivy vulnerability metadata",
+      "change": "Returns UNKNOWN when no dependency inventory is available."
+    },
+    "has_sca_license_inventory": {
+      "source": "Trivy license entries and dependency inventory",
+      "change": "Returns UNKNOWN when no dependency or license inventory is available."
+    },
+    "fallback_unmapped_flags": {
+      "source": "All flags without a direct detector",
+      "change": "Unknown by default unless explicitly classified or overridden."
+    }
+  },
+  "new_optional_flags": {
+    "privacy_trackers": [
+      "has_third_party_trackers",
+      "has_crash_reporting_tracker",
+      "has_analytics_tracker",
+      "has_privacy_relevant_tracker"
+    ],
+    "android_sdk_baseline": [
+      "has_min_sdk_below_security_baseline",
+      "has_target_sdk_below_security_baseline",
+      "has_modern_android_security_baseline"
+    ],
+    "sast_coverage": [
+      "has_sast_security_findings",
+      "has_codeql_security_findings",
+      "has_semgrep_security_findings",
+      "has_sast_high_confidence_security_findings",
+      "has_sast_quality_only_findings"
+    ],
+    "dynamic_coverage": [
+      "has_dynamic_runtime_evidence",
+      "has_dynamic_tls_evidence",
+      "has_dynamic_storage_evidence",
+      "has_dynamic_session_evidence",
+      "has_dynamic_http_traffic_detected"
+    ]
+  }
+}

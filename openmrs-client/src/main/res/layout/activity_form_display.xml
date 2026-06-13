@@ -13,11 +13,8 @@
   ~ Copyright (C) OpenMRS, LLC.  All Rights Reserved.
   -->
 
-<ScrollView
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:background="#EEE"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -25,17 +22,8 @@
     <RelativeLayout
         android:id="@+id/formMainContainer"
         android:orientation="vertical"
-        android:background="#EEE"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
-            app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
         <RelativeLayout
             android:id="@+id/viewPagerIndicator"
@@ -54,16 +42,16 @@
                     android:id="@+id/btn_next"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:backgroundTint="@color/primary"
+                    android:background="@drawable/btn_submit_selector"
                     android:textColor="@color/white"
-                    android:text="Next"/>
+                    android:text="@string/action_next"/>
                 <Button
-                    android:id="@+id/btn_finish"
+                    android:id="@+id/btn_submit"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:backgroundTint="@color/primary"
+                    android:background="@drawable/btn_submit_selector"
                     android:textColor="@color/white"
-                    android:text="Submit"
+                    android:text="@string/action_submit"
                     android:visibility="gone"/>
             </RelativeLayout>
 
@@ -80,15 +68,12 @@
         <LinearLayout
             android:id="@+id/pagerContainer"
             android:layout_above="@id/viewPagerIndicator"
-            android:layout_below="@+id/toolbar"
-            android:layout_alignLeft="@+id/toolbar"
-            android:layout_alignRight="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="fill_parent"
             android:orientation="horizontal">
-            <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+            <androidx.viewpager.widget.ViewPager
                 xmlns:tools="http://schemas.android.com/tools"
-                android:id="@+id/container"
+                android:id="@+id/view_pager"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 tools:context=".activities.formdisplay.FormDisplayActivity" />

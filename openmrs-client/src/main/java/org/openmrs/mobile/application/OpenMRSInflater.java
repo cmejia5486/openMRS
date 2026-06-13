@@ -14,15 +14,12 @@
 
 package org.openmrs.mobile.application;
 
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.utilities.FontsUtil;
-
 
 public class OpenMRSInflater {
     private LayoutInflater mInflater;
@@ -32,29 +29,25 @@ public class OpenMRSInflater {
     }
 
     public ViewGroup addKeyValueStringView(ViewGroup parentLayout, String label, String data) {
-        View view = mInflater.inflate(R.layout.key_value_data_row, null, false);
-        TextView labelText = (TextView) view.findViewById(R.id.keyValueDataRowTextLabel);
+        View view = mInflater.inflate(R.layout.row_key_value_data, null, false);
+        TextView labelText = view.findViewById(R.id.keyValueDataRowTextLabel);
         if (label.contains(":")) {
             labelText.setText(label.substring(0, label.indexOf(':')));
         } else {
             labelText.setText(label);
         }
-        FontsUtil.setFont(labelText, FontsUtil.OpenFonts.OPEN_SANS_SEMIBOLD);
 
-        TextView dataText = (TextView) view.findViewById(R.id.keyValueDataRowTextData);
+        TextView dataText = view.findViewById(R.id.keyValueDataRowTextData);
         dataText.setText(data);
-        FontsUtil.setFont(dataText, FontsUtil.OpenFonts.OPEN_SANS_REGULAR);
         parentLayout.addView(view);
         return parentLayout;
     }
 
     public ViewGroup addSingleStringView(ViewGroup parentLayout, String label) {
-        View view = mInflater.inflate(R.layout.single_text_data_row, null, false);
-        TextView labelText = (TextView) view.findViewById(R.id.singleTextRowLabelText);
+        View view = mInflater.inflate(R.layout.row_single_text_data, null, false);
+        TextView labelText = view.findViewById(R.id.singleTextRowLabelText);
         labelText.setText(label);
-        FontsUtil.setFont(labelText, FontsUtil.OpenFonts.OPEN_SANS_SEMIBOLD);
         parentLayout.addView(view);
         return parentLayout;
     }
-
 }
