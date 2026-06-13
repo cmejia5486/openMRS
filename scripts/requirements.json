@@ -5,7 +5,11 @@
     "patched_at": "2026-06-13",
     "patch_purpose": "Align 469 requirement results to target matrix while prioritizing scanner-variable flags from the 259-flag fingerprint universe.",
     "source_requirements_file": "requirements(6).json",
-    "manual_refinement": "Replaced generic dynamic runtime support in ICO-022 and ICR-011 with network transport flags plus approved ports/protocols support."
+    "manual_refinement": "Replaced generic dynamic runtime support in ICO-022 and ICR-011 with network transport flags plus approved ports/protocols support.",
+    "reoptimized_at": "2026-06-13",
+    "reoptimization_purpose": "Second-pass full-catalog flag assignment, extending fluctuating scanner-backed mapping to no and n/a requirements while preserving the 469-target result matrix.",
+    "source_file": "requirements_6_patched_469_variable_flags.json",
+    "flag_universe": "259 Vision360 flags from patched generator"
   },
   "requirements_count": 469,
   "requirements": [
@@ -77,7 +81,8 @@
       "controles": "To avoid unauthorized access and reduce the security risks of the application, the requirement is to ensure that hardcoded default credentials are not used in the application.",
       "Flags": [
         "has_hardcoded_credentials",
-        "has_secrets_secure_keystore_env_vars"
+        "has_secrets_secure_keystore_env_vars",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -126,7 +131,8 @@
         "has_secure_cicd_key_management",
         "has_hardcoded_credentials",
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_ipc_bindservice_secure"
+        "has_ipc_bindservice_secure",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -254,7 +260,8 @@
       "Flags": [
         "has_protection_against_tampered_executables",
         "has_prevention_against_reverse_engineering",
-        "has_org_has_binary_protection_policy"
+        "has_org_has_binary_protection_policy",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -306,7 +313,8 @@
         "has_uses_os_level_update_mechanisms",
         "has_org_has_formal_patch_management_policy",
         "has_org_notifies_users_of_security_updates",
-        "has_org_documents_security_updates"
+        "has_org_documents_security_updates",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -390,7 +398,8 @@
         "has_endpoint_requires_user_authentication",
         "has_server_side_authz_enforced",
         "has_rbac_enforced_on_api",
-        "has_protection_against_tampered_executables"
+        "has_protection_against_tampered_executables",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -440,7 +449,8 @@
       "controles": "The application should check that all of its elements will be detected and are necessary for the application to function. Constantly manage an inventory of all infrastructure-related assets—including those that are mobile, IoT, and cloud-based—to identify, protect, and remediate any unauthorized or unmanaged asset.",
       "Flags": [
         "has_org_tracks_component_vulnerabilities",
-        "has_protection_against_tampered_executables"
+        "has_protection_against_tampered_executables",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -463,7 +473,8 @@
       "controles": "If a class extending SSLSocketFactory is being used, the checkServerTrusted method of that class must be correctly implemented and must validate the server certificate",
       "Flags": [
         "has_android_ssl_pinning_present",
-        "has_android_ssl_pinning_detected"
+        "has_android_ssl_pinning_detected",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -513,7 +524,8 @@
       "Validation criteria": "Enforcing Limitations on Embedded Content:\nEnsure the application enforces organization-defined limits on embedding one data type within another.\nMonitoring, detection, and blocking of unauthorized or unsupported nested data.\nData Integrity Testing:\nEmpirical test cases for scenarios where one data type has the other one embedded inside it and to check that the application validates and enforces the limitations defined without any failure.\nCode Review of Policies in Embed:\nReview of application Code to ensure that rules on data embedding based on Organizational policies have been implemented.",
       "controles": "The application shall restrict the embedding of one data type within another through organization-defined limits to ensure the integrity of the data and to restrict unauthorized nesting of data.",
       "Flags": [
-        "has_org_policy_embedding_data_type"
+        "has_org_policy_embedding_data_type",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -536,12 +548,8 @@
       "controles": "If tampering or fraud is detected, the application backend server should take the appropriate action based on the integrity check result to implement preventive measures, block potential attacks, and help reduce abuse.",
       "Flags": [
         "has_protection_against_tampered_executables",
-<<<<<<< HEAD
         "has_backend_token_validation",
         "has_android_debuggable_enabled"
-=======
-        "has_backend_token_validation"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -567,7 +575,8 @@
         "has_org_api_responses_schema",
         "has_soap_uses_strict_schema_validation",
         "has_backend_input_validation",
-        "has_data_format_strictly_controlled"
+        "has_data_format_strictly_controlled",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -612,7 +621,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Where To Get Feedback:\nConfirm there is a configured and functional means of receiving security-related feedback (e.g., a security email address).\nShow clearly how to provide feedback in the app or documentation (e.g., help section, privacy policy).\nFeedback Workflow Testing:\nSend a message to the security feedback channel and verify receipt of the message.\nVerify if the feedback channel has an automated or manual acknowledgment mechanism to ensure that security reports are received.\nSecurity Incident Tracking:\nCheck ensuring that security reports submitted are logged with a unique identifier which can be used for tracking purposes.\nEnsure that there is a mechanism that ensures all logged reports are reviewed and addressed, including documentation of actions taken to resolve issues.",
       "controles": "There should be means of providing feedback (e.g., provide a security email address (e.g., security@domain.com)).",
-      "Flags": []
+      "Flags": [
+        "has_sca_security_sensitive_outdated_libraries"
+      ]
     },
     {
       "PUID": "SECM-CAT-ISU-021",
@@ -634,7 +645,8 @@
       "controles": "Application should analyze and perform client-side data processing for sensitive operations (if applicable) to avoid sending confidential data to the server unnecessarily.",
       "Flags": [
         "has_org_client_processing_policy",
-        "has_enforces_data_minimization_on_client"
+        "has_enforces_data_minimization_on_client",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -657,7 +669,8 @@
       "controles": "The application must have at least one administrator signed up for receiving update notifications and security alerts to ensure timely patching/updates of both the application as well as its components.",
       "Flags": [
         "has_org_registers_admin_for_security_alerts",
-        "has_org_notifies_users_of_security_updates"
+        "has_org_notifies_users_of_security_updates",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -710,9 +723,7 @@
       "Validation criteria": "Update transmission is encrypted:\nCheck if out-of-app-store updates are delivered on encrypted routes (e.g., TLS/SSL).\nProvide an initial check with secure connection before the update.\nIntegrity Verification for Updates:\nVerify all updates outside the app store for authenticity and integrity before the application.\nSucceeding with an affected update and be confident that it is identified and declined.\nMaintenance Sessions Are Secure with Cryptographic Protection:\nVerify that strong cryptographic mechanisms are in place to encrypt all data in transit during remote maintenance sessions.\nEnsure integrity of communications during remote sessions are cryptographically checked.",
       "controles": "Security updates must all be shipped using an encrypted connection and the security update must be checked from their proper publisher. This ensures the confidentiality and integrity of non-local maintenance and diagnostic communications using cryptographic mechanisms.",
       "Flags": [
-        "has_org_notifies_users_of_security_updates",
-        "has_manifest_allow_clear_text_traffic_true",
-        "has_uses_os_level_update_mechanisms"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -734,7 +745,7 @@
       "Validation criteria": "Signature: An Application to the External Resources\nEnsure all resources that are to be updated outside of app-store mechanisms are signed using a cryptographically strong signature.\nConfirm that unsigned resources are rejected on the update path.\nSignature Validation Testing:\nValidate the signature of updated resources to check the application.\nAttempt to apply an update with a bad or missing signature [simulate] and verify that the bad update is detected and rejected.\nResistance to Tampering Validation:\nTrigger a tampered update and confirm the detection of changes by the application, ensuring the resource will not be applied.\nWe organized periodic reviews of the Resource Update Workflow:\nImplement an automatic signature verification in the update workflow that cannot be manually overridden before it applies the updates to any resources.",
       "controles": "App must validate those resources outside the app-store mechanisms which will be consumed are signed and get validated before updating and applying.",
       "Flags": [
-        "has_webview_remote_content"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -785,7 +796,8 @@
       "Flags": [
         "has_defined_rbac_model",
         "has_defined_authorization_policy",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -906,9 +918,7 @@
       "Validation criteria": "Platform Version Review:\nEnsure that the application runs on the latest version of the platform and does not support obsolete versions & versions that have known vulnerabilities.\nUpdate Schedule Compliance:\nMake sure that the application performs checks for security updates and patches at a minimum weekly.\nKeep applications up-to-date with the latest software patches following vendor-ironclad procedures.",
       "controles": "Continuous updating of all software components and third-party libraries (e.g., SDKs, libraries, and cryptographic frameworks) ensures addressing known vulnerabilities by integrating regular security and platform updates to support the latest security features.",
       "Flags": [
-        "has_soap_uses_mutual_tls",
-        "has_defined_certificate_management_policy",
-        "has_defined_identity_lifecycle_policy"
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -931,7 +941,8 @@
       "controles": "Modify and maintain privileges for software libraries must be controlled within application owners.",
       "Flags": [
         "has_defined_privilege_management_policy",
-        "has_backend_policy_dependencies"
+        "has_backend_policy_dependencies",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1061,7 +1072,8 @@
         "has_data_format_strictly_controlled",
         "has_server_side_audit_trail",
         "has_secure_backend_log_storage",
-        "has_log_injection_vulnerabilities"
+        "has_log_injection_vulnerabilities",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1085,7 +1097,8 @@
       "Flags": [
         "has_secrets_secure_keystore_env_vars",
         "has_signing_creds_not_hardcoded",
-        "has_secure_cicd_key_management"
+        "has_secure_cicd_key_management",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1132,7 +1145,8 @@
       "Flags": [
         "has_org_app_deprecation_policy",
         "has_org_app_deprecation_user_notification_process",
-        "has_org_app_deprecation_communication_plan"
+        "has_org_app_deprecation_communication_plan",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1158,7 +1172,8 @@
         "has_collects_telemetry_for_security_events",
         "has_logs_offloaded_to_secure_siem",
         "has_audit_failure_alerting",
-        "has_runtime_global_kill_switch_for_security_incidents"
+        "has_runtime_global_kill_switch_for_security_incidents",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1182,7 +1197,8 @@
       "Flags": [
         "has_safe_mode_degraded_functionality_design",
         "has_org_has_incident_response_plan_for_app",
-        "has_runtime_global_kill_switch_for_security_incidents"
+        "has_runtime_global_kill_switch_for_security_incidents",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -1208,7 +1224,8 @@
         "has_approved_ports_and_protocols",
         "has_controls_protecting_temporary_compiled_data",
         "has_temporary_compiled_data_securely_deleted",
-        "has_runtime_global_kill_switch_for_security_incidents"
+        "has_runtime_global_kill_switch_for_security_incidents",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1230,8 +1247,7 @@
       "Validation criteria": "How JavaScript Configuration Testing Works:\nEnsure that JavaScript is disabled in all WebViews by default.\nMake sure the setJavaScriptEnabled() method is invoked only when needed and documented.\nTo Test Cross-Site Scripting (XSS):\nPerform XSS vulnerabilities test in WebViews and ensure the app is able to mitigate these attacks.\nCode Review for WebView Use:\nReviewing Application Code for WebView instances and verify if it follows secure configuration practices",
       "controles": "Disable JavaScript for WebViews unless it is explicitly required for the functionality of the application and configure WebViews securely to avoid vulnerabilities such as XSS or sensitive data portion leakage.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_webview_javascript"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -1254,7 +1270,8 @@
       "controles": "Extreme caution must be used when using addJavaScriptInterface() and it must be limited to trusted web content embedded in the APK or internal sources, and WebViews must be configured correctly so that sensitive data does not leak and sensitive functionality is not exposed.",
       "Flags": [
         "has_webview_addjavascriptinterface_present",
-        "has_webview_components"
+        "has_webview_components",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -1277,7 +1294,8 @@
       "controles": "The WebView must restrict JavaScript execution to only JS within the app package, and properly configured WebViews must not leak sensitive data or functionality.",
       "Flags": [
         "has_webview_addjavascriptinterface_present",
-        "has_webview_components"
+        "has_webview_components",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -1299,8 +1317,7 @@
       "Validation criteria": "Unused Functionality Review:\nEnsure that platform-supported unused functionalities, such as plugins, local files access, content provider access, and JavaScript execution features, are all disabled in WebViews.\nValidation of Interface in Full-Screen:\nVerify the application does not expose full-screen web interfaces in embedded browsing components.\nAssess risks associated with potential phishing attacks through full-screen interfaces and verify that the application is not vulnerable to the same.\nCode Review: Proper WebView Security Configuration\nGo through the codebase to check that said secure WebView configurations, such as access restrictions, disabled functionalities, and no full-screen interfaces are observed.",
       "controles": "The application shall limit access to domains that are not compliant within any third-party components used for embedded browsing that utilize a user-supplied agent (for example, WebViews) as well as disable any platform-supported features that are not used to reduce security risks.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_manifest_allow_clear_text_traffic_true"
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -1322,7 +1339,7 @@
       "Validation criteria": "Cache Clearing Validation:\nVerify that the application uses clearCache() to clear all the WebView caches after sensitive data is processed\nMock data through WebView and make sure that the cached information is invalidated as soon as possible\nServer-Side Header Testing:\nEnsure no sensitive data gets cached into the WebView by ensuring the server-side headers like no-store, no-cache, etc.\nVerify that the headers work as intended by testing the content delivery.\nCheck this code for Cache Management:\nReview the application’s use of WebView and make sure that clearCache() is called after processing sensitive content.\nEnsure server-side headers are appropriately set to restrict sensitive data caching",
       "controles": "The application should manage webview caching. It should remove local cache using clearCache() after handling sensitive data and should use server-side headers like no-store to avoid caching sensitive content.",
       "Flags": [
-        "has_webview_remote_content"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -1344,9 +1361,7 @@
       "Validation criteria": "Testing for WebView Content Restrictions:\nEnsure that WebView on pre-4.4 Android versions (API level 19) is only allowed to render trusted content.\nAttempt to load untrusted content and ensure it is blocked from being loaded.\nSecurity Provider Validation:\nMake sure the application makes use of the updatable Security Provider object to mitigate any SSL vulnerabilities.\nCheck and apply updates to the security provider.\nStaging for Legacy Devices Compatibility Testing\nVerify WebView security configurations for Android version lower than 4.4.\nVerify that exposure to known vulnerabilities in legacy webkit versions is mitigated by application-specific safeguards.",
       "controles": "Display only trusted content in WebView (on older Android versions) to mitigate Man-In-The-Middle web attacks, Updatable Security Provider (for SSL vulnerabilities).",
       "Flags": [
-        "has_webview_remote_content",
-        "has_webview_file_scheme",
-        "has_insecure_http_based_webview_communication"
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -1368,9 +1383,7 @@
       "Validation criteria": "Testing Protocol Handler Configuration\nEnsure that no HTTP protocol handler is allowed for the WebView.\nVerify that potentially harmful handlers like file, tel, app-id, etc. are disabled.\nUnauthorized Protocol Testing:\nAttempt to invoke unauthorized or disabled protocol handlers and check that the event is blocked.\nSecure Data Transmission Validation\nEnsure the WebView only allows secure communication channels (e.g., HTTPS) and deny non-secure connections.\nSetting up protocol handler (via code review)\nVerify the WebView configuration of the application to ensure that only the minimal needed protocol handlers are configured.\nConfirm that potentially dangerous protocol handlers are not present in the codebase.",
       "controles": "The application must make use of WebViews to enable only the minimum set of protocol handlers, ideally limited to HTTPS, and disable potentially dangerous handlers such as file, tel, and app-id.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_webview_file_scheme",
-        "has_insecure_http_based_webview_communication"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -1392,8 +1405,7 @@
       "Validation criteria": "Local Resource Loading Testing:\nVerify that the WebView configuration prevents the loading of user-supplied local resources.\nSimulate attempts to load unauthorized local resources and confirm they are blocked.\nContent Source Restriction Validation:\nConfirm that WebViews are configured to load only predefined and trusted resources.\nValidate that the application restricts resource loading to prevent execution of user-supplied content.\nCode Review for Resource Loading Logic:\nReview the application’s WebView implementation to ensure compliance with the restriction on loading user-supplied local resources.\nCheck for potential vulnerabilities that may allow circumvention of this restriction.\nSecure Resource Handling Testing:\nTest WebView behavior under various scenarios to ensure secure handling of resources, including attempts to inject local files.",
       "controles": "The application must ensure that WebViews do not load user-supplied local resources to prevent unauthorized access or malicious content execution.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_webview_file_scheme"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -1415,8 +1427,7 @@
       "Validation criteria": "Input Data Validation Testing:\nVerify that all input data received by WebView is validated for format, type, and content.\nTest for injection vulnerabilities by attempting to supply malformed or malicious input data.\nProtocol Trust Restriction:\nConfirm that WebView does not trust insecure protocols, such as HTTP, by default.\nTest for proper rejection of insecure protocol-based content.\nCode Review for Data Handling Logic:\nConduct a review of the WebView implementation to ensure robust input validation and data sanitization are in place.\nValidate adherence to secure coding practices for data handling.",
       "controles": "The application must validate all input data in WebViews used for network content, ensuring that insecure protocols are not trusted and all incoming data is sanitized.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_insecure_http_based_webview_communication"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -1437,7 +1448,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Serialization API Validation:\nVerify that the application uses safe and approved serialization APIs for object serialization.\nConfirm that unsafe or deprecated serialization methods are not utilized in the codebase.\nCode Review for Serialization Practices:\nReview the application’s codebase to ensure serialization and deserialization processes follow secure coding standards.\nCheck for proper validation of serialized data during deserialization.\nData Integrity Validation:\nConfirm that the serialization process maintains the integrity and confidentiality of sensitive data.\nValidate that only authorized entities can serialize or deserialize objects.",
       "controles": "The application must implement object serialization using safe serialization APIs to prevent security vulnerabilities such as unauthorized data access or deserialization attacks.",
-      "Flags": []
+      "Flags": [
+        "has_sca_security_sensitive_outdated_libraries"
+      ]
     },
     {
       "PUID": "SECM-CAT-ISU-054",
@@ -1457,7 +1470,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Data Validation Testing:\nVerify that all untrusted data is validated before deserialization to ensure it is well-formed and secure.\nTest the application for improper deserialization of invalid or malicious data inputs.\nCode Review for Deserialization Logic:\nReview the deserialization implementation to ensure secure handling of untrusted data, including validation and cryptographic protections where applicable.\nCheck for adherence to secure coding standards for deserialization.\nRuntime Behavior Validation:\nMonitor the application's runtime behavior during deserialization to detect and prevent unauthorized actions or errors resulting from untrusted data.",
       "controles": "The application must securely implement object deserialization by validating untrusted data before deserialization and protecting against unauthorized gadget chain execution.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-ISU-055",
@@ -1479,12 +1494,8 @@
       "controles": "The application must detect and mitigate interactions from untrustworthy environments, such as rooted or jailbroken devices, and ensure operation only on secure, verified Android-powered devices.",
       "Flags": [
         "has_protection_against_tampered_executables",
-<<<<<<< HEAD
         "has_device_access_policy_enforced",
         "has_android_debuggable_enabled"
-=======
-        "has_device_access_policy_enforced"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -1555,7 +1566,8 @@
         "has_secure_cicd_key_management",
         "has_secrets_secure_keystore_env_vars",
         "has_ci_cd_uses_encrypted_keys",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1576,7 +1588,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Execution Flow Diagram Validation:\nVerify that execution flow diagrams are created and accurately depict how the application handles potential deadlock and recursion scenarios in web services.\nDesign Document Review:\nConfirm that design documents include a detailed explanation of mitigation strategies for deadlock and recursion issues.\nValidate that the documentation aligns with best practices for web service development.\nCode Review for Mitigation Strategies:\nReview the application code to confirm that deadlock and recursion mitigation strategies, such as resource locks and recursion limits, are implemented as described in the design documents.",
       "controles": "The application must include execution flow diagrams and design documents demonstrating how deadlock and recursion issues in web services are mitigated during development.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-001",
@@ -1599,7 +1613,8 @@
       "Flags": [
         "has_endpoint_requires_user_authentication",
         "has_session_id_assigned_from_server_cookie",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -1620,7 +1635,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Action Definition Validation:\nVerify that all user actions permitted without identification or authentication are explicitly defined.\nConfirm that these actions are consistent with the organization’s mission and business requirements.\nSecurity Plan Review:\nEnsure that the security plan includes documentation of permitted actions and provides supporting rationale for each.\nValidate that the rationale aligns with organizational security policies and standards.\nStakeholder Approval:\nConfirm that stakeholders, including security and compliance teams, have reviewed and approved the documented permitted actions.",
       "controles": "The application must define and document user actions that can be performed without identification or authentication, ensuring they align with the organizational mission and business functions and provide supporting rationale in the security plan.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-003",
@@ -1643,7 +1660,8 @@
       "Flags": [
         "has_endpoint_requires_user_authentication",
         "has_server_side_authz_enforced",
-        "has_server_side_authz_for_sensitive_actions"
+        "has_server_side_authz_for_sensitive_actions",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -1669,7 +1687,8 @@
         "has_logout_invalidates_server_session",
         "has_supports_manual_logout",
         "has_clears_local_session_data_on_logout",
-        "has_clears_auth_data_on_logout"
+        "has_clears_auth_data_on_logout",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -1693,7 +1712,8 @@
       "Flags": [
         "has_defined_session_timeout_policy",
         "has_org_session_timeout_policy_meets_stig_requirements",
-        "has_session_id_assigned_from_server_cookie"
+        "has_session_id_assigned_from_server_cookie",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -1717,7 +1737,8 @@
       "Flags": [
         "has_defined_session_timeout_policy",
         "has_org_session_timeout_policy_meets_stig_requirements",
-        "has_session_id_assigned_from_server_cookie"
+        "has_session_id_assigned_from_server_cookie",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -1738,7 +1759,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Log-on Identifier Validation:\nVerify that system or application identifiers are not displayed until after the user has successfully logged in.\nTest various log-on scenarios to confirm that identifiers remain hidden during the authentication process.\nCode Review for Log-on Procedures:\nReview the implementation of log-on procedures to ensure compliance with secure practices for hiding identifiers.\nValidate adherence to best practices for user authentication processes.\nUI/UX Testing for Identifier Handling:\nConfirm that the user interface does not display application or system identifiers during the log-on process.\nValidate those identifiers, which are revealed only after successful authentication.",
       "controles": "The application must ensure that system or application identifiers are not displayed until the log-on process has been successfully completed.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-008",
@@ -1760,7 +1783,8 @@
       "controles": "The application must prevent the display of help messages during the log-on procedure and obscure authentication feedback to avoid aiding unauthorized users or exposing sensitive authentication information.",
       "Flags": [
         "has_error_messages_are_generic",
-        "has_error_messages_disclose_internal_details"
+        "has_error_messages_disclose_internal_details",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -1806,7 +1830,8 @@
       "controles": "The application must validate log-on information only after all input data has been completed and must not indicate which specific part of the input is correct or incorrect in case of an error.",
       "Flags": [
         "has_error_messages_are_generic",
-        "has_error_messages_disclose_internal_details"
+        "has_error_messages_disclose_internal_details",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -1829,7 +1854,8 @@
       "controles": "The application must enforce a limit of three consecutive invalid log-on attempts within a 15-minute time period and lock the account or take other defined actions when the maximum number of unsuccessful attempts is exceeded.",
       "Flags": [
         "has_defined_account_lock_policy",
-        "has_org_account_lockout_policy_meets_stig_requirements"
+        "has_org_account_lockout_policy_meets_stig_requirements",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -1854,7 +1880,8 @@
         "has_org_has_formal_account_lifecycle_process",
         "has_org_notifies_admin_on_account_lifecycle_events",
         "has_defined_identity_lifecycle_policy",
-        "has_defined_account_lock_policy"
+        "has_defined_account_lock_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -1877,7 +1904,8 @@
       "controles": "The application must display a system use notification banner before granting access, warning users that the system is for authorized use only and providing legal and privacy notices.",
       "Flags": [
         "has_org_has_formal_privacy_notice_and_consent_process",
-        "has_supports_patient_consent_workflows"
+        "has_supports_patient_consent_workflows",
+        "has_privacy_relevant_tracker"
       ]
     },
     {
@@ -1900,7 +1928,8 @@
       "controles": "The application must retain the Standard Mandatory DoD Notice and Consent Banner on the screen until the user acknowledges the usage conditions and explicitly logs on for further access.",
       "Flags": [
         "has_org_has_formal_privacy_notice_and_consent_process",
-        "has_supports_patient_consent_workflows"
+        "has_supports_patient_consent_workflows",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -1924,7 +1953,8 @@
       "Flags": [
         "has_iaa_enforces_account_lifecycle_controls",
         "has_org_has_formal_account_lifecycle_process",
-        "has_defined_identity_lifecycle_policy"
+        "has_defined_identity_lifecycle_policy",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -1948,7 +1978,8 @@
       "Flags": [
         "has_org_has_formal_account_lifecycle_process",
         "has_org_notifies_admin_on_account_lifecycle_events",
-        "has_iaa_enforces_account_lifecycle_controls"
+        "has_iaa_enforces_account_lifecycle_controls",
+        "has_secrets_count"
       ]
     },
     {
@@ -1973,7 +2004,8 @@
         "has_defined_password_policy",
         "has_org_password_policy_meets_stig_requirements",
         "has_iaa_supports_mfa_for_privileged_accounts",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -1996,7 +2028,8 @@
       "controles": "The application must automatically disable user accounts after a 35-day period of inactivity to mitigate unauthorized access risks.",
       "Flags": [
         "has_iaa_enforces_account_lifecycle_controls",
-        "has_org_has_formal_account_lifecycle_process"
+        "has_org_has_formal_account_lifecycle_process",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2019,7 +2052,8 @@
       "controles": "The application must implement processes or features to prevent the removal or disabling of emergency accounts while the emergency situation is ongoing.",
       "Flags": [
         "has_org_has_emergency_access_procedure_for_ephi",
-        "has_org_logs_and_reviews_emergency_access_events"
+        "has_org_logs_and_reviews_emergency_access_events",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -2043,7 +2077,8 @@
       "Flags": [
         "has_org_has_formal_account_lifecycle_process",
         "has_defined_key_rotation_policy",
-        "has_defined_api_key_rotation_policy"
+        "has_defined_api_key_rotation_policy",
+        "has_secrets_count"
       ]
     },
     {
@@ -2070,7 +2105,8 @@
         "has_logout_invalidates_server_session",
         "has_clears_auth_data_on_logout",
         "has_defined_session_timeout_policy",
-        "has_org_session_timeout_policy_meets_stig_requirements"
+        "has_org_session_timeout_policy_meets_stig_requirements",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2091,7 +2127,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Concurrent Session Limitation Testing:\nVerify that the application enforces the organization-defined limit on concurrent logon sessions per user.\nConfiguration Validation:\nConfirm that the number of allowed concurrent sessions is configurable and adheres to organizational policies.\nCode Review for Session Control Mechanisms:\nReview the implementation of session control logic to ensure proper enforcement of concurrent session limits.\nCheck for vulnerabilities that could bypass session limits.",
       "controles": "The application must provide the capability to limit the number of concurrent logon sessions per user based on organization-defined thresholds.",
-      "Flags": []
+      "Flags": [
+        "has_sca_low_vulnerabilities"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-023",
@@ -2115,7 +2153,8 @@
         "has_endpoint_requires_user_authentication",
         "has_oauth2_authentication",
         "has_defined_identity_lifecycle_policy",
-        "has_handles_patient_identifier_correctly"
+        "has_handles_patient_identifier_correctly",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -2139,7 +2178,8 @@
       "Flags": [
         "has_endpoint_requires_user_authentication",
         "has_defined_identity_lifecycle_policy",
-        "has_oauth2_authentication"
+        "has_oauth2_authentication",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2164,7 +2204,8 @@
         "has_defined_authorization_policy",
         "has_defined_rbac_model",
         "has_rbac_enforced_on_api",
-        "has_backend_rbac_enforcement"
+        "has_backend_rbac_enforcement",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -2185,7 +2226,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Registration Expiry Testing:\nVerify that user registrations automatically expire after the defined time limit.\nConfirm that expired registrations are renewed only through a secure re-registration process.\nAccess Restriction Validation:\nTest scenarios where users attempt to access the system after their registration has expired, ensuring access is denied until renewal.\nConfiguration Review:\nValidate that the time limit for user registration is configurable and aligns with organizational policies.\nCode Review for Registration Logic:\nReview the implementation of time-limited registration and renewal mechanisms to ensure compliance with secure coding practices.",
       "controles": "The application must implement time-limited user registration for Point of Service (PoS) systems connected to the EHRi, requiring periodic renewal of user registrations to maintain access.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-027",
@@ -2205,7 +2248,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Connection Time Restriction Testing:\nVerify that connection times to high-risk EHRi services are restricted as per organizational policies.\nTest scenarios to confirm that connections are terminated after the specified duration.\nAccess Control Validation:\nEnsure that remote access to EHRi applications is monitored and restricted based on access type and session duration.\nCode Review for Session Management:\nReview the implementation of session duration controls to ensure secure handling of connection restrictions.",
       "controles": "The application must restrict connection times to high-risk EHRi services to enhance security and minimize the risk of unauthorized access.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-028",
@@ -2230,7 +2275,8 @@
         "has_endpoint_requires_user_authentication",
         "has_oauth2_authentication",
         "has_defined_identity_lifecycle_policy",
-        "has_handles_patient_identifier_correctly"
+        "has_handles_patient_identifier_correctly",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2253,7 +2299,8 @@
       "controles": "The application must validate certificates by constructing a certification path, including status information, to an accepted trust anchor when utilizing PKI-based authentication.",
       "Flags": [
         "has_soap_uses_mutual_tls",
-        "has_soap_uses_tls"
+        "has_soap_uses_tls",
+        "has_sca_low_vulnerabilities"
       ]
     },
     {
@@ -2276,7 +2323,8 @@
       "controles": "The application must implement a local cache of revocation data to support certification path discovery and validation when network access to revocation information is unavailable during PKI-based authentication.",
       "Flags": [
         "has_soap_uses_mutual_tls",
-        "has_soap_uses_tls"
+        "has_soap_uses_tls",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2299,7 +2347,8 @@
       "controles": "The application must map authenticated identities to individual user or group accounts during PKI-based authentication to ensure accurate association of certificate information.",
       "Flags": [
         "has_soap_uses_mutual_tls",
-        "has_soap_uses_tls"
+        "has_soap_uses_tls",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2323,7 +2372,8 @@
       "Flags": [
         "has_soap_uses_mutual_tls",
         "has_android_ssl_pinning_present",
-        "has_android_ssl_pinning_detected"
+        "has_android_ssl_pinning_detected",
+        "has_sca_low_vulnerabilities"
       ]
     },
     {
@@ -2346,7 +2396,8 @@
       "controles": "The application must implement robust mechanisms to secure local user authentication and mitigate the risk of client-side bypass vulnerabilities, especially on jailbroken or compromised devices.",
       "Flags": [
         "has_os_secure_key_storage",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -2373,7 +2424,8 @@
         "has_jwt_tokens",
         "has_token_based_auth",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -2400,7 +2452,8 @@
         "has_server_side_authz_enforced",
         "has_server_side_authz_for_sensitive_actions",
         "has_backend_token_validation",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -2421,7 +2474,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Authentication Bypass Testing:\nSimulate authentication attempts using spoofed device identifiers and geo-location data.\nVerify that these spoofed values do not bypass the authentication process.\nAlternate Authentication Factor Testing:\nTest the implementation of secure authentication mechanisms such as multi-factor authentication (MFA) or public key infrastructure (PKI).\nValidate that device identifiers and geo-location data are not used as primary or fallback authentication factors.\nCode Analysis for Spoofable Inputs:\nConduct a static code analysis to identify and verify that device identifiers, geo-location data, or similar spoofable inputs are not included in the authentication logic.\nConfirm that only secure authentication factors are implemented.\nConfiguration and Hardening Verification:\nEnsure configuration files and authentication settings do not allow the use of device identifiers or geo-location data for authentication.\nSession Hijacking and Replay Testing:\nAttempt to hijack or replay sessions using captured device identifiers or geo-location data.\nVerify that such attacks are mitigated through robust authentication and session validation.\nPenetration Testing for Authentication Mechanisms:\nPerform penetration testing specifically targeting the authentication mechanism.\nConfirm that authentication cannot be bypassed or manipulated through spoofed inputs.",
       "controles": "The application must avoid using spoof-able values, such as device identifiers or geolocation data, for user authentication.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-037",
@@ -2442,8 +2497,7 @@
       "Validation criteria": "Message Time Stamp Validation:\nVerify that each WS-Security message includes a creation and expiration time stamp.\nConfirm that the application has rejected expired messages.\nSequence Number Testing:\nEnsure that WS-Security messages include sequence numbers to prevent replay attacks.\nValidate that the application rejects messages with duplicate sequence numbers.\nConfiguration Review:\nConfirm that the application’s WS-Security configuration enforces the use of time stamps and sequence numbers.\nReplay Attack Simulation:\nSimulate a replay attack by resending a previously valid message with the same sequence number or expired time stamp.\nVerify that the application detects and rejects the attack.\nCode Review for WS-Security Implementation:\nAnalyze the code to ensure WS-Security is correctly implemented with time stamps, sequence numbers, and proper validation logic.",
       "controles": "The application must use WS-Security to protect messages with time stamps, including creation and expiration times, and sequence numbers to prevent replay attacks and ensure message integrity.",
       "Flags": [
-        "has_soap_message_level_signatures",
-        "has_soap_prevents_replay_attacks"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2465,7 +2519,8 @@
       "Validation criteria": "Assertion ID Uniqueness Testing:\nVerify that each SAML assertion includes a unique assertion ID generated by the asserting party.\nConfirm that duplicate assertion IDs are detected and rejected by the application.\nConfiguration Review:\nValidate that the SAML assertion authority is configured to generate unique identifiers for each assertion.\nCode Review for Assertion Handling:\nEnsure the application includes logic to check the uniqueness of assertion IDs and handles invalid or duplicate IDs securely.\nIntegration Testing with Asserting Parties:\nTest the SAML assertion process with multiple asserting parties to ensure unique assertion IDs are consistently generated and verified.",
       "controles": "The application must ensure that each asserting party provides unique assertion ID references for every SAML assertion to maintain assertion integrity and prevent replay attacks.",
       "Flags": [
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2487,7 +2542,7 @@
       "Validation criteria": "Validity Period Testing:\nVerify that the application checks the validity periods of WS-Security tokens and SAML assertions during authentication and message processing.\nConfirm that expired tokens or assertions are rejected.\nConfiguration Review:\nEnsure that validity period enforcement is enabled for all WS-Security and SAML assertion configurations.\nCode Review for Validity Logic:\nAnalyze the implementation of validity period checks to confirm secure handling and proper enforcement.\nIntegration Testing with Federated Services:\nTest validity period enforcement in scenarios involving federated services using WS-Security or SAML assertions to ensure compatibility and security.",
       "controles": "The application must validate the validity periods of all WS-Security tokens and SAML assertions to ensure secure communication and prevent the use of expired or invalid credentials.",
       "Flags": [
-        "has_soap_message_level_signatures"
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -2513,7 +2568,8 @@
         "has_saml_based_sso",
         "has_uses_xml_encryption",
         "has_soap_message_level_encryption",
-        "has_org_requires_fips_validated_crypto_for_sensitive_data"
+        "has_org_requires_fips_validated_crypto_for_sensitive_data",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2535,7 +2591,8 @@
       "Validation criteria": "Assertion Validity Testing:\nVerify that all SAML assertions include the <NotOnOrAfter> condition in the <SubjectConfirmation> element.\nConfirm that the application has rejected expired assertions.\nConfiguration Review:\nValidate that the application’s SAML configuration enforces the inclusion of <NotOnOrAfter> conditions in all assertions.\nCode Review for SAML Validation Logic:\nEnsure the implementation properly enforces <NotOnOrAfter> conditions and handles expired assertions securely.\nIntegration Testing:\nTest the application’s interaction with federated systems to ensure <NotOnOrAfter> conditions are consistently enforced across systems.",
       "controles": "The application must implement the <NotOnOrAfter> condition in the <SubjectConfirmation> element of SAML assertions to enforce time-bound validity and prevent the reuse of expired assertions.",
       "Flags": [
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2557,7 +2614,8 @@
       "Validation criteria": "Assertion Validity Period Testing:\nVerify that all SAML assertions include <NotBefore> and <NotOnOrAfter> elements to define valid time windows.\nConfirm that assertions outside these time windows are rejected.\nOne-Time Use Testing:\nValidate that assertions with <OneTimeUse> elements are rejected after a single successful use.\nConfiguration Review:\nEnsure the application is configured to enforce the inclusion of <NotBefore>, <NotOnOrAfter>, or <OneTimeUse> conditions in all SAML assertions.\nCode Review for Assertion Validation Logic:\nAnalyze the implementation to verify proper handling of <Conditions> elements and enforcement of their restrictions.\nIntegration Testing:\nTest the application’s handling of SAML assertions in federated environments to ensure consistent enforcement of <Conditions> elements.",
       "controles": "The application must implement the <NotBefore> and <NotOnOrAfter> conditions or the <OneTimeUse> element within the <Conditions> element in SAML assertions to enforce time-bound validity and restrict reuse.",
       "Flags": [
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2579,7 +2637,8 @@
       "Validation criteria": "SAML Assertion Validation:\nVerify that only one <OneTimeUse> element is present in the <Conditions> element of each SAML assertion.\nConfirm that assertions with multiple <OneTimeUse> elements are rejected.\nReplay Protection Testing:\nTest the behavior of assertions with <OneTimeUse> to ensure they cannot be reused after successful validation.\nConfiguration Review:\nValidate that the application is configured to enforce the restriction of a single <OneTimeUse> element within the <Conditions> section.\nCode Review for Assertion Logic:\nAnalyze the implementation to confirm that logic explicitly restricts multiple <OneTimeUse> elements and ensures proper handling of single-use assertions.\nIntegration Testing:\nTest SAML assertions across federated systems to ensure <OneTimeUse> enforcement is consistent and reliable.",
       "controles": "The application must ensure that only one <OneTimeUse> element is included in the <Conditions> element of a SAML assertion to maintain the integrity of single-use conditions.",
       "Flags": [
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -2604,7 +2663,8 @@
         "has_supports_manual_logout",
         "has_clears_local_session_data_on_logout",
         "has_clears_auth_data_on_logout",
-        "has_logout_invalidates_server_session"
+        "has_logout_invalidates_server_session",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -2630,7 +2690,8 @@
         "has_session_id_assigned_from_server_cookie",
         "has_backend_token_validation",
         "has_logout_invalidates_server_session",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2656,7 +2717,8 @@
         "has_defined_password_policy",
         "has_org_password_policy_meets_stig_requirements",
         "has_password_hashing_uses_kdf",
-        "has_os_secure_key_storage"
+        "has_os_secure_key_storage",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2679,7 +2741,8 @@
       "controles": "The application must enforce a minimum password lifetime of 24 hours to prevent users from bypassing password history requirements by making frequent password changes.",
       "Flags": [
         "has_defined_password_policy",
-        "has_org_password_policy_meets_stig_requirements"
+        "has_org_password_policy_meets_stig_requirements",
+        "has_secrets_count"
       ]
     },
     {
@@ -2702,7 +2765,8 @@
       "controles": "The application must enforce a maximum password lifetime of 60 days to ensure users regularly update their passwords and maintain strong account security.",
       "Flags": [
         "has_defined_password_policy",
-        "has_org_password_policy_meets_stig_requirements"
+        "has_org_password_policy_meets_stig_requirements",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2726,7 +2790,8 @@
       "Flags": [
         "has_defined_password_policy",
         "has_org_password_policy_meets_stig_requirements",
-        "has_password_hashing_uses_kdf"
+        "has_password_hashing_uses_kdf",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2749,7 +2814,8 @@
       "controles": "The application must enforce a policy requiring at least eight characters to be changed when passwords are updated, ensuring password uniqueness and reducing the risk of reuse.",
       "Flags": [
         "has_defined_password_policy",
-        "has_org_password_policy_meets_stig_requirements"
+        "has_org_password_policy_meets_stig_requirements",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -2774,7 +2840,8 @@
         "has_defined_password_policy",
         "has_org_password_policy_meets_stig_requirements",
         "has_hardcoded_credentials",
-        "has_password_hashing_uses_kdf"
+        "has_password_hashing_uses_kdf",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2798,7 +2865,8 @@
       "Flags": [
         "has_defined_password_policy",
         "has_org_password_policy_meets_stig_requirements",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -2823,7 +2891,8 @@
         "has_server_side_authz_enforced",
         "has_rbac_enforced_on_api",
         "has_defined_rbac_model",
-        "has_defined_authorization_policy"
+        "has_defined_authorization_policy",
+        "has_secrets_count"
       ]
     },
     {
@@ -2847,7 +2916,8 @@
       "Flags": [
         "has_org_complies_with_ficam_profiles",
         "has_defined_certificate_management_policy",
-        "has_org_requires_dod_approved_ca_for_tls"
+        "has_org_requires_dod_approved_ca_for_tls",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2872,7 +2942,8 @@
         "has_server_side_authz_enforced",
         "has_rbac_enforced_on_api",
         "has_defined_rbac_model",
-        "has_defined_authorization_policy"
+        "has_defined_authorization_policy",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -2898,7 +2969,8 @@
         "has_clears_auth_data_on_logout",
         "has_logout_invalidates_server_session",
         "has_clears_ui_on_background",
-        "has_clears_local_data_on_logout_or_switch_user"
+        "has_clears_local_data_on_logout_or_switch_user",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -2923,7 +2995,8 @@
         "has_supports_manual_logout",
         "has_logout_invalidates_server_session",
         "has_clears_cookies_on_logout",
-        "has_session_id_assigned_from_server_cookie"
+        "has_session_id_assigned_from_server_cookie",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -2951,7 +3024,8 @@
         "has_sso_mechanisms",
         "has_rbac_enforced_on_api",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_iaa_supports_out_of_band_authentication"
+        "has_iaa_supports_out_of_band_authentication",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -2976,7 +3050,8 @@
         "has_rbac_enforced_on_api",
         "has_backend_rbac_enforcement",
         "has_iaa_enforces_account_lifecycle_controls",
-        "has_defined_rbac_model"
+        "has_defined_rbac_model",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3000,7 +3075,8 @@
       "Flags": [
         "has_sso_mechanisms",
         "has_oauth2_authentication",
-        "has_token_based_auth"
+        "has_token_based_auth",
+        "has_api_keys_in_version_control"
       ]
     },
     {
@@ -3025,7 +3101,8 @@
         "has_sensitive_data_encrypted_with_os_keystore",
         "has_auth_keys_stored_in_secure_hardware",
         "has_os_secure_key_storage",
-        "has_android_insecure_random_rng"
+        "has_android_insecure_random_rng",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3053,7 +3130,8 @@
         "has_backend_token_validation",
         "has_tls_ssl_pinning_implemented",
         "has_ssl_cert_pinning_implemented",
-        "has_manifest_allow_clear_text_traffic_true"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3077,7 +3155,8 @@
       "Flags": [
         "has_org_complies_with_ficam_profiles",
         "has_sso_mechanisms",
-        "has_saml_based_sso"
+        "has_saml_based_sso",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3106,7 +3185,8 @@
         "has_clears_auth_data_on_logout",
         "has_password_hashing_uses_kdf",
         "has_password_hashing_uses_salts",
-        "has_stores_auth_tokens_in_plaintext"
+        "has_stores_auth_tokens_in_plaintext",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3131,7 +3211,8 @@
         "has_token_based_auth",
         "has_defined_key_revocation_process",
         "has_org_has_device_loss_response_process",
-        "has_device_access_policy_enforced"
+        "has_device_access_policy_enforced",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3155,7 +3236,8 @@
       "Flags": [
         "has_clears_local_session_data_on_logout",
         "has_clears_auth_data_on_logout",
-        "has_clears_ui_on_background"
+        "has_clears_ui_on_background",
+        "has_api_keys_in_version_control"
       ]
     },
     {
@@ -3178,7 +3260,8 @@
       "controles": "The application must immediately release UI frames containing credentials or keys after their use to prevent unintended exposure.",
       "Flags": [
         "has_clears_ui_on_background",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3203,7 +3286,8 @@
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
         "has_content_provider_actively_exposed",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3227,7 +3311,8 @@
       "Flags": [
         "has_org_password_policy_meets_stig_requirements",
         "has_session_ids_reused",
-        "has_session_id_assigned_from_server_cookie"
+        "has_session_id_assigned_from_server_cookie",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3253,7 +3338,8 @@
         "has_logout_invalidates_server_session",
         "has_clears_local_session_data_on_logout",
         "has_clears_auth_data_on_logout",
-        "has_clears_cookies_on_logout"
+        "has_clears_cookies_on_logout",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -3278,7 +3364,8 @@
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3304,7 +3391,8 @@
         "has_ipc_bindservice_secure",
         "has_manifest_custom_permission_defined",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_iaa_supports_out_of_band_authentication"
+        "has_iaa_supports_out_of_band_authentication",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -3357,7 +3445,8 @@
         "has_rbac_enforced_on_api",
         "has_backend_rbac_enforcement",
         "has_defined_authorization_policy",
-        "has_defined_rbac_model"
+        "has_defined_rbac_model",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3381,7 +3470,8 @@
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
         "has_manifest_exports_components_insecurely",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3405,7 +3495,8 @@
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
         "has_manifest_exports_components_insecurely",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3429,7 +3520,8 @@
       "Flags": [
         "has_ipc_bindservice_secure",
         "has_manifest_custom_permission_defined",
-        "has_permissions_protected_with_signature_level"
+        "has_permissions_protected_with_signature_level",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -3452,7 +3544,8 @@
       "controles": "The application must enforce explicit access control checks within Binder or Messenger interfaces to ensure secure communication, as these objects do not support declarative permissions in the manifest.",
       "Flags": [
         "has_ipc_bindservice_secure",
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -3476,7 +3569,8 @@
       "Flags": [
         "has_ipc_bindservice_secure",
         "has_manifest_custom_permission_defined",
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_secrets_count"
       ]
     },
     {
@@ -3503,7 +3597,8 @@
         "has_oauth2_authentication",
         "has_rbac_enforced_on_api",
         "has_backend_rbac_enforcement",
-        "has_server_side_authz_enforced"
+        "has_server_side_authz_enforced",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -3533,7 +3628,8 @@
         "has_server_side_authz_for_sensitive_actions",
         "has_backend_token_validation",
         "has_backend_rbac_enforcement",
-        "has_iaa_supports_mfa_for_privileged_accounts"
+        "has_iaa_supports_mfa_for_privileged_accounts",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -3559,7 +3655,8 @@
         "has_maps_patient_ids_consistently",
         "has_supports_ephi_access_auditing",
         "has_supports_patient_access_to_audit_trail",
-        "has_defined_authorization_policy"
+        "has_defined_authorization_policy",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3584,7 +3681,8 @@
         "has_ipc_bindservice_secure",
         "has_permissions_protected_with_signature_level",
         "has_manifest_custom_permission_defined",
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3605,7 +3703,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Identity Overriding Test:\nVerify that the application correctly invokes clearCallingIdentity() to override the caller's identity.\nEnsure the application performs the required operation successfully.\nIdentity Restoration Test:\nCheck that the application invokes restoreCallingIdentity() immediately after completing the privileged operation.\nVerify that the original caller's identity and permissions are fully restored.\nUnauthorized Use Prevention:\nAttempt unauthorized access or actions using clearCallingIdentity() without proper controls in place.\nConfirm that the application logs and rejects unauthorized privilege escalations.",
       "controles": "The application must securely implement identity overriding mechanisms using clearCallingIdentity() and restoreCallingIdentity() to ensure temporary privilege escalation is safely managed during external process interactions.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-085",
@@ -3629,7 +3729,8 @@
         "has_ipc_bindservice_secure",
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3653,7 +3754,8 @@
       "Flags": [
         "has_ipc_bindservice_secure",
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3676,7 +3778,8 @@
       "controles": "The application must ensure secure intent broadcasting by using explicit intents for specific recipients and applying appropriate controls when using ordered broadcasts to prevent unauthorized interception",
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -3701,7 +3804,8 @@
         "has_oauth2_authentication",
         "has_jwt_tokens",
         "has_token_based_auth",
-        "has_sso_mechanisms"
+        "has_sso_mechanisms",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3726,7 +3830,8 @@
         "has_oauth2_authentication",
         "has_jwt_tokens",
         "has_token_based_auth",
-        "has_sso_mechanisms"
+        "has_sso_mechanisms",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3751,7 +3856,8 @@
         "has_oauth2_authentication",
         "has_jwt_tokens",
         "has_token_based_auth",
-        "has_sso_mechanisms"
+        "has_sso_mechanisms",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3775,7 +3881,8 @@
       "Flags": [
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
         "has_iaa_supports_out_of_band_authentication",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3798,7 +3905,8 @@
       "controles": "The application must implement FaceID and TouchID to unlock biometrically locked secrets and securely protect sensitive authentication materials, such as session tokens.",
       "Flags": [
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_stores_auth_tokens_in_plaintext"
+        "has_stores_auth_tokens_in_plaintext",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -3819,7 +3927,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Biometric Data Verification:\nConfirm that the application verifies the existence of enrolled biometric data (e.g., fingerprints or iris scans) before activating biometric authentication APIs.\nEnrollment Prompt Testing:\nVerify that users are prompted to enroll their biometrics if no data is detected when attempting to enable biometric authentication.\nAPI Restriction Testing:\nEnsure that the biometric authentication API is inaccessible unless valid biometric data has been enrolled on the device.\nUnauthorized Access Testing:\nTests that attempt to authenticate using biometric APIs without prior enrollment are blocked securely.",
       "controles": "The application must validate the presence of enrolled biometric data, such as registered fingerprints or iris scans, before enabling API access for biometric authentication purposes.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-094",
@@ -3839,7 +3949,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Biometric Sensor Validation:\nVerify that the application detects the presence of a biometric sensor before activating biometric authentication.\nFallback Mechanism Testing:\nConfirm that alternative authentication methods (e.g., PIN, password) are provided when biometric hardware is unavailable.\nSecure API Validation:\nEnsure biometric authentication APIs utilize secure mechanisms such as unlocking the keychain/keystore rather than simple \"true/false\" responses.\nAuthentication Flow Testing:\nTest that biometric authentication supports sensitive operations, such as accessing user data, with additional authentication when required.\nUnauthorized Access Prevention:\nValidate that unauthorized users cannot bypass biometric authentication or fallback mechanisms to gain access to sensitive app features.",
       "controles": "The application must implement secure biometric authentication methods, such as fingerprint or facial recognition, ensuring compatibility with biometric sensors and providing alternative authentication controls when biometric hardware is unavailable.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-095",
@@ -3863,7 +3975,8 @@
         "has_iaa_supports_mfa_for_privileged_accounts",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
         "has_server_side_authz_for_sensitive_actions",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -3884,7 +3997,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Authentication Factor Comparison:\nConfirm that the authentication factors required by the mobile application are equal to or stronger than those required by the web application counterpart.\nMobile Authentication Testing:\nValidate that the mobile application enforces all authentication steps present in the web version, including multi-factor authentication (if applicable).\nSession Synchronization Testing:\nVerify that user sessions initiated on the mobile app reflect the same authentication security measures as those initiated via the web application.\nFallback Mechanism Evaluation:\nEnsure no fallback mechanism on the mobile application circumvents the authentication steps present in the web application.",
       "controles": "The application must ensure authentication requirements for mobile applications are consistent with their web application counterparts, maintaining equivalent or greater authentication factors.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-097",
@@ -3906,7 +4021,8 @@
       "controles": "The mobile application must implement organization-defined out-of-band authentication to enhance security under specified conditions.",
       "Flags": [
         "has_iaa_supports_out_of_band_authentication",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -3930,7 +4046,8 @@
       "Flags": [
         "has_iaa_supports_mfa_for_privileged_accounts",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -3951,7 +4068,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "PIV Credential Acceptance and Verification:\nVerify that the application accepts and electronically verifies valid PIV credentials for both privileged and non-privileged users.\nConfirm interoperability by validating PIV credentials issued by other federal agencies.\nMFA Implementation Testing:\nEnsure multifactor authentication is enforced for all privileged and non-privileged accounts during local and network access, using CAC or Alt. Token credentials.\nAccess Controls Testing:\nConfirm that non-privileged accounts cannot access privileged resources without MFA.\nValidate that session initiation is blocked for invalid or expired PIV credentials.\nInteroperability Validation:\nTest the application's ability to accept and authenticate PIV credentials from Federal (Non-DoD) agencies without errors or restrictions.",
       "controles": "The application must accept and electronically verify Personal Identity Verification (PIV) credentials, enforce multifactor authentication (MFA) using CAC or Alt. Token for local and network access, and support PIV credentials from other federal agencies.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IAA-100",
@@ -3974,7 +4093,8 @@
       "Flags": [
         "has_server_side_authz_enforced",
         "has_server_side_authz_for_sensitive_actions",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_api_keys_in_version_control"
       ]
     },
     {
@@ -3999,7 +4119,8 @@
         "has_supports_runtime_permission_management",
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
-        "has_ipc_bindservice_secure"
+        "has_ipc_bindservice_secure",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -4026,7 +4147,8 @@
         "has_server_side_authz_for_sensitive_actions",
         "has_backend_token_validation",
         "has_backend_rbac_enforcement",
-        "has_token_based_auth"
+        "has_token_based_auth",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -4082,7 +4204,8 @@
         "has_session_id_assigned_from_server_cookie",
         "has_logout_invalidates_server_session",
         "has_clears_local_session_data_on_logout",
-        "has_clears_cookies_on_logout"
+        "has_clears_cookies_on_logout",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4107,7 +4230,8 @@
         "has_device_access_policy_enforced",
         "has_org_has_device_loss_response_process",
         "has_org_notifies_admin_on_account_lifecycle_events",
-        "has_org_notifies_users_of_security_updates"
+        "has_org_notifies_users_of_security_updates",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4132,7 +4256,8 @@
         "has_supports_ephi_access_auditing",
         "has_supports_patient_access_to_audit_trail",
         "has_server_side_audit_trail",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -4155,7 +4280,8 @@
       "controles": "Remote endpoints must verify that connecting clients are using the current version of the mobile application to ensure compatibility and security.",
       "Flags": [
         "has_server_side_audit_trail",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -4178,7 +4304,8 @@
       "controles": "The application must utilize mutual authentication when endpoint device non-repudiation protections are required by DoD policy or by the data owner.",
       "Flags": [
         "has_server_side_audit_trail",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4203,7 +4330,8 @@
         "has_endpoint_requires_user_authentication",
         "has_oauth2_authentication",
         "has_jwt_tokens",
-        "has_token_based_auth"
+        "has_token_based_auth",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4230,7 +4358,8 @@
         "has_oauth2_authentication",
         "has_jwt_tokens",
         "has_backend_token_validation",
-        "has_access_tokens_weak_or_unpredictable"
+        "has_access_tokens_weak_or_unpredictable",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4252,7 +4381,8 @@
       "Validation criteria": "Session Termination Test:\nLog out from the application and verify that the remote endpoint invalidates the session ID associated with the user.\nAccess Denial Test Post Logout:\nAttempt to access resources using the previous session credentials after logging out. Ensure that all access attempts are denied.\nToken Revocation Test:\nConfirm that access tokens or session tokens issued to the user are revoked upon logout.\nSimultaneous Session Termination Test:\nEnsure that if the user has multiple sessions, all sessions are terminated upon logout, unless specified otherwise by the application design.",
       "controles": "The application must ensure that the remote endpoint terminates any existing session when the user logs out.",
       "Flags": [
-        "has_logout_invalidates_server_session"
+        "has_logout_invalidates_server_session",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -4277,7 +4407,8 @@
         "has_clears_local_session_data_on_logout",
         "has_clears_cookies_on_logout",
         "has_clears_local_data_on_logout_or_switch_user",
-        "has_clears_ui_on_background"
+        "has_clears_ui_on_background",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4300,7 +4431,8 @@
       "controles": "The application must automatically terminate inactive sessions after a predetermined period of inactivity to prevent unauthorized access, particularly in high-risk locations or when handling sensitive data.",
       "Flags": [
         "has_defined_session_timeout_policy",
-        "has_org_session_timeout_policy_meets_stig_requirements"
+        "has_org_session_timeout_policy_meets_stig_requirements",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -4323,7 +4455,8 @@
       "controles": "The application must provide all users with the capability to manually terminate their communication session to ensure user-initiated logoff functionality.",
       "Flags": [
         "has_supports_manual_logout",
-        "has_logout_invalidates_server_session"
+        "has_logout_invalidates_server_session",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -4346,7 +4479,8 @@
       "controles": "The mobile application has a feature so that at the end of the session the respective confirmation is presented through an informative message.",
       "Flags": [
         "has_logout_invalidates_server_session",
-        "has_clears_local_session_data_on_logout"
+        "has_clears_local_session_data_on_logout",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -4370,7 +4504,8 @@
       "Flags": [
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
         "has_iaa_supports_out_of_band_authentication",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -4394,7 +4529,8 @@
       "Flags": [
         "has_defined_account_lock_policy",
         "has_org_account_lockout_policy_meets_stig_requirements",
-        "has_backend_has_dos_protection_and_rate_limiting"
+        "has_backend_has_dos_protection_and_rate_limiting",
+        "has_secrets_count"
       ]
     },
     {
@@ -4439,7 +4575,8 @@
       "Validation criteria": "Certificate Validation Test:\nConfirm that the application validates the X.509 certificate chain for the remote endpoint during secure channel establishment, accepting only certificates signed by a trusted CA.\nInvalid Certificate Test:\nSimulate a connection attempt with an invalid, expired, or self-signed certificate, and verify that the application rejects the connection.\nCA Trust Store Test:\nConfirm that the application relies only on the platform’s trusted CA store or a custom CA store configured securely within the application.",
       "controles": "The application must verify the X.509 certificate of the remote endpoint during secure channel establishment, ensuring only certificates signed by a valid Certificate Authority (CA) are accepted, and fail securely if validation fails.",
       "Flags": [
-        "has_https_with_cert_pinning"
+        "has_https_with_cert_pinning",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -4466,7 +4603,8 @@
         "has_jwt_tokens",
         "has_endpoint_requires_user_authentication",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_api_keys_in_version_control"
       ]
     },
     {
@@ -4491,7 +4629,8 @@
         "has_oauth2_authentication",
         "has_jwt_tokens",
         "has_token_based_auth",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_api_keys_in_version_control"
       ]
     },
     {
@@ -4514,7 +4653,8 @@
       "controles": "The application must generate unique API keys for each application instance to ensure efficient identification and isolation of compromised or unauthorized access.",
       "Flags": [
         "has_hardcoded_credentials",
-        "has_defined_api_key_rotation_policy"
+        "has_defined_api_key_rotation_policy",
+        "has_api_keys_in_version_control"
       ]
     },
     {
@@ -4538,7 +4678,8 @@
       "Flags": [
         "has_backend_token_validation",
         "has_rbac_enforced_on_api",
-        "has_token_based_auth"
+        "has_token_based_auth",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -4562,7 +4703,8 @@
       "Flags": [
         "has_error_messages_are_generic",
         "has_error_messages_disclose_internal_details",
-        "has_log_input_sanitization_present"
+        "has_log_input_sanitization_present",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -4586,7 +4728,8 @@
       "Flags": [
         "has_backend_input_validation",
         "has_data_format_strictly_controlled",
-        "has_log_input_sanitization_present"
+        "has_log_input_sanitization_present",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4610,7 +4753,8 @@
       "Flags": [
         "has_error_messages_are_generic",
         "has_error_messages_disclose_internal_details",
-        "has_error_messages_sent_to_unauthorized_destinations"
+        "has_error_messages_sent_to_unauthorized_destinations",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -4634,7 +4778,8 @@
       "Flags": [
         "has_error_messages_are_generic",
         "has_error_messages_disclose_internal_details",
-        "has_error_messages_sent_to_unauthorized_destinations"
+        "has_error_messages_sent_to_unauthorized_destinations",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -4659,7 +4804,8 @@
         "has_webview_file_scheme",
         "has_webview_remote_content",
         "has_webview_javascript_interface_exposes_sensitive_functionality",
-        "has_webview_javascript_interface_leaks_sensitive_data"
+        "has_webview_javascript_interface_leaks_sensitive_data",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -4687,7 +4833,8 @@
         "has_ensures_data_integrity_for_clinical_records",
         "has_backend_input_validation",
         "has_data_format_strictly_controlled",
-        "has_org_has_incident_response_plan_for_app"
+        "has_org_has_incident_response_plan_for_app",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -4711,7 +4858,8 @@
       "Flags": [
         "has_error_messages_are_generic",
         "has_error_messages_disclose_internal_details",
-        "has_error_messages_sent_to_unauthorized_destinations"
+        "has_error_messages_sent_to_unauthorized_destinations",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -4734,7 +4882,8 @@
       "controles": "The system must enforce strict control over the data format during information exchange between applications to ensure data integrity, prevent inconsistencies, and safeguard against potential vulnerabilities.",
       "Flags": [
         "has_data_format_strictly_controlled",
-        "has_backend_input_validation"
+        "has_backend_input_validation",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -4758,7 +4907,8 @@
       "Flags": [
         "has_org_api_responses_schema",
         "has_soap_uses_strict_schema_validation",
-        "has_backend_input_validation"
+        "has_backend_input_validation",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -4782,7 +4932,8 @@
       "Flags": [
         "has_backend_input_validation",
         "has_log_input_sanitization_present",
-        "has_data_format_strictly_controlled"
+        "has_data_format_strictly_controlled",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -4806,7 +4957,8 @@
       "Flags": [
         "has_backend_input_validation",
         "has_data_format_strictly_controlled",
-        "has_log_input_sanitization_present"
+        "has_log_input_sanitization_present",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -4832,7 +4984,8 @@
         "has_webview_addjavascriptinterface_present",
         "has_webview_javascript_interface_limited_to_trusted_content",
         "has_webview_components",
-        "has_webview_javascript"
+        "has_webview_javascript",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -4854,7 +5007,7 @@
       "Validation criteria": "Encoding Inspection Test:\nTest: Verify that all special characters in dynamic content are encoded before rendering in the UI or WebView.\nExpected Result: Special characters, such as <, >, and \", are rendered as their encoded equivalents (e.g., &lt;, &gt;, &quot;).\nHTML Injection Test:\nTest: Attempt to inject HTML tags or scripts into data displayed in the UI or WebView.\nExpected Result: HTML tags or scripts are displayed as text rather than executed in the WebView or UI.\nCommunication Encoding Test:\nTest: Monitor data transmitted from the app to ensure that output data containing special characters is properly encoded.\nExpected Result: Data transmitted via API or other communication protocols uses output encoding to safeguard against injection attacks.\nDynamic Content Validation:\nTest: Input and display special characters or scripts in dynamic content (e.g., search results, user-generated content).\nExpected Result: Special characters are safely encoded and rendered without execution.\nSecure WebView Rendering Test:\nTest: Load and render user-supplied or external data in WebViews.\nExpected Result: All dynamic content is encoded and displayed securely without enabling the execution of untrusted code.\nPenetration Testing:\nTest: Conduct penetration testing to identify any vulnerabilities related to output encoding.\nExpected Result: The application passes all tests with no exploitable encoding vulnerabilities",
       "controles": "The application must implement output encoding techniques to sanitize data before displaying it in user interfaces or transmitting it over communication channels. This ensures that special characters are rendered safely, preventing unintended behavior or security vulnerabilities such as cross-site scripting (XSS).",
       "Flags": [
-        "has_webview_remote_content"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -4877,7 +5030,8 @@
       "controles": "The mobile healthcare application must be designed to prevent vulnerabilities to XML-oriented attacks by ensuring the use of secure and updated XML parsers and libraries, patching components promptly when vulnerabilities are identified, and implementing input validation for XML data.",
       "Flags": [
         "has_uses_xml_signatures",
-        "has_uses_xml_encryption"
+        "has_uses_xml_encryption",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -4899,7 +5053,8 @@
       "Validation criteria": "Recursive Payload Test:\nTest: Send an XML payload with deeply nested elements to the application.\nExpected Result: The application detects and rejects the payload without performance degradation.\nOversized Payload Test:\nTest: Send an XML payload exceeding the maximum allowed size to the application.\nExpected Result: The application rejects the oversized payload and logs the event without crashing.\nXML Entity Expansion Test:\nTest: Submit an XML payload containing a large number of entities that reference each other (e.g., a billion laughs attack).\nExpected Result: The application rejects the payload and prevents resource exhaustion.\nOverlong Element Names Test:\nTest: Submit an XML payload with excessively long element names.\nExpected Result: The application rejects the payload and logs the attempt as a potential DoS attack.\nThroughput Optimization Test:\nTest: Send a high volume of valid XML requests to the application concurrently.\nExpected Result: The application processes requests efficiently without bottlenecks or increased latency.",
       "controles": "The mobile application must mitigate XML-based DoS attacks by implementing robust mechanisms, such as XML filters, parser options, or gateways, to validate recursive payloads, oversized payloads, and prevent XML entity expansion. It must optimize configurations to limit overlong element names and ensure high message throughput while maintaining protection against service disruption.",
       "Flags": [
-        "has_soap_uses_strict_schema_validation"
+        "has_soap_uses_strict_schema_validation",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -4922,7 +5077,8 @@
       "controles": "The mobile application must perform context-specific validation for all user inputs, particularly in file uploads or database queries, to prevent vulnerabilities such as path traversal and injection attacks. This includes validating and sanitizing file paths to ensure operations remain confined to designated directories.",
       "Flags": [
         "has_backend_input_validation",
-        "has_data_format_strictly_controlled"
+        "has_data_format_strictly_controlled",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -4945,7 +5101,8 @@
       "controles": "The mobile application must validate and sanitize all inputs from external sources and users, including data received through the UI, inter-process communication (IPC) mechanisms such as intents, custom URLs, and network sources, to prevent injection attacks and ensure input integrity.",
       "Flags": [
         "has_backend_input_validation",
-        "has_data_format_strictly_controlled"
+        "has_data_format_strictly_controlled",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -4994,7 +5151,8 @@
       "Flags": [
         "has_uses_encrypted_filesystem_storage",
         "has_os_secure_key_storage",
-        "has_secure_backend_log_storage"
+        "has_secure_backend_log_storage",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5018,7 +5176,8 @@
       "Flags": [
         "has_backend_input_validation",
         "has_data_format_strictly_controlled",
-        "has_log_input_sanitization_present"
+        "has_log_input_sanitization_present",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -5067,7 +5226,8 @@
         "has_ui_data_masking",
         "has_blocks_screenshots_flag_secure",
         "has_clears_ui_on_background",
-        "has_displays_sensitive_data_unmasked"
+        "has_displays_sensitive_data_unmasked",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5092,7 +5252,8 @@
         "has_ui_data_masking",
         "has_blocks_screenshots_flag_secure",
         "has_clears_ui_on_background",
-        "has_displays_sensitive_data_unmasked"
+        "has_displays_sensitive_data_unmasked",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5113,7 +5274,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Third-Party Keyboard Restriction Test:\nTest: Attempt to use a third-party keyboard for sensitive input fields.\nExpected result: The sensitive input fields automatically disable third-party keyboards and use the default or custom secure keyboard.\nCustom Keyboard Implementation Test:\nTest: Check whether sensitive input fields use a custom keyboard specifically designed for secure data entry.\nExpected result: Custom keyboards are applied to all sensitive data input fields.\nCode Attribute Validation Test:\nTest: Inspect the codebase to ensure sensitive input fields include attributes or logic to enforce custom keyboard usage.\nExpected result: Sensitive fields explicitly enforce custom keyboard restrictions and block third-party keyboard usage.\nUser Experience Test:\nTest: Interact with sensitive input fields on various devices to ensure that users experience no interruptions or usability issues with the custom keyboard.\nExpected result: Custom keyboards function seamlessly and do not hinder user experience.\nSecurity Penetration Test:\nTest: Conduct tests to verify that sensitive data cannot be captured by third-party keyboards when interacting with sensitive input fields.\nExpected result: No sensitive data is accessible by third-party keyboard apps.",
       "controles": "The application must restrict the use of third-party keyboards for input fields that handle sensitive data, such as credentials or payment information, and should use a custom keyboard for secure inputs instead.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IOV-024",
@@ -5133,7 +5296,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Clipboard Disablement Test:\nTest: Attempt to cut, copy, or paste sensitive data (e.g., passwords or credit card information) from text fields into another application.\nExpected result: Clipboard functionalities are disabled for sensitive text fields, and no data transfer occurs.\nRestricted Clipboard Scope Test:\nTest: Copy data within the application and attempt to paste it into a third-party application.\nExpected result: Clipboard content is restricted to the application and cannot be accessed externally.\nFunctionality Verification Test:\nTest: Verify that non-sensitive fields maintain clipboard functionality as expected.\nExpected result: Clipboard actions work normally for non-sensitive fields.",
       "controles": "The application must disable clipboard functionalities, including cut, copy, and paste, for text fields containing sensitive data or restrict clipboard access to the application only.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IOV-025",
@@ -5155,7 +5320,8 @@
       "controles": "The application must implement input field masking for sensitive data, such as passwords and PINs, ensuring that they are not displayed in clear text during entry or stored as plain text.",
       "Flags": [
         "has_displays_sensitive_data_unmasked",
-        "has_ui_data_masking"
+        "has_ui_data_masking",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5181,7 +5347,8 @@
         "has_manifest_services_explicit_accessibility_attributes",
         "has_manifest_exports_components_insecurely",
         "has_exported_broadcast_receivers_without_permission",
-        "has_data_format_strictly_controlled"
+        "has_data_format_strictly_controlled",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -5206,7 +5373,8 @@
         "has_iaa_supports_mfa_for_privileged_accounts",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
         "has_iaa_supports_out_of_band_authentication",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -5234,7 +5402,8 @@
         "has_uses_push_notifications_for_ephi",
         "has_uses_secure_push_channel_for_ephi",
         "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented"
+        "has_ssl_cert_pinning_implemented",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5258,7 +5427,8 @@
       "Flags": [
         "has_client_side_crypto_for_sensitive_data",
         "has_soap_message_level_encryption",
-        "has_uses_xml_encryption"
+        "has_uses_xml_encryption",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -5304,7 +5474,8 @@
       "controles": "The application must treat SMS data as originating from untrusted sources and avoid performing sensitive operations based on unauthenticated SMS data. Safeguards against spoofing and interception must be implemented to mitigate risks associated with SMS as an insecure communication method.",
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -5351,7 +5522,8 @@
       "controles": "The application must restrict the exposure of sensitive information via broadcast intents, especially when handling SMS messages. Broadcast messages must be secured, limited to authorized applications, and sensitive data must not be transmitted using insecure methods such as SMS or MMS.",
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5449,12 +5621,9 @@
         "has_soap_message_level_signatures",
         "has_uses_xml_signatures",
         "has_proper_ws_security_headers",
-<<<<<<< HEAD
         "has_soap_message_level_encryption",
-        "has_data_format_strictly_controlled"
-=======
-        "has_soap_message_level_encryption"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
+        "has_data_format_strictly_controlled",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -5600,7 +5769,8 @@
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
         "has_ipc_bindservice_secure",
-        "has_content_provider_actively_exposed"
+        "has_content_provider_actively_exposed",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5626,7 +5796,8 @@
         "has_permissions_protected_with_signature_level",
         "has_content_provider_actively_exposed",
         "has_ipc_bindservice_secure",
-        "has_manifest_exports_components_insecurely"
+        "has_manifest_exports_components_insecurely",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -5648,9 +5819,7 @@
       "Validation criteria": "Third-Party SSL Enforcement Test:\nTest: Attempt to establish connections to third-party analytics or social networks without SSL/TLS.\nExpected result: All connections must fail if SSL/TLS is not enforced.\nWebView Security Validation Test:\nTest: Inspect WebView configurations to ensure that only HTTPS URLs are allowed for third-party services.\nExpected result: WebView enforces HTTPS, and attempts to load HTTP content are blocked.\nMixed Content Protection Test:\nTest: Load a webpage containing mixed SSL content (both HTTP and HTTPS) in WebView.\nExpected result: The application blocks or warns about mixed content loading, ensuring no session IDs or data are exposed.\nDynamic Network Traffic Analysis Test:\nTest: Use a network proxy to monitor the application’s outgoing traffic to third-party entities during browser/WebView interactions.\nExpected result: All traffic is encrypted using SSL/TLS, and no unencrypted requests are made.\nSession ID Security Test:\nTest: Simulate session hijacking attempts by intercepting session IDs during third-party interactions.\nExpected result: Session IDs are protected through secure SSL/TLS connections, and no session data is exposed.\nConfiguration Review Test:\nTest: Review the application’s codebase and configuration files for secure connection enforcement with third-party APIs.\nExpected result: SSL/TLS is enforced programmatically for all third-party connections.\nPenetration Test for Mixed Content Vulnerabilities:\nTest: Perform penetration testing focusing on mixed content vulnerabilities in WebView and browser interactions.\nExpected result: The application is not vulnerable to mixed SSL content exploitation.\nEnd-to-End Encryption Verification Test:\nTest: Verify that the data transmitted between the application and third-party services is encrypted end-to-end.\nExpected result: Encryption is maintained throughout the transmission, with no plaintext data visible.",
       "controles": "The application must ensure that all external connections to third-party entities, such as analytics providers or social networks, use SSL/TLS for secure communication when running routines through the browser or WebView. Mixed SSL sessions must be avoided to protect the user’s session ID and data integrity.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_insecure_http_based_webview_communication",
-        "has_manifest_allow_clear_text_traffic_true"
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -5672,9 +5841,7 @@
       "Validation criteria": "Session ID Transmission Test:\nTest: Monitor all network traffic during user authentication and session creation.\nExpected result: Session IDs are transmitted only over secure channels (e.g., HTTPS) and are not visible in plaintext.\nSession ID Storage Test:\nTest: Inspect local storage (e.g., SharedPreferences or keychain) and application memory for session ID storage practices.\nExpected result: Session IDs are stored securely, using encryption or secure OS-level storage mechanisms, and are not stored in plaintext.\nSession Cookie Security Test:\nTest: Verify that the HTTPOnly and Secure flags are set on session cookies.\nExpected result: Session cookies have the HTTPOnly and Secure flags enabled to prevent client-side scripting attacks and transmission over unsecure connections.\nSession ID Exposure Test:\nTest: Attempt to retrieve session IDs through browser caches, logs, or URL parameters.\nExpected result: Session IDs are not exposed in logs, caches, or URLs.\nSession ID Validation Test:\nTest: Test the application’s behavior when a manipulated session ID is submitted.\nExpected result: The application invalidates manipulated session IDs and logs the attempt.\nReplay Attack Simulation Test:\nTest: Attempt to reuse a captured session ID on another device or network.\nExpected result: The application detects and blocks reused session IDs, invalidating the session.\nIdle Timeout Enforcement Test:\nTest: Leave a session idle beyond the timeout period and observe the behavior upon resuming.\nExpected result: The session is invalidated, requiring re-authentication.\nSession Termination Verification Test:\nTest: Log out of the application and monitor whether the session ID is invalidated.\nExpected result: The session ID is destroyed upon logout and cannot be reused.\nSession Integrity Penetration Test:\nTest: Conduct penetration testing to simulate session hijacking attacks.\nExpected result: The application is resilient against session hijacking, and session integrity is maintained.",
       "controles": "The application must ensure that session IDs are not exposed to unauthorized entities and must implement measures to protect session IDs from interception, manipulation, or unauthorized reus.",
       "Flags": [
-        "has_webview_remote_content",
-        "has_insecure_http_based_webview_communication",
-        "has_manifest_allow_clear_text_traffic_true"
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -5722,11 +5889,7 @@
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
         "has_insecure_http_based_webview_communication",
-<<<<<<< HEAD
         "has_approved_ports_and_protocols"
-=======
-        "has_endpoint_requires_user_authentication"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -5752,7 +5915,8 @@
         "has_token_based_auth",
         "has_jwt_tokens",
         "has_backend_token_validation",
-        "has_endpoint_requires_user_authentication"
+        "has_endpoint_requires_user_authentication",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -5799,7 +5963,8 @@
       "controles": "The application must utilize only DoD-approved Public Key Infrastructure (PKI) certificate authorities (CAs) for the verification of protected session establishments. Configure the application to ensure all DoD-signed certificates are validated using DoD-approved PKI CAs exclusively.",
       "Flags": [
         "has_org_requires_dod_approved_ca_for_tls",
-        "has_org_complies_with_ficam_profiles"
+        "has_org_complies_with_ficam_profiles",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -5823,7 +5988,8 @@
       "Flags": [
         "has_tls_ssl_pinning_implemented",
         "has_ssl_cert_pinning_implemented",
-        "has_approved_ports_and_protocols"
+        "has_approved_ports_and_protocols",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -5845,7 +6011,8 @@
       "Validation criteria": "Cryptographic Module Validation Test:\nTest: Verify that the cryptographic modules used in the application meet FIPS 140-2 standards for encryption and related functionalities.\nExpected Result: All cryptographic modules are FIPS 140-2 validated and correctly implemented.\nTLS Version Enforcement Test:\nTest: Confirm that the application enforces the use of secure TLS versions (e.g., TLS 1.2 or higher) for all communications.\nExpected Result: Connections using older or insecure TLS versions are rejected.\nEncryption Key Exchange Test:\nTest: Verify that key exchange mechanisms, such as Diffie-Hellman or RSA, use encryption to authenticate endpoints before communication channels are established.\nExpected Result: Key exchange processes securely authenticate endpoints and prevent unauthorized access.\nEnd-to-End Encryption Test:\nTest: Inspect the application’s communication flows to ensure all data exchanges between patients, healthcare providers, and backend systems are encrypted.\nExpected Result: Data exchanged across all channels is encrypted and protected from interception or tampering.\nMessage Integrity Verification Test:\nTest: Validate that the application uses digital signatures to maintain message integrity and prevent unauthorized modifications.\nExpected Result: Messages are digitally signed, and any modifications during transit are detected and flagged.",
       "controles": "The application must implement FIPS 140-2-validated cryptographic modules for encryption, key exchange, digital signatures, random number generation, and hash functionality. Secure communication channels, such as IPSec or TLS, must protect all stored, collected, and exchanged data with encryption mechanisms aligned with current best practices.",
       "Flags": [
-        "has_org_requires_fips_validated_crypto_for_sensitive_data"
+        "has_org_requires_fips_validated_crypto_for_sensitive_data",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -5866,7 +6033,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Binding Address Verification Test:\nTest: Analyze the application’s network configuration to confirm that it does not bind to INADDR_ANY.\nExpected Result: The application binds only to specific and secure IP addresses.\nAccess Control Test:\nTest: Simulate unauthorized access attempts from untrusted IP addresses to ensure binding restrictions are enforced.\nExpected Result: Connections from untrusted IP addresses are rejected.\nConfiguration Review Test:\nTest: Inspect the application’s code and configuration files for hardcoded or default use of INADDR_ANY.\nExpected Result: No occurrences of INADDR_ANY are found in the codebase or configuration.\nNetwork Interface Monitoring Test:\nTest: Monitor the application’s active network bindings during runtime to verify that only intended network interfaces are used.\nExpected Result: The application binds only to the specified and secured IP addresses.\nPenetration Test:\nTest: Conduct a penetration test to identify potential vulnerabilities caused by improper binding practices.\nExpected Result: No vulnerabilities related to insecure IP address bindings are detected.",
       "controles": "The application must avoid binding to the non-specific IP address INADDR_ANY. Instead, it must bind only to specific and secure IP addresses to restrict unauthorized access and prevent unintended exposure to all network interfaces.",
-      "Flags": []
+      "Flags": [
+        "has_sca_low_vulnerabilities"
+      ]
     },
     {
       "PUID": "SECM-CAT-ICO-029",
@@ -5886,7 +6055,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Code Inspection Test:\nTest: Inspect the application’s source code to verify that onReceivedSslError is not overridden to bypass certificate validation.\nExpected Result: The onReceivedSslError method is either not overridden or properly configured to reject invalid SSL certificates.\nSSL Certificate Validation Test:\nTest: Simulate connections using invalid or self-signed SSL certificates.\nExpected Result: The application rejects connections using invalid SSL certificates.\nNetwork Traffic Analysis Test:\nTest: Monitor network traffic to ensure encrypted data is transmitted only through valid SSL connections.\nExpected Result: All communication uses valid and verified SSL certificates without bypassing validation.\nDynamic Security Testing:\nTest: Use tools to simulate MITM attacks and verify that the application does not accept invalid SSL certificates.\nExpected Result: The application detects and blocks MITM attacks effectively.\n Configuration Audit Test:\nTest: Review SSL/TLS configurations and settings to ensure best practices for certificate validation are applied.\nExpected Result: The application enforces strict SSL validation and does not bypass errors.",
       "controles": "The application must not override the onReceivedSslError method to bypass SSL certificate validation, ensuring that invalid SSL certificates are not accepted.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-ICO-030",
@@ -5932,7 +6103,8 @@
       "Validation criteria": "Platform Security Configuration Test:\nTest: Verify that ATS is enabled for iOS applications and clear text traffic is disabled in Android applications.\nExpected Result: iOS apps enforce ATS, and Android apps block clear text traffic unless explicitly allowed for specific trusted endpoints.\nTraffic Analysis Test:\nTest: Monitor network traffic to confirm that all HTTP-based requests are encrypted and adhere to platform-specific security configurations.\nExpected Result: All HTTP requests use secure protocols, such as HTTPS, and no clear text traffic is detected.\nCode Review Test:\nTest: Review the application’s networking configuration files (e.g., Info.plist for iOS, NetworkSecurityConfig for Android).\nExpected Result: Security configurations explicitly enforce secure transport policies, such as ATS and clear text traffic restrictions.\nException Handling Test:\nTest: Attempt to connect to endpoints using clear text traffic or non-compliant configurations.\nExpected Result: The application denies such connections and logs appropriate error messages.\nDynamic Security Testing:\nTest: Use security tools to test compliance with platform-specific networking security standards.\nExpected Result: The application passes all security compliance checks for HTTP-based networking on its platform.",
       "controles": "The application must leverage platform-specific mechanisms, such as App Transport Security (ATS) in iOS and clear text traffic opt-out in Android, to enforce additional security requirements for HTTP-based networking requests.",
       "Flags": [
-        "has_manifest_allow_clear_text_traffic_true"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_sca_security_sensitive_outdated_libraries"
       ]
     },
     {
@@ -5983,7 +6155,8 @@
         "has_clears_cookies_on_logout",
         "has_clears_auth_data_on_logout",
         "has_clears_local_session_data_on_logout",
-        "has_defined_session_timeout_policy"
+        "has_defined_session_timeout_policy",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -6007,7 +6180,8 @@
       "Flags": [
         "has_endpoint_requires_user_authentication",
         "has_oauth2_authentication",
-        "has_defined_password_policy"
+        "has_defined_password_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6138,7 +6312,8 @@
         "has_org_minimizes_pii_collection_by_design",
         "has_requests_only_minimum_permissions",
         "has_android_extra_risky_permissions_present",
-        "has_ui_data_masking"
+        "has_ui_data_masking",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6164,7 +6339,8 @@
         "has_org_has_data_retention_policy_for_pii_phi",
         "has_org_minimizes_pii_collection_by_design",
         "has_requests_only_minimum_permissions",
-        "has_android_extra_risky_permissions_present"
+        "has_android_extra_risky_permissions_present",
+        "has_privacy_relevant_tracker"
       ]
     },
     {
@@ -6189,7 +6365,8 @@
         "has_org_has_data_retention_policy_for_pii_phi",
         "has_supports_patient_data_deletion",
         "has_clears_local_data_on_uninstall",
-        "has_clears_local_data_on_logout_or_switch_user"
+        "has_clears_local_data_on_logout_or_switch_user",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -6214,7 +6391,8 @@
         "has_supports_patient_consent_workflows",
         "has_supports_patient_data_export",
         "has_supports_patient_data_deletion",
-        "has_supports_runtime_permission_management"
+        "has_supports_runtime_permission_management",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6267,7 +6445,8 @@
         "has_org_log_retention_at_least_one_year",
         "has_org_has_audit_reporting_and_forensic_procedures",
         "has_org_has_incident_response_plan_for_app",
-        "has_org_validates_audit_tool_integrity_periodically"
+        "has_org_validates_audit_tool_integrity_periodically",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -6290,7 +6469,8 @@
       "controles": "The application must implement logging mechanisms to audit the execution of privileged functions. Each log entry must include, at a minimum, the specific action taken, the date, and the time of the event.",
       "Flags": [
         "has_logs_privileged_actions_with_timestamp",
-        "has_server_side_audit_trail"
+        "has_server_side_audit_trail",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6314,7 +6494,8 @@
       "Flags": [
         "has_error_messages_sent_to_unauthorized_destinations",
         "has_error_messages_are_generic",
-        "has_error_messages_disclose_internal_details"
+        "has_error_messages_disclose_internal_details",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -6335,7 +6516,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Server Log Retention Test:\nTest: Verify that the server logs capture all relevant information about established connections, such as IP addresses and timestamps.\nExpected result: Server logs include complete connection details for all client interactions.\nProxy Header Parsing Test:\nTest: Simulate a connection routed through multiple proxies and examine whether the X-Forwarded-For header is correctly parsed.\nExpected result: The application accurately logs the original client IP address and intermediary proxies' details.\nLog Completeness Test:\nTest: Review logs to ensure they contain sufficient data to trace requests back to the originating client.\nExpected result: Logs include client IP, proxy chain, connection timestamps, and session identifiers, if applicable.\nLog Retention Policy Test:\nTest: Ensure logs are retained in accordance with organizational retention policies.\nExpected result: Logs are securely stored and available for the defined retention period.\nLog Security Test:\nTest: Verify that server logs are protected against unauthorized access or tampering.\nExpected result: Logs are securely stored with access controls and integrity protection mechanisms in place.",
       "controles": "The application must ensure that server logs adequately capture information about established connections, including parsing HTTP headers like X-Forwarded-For in cases involving multiple intermediate proxies.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IPC-016",
@@ -6361,7 +6544,8 @@
         "has_defined_log_review_process",
         "has_org_has_incident_response_plan_for_app",
         "has_org_has_audit_reporting_and_forensic_procedures",
-        "has_org_protects_audit_log_integrity_cryptographically"
+        "has_org_protects_audit_log_integrity_cryptographically",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6387,7 +6571,8 @@
         "has_org_has_audit_reporting_and_forensic_procedures",
         "has_org_protects_audit_log_integrity_cryptographically",
         "has_secure_backend_log_storage",
-        "has_tls_ssl_pinning_implemented"
+        "has_tls_ssl_pinning_implemented",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -6412,7 +6597,8 @@
         "has_server_side_audit_trail",
         "has_logs_privileged_actions_with_timestamp",
         "has_audit_event_correlation",
-        "has_session_id_assigned_from_server_cookie"
+        "has_session_id_assigned_from_server_cookie",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6437,7 +6623,8 @@
         "has_server_side_audit_trail",
         "has_logout_invalidates_server_session",
         "has_logs_privileged_actions_with_timestamp",
-        "has_clears_local_session_data_on_logout"
+        "has_clears_local_session_data_on_logout",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -6462,7 +6649,8 @@
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
         "has_logs_privileged_actions_with_timestamp",
-        "has_session_ids_reused"
+        "has_session_ids_reused",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -6488,7 +6676,8 @@
         "has_secure_backend_log_storage",
         "has_defined_log_retention_policy",
         "has_logs_privileged_actions_with_timestamp",
-        "has_log_input_sanitization_present"
+        "has_log_input_sanitization_present",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6513,7 +6702,8 @@
         "has_defined_session_timeout_policy",
         "has_org_session_timeout_policy_meets_stig_requirements",
         "has_server_side_audit_trail",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6539,7 +6729,8 @@
         "has_org_log_retention_at_least_one_year",
         "has_org_log_retention_at_least_five_years_for_sami",
         "has_defined_log_review_process",
-        "has_secure_backend_log_storage"
+        "has_secure_backend_log_storage",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6751,7 +6942,8 @@
         "has_org_has_data_classification_policy",
         "has_uses_encrypted_shared_preferences",
         "has_displays_sensitive_data_unmasked",
-        "has_notification_leaks_sensitive_data"
+        "has_notification_leaks_sensitive_data",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6800,7 +6992,8 @@
         "has_blocks_screenshots_flag_secure",
         "has_ui_data_masking",
         "has_displays_sensitive_data_unmasked",
-        "has_notification_leaks_sensitive_data"
+        "has_notification_leaks_sensitive_data",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6844,7 +7037,7 @@
       "Validation criteria": "JavaScript Access Control Test:\nTest: Attempt to access content from another file scheme URL within the application's JavaScript context.\nExpected Result: Access to other file scheme URLs is blocked unless explicitly required and securely configured.\nContent Origin Restriction Test:\nTest: Attempt to load content from an untrusted origin using JavaScript in the context of a file scheme URL.\nExpected Result: Loading content from any origin is restricted unless explicitly allowed by secure configurations.\nConfiguration Review Test:\nTest: Examine the application’s configuration to ensure unused attributes related to file scheme URLs are disabled.\nExpected Result: All unused platform-supported attributes are explicitly disabled in the application’s settings.\nPenetration Test for File Scheme URLs:\nTest: Conduct a penetration test targeting vulnerabilities related to file scheme URL handling.\nExpected Result: The application resists unauthorized access or exploitation through file scheme URLs.\nSecurity Code Review:\nTest: Perform a security review of the JavaScript implementation and its interaction with file scheme URLs.\nExpected Result: The JavaScript code adheres to secure practices, and unnecessary attributes are disabled.",
       "controles": "The mobile application must ensure that, when using JavaScript code running in the context of a file scheme URL, all unused platform-supported attributes are disabled. Specifically, the application must restrict access to content from other file scheme URLs and content from any origin unless explicitly required and securely implemented.",
       "Flags": [
-        "has_webview_file_scheme"
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -6865,7 +7058,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Background Transition Test:\nTest: Transition the application to the background while sensitive data is displayed.\nExpected Result: Sensitive data is removed, obscured, or replaced with a blurred overlay when the application is backgrounded.\nScreenshot Storage Test:\nTest: Inspect the operating system’s local storage to verify if sensitive data is visible in screenshots captured during background transitions.\nExpected Result: Screenshots of the application display blurred or generic content instead of sensitive data.\nConfiguration Review Test:\nTest: Verify the application's configuration for handling background transitions and disabling backgrounding, if necessary.\nExpected Result: Backgrounding is disabled or properly configured to obscure sensitive data.\nUser Deactivation Test:\nTest: Attempt to deactivate the application's background running feature through user settings or administrative configurations.\nExpected Result: The application allows users or administrators to disable backgrounding if required.\nPenetration Test for Data Leakage:\nTest: Perform a penetration test focusing on capturing sensitive data through screenshots or background caching mechanisms.\nExpected Result: No sensitive data is exposed through screenshots or other cached views during background transitions.",
       "controles": "The mobile application must remove sensitive data from views when transitioning to the background. If the platform retains a screenshot of the visible screen in local storage during backgrounding (e.g., iOS), the application must either disable backgrounding or apply a blurred screen overlay to protect sensitive data.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IPC-037",
@@ -6887,7 +7082,8 @@
       "controles": "The mobile application must exclude sensitive user interface elements from being accessed by custom accessibility applications, particularly on platforms like Android that support such permissions. Sensitive data must not be exposed through accessibility features.",
       "Flags": [
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_blocks_screenshots_flag_secure"
+        "has_blocks_screenshots_flag_secure",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -6935,7 +7131,8 @@
       "controles": "The mobile application must require user re-authentication when transitioning from background to foreground if it contains sensitive data. Alternatively, the application must verify that the device is secured with a PIN, pattern, or password.",
       "Flags": [
         "has_clears_ui_on_background",
-        "has_device_access_policy_enforced"
+        "has_device_access_policy_enforced",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6959,7 +7156,8 @@
       "Flags": [
         "has_defined_privilege_management_policy",
         "has_iaa_supports_mfa_for_privileged_accounts",
-        "has_defined_session_timeout_policy"
+        "has_defined_session_timeout_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6983,7 +7181,8 @@
       "Flags": [
         "has_secure_notifications",
         "has_notification_leaks_sensitive_data",
-        "has_notification_uses_public_channels"
+        "has_notification_uses_public_channels",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -7007,7 +7206,8 @@
       "Flags": [
         "has_secure_notifications",
         "has_notification_leaks_sensitive_data",
-        "has_notification_uses_public_channels"
+        "has_notification_uses_public_channels",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -7127,7 +7327,8 @@
       "controles": "The mobile health application must implement robust error handling mechanisms to prevent error handling vulnerabilities. Proper return codes and exception handling must be implemented throughout the application to ensure secure and predictable behavior during runtime anomalies.",
       "Flags": [
         "has_fails_safe_on_init_failure",
-        "has_error_messages_are_generic"
+        "has_error_messages_are_generic",
+        "has_crash_reporting_tracker"
       ]
     },
     {
@@ -7245,7 +7446,8 @@
       "controles": "The mobile health application must mitigate SQL injection vulnerabilities by using parameterized queries and prepared statements for all database operations. User input must be validated and sanitized to prevent the injection of unauthorized SQL commands. Concatenation of user data into SQL queries is strictly prohibited.",
       "Flags": [
         "has_backend_input_validation",
-        "has_org_runs_static_analysis_in_cicd"
+        "has_org_runs_static_analysis_in_cicd",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7266,7 +7468,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Static Code Review Test\nTest: Analyze the codebase to identify any instances where external input is used to construct OS commands.\nExpected result: No command execution relies on unvalidated or unsanitized user input.\nCommand Injection Simulation Test\nTest: Perform penetration testing to simulate command injection attacks using various payloads.\nExpected result: The application rejects malicious inputs and prevents unauthorized command execution.\nInput Filtering Verification Test\nTest: Validate that all input fields sanitize special characters before processing or executing commands.\nExpected result: Special characters are escaped or neutralized, preventing unintended command modification.\nDynamic Runtime Behavior Test\nTest: Monitor the application's runtime behavior to ensure that commands are executed as intended and not influenced by external inputs.\nExpected result: The application executes commands securely without deviation from expected behavior.\nInterpreters and Code Injection Test\nTest: Verify that the application filters user inputs passed to command interpreters or scripting engines.\nExpected result: The application properly validates and sanitizes inputs to prevent command or code injection vulnerabilities.",
       "controles": "The mobile health application must mitigate command injection vulnerabilities by validating and sanitizing all user inputs before executing any system or OS commands. Input filtering must escape or neutralize special characters that could be exploited to alter the intended behavior of commands.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IBP-012",
@@ -7288,7 +7492,8 @@
       "controles": "The mobile health application must implement validation and error-handling mechanisms to prevent null pointer dereference vulnerabilities, ensuring that all pointers are checked for null values before dereferencing.",
       "Flags": [
         "has_null_pointer_protection_implemented",
-        "has_error_messages_are_generic"
+        "has_error_messages_are_generic",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -7313,7 +7518,8 @@
         "has_backend_replay_protection",
         "has_endpoint_requires_user_authentication",
         "has_tls_ssl_pinning_implemented",
-        "has_iaa_supports_mfa_for_privileged_accounts"
+        "has_iaa_supports_mfa_for_privileged_accounts",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -7336,7 +7542,8 @@
       "controles": "The mobile health application must implement rate-limiting mechanisms for authentication and authorization requests to prevent brute-force attacks. This includes account lockouts, CAPTCHAs, or additional user verification measures after multiple failed login attempts.",
       "Flags": [
         "has_backend_has_dos_protection_and_rate_limiting",
-        "has_org_account_lockout_policy_meets_stig_requirements"
+        "has_org_account_lockout_policy_meets_stig_requirements",
+        "has_secrets_count"
       ]
     },
     {
@@ -7357,7 +7564,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Obscured View Test\nTest: Overlay the application interface with another UI layer and attempt to interact with the app.\nExpected result: The application disables interaction events when its UI is obscured.\nTapjacking Simulation Test\nTest: Use a test environment to simulate a tapjacking attack scenario.\nExpected result: The app prevents unauthorized interactions with underlying UI components.\nUser Notification Test\nTest: Test if the app notifies the user when interaction is blocked due to obscuring layers.\nExpected result: A clear and concise notification is displayed to the user indicating blocked interaction.\nPerformance Validation Test\nTest: Ensure the app functions normally without interruptions when no obscuring layers are present.\nExpected result: Normal interactions with the app remain unaffected.\nAccessibility Impact Test\nTest: Evaluate the impact of disabling interaction events on accessibility features.\nExpected result: Accessibility functionalities are maintained without introducing usability challenges.",
       "controles": "The mobile health application must disable interaction events when the app interface is obscured by another layer to prevent tapjacking attacks. This ensures that users do not unknowingly interact with hidden views or unauthorized overlays.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IBP-016",
@@ -7471,7 +7680,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Static Code Analysis for Memory Management\nTest: Use static analysis tools to scan for potential memory management issues, such as use-after-free errors and improper memory handling.\nExpected result: No memory management flaws, such as CWE-416, are detected.\nDynamic Memory Safety Testing\nTest: Conduct dynamic testing with tools like AddressSanitizer to identify runtime memory issues, including invalid pointer references and improper memory deallocation.\nExpected result: The application does not exhibit use-after-free or memory corruption vulnerabilities during execution.\nValidation of ASLR and DEP Configuration\nTest: Verify that the application utilizes Android’s ASLR and DEP features by inspecting the binary with security configuration tools.\nExpected result: ASLR and DEP are correctly enabled and enforced.\nInput Validation Testing\nTest: Provide malformed and oversized inputs to validate that input validation mechanisms prevent memory corruption vulnerabilities.\nExpected result: The application correctly sanitizes and validates inputs, preventing memory handling issues.\nCode Review for Responsibility and Ownership\nTest: Conduct a code review to ensure clarity in memory ownership and deallocation responsibility to avoid confusion leading to use-after-free errors.\nExpected result: Memory allocation and deallocation responsibilities are well-documented and implemented securely.",
       "controles": "The mobile health application must leverage Android's security features, such as Address Space Layout Randomization (ASLR) and Data Execution Prevention (DEP), to protect against memory corruption vulnerabilities. Input validation and safe memory management practices must also be implemented to mitigate issues such as use-after-free errors and other memory handling flaws.",
-      "Flags": []
+      "Flags": [
+        "has_sca_security_sensitive_outdated_libraries"
+      ]
     },
     {
       "PUID": "SECM-CAT-IBP-021",
@@ -7541,7 +7752,8 @@
       "Flags": [
         "has_webview_addjavascriptinterface_present",
         "has_webview_javascript_interface_exposes_sensitive_functionality",
-        "has_webview_components"
+        "has_webview_components",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7564,7 +7776,8 @@
       "controles": "The mobile health application must ensure that any dynamically loaded code inherits the same security permissions as the application and maintains user trust by adhering to the application’s defined security policies. All dynamically loaded components must be secure, validated, and aligned with the permissions granted to the application.",
       "Flags": [
         "has_android_dynamic_code_loading",
-        "has_libraries_stored_in_secure_app_dir"
+        "has_libraries_stored_in_secure_app_dir",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -7609,7 +7822,8 @@
       "controles": "The mobile health application must ensure that any dynamically loaded code is transmitted over secure, encrypted channels (e.g., HTTPS) and stored in tamper-proof locations to prevent unauthorized access or modification by other applications or users.",
       "Flags": [
         "has_android_dynamic_code_loading",
-        "has_tls_ssl_pinning_implemented"
+        "has_tls_ssl_pinning_implemented",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7630,7 +7844,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "APK Packaging Inspection\nTest: Inspect the APK to confirm that dynamically loaded modules are included within the package.\nExpected result: All dynamically loaded modules are contained within the APK file, and no external dependencies are required post-installation.\nModule Loading Mechanism Verification\nTest: Verify that DexClassLoader or equivalent secure mechanisms are used to load dynamically included modules.\nExpected result: Modules are securely loaded, and the application does not utilize insecure loading mechanisms.\nTampering Protection Test\nTest: Attempt to modify dynamically loaded modules within the APK and observe application behavior.\nExpected result: The application detects tampering and prevents the execution of altered modules.\nCode Integrity Validation\nTest: Confirm that integrity checks (e.g., digital signatures) are applied to verify the authenticity of dynamically loaded modules.\nExpected result: The application validates module integrity before execution and rejects any corrupted or altered modules.\nSource Code Review\nTest: Conduct a review of the source code to ensure all dynamically loaded modules are appropriately declared and managed.\nExpected result: No dynamically loaded modules are sourced externally without explicit and secure handling mechanisms.",
       "controles": "The mobile health application must package dynamically loaded modules directly within the APK whenever feasible. These modules should be implemented as native libraries or classes loaded using DexClassLoader to prevent tampering or alteration by external applications.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-IBP-028",
@@ -7679,7 +7895,8 @@
       "controles": "The mobile health application must implement robust anti-static analysis mechanisms, including code obfuscation, to impede reverse engineering. This includes using obfuscation tools, compiling natively when feasible, and ensuring that obfuscation balances complexity with operational correctness of dependent features.",
       "Flags": [
         "has_prevention_against_reverse_engineering",
-        "has_controls_protecting_temporary_compiled_data"
+        "has_controls_protecting_temporary_compiled_data",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -7727,12 +7944,8 @@
       "controles": "The mobile health application must integrate with the Play Integrity API to ensure that interactions and server requests originate from a legitimate, untampered app binary running on a genuine Android device.",
       "Flags": [
         "has_protection_against_tampered_executables",
-<<<<<<< HEAD
         "has_backend_token_validation",
         "has_android_debuggable_enabled"
-=======
-        "has_backend_token_validation"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -7755,7 +7968,8 @@
       "controles": "The mobile health application must initialize all parameter values upon startup to ensure predictable behavior, prevent unintentional data leakage, and avoid reliance on uninitialized or potentially unsafe variables.",
       "Flags": [
         "has_initializes_params_on_startup",
-        "has_controls_protecting_temporary_compiled_data"
+        "has_controls_protecting_temporary_compiled_data",
+        "has_crash_reporting_tracker"
       ]
     },
     {
@@ -7801,7 +8015,8 @@
       "controles": "The mobile health application system must evaluate application binaries to identify critical content or high popularity that may necessitate binary protection. For applications requiring such protection, a thorough threat modeling analysis must be conducted to identify relevant risks and their potential financial impact.",
       "Flags": [
         "has_org_has_binary_protection_policy",
-        "has_org_has_threat_model_for_mobile_app"
+        "has_org_has_threat_model_for_mobile_app",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7856,7 +8071,8 @@
         "has_org_documents_security_updates",
         "has_defined_log_review_process",
         "has_org_monitors_resource_exhaustion_and_alerts_admins",
-        "has_org_runs_static_analysis_in_cicd"
+        "has_org_runs_static_analysis_in_cicd",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -7903,7 +8119,8 @@
       "controles": "The application must default to a secure state in the event of initialization, shutdown, or abort failures, ensuring no unintended access or exposure.",
       "Flags": [
         "has_fails_safe_on_init_failure",
-        "has_temporary_compiled_data_securely_deleted"
+        "has_temporary_compiled_data_securely_deleted",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -7930,7 +8147,8 @@
         "has_logs_privileged_actions_with_timestamp",
         "has_secure_backend_log_storage",
         "has_defined_log_retention_policy",
-        "has_org_has_data_recovery_and_backup_for_ephi"
+        "has_org_has_data_recovery_and_backup_for_ephi",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -7954,7 +8172,8 @@
       "Flags": [
         "has_audit_failure_alerting",
         "has_org_notifies_isso_on_audit_failures",
-        "has_fails_safe_on_init_failure"
+        "has_fails_safe_on_init_failure",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -7977,7 +8196,8 @@
       "controles": "The application must incorporate redundancy mechanisms to ensure high availability in critical environments, mitigating single points of failure.",
       "Flags": [
         "has_backend_is_deployed_with_redundancy_for_ha",
-        "has_runtime_global_kill_switch_for_security_incidents"
+        "has_runtime_global_kill_switch_for_security_incidents",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -8097,7 +8317,8 @@
       "Validation criteria": "Permission Reuse Analysis Test:\nTest: Analyze the app’s permissions and verify whether existing system-defined permissions meet the app's security needs.\nExpected result: All necessary permissions are reused from system-defined permissions when applicable.\nNew Permission Justification Test:\nTest: Examine the app’s documentation to ensure all newly created permissions are justified by unique security needs.\nExpected result: New permissions are introduced only when no system-defined permissions suffice.\nRedundancy Avoidance Test:\nTest: Compare newly defined permissions against system-defined ones for potential overlap.\nExpected result: No redundant permissions overlap with system-defined permissions.\nPlatform Compatibility Review:\nTest: Verify that the app’s permission strategy aligns with the platform's guidelines and best practices.\nExpected result: The app adheres to platform standards and avoids unnecessary custom permissions.\nPermission Impact Assessment:\nTest: Assess the impact of any new permissions on user security and system resources.\nExpected result: New permissions, if any, have minimal impact and are essential for app functionality.",
       "controles": "The application must prioritize the use of existing system-defined permissions to meet security requirements before defining new permissions.",
       "Flags": [
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -8168,7 +8389,8 @@
       "controles": "The application must notify System Administrators and Information System Security Officers (ISSOs) of account lifecycle events, including creation, modification, enabling, disabling, and removal.",
       "Flags": [
         "has_org_notifies_admin_on_account_lifecycle_events",
-        "has_org_has_formal_account_lifecycle_process"
+        "has_org_has_formal_account_lifecycle_process",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8292,7 +8514,8 @@
       "controles": "The mobile health application must clear all cookies and user-tracking information upon termination to prevent unauthorized access or identity tracking.",
       "Flags": [
         "has_session_id_assigned_from_server_cookie",
-        "has_clears_cookies_on_logout"
+        "has_clears_cookies_on_logout",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -8315,7 +8538,8 @@
       "controles": "The mobile health application must utilize ports and protocols in alignment with organizational and DoD Ports, Protocols, and Services Management (DoD PPSM) guidelines.",
       "Flags": [
         "has_approved_ports_and_protocols",
-        "has_https_with_cert_pinning"
+        "has_https_with_cert_pinning",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8361,7 +8585,8 @@
       "Flags": [
         "has_prevention_against_reverse_engineering",
         "has_controls_protecting_temporary_compiled_data",
-        "has_temporary_compiled_data_securely_deleted"
+        "has_temporary_compiled_data_securely_deleted",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -8432,7 +8657,8 @@
       "Flags": [
         "has_org_notifies_isso_on_audit_failures",
         "has_org_has_formal_security_testing_program",
-        "has_org_runs_pentest_before_production"
+        "has_org_runs_pentest_before_production",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8454,7 +8680,8 @@
       "Validation criteria": "Simulated Low Resource Test:\nTest: Simulate a low resource condition (e.g., by exceeding memory or CPU thresholds).\nExpected Result: The application generates and sends an alert to the system administrator with details of the resource condition.\nAlert Content Test:\nTest: Verify the accuracy and comprehensiveness of the alert message.\nExpected Result: Alerts include specifics about the resource type, severity, and suggested corrective actions.\nNotification Mechanism Test:\nTest: Verify that the alert is delivered through all configured communication channels (e.g., email, SMS, or system dashboard).\nExpected Result: Notifications are reliably sent and received through all defined channels.\nThreshold Configuration Test:\nTest: Confirm that resource thresholds for triggering alerts can be configured by administrators.\nExpected Result: Administrators can customize thresholds for memory, CPU, and other resource limits.\nRecovery Logging Test:\nTest: Simulate resource recovery and verify that the system logs the event.\nExpected Result: Recovery from low resource conditions is accurately logged for auditing purposes.",
       "controles": "The mobile health application must alert administrators when low resource conditions, such as insufficient memory or CPU overload, are detected.",
       "Flags": [
-        "has_org_monitors_resource_exhaustion_and_alerts_admins"
+        "has_org_monitors_resource_exhaustion_and_alerts_admins",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8476,7 +8703,8 @@
       "Validation criteria": "Manifest Declaration Test:\nTest: Verify that new permissions are declared in the app’s manifest using the <permission> element.\nExpected Result: All newly created permissions are correctly defined in the manifest with clear descriptions and protection levels.\nDependent App Reference Test:\nTest: Verify that dependent applications reference the declared permissions using the <uses-permission> element.\nExpected Result: Dependent apps include appropriate <uses-permission> elements in their manifests, ensuring correct integration.\nProtection Level Test:\nTest: Check that the declared permission specifies the correct protection level (normal, dangerous, signature).\nExpected Result: The protection level aligns with the permission’s intended use and security requirements.\nPermission Scope Test:\nTest: Validate that the permission scope is limited to necessary functionalities.\nExpected Result: No excessive or overly broad permissions are granted.\nPermission Usage Logging Test:\nTest: Enable and monitor logs to track the usage of declared permissions by dependent applications.\nExpected Result: Usage is logged appropriately, and no unauthorized access is detected.",
       "controles": "Mobile health applications must declare new permissions in the app manifest using the <permission> element, ensuring proper reference and control by dependent applications.",
       "Flags": [
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -8499,7 +8727,8 @@
       "controles": "Each service class in mobile health applications must have a <service> declaration in the AndroidManifest.xml file, with explicitly defined accessibility attributes to prevent unintentional exposure to other applications.",
       "Flags": [
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8523,7 +8752,8 @@
       "Flags": [
         "has_manifest_services_explicit_accessibility_attributes",
         "has_permissions_protected_with_signature_level",
-        "has_ipc_bindservice_secure"
+        "has_ipc_bindservice_secure",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8548,7 +8778,8 @@
         "has_manifest_exports_components_insecurely",
         "has_manifest_services_explicit_accessibility_attributes",
         "has_exported_broadcast_receivers_without_permission",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8569,7 +8800,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Scope Restriction Configuration Test:\nTest: Verify that API keys are configured with scope restrictions (e.g., IP addresses, package names, or certificate fingerprints).\nExpected Result: API keys are limited to the predefined scopes as per security requirements.\nQuota Enforcement Test:\nTest: Test API key usage against defined quotas to ensure usage limits are enforced.\nExpected Result: Quotas are applied, and excess usage is blocked or flagged.\nAnomaly Detection Test:\nTest: Simulate unusual API usage patterns to confirm detection and alert mechanisms are active.\nExpected Result: Suspicious activity triggers alerts for administrative review.\nKey Revocation Simulation Test:\nTest: Attempt to use an API key after it has been revoked.\nExpected Result: Access is denied immediately upon key revocation.\nDynamic Access Control Test:\nTest: Test that API keys restricted by IP or app package fail when accessed from unauthorized IPs or applications.\nExpected Result: Unauthorized requests are blocked.",
       "controles": "Mobile health applications must restrict API key usage by applying IP address, app package name, or certificate fingerprint restrictions and monitor API usage for anomalies.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-SMC-033",
@@ -8591,7 +8824,8 @@
       "controles": "Mobile health applications must implement regular API key rotation, adhering to ISO 27001 or similar standards, to reduce the risk of key exposure and unauthorized access.",
       "Flags": [
         "has_defined_api_key_rotation_policy",
-        "has_defined_key_rotation_policy"
+        "has_defined_key_rotation_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8616,7 +8850,8 @@
         "has_org_requires_nist_approved_key_management",
         "has_defined_api_key_rotation_policy",
         "has_secure_cicd_key_management",
-        "has_secrets_secure_keystore_env_vars"
+        "has_secrets_secure_keystore_env_vars",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8640,7 +8875,8 @@
       "Flags": [
         "has_defined_api_key_rotation_policy",
         "has_defined_secrets_management_policy",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8664,7 +8900,8 @@
       "Flags": [
         "has_defined_api_key_rotation_policy",
         "has_org_has_crypto_key_lifecycle_policy",
-        "has_defined_key_rotation_policy"
+        "has_defined_key_rotation_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8688,7 +8925,8 @@
       "Flags": [
         "has_defined_key_revocation_process",
         "has_defined_api_key_rotation_policy",
-        "has_env_specific_api_credentials_configured"
+        "has_env_specific_api_credentials_configured",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8736,7 +8974,8 @@
       "Flags": [
         "has_defined_key_revocation_process",
         "has_defined_key_rotation_policy",
-        "has_defined_api_key_rotation_policy"
+        "has_defined_api_key_rotation_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8758,7 +8997,8 @@
       "Validation criteria": "Metadata Accessibility Test:\nTest: Attempt to access metadata files, including WSDL documents, through publicly accessible endpoints.\nExpected Result: Requests for metadata files return an error or are blocked.\nConfiguration Review Test:\nTest: Inspect the application server configuration to verify metadata publishing is disabled.\nExpected Result: Metadata publishing settings are explicitly disabled in the configuration.\nSecurity Assessment Test:\nTest: Conduct a security assessment of application endpoints to ensure metadata files are not accessible.\nExpected Result: No sensitive metadata is found during the assessment.\nFunctional Verification Test:\nTest: Verify that disabling metadata publishing does not impact the functionality of the application.\nExpected Result: The application operates as expected without metadata publishing enabled.\nAudit Logging Test:\nTest: Review system logs for unauthorized access attempts to metadata endpoints.\nExpected Result: Any unauthorized attempts are logged and flagged for review.",
       "controles": "Mobile health applications must disable metadata publishing, such as WSDL documents, to prevent unintended exposure of sensitive service metadata.",
       "Flags": [
-        "has_soap_uses_strict_schema_validation"
+        "has_soap_uses_strict_schema_validation",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -8781,7 +9021,8 @@
       "controles": "Mobile health applications must control the export status of services by explicitly setting android:exported attributes to define accessibility.",
       "Flags": [
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8806,7 +9047,8 @@
         "has_supports_ephi_access_auditing",
         "has_server_side_audit_trail",
         "has_org_protects_audit_log_integrity_cryptographically",
-        "has_audit_failure_alerting"
+        "has_audit_failure_alerting",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -8831,7 +9073,8 @@
         "has_defined_log_retention_policy",
         "has_org_log_retention_at_least_one_year",
         "has_org_log_retention_at_least_five_years_for_sami",
-        "has_org_has_audit_reporting_and_forensic_procedures"
+        "has_org_has_audit_reporting_and_forensic_procedures",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -8855,7 +9098,8 @@
       "Flags": [
         "has_audit_event_correlation",
         "has_logs_privileged_actions_with_timestamp",
-        "has_server_side_audit_trail"
+        "has_server_side_audit_trail",
+        "has_analytics_tracker"
       ]
     },
     {
@@ -8879,7 +9123,8 @@
       "Flags": [
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_clears_local_session_data_on_logout"
+        "has_clears_local_session_data_on_logout",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -8906,7 +9151,8 @@
         "has_logs_privileged_actions_with_timestamp",
         "has_org_supports_audit_reduction_and_filtering",
         "has_os_time_source",
-        "has_org_validates_audit_tool_integrity_periodically"
+        "has_org_validates_audit_tool_integrity_periodically",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8954,7 +9200,8 @@
       "Flags": [
         "has_audit_failure_alerting",
         "has_org_notifies_isso_on_audit_failures",
-        "has_org_registers_admin_for_security_alerts"
+        "has_org_registers_admin_for_security_alerts",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8978,7 +9225,8 @@
       "Flags": [
         "has_audit_failure_alerting",
         "has_org_notifies_isso_on_audit_failures",
-        "has_org_registers_admin_for_security_alerts"
+        "has_org_registers_admin_for_security_alerts",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -9004,7 +9252,8 @@
         "has_server_side_audit_trail",
         "has_logs_privileged_actions_with_timestamp",
         "has_audit_event_correlation",
-        "has_os_time_source"
+        "has_os_time_source",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -9051,7 +9300,8 @@
       "controles": "The mobile health application must log all shutdown events in the event logs to ensure comprehensive audit trail coverage.",
       "Flags": [
         "has_server_side_audit_trail",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -9074,7 +9324,8 @@
       "controles": "The mobile health application must generate and log audit records for all successful and unsuccessful logon attempts, and raise security events for detected log-on breaches.",
       "Flags": [
         "has_server_side_audit_trail",
-        "has_defined_log_review_process"
+        "has_defined_log_review_process",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9099,7 +9350,8 @@
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9123,7 +9375,8 @@
       "Flags": [
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -9172,7 +9425,8 @@
       "Flags": [
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -9196,7 +9450,8 @@
       "Flags": [
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9245,7 +9500,8 @@
       "Flags": [
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -9294,7 +9550,8 @@
       "Flags": [
         "has_server_side_audit_trail",
         "has_logs_privileged_actions_with_timestamp",
-        "has_logs_clinically_relevant_events"
+        "has_logs_clinically_relevant_events",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -9318,7 +9575,8 @@
       "Flags": [
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_transaction_recovery_logs"
+        "has_transaction_recovery_logs",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -9342,7 +9600,8 @@
       "Flags": [
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_secrets_generic_found"
       ]
     },
     {
@@ -9367,7 +9626,8 @@
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -9392,7 +9652,8 @@
         "has_server_side_audit_trail",
         "has_secure_backend_log_storage",
         "has_logs_offloaded_to_secure_siem",
-        "has_defined_log_review_process"
+        "has_defined_log_review_process",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -9443,7 +9704,8 @@
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -9469,7 +9731,8 @@
         "has_server_side_audit_trail",
         "has_logs_privileged_actions_with_timestamp",
         "has_audit_event_correlation",
-        "has_data_format_strictly_controlled"
+        "has_data_format_strictly_controlled",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9495,7 +9758,8 @@
         "has_org_notifies_admin_on_account_lifecycle_events",
         "has_iaa_enforces_account_lifecycle_controls",
         "has_server_side_audit_trail",
-        "has_defined_log_review_process"
+        "has_defined_log_review_process",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -9519,7 +9783,8 @@
       "Flags": [
         "has_logs_privileged_actions_with_timestamp",
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -9543,7 +9808,8 @@
       "Flags": [
         "has_supports_ephi_access_auditing",
         "has_server_side_audit_trail",
-        "has_org_protects_audit_log_integrity_cryptographically"
+        "has_org_protects_audit_log_integrity_cryptographically",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -9567,7 +9833,8 @@
       "Flags": [
         "has_defined_authorization_policy",
         "has_defined_rbac_model",
-        "has_server_side_authz_enforced"
+        "has_server_side_authz_enforced",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -9591,7 +9858,8 @@
       "Flags": [
         "has_transaction_recovery_logs",
         "has_ensures_atomic_updates_to_clinical_records",
-        "has_org_has_data_recovery_and_backup_for_ephi"
+        "has_org_has_data_recovery_and_backup_for_ephi",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -9639,7 +9907,8 @@
       "controles": "The mobile health application must implement an emergency access procedure to allow authorized access to electronic protected health information (ePHI) during emergencies.",
       "Flags": [
         "has_org_has_emergency_access_procedure_for_ephi",
-        "has_org_logs_and_reviews_emergency_access_events"
+        "has_org_logs_and_reviews_emergency_access_events",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9662,7 +9931,8 @@
       "controles": "The mobile health application must maintain a transmission log for messages containing personal health information (PHI), recording metadata such as time, date, origin, and destination, while excluding message content.",
       "Flags": [
         "has_org_has_emergency_access_procedure_for_ephi",
-        "has_org_logs_and_reviews_emergency_access_events"
+        "has_org_logs_and_reviews_emergency_access_events",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -9685,7 +9955,8 @@
       "controles": "The mobile health application must implement organization-defined data mining detection techniques to monitor and safeguard data storage objects from unauthorized data mining attempts.",
       "Flags": [
         "has_backend_has_dos_protection_and_rate_limiting",
-        "has_org_monitors_resource_exhaustion_and_alerts_admins"
+        "has_org_monitors_resource_exhaustion_and_alerts_admins",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9710,7 +9981,8 @@
         "has_server_side_audit_trail",
         "has_supports_ephi_access_auditing",
         "has_audit_event_correlation",
-        "has_org_has_audit_reporting_and_forensic_procedures"
+        "has_org_has_audit_reporting_and_forensic_procedures",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -9735,7 +10007,8 @@
         "has_org_supports_audit_reduction_and_filtering",
         "has_org_has_audit_reporting_and_forensic_procedures",
         "has_secure_backend_log_storage",
-        "has_logs_offloaded_to_secure_siem"
+        "has_logs_offloaded_to_secure_siem",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9761,7 +10034,8 @@
         "has_org_has_audit_reporting_and_forensic_procedures",
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_logs_privileged_actions_with_timestamp",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -9785,7 +10059,8 @@
       "Flags": [
         "has_org_supports_audit_reduction_and_filtering",
         "has_audit_event_correlation",
-        "has_server_side_audit_trail"
+        "has_server_side_audit_trail",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -9809,7 +10084,8 @@
       "Flags": [
         "has_org_protects_audit_log_integrity_cryptographically",
         "has_org_validates_audit_tool_integrity_periodically",
-        "has_secure_backend_log_storage"
+        "has_secure_backend_log_storage",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -9835,7 +10111,8 @@
         "has_defined_rbac_model",
         "has_rbac_enforced_on_api",
         "has_secure_backend_log_storage",
-        "has_logs_offloaded_to_secure_siem"
+        "has_logs_offloaded_to_secure_siem",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -9861,7 +10138,8 @@
         "has_defined_rbac_model",
         "has_rbac_enforced_on_api",
         "has_permissions_protected_with_signature_level",
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -9887,7 +10165,8 @@
         "has_org_protects_audit_tools_and_log_access",
         "has_org_validates_audit_tool_integrity_periodically",
         "has_secure_backend_log_storage",
-        "has_logs_offloaded_to_secure_siem"
+        "has_logs_offloaded_to_secure_siem",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -9913,7 +10192,8 @@
         "has_org_protects_audit_tools_and_log_access",
         "has_org_validates_audit_tool_integrity_periodically",
         "has_secure_backend_log_storage",
-        "has_logs_offloaded_to_secure_siem"
+        "has_logs_offloaded_to_secure_siem",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -9937,7 +10217,8 @@
       "Flags": [
         "has_org_validates_audit_tool_integrity_periodically",
         "has_org_protects_audit_tools_and_log_access",
-        "has_protection_against_tampered_executables"
+        "has_protection_against_tampered_executables",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -9962,12 +10243,8 @@
         "has_clears_local_data_on_uninstall",
         "has_android_read_write_external_storage",
         "has_uses_encrypted_filesystem_storage",
-<<<<<<< HEAD
         "has_android_extra_risky_permissions_present",
         "has_encrypted_local_caching_of_ephi"
-=======
-        "has_android_extra_risky_permissions_present"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -9988,7 +10265,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Directory Segregation:\nTest: Verify that configuration and control files are stored in a distinct directory from user data.\nExpected result: Configuration files are located in a separate directory with no overlap with user data.\nAccess Restrictions:\nTest: Confirm that user-level permissions restrict access to the directory containing configuration and control files.\nExpected result: Only authorized processes and roles can access configuration files.\nSecure Path Validation:\nTest: Inspect the file paths used by the application to ensure user data and configuration files are not co-located.\nExpected result: Application paths maintain strict separation between user data and configuration files.\nData Integrity:\nTest: Verify that unauthorized attempts to access or modify configuration files are logged and denied.\nExpected result: Audit logs capture unauthorized access attempts, and files remain unaltered.\nConfiguration Review:\nTest: Perform periodic reviews of the directory structure and permissions.\nExpected result: Directory structure and permissions comply with the application’s security design.",
       "controles": "The mobile health application must store configuration and control files in a directory separate from user data to enhance security and prevent unauthorized access to application settings.",
-      "Flags": []
+      "Flags": [
+        "has_android_extra_risky_permissions_present"
+      ]
     },
     {
       "PUID": "SECM-CAT-IDS-050",
@@ -10063,7 +10342,8 @@
       "controles": "The mobile health application must support remote wipe and kill switch capabilities to securely remove sensitive data in case of theft or loss of the device.",
       "Flags": [
         "has_runtime_global_kill_switch_for_security_incidents",
-        "has_org_has_device_loss_response_process"
+        "has_org_has_device_loss_response_process",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10086,7 +10366,8 @@
       "controles": "Incorporate an application-specific \"data kill switch\" feature to securely delete sensitive data associated with the mobile health application, ensuring strong user authentication to prevent misuse.",
       "Flags": [
         "has_runtime_global_kill_switch_for_security_incidents",
-        "has_iaa_supports_mfa_for_sensitive_ephi_access"
+        "has_iaa_supports_mfa_for_sensitive_ephi_access",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -10163,7 +10444,8 @@
         "has_clears_local_data_on_uninstall",
         "has_clears_local_data_on_logout_or_switch_user",
         "has_clears_local_session_data_on_logout",
-        "has_blocks_screenshots_flag_secure"
+        "has_blocks_screenshots_flag_secure",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -10185,11 +10467,7 @@
       "Validation criteria": "Temporary File Deletion on Termination:\nTest: Terminate the application and inspect the designated temporary file directories.\nExpected result: No temporary files created by the application remain accessible after termination.\nSecure Deletion Method:\nTest: Verify that temporary files are securely deleted, not merely unlinked, to prevent data recovery.\nExpected result: Deleted temporary files cannot be recovered using standard data recovery tools.\nRuntime File Management:\nTest: Ensure that the application removes unnecessary temporary files during runtime as soon as they are no longer needed.\nExpected result: Temporary files are deleted immediately after use to minimize risk.\nLogging and Debug Data Clearance:\nTest: Verify that no sensitive debug or log data remains in temporary file locations post-termination.\nExpected result: All debug and log data is securely removed.\nPlatform Compliance:\nTest: Confirm that the app adheres to platform-specific guidelines for temporary file storage and removal (e.g., Android cache directories, iOS sandboxing rules).\nExpected result: Temporary file handling complies with platform security best practices.",
       "controles": "Ensure the mobile health application removes all temporary files upon termination to prevent unauthorized access to sensitive data.",
       "Flags": [
-<<<<<<< HEAD
         "has_dynamic_storage_evidence"
-=======
-        "has_clears_local_session_data_on_logout"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -10212,7 +10490,8 @@
       "controles": "Ensure the mobile health application restricts the upload of files to only those of secure and approved types, implementing validation and processing controls to mitigate risks associated with dangerous file types.",
       "Flags": [
         "has_data_format_strictly_controlled",
-        "has_backend_input_validation"
+        "has_backend_input_validation",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10434,7 +10713,8 @@
         "has_content_provider_actively_exposed",
         "has_permissions_protected_with_signature_level",
         "has_manifest_custom_permission_defined",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -10456,7 +10736,8 @@
       "Validation criteria": "Access Control Testing:\nTest: Attempt to access the content provider using unauthorized applications or processes.\nExpected result: Unauthorized access is denied, and only applications with appropriate permissions can access the content provider.\nData Manipulation Prevention:\nTest: Attempt to modify data within the content provider without proper authorization.\nExpected result: Unauthorized modifications are blocked, and the integrity of the data is maintained.\nConfiguration Verification:\nTest: Review the manifest file to ensure permissions and access settings for the content provider are correctly configured.\nExpected result: The content provider is configured with secure read and write permissions, leveraging signature-level protection where appropriate.\nSQL Injection Mitigation:\nTest: Analyze SQL queries used by the content provider for vulnerabilities to injection attacks.\nExpected result: Queries are parameterized, and no mechanisms allow unauthorized inference or modification of data.\nRuntime Behavior Monitoring:\nTest: Monitor real-time interactions with the content provider during app operation.\nExpected result: All access and data handling comply with predefined secure practices, and sensitive data remains protected.",
       "controles": "The mobile health application must enforce secure practices for accessing content providers. All data handling operations, including reading and writing data, must mitigate potential security threats such as unauthorized access and data manipulation.",
       "Flags": [
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -10481,7 +10762,8 @@
         "has_manifest_services_explicit_accessibility_attributes",
         "has_manifest_exports_components_insecurely",
         "has_content_provider_actively_exposed",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10555,7 +10837,8 @@
       "Flags": [
         "has_clears_ui_on_background",
         "has_clears_auth_data_on_logout",
-        "has_blocks_screenshots_flag_secure"
+        "has_blocks_screenshots_flag_secure",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -10581,7 +10864,8 @@
         "has_sensitive_data_encrypted_with_os_keystore",
         "has_auth_keys_stored_in_secure_hardware",
         "has_stores_auth_tokens_in_plaintext",
-        "has_stores_keys_in_plaintext"
+        "has_stores_keys_in_plaintext",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10633,7 +10917,8 @@
         "has_password_hashing_uses_salts",
         "has_password_hashing_uses_kdf",
         "has_hardcoded_credentials",
-        "has_os_secure_key_storage"
+        "has_os_secure_key_storage",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10659,7 +10944,8 @@
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
         "has_auth_keys_stored_in_secure_hardware",
-        "has_client_side_crypto_for_sensitive_data"
+        "has_client_side_crypto_for_sensitive_data",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -10686,7 +10972,8 @@
         "has_defined_api_key_rotation_policy",
         "has_defined_secrets_management_policy",
         "has_hardcoded_credentials",
-        "has_signing_creds_not_hardcoded"
+        "has_signing_creds_not_hardcoded",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10710,7 +10997,8 @@
       "Flags": [
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10758,7 +11046,8 @@
       "controles": "Applications must leverage hardware-level encryption to secure files, utilizing the highest supported security level provided by the device. Application files must be configured to remain protected after the device is locked to ensure data confidentiality.",
       "Flags": [
         "has_auth_keys_stored_in_secure_hardware",
-        "has_uses_encrypted_filesystem_storage"
+        "has_uses_encrypted_filesystem_storage",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10806,7 +11095,8 @@
       "controles": "Applications must prevent interpreted code from directly accessing user data and encrypted storage. Implement strict isolation and controlled access mechanisms to ensure that interpreted code cannot bypass security controls or interact with sensitive data storage areas.",
       "Flags": [
         "has_webview_javascript_interface_limited_to_trusted_content",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -10853,7 +11143,8 @@
       "Flags": [
         "has_org_has_data_recovery_and_backup_for_ephi",
         "has_transaction_recovery_logs",
-        "has_manifest_backup_enabled"
+        "has_manifest_backup_enabled",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -10879,7 +11170,8 @@
         "has_org_has_crypto_key_lifecycle_policy",
         "has_defined_key_rotation_policy",
         "has_defined_key_revocation_process",
-        "has_defined_certificate_management_policy"
+        "has_defined_certificate_management_policy",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -10903,7 +11195,8 @@
       "Flags": [
         "has_org_requires_nist_approved_key_management",
         "has_org_has_crypto_key_lifecycle_policy",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10927,7 +11220,8 @@
       "Flags": [
         "has_password_hashing_uses_kdf",
         "has_password_hashing_uses_salts",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -11075,7 +11369,8 @@
         "has_defined_key_rotation_policy",
         "has_defined_key_revocation_process",
         "has_secure_cicd_key_management",
-        "has_ci_cd_uses_encrypted_keys"
+        "has_ci_cd_uses_encrypted_keys",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -11097,7 +11392,8 @@
       "Validation criteria": "Encryption Verification:\nTest: Verify that messages containing privacy data tied to the SessionIndex are encrypted using strong encryption algorithms.\nExpected Result: All messages associated with privacy data are encrypted before transmission.\nSessionIndex Validation:\nTest: Inspect the implementation to confirm that the SessionIndex is accurately identified when tied to privacy data.\nExpected Result: The system correctly identifies and flags SessionIndex instances that require encryption.\nTransmission Monitoring:\nTest: Simulate data transmission and inspect network traffic for unencrypted messages linked to the SessionIndex.\nExpected Result: No unencrypted messages containing privacy data are observed in the network traffic.\nDecryption Testing:\nTest: Attempt to decrypt the encrypted messages using the authorized decryption process.\nExpected Result: Decryption succeeds only with the correct cryptographic keys and authorized processes.\nCompliance Audit:\nTest: Assess the encryption implementation against regulatory standards for protecting privacy data during transmission.\nExpected Result: The encryption approach complies with applicable privacy regulations and standards.",
       "controles": "The application must encrypt all messages when the SessionIndex is associated with privacy data to safeguard sensitive information during transmission and mitigate risks of unauthorized access or interception.",
       "Flags": [
-        "has_uses_xml_encryption"
+        "has_uses_xml_encryption",
+        "has_uses_encrypted_local_database"
       ]
     },
     {
@@ -11121,13 +11417,7 @@
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
         "has_insecure_http_based_webview_communication",
-<<<<<<< HEAD
         "has_approved_ports_and_protocols"
-=======
-        "has_endpoint_requires_user_authentication",
-        "has_android_ssl_pinning_present",
-        "has_android_ssl_pinning_detected"
->>>>>>> d2b82bfd63c65c265d5c05bd94e1b89ece027642
       ]
     },
     {
@@ -11149,7 +11439,8 @@
       "Validation criteria": "Initial Permission Check:\nTest: Execute the application on a platform older than Android 5.0 and inspect its ability to validate the ownership of custom permissions during the first run.\nExpected Result: The application identifies and resolves any conflicts if another app has requested the same permissions.\nConflict Resolution Assessment:\nTest: Simulate a scenario where another app has claimed the same custom permission before the first run.\nExpected Result: The application detects the conflict and either reclaims or denies usage of the permission securely.\nCross-Platform Testing:\nTest: Validate the custom permission-checking mechanism across supported Android platform versions, particularly focusing on versions prior to 5.0.\nExpected Result: Permission validation operates reliably and securely across all supported versions.\nPermission Association Integrity Check:\nTest: Review the application’s permission association process for adherence to security best practices.\nExpected Result: Custom permissions are securely linked to the application and cannot be exploited by other apps.\nDynamic Behavior Testing:\nTest: Test runtime behavior when custom permissions are accessed during the app lifecycle.\nExpected Result: Permissions are handled securely, and unauthorized access attempts are logged or blocked",
       "controles": "The application must verify during the first run that no other application has previously requested the same custom permissions, particularly on platforms older than Android 5.0. This ensures that the permissions are securely associated with the intended application and are not subject to unauthorized access or conflict.",
       "Flags": [
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -11171,7 +11462,8 @@
       "Validation criteria": "Domain-Based Naming Validation:\nTest: Review the naming convention of declared custom permissions in the application.\nExpected Result: All custom permissions are prefixed with the app’s domain name, following the domain name registration infrastructure.\nCollision Detection Simulation:\nTest: Simulate the registration of permissions with identical names by multiple apps.\nExpected Result: The application’s custom permissions remain unique due to adherence to the domain-based naming convention.\nCross-App Compatibility Test:\nTest: Test the application in an environment with multiple apps using custom permissions.\nExpected Result: No collisions or conflicts occur between the custom permissions of the application and those of other apps.\nCode Review for Custom Permissions:\nTest: Perform a static code analysis to ensure the correct usage of domain-prefixed custom permissions throughout the application.\nExpected Result: Custom permissions are consistently declared and used without deviations from the domain-based naming standard.\nDynamic Environment Testing:\nTest: Validate custom permission behavior during app interactions in a multi-application ecosystem.\nExpected Result: The application’s permissions function securely and without interference from other apps.",
       "controles": "The application must adhere to the domain name registration infrastructure when declaring custom permissions to prevent collisions or conflicts with permissions declared by other applications.",
       "Flags": [
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -11198,7 +11490,8 @@
         "has_manifest_custom_permission_defined",
         "has_exported_broadcast_receivers_without_permission",
         "has_manifest_exports_components_insecurely",
-        "has_defined_privilege_management_policy"
+        "has_defined_privilege_management_policy",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -11219,7 +11512,9 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "Inactivity Enforcement Test:\nTest: Simulate 35 days of account inactivity and attempt to authenticate using the device identifier.\nExpected Result: The application denies access for inactive device identifiers.\nPKI Credential Usage Verification:\nTest: Authenticate using PKI credentials with an expiration date after a 35-day inactivity period.\nExpected Result: Authentication succeeds only with valid PKI credentials.\nConfiguration Review:\nTest: Inspect application settings to verify implementation of inactivity-based identifier disabling and PKI certificate acceptance.\nExpected Result: Settings reflect compliance with the 35-day inactivity rule and enable PKI credential validation.\nCertificate Expiration Validation:\nTest: Attempt authentication using an expired PKI certificate.\nExpected Result: The application rejects expired certificates.\nPolicy Documentation Audit:\nTest: Review security policies to confirm the inclusion of a 35-day inactivity rule and PKI credential handling.\nExpected Result: Policies explicitly define and enforce both requirements.",
       "controles": "The application must disable device identifiers after 35 days of inactivity unless cryptographic certificates, such as PKI credentials, are used for authentication.",
-      "Flags": []
+      "Flags": [
+        "has_uses_encrypted_local_database"
+      ]
     },
     {
       "PUID": "SECM-CAT-ICR-016",
@@ -11318,7 +11613,8 @@
       "controles": "The application must use the appropriate block cipher mode for encryption based on the context of use. For general encryption, Cipher Block Chaining (CBC) or Galois/Counter Mode (GCM) must be implemented. For streaming data, Counter (CTR) mode is recommended, ensuring no reuse of initialization vectors (IVs) or counters to maintain security.",
       "Flags": [
         "has_client_side_crypto_for_sensitive_data",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -11343,7 +11639,8 @@
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
         "has_hardcoded_credentials",
-        "has_client_side_crypto_for_sensitive_data"
+        "has_client_side_crypto_for_sensitive_data",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -11366,7 +11663,8 @@
       "controles": "The application must ensure that cryptographic keys are not reused for multiple purposes, such as encrypting data and signing messages. Separate cryptographic keys must be utilized for distinct cryptographic operations to maintain security and prevent key misuse.",
       "Flags": [
         "has_os_secure_key_storage",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -11389,7 +11687,8 @@
       "controles": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
       "Flags": [
         "has_android_insecure_random_rng",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -11412,7 +11711,8 @@
       "controles": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
       "Flags": [
         "has_android_insecure_random_rng",
-        "has_sensitive_data_encrypted_with_os_keystore"
+        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_manifest_debuggable_true"
       ]
     }
   ]
