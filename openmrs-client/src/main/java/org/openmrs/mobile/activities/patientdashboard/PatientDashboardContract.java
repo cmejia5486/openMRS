@@ -14,7 +14,7 @@
 
 package org.openmrs.mobile.activities.patientdashboard;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 import org.openmrs.mobile.models.Encounter;
 import org.openmrs.mobile.models.Patient;
@@ -39,6 +39,7 @@ public interface PatientDashboardContract {
         void dismissDialog();
         void showToast(int stringRes, boolean error);
         void setMenuTitle(String nameString, String identifier);
+        void startPatientUpdateActivity(long patientId);
     }
 
     interface ViewPatientDiagnosis extends ViewPatientMain {
@@ -47,12 +48,12 @@ public interface PatientDashboardContract {
 
     interface ViewPatientVisits extends ViewPatientMain {
         void showErrorToast(String message);
-        void dismissCurrentDialog();
+        void showStartVisitDialog();
+        void dismissStartVisitDialog();
         void toggleRecyclerListVisibility(boolean isVisible);
         void setVisitsToDisplay(List<Visit> visits);
         void goToVisitDashboard(Long visitID);
         void showStartVisitDialog(boolean isVisitPossible);
-        void showStartVisitProgressDialog();
     }
 
     interface ViewPatientVitals extends ViewPatientMain {
@@ -62,23 +63,16 @@ public interface PatientDashboardContract {
         void showErrorToast(String errorMessage);
     }
 
-    interface ViewPatientCharts extends ViewPatientMain{
-        void populateList(List<Visit> visits);
-        void setEmptyListVisibility(boolean visibility);
-
-    }
-
     /*
     * Presenters
     */
-    interface PatientDashboardMainPresenter extends BasePresenterContract {
+    interface PatientDashboardMainPresenter extends BasePresenter {
         void deletePatient();
         long getPatientId();
     }
 
     interface PatientDetailsPresenter extends PatientDashboardMainPresenter  {
         void synchronizePatient();
-        void updatePatientDataFromServer();
         void reloadPatientData(Patient patient);
     }
 
@@ -96,7 +90,4 @@ public interface PatientDashboardContract {
         void startFormDisplayActivityWithEncounter();
     }
 
-    interface PatientChartsPresenter extends PatientDashboardMainPresenter {
-
-    }
 }

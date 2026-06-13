@@ -19,11 +19,11 @@
     android:layout_height="match_parent">
 
 
-    <com.google.android.material.appbar.AppBarLayout
+    <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:elevation="0dp"
         android:layout_height="wrap_content">
-    </com.google.android.material.appbar.AppBarLayout>
+    </android.support.design.widget.AppBarLayout>
 
 
     <FrameLayout

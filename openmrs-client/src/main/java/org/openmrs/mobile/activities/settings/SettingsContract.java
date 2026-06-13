@@ -14,37 +14,27 @@
 
 package org.openmrs.mobile.activities.settings;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 
 public interface SettingsContract {
 
     interface View extends BaseView<Presenter> {
 
+        boolean isActive();
+
         void addLogsInfo(long logSize, String logFilename);
-
-        void setUpConceptsView();
-
-        void setConceptsInDbText(String text);
 
         void addBuildVersionInfo();
 
-        void addPrivacyPolicyInfo();
+        void applyChanges();
 
-        void rateUs();
-
-        void setDarkMode();
     }
 
-    interface Presenter extends BasePresenterContract {
+    interface Presenter extends BasePresenter {
 
         void logException(String exception);
 
-        void updateConceptsInDBTextView();
-
-        boolean isDarkModeActivated();
-
-        void setDarkMode(boolean darkMode);
     }
 
 }

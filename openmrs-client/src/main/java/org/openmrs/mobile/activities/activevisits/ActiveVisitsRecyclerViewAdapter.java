@@ -16,15 +16,12 @@ package org.openmrs.mobile.activities.activevisits;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.visitdashboard.VisitDashboardActivity;
@@ -46,16 +43,15 @@ public class ActiveVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Active
         this.mVisits = items;
     }
 
-    @NonNull
     @Override
-    public VisitViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_find_visits, parent, false);
+    public VisitViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.find_visits_row, parent, false);
         FontsUtil.setFont((ViewGroup) itemView);
         return new VisitViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VisitViewHolder visitViewHolder, final int position) {
+    public void onBindViewHolder(VisitViewHolder visitViewHolder, final int position) {
         final int adapterPos = visitViewHolder.getAdapterPosition();
         Visit visit = mVisits.get(adapterPos);
         Patient patient = new PatientDAO().findPatientByID(visit.getPatient().getId().toString());
@@ -66,27 +62,32 @@ public class ActiveVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Active
             final String display = "#" + patient.getIdentifier().getIdentifier();
             visitViewHolder.mIdentifier.setText(display);
         }
-        if (null != patient.getName()) {
-            visitViewHolder.mDisplayName.setText(patient.getName().getNameString());
+        if (null != patient.getPerson().getName()) {
+            visitViewHolder.mDisplayName.setText(patient.getPerson().getName().getNameString());
         }
-        if (null != patient.getGender()) {
-            visitViewHolder.mGender.setText(patient.getGender());
+        if (null != patient.getPerson().getGender()) {
+            visitViewHolder.mGender.setText(patient.getPerson().getGender());
         }
-        try {
-            visitViewHolder.mBirthDate.setText(DateUtils.convertTime(DateUtils.convertTime(patient.getBirthdate())));
-        } catch (Exception e) {
+        try{
+            visitViewHolder.mBirthDate.setText(DateUtils.convertTime(DateUtils.convertTime(patient.getPerson().getBirthdate())));
+        }
+        catch (Exception e)
+        {
             visitViewHolder.mBirthDate.setText(" ");
         }
 
-        visitViewHolder.mLinearLayout.setOnClickListener(view -> {
-            Intent intent = new Intent(mContext, VisitDashboardActivity.class);
-            intent.putExtra(ApplicationConstants.BundleKeys.VISIT_ID, mVisits.get(adapterPos).getId());
-            mContext.startActivity(intent);
+        visitViewHolder.mRelativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, VisitDashboardActivity.class);
+                intent.putExtra(ApplicationConstants.BundleKeys.VISIT_ID, mVisits.get(adapterPos).getId());
+                mContext.startActivity(intent);
+            }
         });
     }
 
     @Override
-    public void onViewDetachedFromWindow(@NonNull VisitViewHolder holder) {
+    public void onViewDetachedFromWindow(VisitViewHolder holder) {
         holder.clearAnimation();
     }
 
@@ -95,26 +96,25 @@ public class ActiveVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Active
         return mVisits.size();
     }
 
-    class VisitViewHolder extends RecyclerView.ViewHolder {
+    class VisitViewHolder extends RecyclerView.ViewHolder{
         private TextView mIdentifier;
         private TextView mDisplayName;
         private TextView mGender;
         private TextView mBirthDate;
         private TextView mVisitPlace;
-        private LinearLayout mLinearLayout;
+        private LinearLayout mRelativeLayout;
 
         public VisitViewHolder(View itemView) {
             super(itemView);
-            mLinearLayout = itemView.findViewById(R.id.findVisitContainerLL);
-            mIdentifier = itemView.findViewById(R.id.findVisitsIdentifier);
-            mDisplayName = itemView.findViewById(R.id.findVisitsDisplayName);
-            mVisitPlace = itemView.findViewById(R.id.findVisitsPlace);
-            mBirthDate = itemView.findViewById(R.id.findVisitsPatientBirthDate);
-            mGender = itemView.findViewById(R.id.findVisitsPatientGender);
+            mRelativeLayout = (LinearLayout) itemView;
+            mIdentifier = (TextView) itemView.findViewById(R.id.findVisitsIdentifier);
+            mDisplayName = (TextView) itemView.findViewById(R.id.findVisitsDisplayName);
+            mVisitPlace = (TextView) itemView.findViewById(R.id.findVisitsPlace);
+            mBirthDate = (TextView) itemView.findViewById(R.id.findVisitsPatientBirthDate);
+            mGender = (TextView) itemView.findViewById(R.id.findVisitsPatientGender);
         }
-
         public void clearAnimation() {
-            mLinearLayout.clearAnimation();
+            mRelativeLayout.clearAnimation();
         }
     }
 }

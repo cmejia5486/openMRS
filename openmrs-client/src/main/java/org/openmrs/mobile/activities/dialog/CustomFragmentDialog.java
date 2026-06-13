@@ -15,58 +15,48 @@
 package org.openmrs.mobile.activities.dialog;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
-import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
-import org.openmrs.mobile.activities.addeditpatient.SimilarPatientsRecyclerViewAdapter;
 import org.openmrs.mobile.activities.login.LoginActivity;
 import org.openmrs.mobile.activities.login.LoginFragment;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.visits.PatientVisitsFragment;
-import org.openmrs.mobile.activities.syncedpatients.SyncedPatientsActivity;
+import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
+import org.openmrs.mobile.activities.addeditpatient.SimilarPatientsRecyclerViewAdapter;
 import org.openmrs.mobile.activities.visitdashboard.VisitDashboardActivity;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.bundle.CustomDialogBundle;
 import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.utilities.ApplicationConstants;
 import org.openmrs.mobile.utilities.FontsUtil;
-import org.openmrs.mobile.utilities.ToastUtil;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * General class for creating dialog fragment instances
@@ -76,13 +66,12 @@ public class CustomFragmentDialog extends DialogFragment {
 
     public enum OnClickAction {
         SET_URL, SHOW_URL_DIALOG, DISMISS_URL_DIALOG, DISMISS, LOGOUT, FINISH, INTERNET, UNAUTHORIZED, END_VISIT,
-        START_VISIT, LOGIN, REGISTER_PATIENT, CANCEL_REGISTERING, DELETE_PATIENT,MULTI_DELETE_PATIENT, SELECT_LOCATION
+        START_VISIT, LOGIN, REGISTER_PATIENT, CANCEL_REGISTERING, DELETE_PATIENT
     }
 
     protected LayoutInflater mInflater;
     protected LinearLayout mFieldsLayout;
     protected RecyclerView mRecyclerView;
-    protected ListView locationListView;
 
     protected TextView mTextView;
     protected TextView mTitleTextView;
@@ -93,10 +82,6 @@ public class CustomFragmentDialog extends DialogFragment {
     protected EditText mEditText;
 
     private CustomDialogBundle mCustomDialogBundle;
-
-    private ArrayList<Patient> itemsToDelete = new ArrayList<>();
-
-    protected final OpenMRS mOpenMRS = OpenMRS.getInstance();
 
     public static CustomFragmentDialog newInstance(CustomDialogBundle customDialogBundle) {
         CustomFragmentDialog dialog = new CustomFragmentDialog();
@@ -122,10 +107,10 @@ public class CustomFragmentDialog extends DialogFragment {
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         this.mInflater = inflater;
         View dialogLayout = mInflater.inflate(R.layout.fragment_dialog_layout, null, false);
-        this.mFieldsLayout = dialogLayout.findViewById(R.id.dialogForm);
+        this.mFieldsLayout = (LinearLayout) dialogLayout.findViewById(R.id.dialogForm);
         this.setRightButton(dialogLayout);
         this.setLeftButton(dialogLayout);
         getDialog().setCanceledOnTouchOutside(false);
@@ -147,11 +132,7 @@ public class CustomFragmentDialog extends DialogFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (isDialogAvailable()) {
-            if(mCustomDialogBundle.hasLoadingBar()||mCustomDialogBundle.hasProgressDialog())
-                this.setProgressDialogWidth();
-            else{
-                this.setBorderless();
-            }
+            this.setBorderless();
             this.setOnBackListener();
         }
     }
@@ -169,26 +150,32 @@ public class CustomFragmentDialog extends DialogFragment {
         if (getDialog() != null && getRetainInstance()) {
             getDialog().setDismissMessage(null);
         }
+        if (getActivity().getClass().equals(DialogActivity.class)) {
+            getActivity().finish();
+        }
         super.onDestroyView();
 
     }
 
     public final void setOnBackListener() {
-        getDialog().setOnKeyListener((dialog, keyCode, event) -> {
-            if (keyCode == KeyEvent.KEYCODE_BACK && getActivity().getClass().equals(LoginActivity.class)) {
-                if (OpenMRS.getInstance().getServerUrl().equals(ApplicationConstants.EMPTY_STRING)) {
-                    OpenMRS.getInstance().getOpenMRSLogger().d("Exit application");
-                    getActivity().onBackPressed();
-                    dismiss();
-                } else {
-                    ((LoginFragment) getActivity()
-                            .getSupportFragmentManager()
-                            .findFragmentById(R.id.loginContentFrame))
-                            .hideURLDialog();
-                    dismiss();
+        getDialog().setOnKeyListener(new DialogInterface.OnKeyListener() {
+            @Override
+            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK && getActivity().getClass().equals(LoginActivity.class)) {
+                    if (OpenMRS.getInstance().getServerUrl().equals(ApplicationConstants.EMPTY_STRING)) {
+                        OpenMRS.getInstance().getOpenMRSLogger().d("Exit application");
+                        getActivity().onBackPressed();
+                        dismiss();
+                    } else {
+                        ((LoginFragment) getActivity()
+                                .getSupportFragmentManager()
+                                .findFragmentById(R.id.loginContentFrame))
+                                .hideURLDialog();
+                        dismiss();
+                    }
                 }
+                return false;
             }
-            return false;
         });
     }
 
@@ -206,22 +193,6 @@ public class CustomFragmentDialog extends DialogFragment {
 
         getDialog().getWindow().setAttributes(params);
     }
-
-    public final void setProgressDialogWidth() {
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-        int marginWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, TYPED_DIMENSION_VALUE,
-                OpenMRS.getInstance().getResources().getDisplayMetrics());
-
-        DisplayMetrics display = this.getResources().getDisplayMetrics();
-        int width = display.widthPixels;
-
-        WindowManager.LayoutParams params = getDialog().getWindow().getAttributes();
-        params.width = (width * 5 / 6) - (2 * marginWidth);
-
-        getDialog().getWindow().setAttributes(params);
-    }
-
 
     private void buildDialog() {
         if (null != mCustomDialogBundle.getTitleViewMessage()) {
@@ -252,17 +223,11 @@ public class CustomFragmentDialog extends DialogFragment {
         if(null != mCustomDialogBundle.getPatientsList()){
             mRecyclerView = addRecycleView(mCustomDialogBundle.getPatientsList(), mCustomDialogBundle.getNewPatient());
         }
-        if(null != mCustomDialogBundle.getLocationList()){
-          addSingleChoiceItemsListView(mCustomDialogBundle.getLocationList());
-        }
-        if(null != mCustomDialogBundle.getSelectedItems()){
-            itemsToDelete = mCustomDialogBundle.getSelectedItems();
-        }
     }
 
     private RecyclerView addRecycleView(List<Patient> patientsList, Patient newPatient) {
         LinearLayout field = (LinearLayout) mInflater.inflate(R.layout.openmrs_recycle_view, null);
-        RecyclerView recyclerView = field.findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = (RecyclerView) field.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(new SimilarPatientsRecyclerViewAdapter((getActivity()), patientsList, newPatient));
         mFieldsLayout.addView(field);
@@ -270,19 +235,9 @@ public class CustomFragmentDialog extends DialogFragment {
         return recyclerView;
     }
 
-    private void addSingleChoiceItemsListView(List<String>locationList) {
-        LinearLayout field = (LinearLayout) mInflater.inflate(R.layout.openmrs_single_choice_list_view, null);
-        locationListView = field.findViewById(R.id.singleChoiceListView);
-        locationListView.setAdapter(new ArrayAdapter<>(getActivity(),
-                R.layout.row_single_checked_layout, locationList));
-        locationListView.setItemChecked(locationList.indexOf(mOpenMRS.getLocation()),true);
-        mFieldsLayout.addView(field);
-
-    }
-
     public EditText addEditTextField(String defaultMessage) {
         LinearLayout field = (LinearLayout) mInflater.inflate(R.layout.openmrs_edit_text_field, null);
-        EditText editText = field.findViewById(R.id.openmrsEditText);
+        EditText editText = (EditText) field.findViewById(R.id.openmrsEditText);
         if (null != defaultMessage) {
             editText.setText(defaultMessage);
         }
@@ -292,34 +247,20 @@ public class CustomFragmentDialog extends DialogFragment {
 
     public TextView addTextField(String message) {
         LinearLayout field = (LinearLayout) mInflater.inflate(R.layout.openmrs_text_view_field, null);
-        TextView textView = field.findViewById(R.id.openmrsTextView);
+        TextView textView = (TextView) field.findViewById(R.id.openmrsTextView);
         textView.setText(message);
         textView.setSingleLine(false);
-        
-        if(null != mCustomDialogBundle.getLocationList()){
-            textView.setTextSize(18);
-        }
+        FontsUtil.setFont(textView, FontsUtil.OpenFonts.OPEN_SANS_ITALIC);
         mFieldsLayout.addView(field, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         return textView;
     }
 
     public TextView addTitleBar(String title) {
         LinearLayout field = (LinearLayout) mInflater.inflate(R.layout.openmrs_title_view_field, null);
-        TextView textView = field.findViewById(R.id.openmrsTitleView);
-        if (mCustomDialogBundle.hasProgressDialog() || mCustomDialogBundle.hasLoadingBar()) {
-            mFieldsLayout.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT);
-            p.weight = 2;
-            field.setLayoutParams(p);
-            field.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.white));
-            textView.setGravity(Gravity.CENTER);
-            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-            textView.setBackgroundColor(ContextCompat.getColor(getContext(), R.color.white));
-            textView.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
-        }
+        TextView textView = (TextView) field.findViewById(R.id.openmrsTitleView);
         textView.setText(title);
         textView.setSingleLine(true);
-        mFieldsLayout.addView(field);
+        mFieldsLayout.addView(field, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         return textView;
     }
 
@@ -342,20 +283,18 @@ public class CustomFragmentDialog extends DialogFragment {
     }
 
     public void setRightButton(View dialogLayout) {
-        this.mRightButton = dialogLayout.findViewById(R.id.dialogFormButtonsSubmitButton);
+        this.mRightButton = (Button) dialogLayout.findViewById(R.id.dialogFormButtonsSubmitButton);
     }
 
     public void setLeftButton(View dialogLayout) {
-        this.mLeftButton = dialogLayout.findViewById(R.id.dialogFormButtonsCancelButton);
+        this.mLeftButton = (Button) dialogLayout.findViewById(R.id.dialogFormButtonsCancelButton);
     }
 
     public void addProgressBar(String message) {
-        RelativeLayout progressBarLayout = (RelativeLayout) mInflater.inflate(R.layout.dialog_progress, null);
-        mFieldsLayout.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp2px(getResources(),100));
-        p.weight = 1;
-        progressBarLayout.setLayoutParams(p);
-        mFieldsLayout.addView(progressBarLayout);
+        FrameLayout progressBarLayout = (FrameLayout) mInflater.inflate(R.layout.dialog_progress, null);
+        TextView textView = (TextView) progressBarLayout.findViewById(R.id.progressTextView);
+        textView.setText(message);
+        mFieldsLayout.addView(progressBarLayout, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     public String getEditTextValue() {
@@ -371,82 +310,70 @@ public class CustomFragmentDialog extends DialogFragment {
     }
 
     private View.OnClickListener onClickActionSolver(final OnClickAction action) {
-        //CHECKSTYLE:OFF
-        return view -> {
-            switch (action) {
-                case DISMISS_URL_DIALOG:
-                    ((LoginFragment) getActivity()
-                            .getSupportFragmentManager()
-                            .findFragmentById(R.id.loginContentFrame))
-                            .hideURLDialog();
-                    dismiss();
-                    break;
-                case LOGIN:
-                    ((LoginFragment) getActivity()
-                            .getSupportFragmentManager()
-                            .findFragmentById(R.id.loginContentFrame))
-                            .login(true);
-                    dismiss();
-                    break;
-                case DISMISS:
-                    dismiss();
-                    break;
-                case LOGOUT:
-                    ((ACBaseActivity) getActivity()).logout();
-                    dismiss();
-                    break;
-                case FINISH:
-                    getActivity().moveTaskToBack(true);
-                    android.os.Process.killProcess(android.os.Process.myPid());
-                    System.exit(1);
-                    break;
-                case INTERNET:
-                    getActivity().startActivity(new Intent(Settings.ACTION_SETTINGS));
-                    dismiss();
-                    break;
-                case UNAUTHORIZED:
-                    ((ACBaseActivity) getActivity()).moveUnauthorizedUserToLoginScreen();
-                    dismiss();
-                    break;
-                case END_VISIT:
-                    ((VisitDashboardActivity) getActivity()).mPresenter.endVisit();
-                    dismiss();
-                    break;
-                case START_VISIT:
-                    doStartVisitAction();
-                    dismiss();
-                    break;
-                case REGISTER_PATIENT:
-                    ((AddEditPatientActivity) getActivity()).mPresenter.registerPatient();
-                    dismiss();
-                    break;
-                case CANCEL_REGISTERING:
-                    ((AddEditPatientActivity) getActivity()).mPresenter.finishPatientInfoActivity();
-                    dismiss();
-                    break;
-                case DELETE_PATIENT:
-                    PatientDashboardActivity activity = (PatientDashboardActivity) getActivity();
-                    activity.mPresenter.deletePatient();
-                    dismiss();
-                    activity.finish();
-                    break;
-                case MULTI_DELETE_PATIENT:
-                    SyncedPatientsActivity syncedPatientsActivity = (SyncedPatientsActivity) getActivity();
-                    for (Patient patientItem : itemsToDelete) {
-                        if (syncedPatientsActivity != null) {
-                            syncedPatientsActivity.mPresenter.deletePatient(patientItem);
-                        }
-                    }
-                    dismiss();
-                    Objects.requireNonNull(syncedPatientsActivity).finish();
-                    ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.SUCCESS, org.openmrs.mobile.R.string.multiple_patients_deleted);
-                    break;
-                case SELECT_LOCATION:
-                    mOpenMRS.setLocation(locationListView.getAdapter().getItem(locationListView.getCheckedItemPosition()).toString());
-                    dismiss();
-                    break;
-                default:
-                    break;
+        return new View.OnClickListener() {
+            //CHECKSTYLE:OFF
+            @Override
+            public void onClick(View v) {
+                switch (action) {
+                    case DISMISS_URL_DIALOG:
+                        ((LoginFragment) getActivity()
+                                .getSupportFragmentManager()
+                                .findFragmentById(R.id.loginContentFrame))
+                                .hideURLDialog();
+                        dismiss();
+                        break;
+                    case LOGIN:
+                        ((LoginFragment) getActivity()
+                                .getSupportFragmentManager()
+                                .findFragmentById(R.id.loginContentFrame))
+                                .login(true);
+                        dismiss();
+                        break;
+                    case DISMISS:
+                        dismiss();
+                        break;
+                    case LOGOUT:
+                        ((ACBaseActivity) getActivity()).logout();
+                        dismiss();
+                        break;
+                    case FINISH:
+                        getActivity().moveTaskToBack(true);
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(1);
+                        break;
+                    case INTERNET:
+                        getActivity().startActivity(new Intent(Settings.ACTION_SETTINGS));
+                        dismiss();
+                        break;
+                    case UNAUTHORIZED:
+                        ((ACBaseActivity) getActivity()).moveUnauthorizedUserToLoginScreen();
+                        dismiss();
+                        break;
+                    case END_VISIT:
+                        ((VisitDashboardActivity) getActivity()).mPresenter.endVisit();
+                        dismiss();
+                        break;
+                    case START_VISIT:
+                        doStartVisitAction();
+                        dismiss();
+                        break;
+                    case REGISTER_PATIENT:
+                        ((AddEditPatientActivity) getActivity()).mPresenter.registerPatient();
+                        dismiss();
+                        break;
+                    case CANCEL_REGISTERING:
+                        ((AddEditPatientActivity) getActivity()).mPresenter.finishPatientInfoActivity();
+                        dismiss();
+                        break;
+                    case DELETE_PATIENT:
+                        PatientDashboardActivity activity = (PatientDashboardActivity) getActivity();
+                        activity.mPresenter.deletePatient();
+                        dismiss();
+                        activity.finish();
+                        break;
+                    default:
+                        break;
+                }
             }
             //CHECKSTYLE:ON
         };
@@ -468,9 +395,5 @@ public class CustomFragmentDialog extends DialogFragment {
                 fragment.startVisit();
             }
         }
-    }
-
-    public static int dp2px(Resources resource, int dp) {
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,   dp,resource.getDisplayMetrics());
     }
 }

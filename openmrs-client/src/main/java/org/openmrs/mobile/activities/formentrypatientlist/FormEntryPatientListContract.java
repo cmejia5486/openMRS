@@ -14,17 +14,19 @@
 
 package org.openmrs.mobile.activities.formentrypatientlist;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import android.support.annotation.Nullable;
+
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 import org.openmrs.mobile.models.Patient;
 
 import java.util.List;
 
-import androidx.annotation.Nullable;
-
 public interface FormEntryPatientListContract {
 
     interface View extends BaseView<Presenter> {
+
+        boolean isActive();
 
         void updateAdapter(List<Patient> patientList);
 
@@ -34,7 +36,7 @@ public interface FormEntryPatientListContract {
 
     }
 
-    interface Presenter extends BasePresenterContract {
+    interface Presenter extends BasePresenter {
 
         void setQuery(String query);
 

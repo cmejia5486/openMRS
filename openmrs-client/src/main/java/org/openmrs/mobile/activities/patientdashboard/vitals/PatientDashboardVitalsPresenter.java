@@ -16,19 +16,16 @@ package org.openmrs.mobile.activities.patientdashboard.vitals;
 
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardMainPresenterImpl;
-import org.openmrs.mobile.api.repository.VisitRepository;
+import org.openmrs.mobile.api.retrofit.VisitApi;
 import org.openmrs.mobile.dao.EncounterDAO;
 import org.openmrs.mobile.dao.PatientDAO;
 import org.openmrs.mobile.listeners.retrofit.DefaultResponseCallbackListener;
-import org.openmrs.mobile.models.Patient;
+import org.openmrs.mobile.models.Encounter;
 import org.openmrs.mobile.utilities.NetworkUtils;
-
-import rx.android.schedulers.AndroidSchedulers;
 
 public class PatientDashboardVitalsPresenter extends PatientDashboardMainPresenterImpl implements PatientDashboardContract.PatientVitalsPresenter {
 
     private EncounterDAO encounterDAO;
-    private VisitRepository visitRepository;
     private PatientDashboardContract.ViewPatientVitals mPatientVitalsView;
 
     public PatientDashboardVitalsPresenter(String id, PatientDashboardContract.ViewPatientVitals mPatientVitalsView) {
@@ -36,27 +33,17 @@ public class PatientDashboardVitalsPresenter extends PatientDashboardMainPresent
         this.mPatientVitalsView = mPatientVitalsView;
         this.mPatientVitalsView.setPresenter(this);
         this.encounterDAO = new EncounterDAO();
-        this.visitRepository = new VisitRepository();
-    }
-
-    public PatientDashboardVitalsPresenter(Patient patient, PatientDashboardContract.ViewPatientVitals mPatientVitalsView,
-                                           EncounterDAO encounterDAO, VisitRepository visitRepository) {
-        this.mPatient = patient;
-        this.mPatientVitalsView = mPatientVitalsView;
-        this.mPatientVitalsView.setPresenter(this);
-        this.encounterDAO = encounterDAO;
-        this.visitRepository = visitRepository;
     }
 
     @Override
-    public void subscribe() {
+    public void start() {
         loadVitalsFromDB();
         loadVitalsFromServer();
     }
 
     private void loadVitalsFromServer() {
         if (NetworkUtils.isOnline()) {
-            visitRepository.syncLastVitals(mPatient.getUuid(), new DefaultResponseCallbackListener() {
+            new VisitApi().syncLastVitals(mPatient.getUuid(), new DefaultResponseCallbackListener() {
                 @Override
                 public void onResponse() {
                     loadVitalsFromDB();
@@ -71,21 +58,18 @@ public class PatientDashboardVitalsPresenter extends PatientDashboardMainPresent
     }
 
     private void loadVitalsFromDB() {
-        addSubscription(encounterDAO.getLastVitalsEncounter(mPatient.getUuid())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(encounter -> {
-                    if (encounter != null) {
-                        mPatientVitalsView.showEncounterVitals(encounter);
-                    } else {
-                        mPatientVitalsView.showNoVitalsNotification();
-                    }
-                }));
+        Encounter mVitalsEncounter = encounterDAO.getLastVitalsEncounter(mPatient.getUuid());
+        if (mVitalsEncounter != null) {
+            mPatientVitalsView.showEncounterVitals(mVitalsEncounter);
+        }
+        else {
+            mPatientVitalsView.showNoVitalsNotification();
+        }
     }
 
     @Override
     public void startFormDisplayActivityWithEncounter() {
-        addSubscription(encounterDAO.getLastVitalsEncounter(mPatient.getUuid())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(encounter -> mPatientVitalsView.startFormDisplayActivity(encounter)));
+        Encounter lastVitalsEncounter = encounterDAO.getLastVitalsEncounter(mPatient.getUuid());
+        mPatientVitalsView.startFormDisplayActivity(lastVitalsEncounter);
     }
 }

@@ -15,26 +15,26 @@
 package org.openmrs.mobile.activities.activevisits;
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseFragment;
 import org.openmrs.mobile.models.Visit;
 import org.openmrs.mobile.utilities.FontsUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ActiveVisitsFragment extends ACBaseFragment<ActiveVisitsContract.Presenter> implements ActiveVisitsContract.View {
+public class ActiveVisitsFragment extends Fragment implements ActiveVisitsContract.View{
+
+    private ActiveVisitsContract.Presenter mPresenter;
 
     private RecyclerView visitsRecyclerView;
     private TextView emptyList;
@@ -46,25 +46,32 @@ public class ActiveVisitsFragment extends ACBaseFragment<ActiveVisitsContract.Pr
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_active_visits, container, false);
 
-        progressBar = root.findViewById(R.id.progressBar);
-        visitsRecyclerView = root.findViewById(R.id.visitsRecyclerView);
+        progressBar = (ProgressBar)root.findViewById(R.id.progressBar);
+        visitsRecyclerView = (RecyclerView) root.findViewById(R.id.visitsRecyclerView);
         visitsRecyclerView.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this.getActivity());
         visitsRecyclerView.setLayoutManager(linearLayoutManager);
         visitsRecyclerView.setAdapter(new ActiveVisitsRecyclerViewAdapter(this.getActivity(),
-                new ArrayList<>()));
+                new ArrayList<Visit>()));
 
-        emptyList = root.findViewById(R.id.emptyVisitsListViewLabel);
+        emptyList = (TextView) root.findViewById(R.id.emptyVisitsListViewLabel);
         emptyList.setText(getString(R.string.search_visits_no_results));
         emptyList.setVisibility(View.INVISIBLE);
 
 
-        FontsUtil.setFont(this.getActivity().findViewById(android.R.id.content));
+        FontsUtil.setFont((ViewGroup) this.getActivity().findViewById(android.R.id.content));
 
         return root;
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        mPresenter.updateVisitsInDatabaseList();
+
     }
 
     @Override
@@ -88,5 +95,15 @@ public class ActiveVisitsFragment extends ACBaseFragment<ActiveVisitsContract.Pr
     @Override
     public void setEmptyListText(int stringId, String query) {
         emptyList.setText(getString(stringId, query));
+    }
+
+    @Override
+    public boolean isActive() {
+        return isAdded();
+    }
+
+    @Override
+    public void setPresenter(ActiveVisitsContract.Presenter presenter) {
+        this.mPresenter = presenter;
     }
 }

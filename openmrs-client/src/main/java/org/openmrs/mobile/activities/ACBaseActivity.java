@@ -14,54 +14,30 @@
 
 package org.openmrs.mobile.activities;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.Color;
-import android.net.Uri;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-
-import com.google.android.material.snackbar.Snackbar;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
+import org.openmrs.mobile.activities.dialog.DialogActivity;
 import org.openmrs.mobile.activities.login.LoginActivity;
 import org.openmrs.mobile.activities.settings.SettingsActivity;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.application.OpenMRSLogger;
 import org.openmrs.mobile.bundle.CustomDialogBundle;
-import org.openmrs.mobile.dao.LocationDAO;
 import org.openmrs.mobile.databases.OpenMRSDBOpenHelper;
-import org.openmrs.mobile.models.Location;
-import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.net.AuthorizationManager;
 import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.ForceClose;
-import org.openmrs.mobile.utilities.NetworkUtils;
-import org.openmrs.mobile.utilities.ThemeUtils;
 import org.openmrs.mobile.utilities.ToastUtil;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import rx.Observable;
-import rx.Observer;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -70,58 +46,39 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     protected FragmentManager mFragmentManager;
     protected final OpenMRS mOpenMRS = OpenMRS.getInstance();
     protected final OpenMRSLogger mOpenMRSLogger = mOpenMRS.getOpenMRSLogger();
+    private CustomFragmentDialog mCurrentDialog;
     protected AuthorizationManager mAuthorizationManager;
     protected CustomFragmentDialog mCustomFragmentDialog;
     private MenuItem mSyncbutton;
-    private List<String> locationList;
-    private Snackbar snackbar;
-    private IntentFilter mIntentFilter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Thread.setDefaultUncaughtExceptionHandler(new ForceClose(this));
-
-        setupTheme();
-
         mFragmentManager = getSupportFragmentManager();
         mAuthorizationManager = new AuthorizationManager();
-        locationList = new ArrayList<>();
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            Boolean flag = extras.getBoolean("flag");
-            String errorReport = extras.getString("error");
-            if (flag) {
-                showAppCrashDialog(errorReport);
-            }
-        }
-        mIntentFilter = new IntentFilter();
-        mIntentFilter.addAction(ApplicationConstants.BroadcastActions.AUTHENTICATION_CHECK_BROADCAST_ACTION);
+
+
+
     }
 
-    private BroadcastReceiver mPasswordChangedReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            showCredentialChangedDialog();
-        }
-    };
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mCurrentDialog = null;
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
         invalidateOptionsMenu();
-        if (!(this instanceof LoginActivity) && !mAuthorizationManager.isUserLoggedIn()) {
+        if (!(this instanceof LoginActivity || this instanceof DialogActivity) && !mAuthorizationManager.isUserLoggedIn()) {
             mAuthorizationManager.moveToLoginActivity();
         }
-        registerReceiver(mPasswordChangedReceiver, mIntentFilter);
-        ToastUtil.setAppVisible(true);
     }
 
     @Override
     protected void onPause() {
-        unregisterReceiver(mPasswordChangedReceiver);
         super.onPause();
-        ToastUtil.setAppVisible(false);
     }
 
     @Override
@@ -138,8 +95,9 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         if (logoutMenuItem != null) {
             logoutMenuItem.setTitle(getString(R.string.action_logout) + " " + mOpenMRS.getUsername());
         }
-        if (mSyncbutton != null) {
-            final Boolean syncState = NetworkUtils.isOnline();
+        if(mSyncbutton !=null) {
+            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance());
+            final Boolean syncState = prefs.getBoolean("sync", true);
             setSyncButtonState(syncState);
         }
         return true;
@@ -148,7 +106,8 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     private void setSyncButtonState(boolean syncState) {
         if (syncState) {
             mSyncbutton.setIcon(R.drawable.ic_sync_on);
-        } else {
+        }
+        else {
             mSyncbutton.setIcon(R.drawable.ic_sync_off);
         }
     }
@@ -171,86 +130,26 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 return true;
             case R.id.syncbutton:
                 boolean syncState = OpenMRS.getInstance().getSyncState();
+                OpenMRS.getInstance().setSyncState(!syncState);
+                setSyncButtonState(!syncState);
                 if (syncState) {
-                    OpenMRS.getInstance().setSyncState(false);
-                    setSyncButtonState(false);
-                    showNoInternetConnectionSnackbar();
-                    ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.NOTICE, R.string.disconn_server);
-                } else if (NetworkUtils.hasNetwork()) {
-                    OpenMRS.getInstance().setSyncState(true);
-                    setSyncButtonState(true);
+                    ToastUtil.notify("Sync OFF");
+                }
+                else {
                     Intent intent = new Intent("org.openmrs.mobile.intent.action.SYNC_PATIENTS");
                     getApplicationContext().sendBroadcast(intent);
-                    ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.NOTICE, R.string.reconn_server);
-                    if (snackbar != null)
-                        snackbar.dismiss();
-                    ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.connected_to_server_message);
-
-                } else {
-                    showNoInternetConnectionSnackbar();
+                    ToastUtil.notify("Sync ON");
                 }
-                return true;
-
-            case R.id.actionLocation:
-                if (!locationList.isEmpty()) {
-                    locationList.clear();
-                }
-                Observable<List<Location>> observableList = new LocationDAO().getLocations();
-                observableList.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(getLocationList());
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private Observer<List<Location>> getLocationList() {
-        return new Observer<List<Location>>() {
-            @Override
-            public void onCompleted() {
-                showLocationDialog(locationList);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                mOpenMRSLogger.e(e.getMessage());
-            }
-
-            @Override
-            public void onNext(List<Location> locations) {
-                for (Location locationItem : locations) {
-                    locationList.add(locationItem.getName());
-                }
-
-            }
-        };
-    }
-
-    public void showNoInternetConnectionSnackbar() {
-        snackbar = Snackbar.make(findViewById(android.R.id.content),
-                getString(R.string.no_internet_connection_message), Snackbar.LENGTH_INDEFINITE);
-        View sbView = snackbar.getView();
-        TextView textView = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
-        textView.setTextColor(Color.WHITE);
-        snackbar.show();
-    }
-
     public void logout() {
         mOpenMRS.clearUserPreferencesData();
         mAuthorizationManager.moveToLoginActivity();
-        ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.logout_success);
         OpenMRSDBOpenHelper.getInstance().closeDatabases();
-    }
-
-    private void showCredentialChangedDialog() {
-        CustomDialogBundle bundle = new CustomDialogBundle();
-        bundle.setTitleViewMessage(getString(R.string.credentials_changed_dialog_title));
-        bundle.setTextViewMessage(getString(R.string.credentials_changed_dialog_message));
-        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.LOGOUT);
-        bundle.setRightButtonText(getString(R.string.ok));
-        mCustomFragmentDialog = CustomFragmentDialog.newInstance(bundle);
-        mCustomFragmentDialog.setCancelable(false);
-        mCustomFragmentDialog.setRetainInstance(true);
-        mCustomFragmentDialog.show(mFragmentManager, ApplicationConstants.DialogTAG.CREDENTIAL_CHANGED_DIALOG_TAG);
     }
 
     private void showLogoutDialog() {
@@ -262,6 +161,82 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
         bundle.setLeftButtonText(getString(R.string.dialog_button_cancel));
         createAndShowDialog(bundle, ApplicationConstants.DialogTAG.LOGOUT_DIALOG_TAG);
+    }
+
+    protected void showConnectionTimeoutDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.conn_timeout_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.conn_timeout_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
+        bundle.setRightButtonText(getString(R.string.dialog_button_cancel));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.CONN_TIMEOUT_DIALOG_TAG);
+    }
+
+    protected void showAuthenticationFailedDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.auth_failed_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.auth_failed_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
+        bundle.setRightButtonText(getString(R.string.dialog_button_ok));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.AUTH_FAILED_DIALOG_TAG);
+    }
+
+    public void showNoInternetConnectionDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.no_internet_conn_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.no_internet_conn_dialog_message));
+        bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.FINISH);
+        bundle.setLeftButtonText(getString(R.string.no_internet_exit));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.INTERNET);
+        bundle.setRightButtonText(getString(R.string.no_internet_open_settings));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.NO_INTERNET_CONN_DIALOG_TAG);
+    }
+
+    protected void showServerUnavailableDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.server_unavailable_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.server_unavailable_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
+        bundle.setRightButtonText(getString(R.string.dialog_button_ok));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.SERVER_UNAVAILABLE_DIALOG_TAG);
+    }
+
+    protected void showUnauthorizedDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.unauthorized_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.unauthorized_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.UNAUTHORIZED);
+        bundle.setRightButtonText(getString(R.string.dialog_button_ok));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.UNAUTHORIZED_DIALOG_TAG);
+    }
+
+    protected void showServerErrorDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.server_error_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.server_error_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
+        bundle.setRightButtonText(getString(R.string.dialog_button_ok));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.SERVER_ERROR_DIALOG_TAG);
+    }
+
+    protected void showSocketExceptionErrorDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.socket_exception_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.socket_exception_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
+        bundle.setRightButtonText(getString(R.string.dialog_button_ok));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.SOCKET_EXCEPTION_DIALOG_TAG);
+    }
+
+    public void showNoVisitDialog() {
+        CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setTitleViewMessage(getString(R.string.no_visit_dialog_title));
+        bundle.setTextViewMessage(getString(R.string.no_visit_dialog_message));
+        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.START_VISIT);
+        bundle.setRightButtonText(getString(R.string.no_visit_dialog_button_accept));
+        bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
+        bundle.setLeftButtonText(getString(R.string.no_visit_dialog_button_cancel));
+        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.NO_VISIT_DIALOG_TAG);
     }
 
     public void showStartVisitImpossibleDialog(CharSequence title) {
@@ -295,33 +270,22 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         createAndShowDialog(bundle, ApplicationConstants.DialogTAG.DELET_PATIENT_DIALOG_TAG);
     }
 
-    public void showMultiDeletePatientDialog(ArrayList<Patient> selectedItems){
-        CustomDialogBundle bundle = new CustomDialogBundle();
-        bundle.setTitleViewMessage(getString(org.openmrs.mobile.R.string.delete_multiple_patients));
-        bundle.setTextViewMessage(getString(org.openmrs.mobile.R.string.delete_multiple_patients_dialog_message));
-        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.MULTI_DELETE_PATIENT);
-        bundle.setRightButtonText(getString(R.string.dialog_button_confirm));
-        bundle.setSelectedItems(selectedItems);
-        bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
-        bundle.setLeftButtonText(getString(R.string.dialog_button_cancel));
-        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.MULTI_DELETE_PATIENT_DIALOG_TAG);
-    }
-
-    private void showLocationDialog(List<String> locationList) {
-        CustomDialogBundle bundle = new CustomDialogBundle();
-        bundle.setTitleViewMessage(getString(R.string.location_dialog_title));
-        bundle.setTextViewMessage(getString(R.string.location_dialog_current_location) + mOpenMRS.getLocation());
-        bundle.setLocationList(locationList);
-        bundle.setRightButtonAction(CustomFragmentDialog.OnClickAction.SELECT_LOCATION);
-        bundle.setRightButtonText(getString(R.string.dialog_button_select_location));
-        bundle.setLeftButtonAction(CustomFragmentDialog.OnClickAction.DISMISS);
-        bundle.setLeftButtonText(getString(R.string.dialog_button_cancel));
-        createAndShowDialog(bundle, ApplicationConstants.DialogTAG.LOCATION_DIALOG_TAG);
-    }
-
     public void createAndShowDialog(CustomDialogBundle bundle, String tag) {
         CustomFragmentDialog instance = CustomFragmentDialog.newInstance(bundle);
         instance.show(mFragmentManager, tag);
+        mCurrentDialog = instance;
+    }
+
+    public String getDialogEditTextValue() {
+        String value = "";
+        if (mCurrentDialog!=null){
+            value = mCurrentDialog.getEditTextValue();
+        }
+        return value;
+    }
+
+    public synchronized CustomFragmentDialog getCurrentDialog() {
+        return mCurrentDialog;
     }
 
     public void moveUnauthorizedUserToLoginScreen() {
@@ -344,6 +308,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     protected void showProgressDialog(String dialogMessage) {
         CustomDialogBundle bundle = new CustomDialogBundle();
+        bundle.setProgressViewMessage(getString(R.string.progress_dialog_message));
         bundle.setProgressDialog(true);
         bundle.setTitleViewMessage(dialogMessage);
         mCustomFragmentDialog = CustomFragmentDialog.newInstance(bundle);
@@ -352,8 +317,37 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         mCustomFragmentDialog.show(mFragmentManager, dialogMessage);
     }
 
-    public void addFragmentToActivity(@NonNull FragmentManager fragmentManager,
-                                      @NonNull Fragment fragment, int frameId) {
+    public void dismissProgressDialog(boolean errorOccurred, Integer successMessageId, Integer errorMessageId) {
+        mCustomFragmentDialog.dismiss();
+
+        if (!errorOccurred && successMessageId != null) {
+            ToastUtil.showShortToast(this,
+                    ToastUtil.ToastType.SUCCESS,
+                    successMessageId);
+        } else if (errorMessageId != null) {
+            ToastUtil.showShortToast(this,
+                    ToastUtil.ToastType.ERROR,
+                    errorMessageId);
+        }
+    }
+
+    public void showShortToast(boolean errorOccurred, Integer successMessageId, Integer errorMessageId) {
+        if (!errorOccurred && successMessageId != null) {
+            ToastUtil.showShortToast(this,
+                    ToastUtil.ToastType.SUCCESS,
+                    successMessageId);
+        } else if (errorMessageId != null) {
+            ToastUtil.showShortToast(this,
+                    ToastUtil.ToastType.ERROR,
+                    errorMessageId);
+        }
+    }
+    public AuthorizationManager getAuthorizationManager() {
+        return mAuthorizationManager;
+    }
+
+    public void addFragmentToActivity (@NonNull FragmentManager fragmentManager,
+                                       @NonNull Fragment fragment, int frameId) {
         checkNotNull(fragmentManager);
         checkNotNull(fragment);
         FragmentTransaction transaction = fragmentManager.beginTransaction();
@@ -361,38 +355,4 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         transaction.commit();
     }
 
-    public void showAppCrashDialog(String error) {
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                this);
-        alertDialogBuilder.setTitle(R.string.crash_dialog_title);
-        // set dialog message
-        alertDialogBuilder
-                .setMessage(R.string.crash_dialog_message)
-                .setCancelable(false)
-                .setPositiveButton(R.string.crash_dialog_positive_button, (dialog, id) -> dialog.cancel())
-                .setNegativeButton(R.string.crash_dialog_negative_button, (dialog, id) -> finishAffinity())
-                .setNeutralButton(R.string.crash_dialog_neutral_button, (dialog, id) -> {
-                    String filename = OpenMRS.getInstance().getOpenMRSDir()
-                            + File.separator + mOpenMRSLogger.getLogFilename();
-                    Intent email = new Intent(Intent.ACTION_SEND);
-                    email.putExtra(Intent.EXTRA_SUBJECT, R.string.error_email_subject_app_crashed);
-                    email.putExtra(Intent.EXTRA_TEXT, error);
-                    email.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + filename));
-                    //need this to prompts email client only
-                    email.setType("message/rfc822");
-
-                    startActivity(Intent.createChooser(email, getString(R.string.choose_a_email_client)));
-                });
-
-        AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
-    }
-
-    public void setupTheme(){
-        if(ThemeUtils.isDarkModeActivated()){
-            getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-        } else{
-            getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        }
-    }
 }

@@ -12,10 +12,11 @@ package org.openmrs.mobile.api;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.support.annotation.Nullable;
 
 import com.activeandroid.query.Select;
 
-import org.openmrs.mobile.api.repository.VisitRepository;
+import org.openmrs.mobile.api.retrofit.VisitApi;
 import org.openmrs.mobile.dao.PatientDAO;
 import org.openmrs.mobile.dao.VisitDAO;
 import org.openmrs.mobile.listeners.retrofit.DefaultResponseCallbackListener;
@@ -28,8 +29,6 @@ import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -73,7 +72,7 @@ public class EncounterService extends IntentService {
     }
 
         private void startNewVisitForEncounter(final Encountercreate encountercreate, @Nullable final DefaultResponseCallbackListener callbackListener) {
-        new VisitRepository().startVisit(new PatientDAO().findPatientByUUID(encountercreate.getPatient()),
+        new VisitApi().startVisit(new PatientDAO().findPatientByUUID(encountercreate.getPatient()),
                 new StartVisitResponseListenerCallback() {
                     @Override
                     public void onStartVisitResponse(long id) {
@@ -112,13 +111,13 @@ public class EncounterService extends IntentService {
             Call<Encounter> call = apiService.createEncounter(encountercreate);
             call.enqueue(new Callback<Encounter>() {
                 @Override
-                public void onResponse(@NonNull Call<Encounter> call, @NonNull Response<Encounter> response) {
+                public void onResponse(Call<Encounter> call, Response<Encounter> response) {
                     if (response.isSuccessful()) {
                         Encounter encounter = response.body();
                         linkvisit(encountercreate.getPatientId(),encountercreate.getFormname(), encounter, encountercreate);
                         encountercreate.setSynced(true);
                         encountercreate.save();
-                        new VisitRepository().syncLastVitals(encountercreate.getPatient());
+                        new VisitApi().syncLastVitals(encountercreate.getPatient());
                         if (callbackListener != null) {
                             callbackListener.onResponse();
                         }
@@ -130,7 +129,7 @@ public class EncounterService extends IntentService {
                 }
 
                 @Override
-                public void onFailure(@NonNull Call<Encounter> call, @NonNull Throwable t) {
+                public void onFailure(Call<Encounter> call, Throwable t) {
                     if (callbackListener != null) {
                         callbackListener.onErrorResponse(t.getLocalizedMessage());
                     }

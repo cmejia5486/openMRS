@@ -10,12 +10,9 @@
 
 package org.openmrs.mobile.api;
 
-import org.openmrs.mobile.models.Concept;
 import org.openmrs.mobile.models.Encounter;
 import org.openmrs.mobile.models.EncounterType;
 import org.openmrs.mobile.models.Encountercreate;
-import org.openmrs.mobile.models.FormCreate;
-import org.openmrs.mobile.models.FormData;
 import org.openmrs.mobile.models.FormResource;
 import org.openmrs.mobile.models.IdGenPatientIdentifiers;
 import org.openmrs.mobile.models.IdentifierType;
@@ -24,12 +21,9 @@ import org.openmrs.mobile.models.Module;
 import org.openmrs.mobile.models.Obscreate;
 import org.openmrs.mobile.models.Observation;
 import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.models.PatientDto;
 import org.openmrs.mobile.models.PatientPhoto;
-import org.openmrs.mobile.models.Provider;
 import org.openmrs.mobile.models.Results;
 import org.openmrs.mobile.models.Session;
-import org.openmrs.mobile.models.SystemSetting;
 import org.openmrs.mobile.models.User;
 import org.openmrs.mobile.models.Visit;
 import org.openmrs.mobile.models.VisitType;
@@ -38,9 +32,7 @@ import java.util.Map;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
-import retrofit2.Response;
 import retrofit2.http.Body;
-import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -71,16 +63,15 @@ public interface RestApi {
                                                         @Query("password") String password);
 
     @GET("patient/{uuid}")
-    Call<PatientDto> getPatientByUUID(@Path("uuid") String uuid,
-                                      @Query("v") String representation);
+    Call<Patient> getPatientByUUID(@Path("uuid") String uuid,
+                                   @Query("v") String representation);
 
     @GET("patient?lastviewed&v=full")
-    Call<Results<Patient>> getLastViewedPatients(@Query("limit") Integer limit,
-                                                 @Query("startIndex") Integer startIndex);
+    Call<Results<Patient>> getLastViewedPatients();
 
     @POST("patient")
-    Call<PatientDto> createPatient(
-            @Body PatientDto patientDto);
+    Call<Patient> createPatient(
+            @Body Patient patient);
 
     @GET("patient")
     Call<Results<Patient>> getPatients(@Query("q") String searchQuery,
@@ -116,21 +107,21 @@ public interface RestApi {
 
     @GET("visit")
     Call<Results<Visit>> findVisitsByPatientUUID(@Query("patient") String patientUUID,
-                                                 @Query("v") String representation);
+                                        @Query("v") String representation);
 
     @GET("visittype")
     Call<Results<VisitType>> getVisitType();
 
     @GET("encounter")
     Call<Results<Encounter>> getLastVitals(@Query("patient") String patientUUID,
-                                           @Query("encounterType") String encounterType,
-                                           @Query("v") String representation,
-                                           @Query("limit") int limit,
-                                           @Query("order") String order);
+                                  @Query("encounterType") String encounterType,
+                                  @Query("v") String representation,
+                                  @Query("limit") int limit,
+                                  @Query("order") String order);
 
     @POST("patient/{uuid}")
-    Call<PatientDto> updatePatient(@Body PatientDto patientDto, @Path("uuid") String uuid,
-                                   @Query("v") String representation);
+    Call<Patient> updatePatient(@Body Patient patient, @Path("uuid") String uuid,
+                                @Query("v") String representation);
 
     @GET("module")
     Call<Results<Module>> getModules(@Query("v") String representation);
@@ -141,27 +132,4 @@ public interface RestApi {
     @GET("user/{uuid}")
     Call<User> getFullUserInfo(@Path("uuid") String uuid);
 
-    @GET("concept")
-    Call<Results<Concept>> getConcepts(@Query("limit") int limit, @Query("startIndex") int startIndex);
-
-    @GET("systemsetting")
-    Call<Results<SystemSetting>> getSystemSettingsByQuery(@Query("q") String query,
-                                                          @Query("v") String representation);
-
-    @POST("form/{uuid}/resource")
-    Call<FormCreate> formCreate(@Path("uuid") String uuid,
-                                @Body FormData obj);
-
-    @GET("provider?v=default")
-    Call<Results<Provider>> getProviderList();
-
-    @DELETE("provider/{uuid}?!purge")
-    Call<ResponseBody> deleteProvider(@Path("uuid") String uuid);
-
-    @POST("provider")
-    Call<Provider> addProvider(@Body Provider provider);
-
-    @POST("provider/{uuid}")
-    Call<Provider> editProvider(@Path("uuid") String uuid,
-                                @Body Provider provider);
 }

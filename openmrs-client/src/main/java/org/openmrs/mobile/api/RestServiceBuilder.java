@@ -14,7 +14,6 @@ import android.util.Base64;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.prateekj.snooper.okhttp.SnooperInterceptor;
 
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.models.Observation;
@@ -56,21 +55,23 @@ public class RestServiceBuilder {
             String credentials = username + ":" + password;
             final String basic =
                     "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
-            httpClient.addInterceptor(chain -> {
-                Request original = chain.request();
+            httpClient.addInterceptor(new Interceptor() {
+                @Override
+                public Response intercept(Interceptor.Chain chain) throws IOException {
+                    Request original = chain.request();
 
-                Request.Builder requestBuilder = original.newBuilder()
-                        .header("Authorization", basic)
-                        .header("Accept", "application/json")
-                        .method(original.method(), original.body());
+                    Request.Builder requestBuilder = original.newBuilder()
+                            .header("Authorization", basic)
+                            .header("Accept", "application/json")
+                            .method(original.method(), original.body());
 
 
-                Request request = requestBuilder.build();
-                return chain.proceed(request);
+                    Request request = requestBuilder.build();
+                    return chain.proceed(request);
+                }
             });
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-            httpClient.addInterceptor(new SnooperInterceptor());
             httpClient.addInterceptor(logging);
         }
         OkHttpClient client = httpClient.build();
@@ -93,14 +94,6 @@ public class RestServiceBuilder {
                 .create();
 
         return GsonConverterFactory.create(myGson);
-    }
-
-    public static <S> S createServiceForPatientIdentifier(Class<S> clazz){
-        return new Retrofit.Builder()
-                .baseUrl(mOpenMRS.getServerUrl() + '/')
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(clazz);
     }
 
     public static void changeBaseUrl(String newServerUrl){

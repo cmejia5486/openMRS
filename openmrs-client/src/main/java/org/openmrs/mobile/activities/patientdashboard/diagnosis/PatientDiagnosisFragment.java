@@ -15,6 +15,7 @@
 package org.openmrs.mobile.activities.patientdashboard.diagnosis;
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,11 +25,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardFragment;
 import org.openmrs.mobile.utilities.FontsUtil;
@@ -36,6 +33,8 @@ import org.openmrs.mobile.utilities.FontsUtil;
 import java.util.List;
 
 public class PatientDiagnosisFragment extends PatientDashboardFragment implements PatientDashboardContract.ViewPatientDiagnosis {
+
+    private PatientDashboardContract.PatientDiagnosisPresenter mPresenter;
 
     private ListView mDiagnosisList;
 
@@ -51,13 +50,19 @@ public class PatientDiagnosisFragment extends PatientDashboardFragment implement
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View fragmentLayout = inflater.inflate(R.layout.fragment_patient_diagnosis, null, false);
-        mDiagnosisList = fragmentLayout.findViewById(R.id.patientDiagnosisList);
-        TextView emptyList = fragmentLayout.findViewById(R.id.emptyDiagnosisListView);
+        mDiagnosisList = (ListView) fragmentLayout.findViewById(R.id.patientDiagnosisList);
+        TextView emptyList = (TextView) fragmentLayout.findViewById(R.id.emptyDiagnosisListView);
         mDiagnosisList.setEmptyView(emptyList);
         FontsUtil.setFont(fragmentLayout, FontsUtil.OpenFonts.OPEN_SANS_SEMIBOLD);
         return fragmentLayout;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mPresenter.start();
     }
 
     @Override
@@ -73,14 +78,7 @@ public class PatientDiagnosisFragment extends PatientDashboardFragment implement
     }
 
     @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if (isVisibleToUser) {
-            try {
-                PatientDashboardActivity.hideFABs(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    public void setPresenter(PatientDashboardContract.PatientDashboardMainPresenter presenter) {
+        this.mPresenter = ((PatientDashboardDiagnosisPresenter) presenter);
     }
 }

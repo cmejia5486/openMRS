@@ -26,6 +26,7 @@ import org.openmrs.mobile.databases.OpenMRSDBOpenHelper;
 import org.openmrs.mobile.databases.tables.PatientTable;
 import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.models.PatientIdentifier;
+import org.openmrs.mobile.models.Person;
 import org.openmrs.mobile.models.PersonAddress;
 import org.openmrs.mobile.models.PersonName;
 
@@ -34,14 +35,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import rx.Observable;
-
-import static org.openmrs.mobile.databases.DBOpenHelper.createObservableIO;
-
 public class PatientDAO {
 
-    public Observable<Long> savePatient(Patient patient) {
-        return createObservableIO(() -> new PatientTable().insert(patient));
+    public long savePatient(Patient patient) {
+        return new PatientTable().insert(patient);
     }
 
     public boolean updatePatient(long patientID, Patient patient) {
@@ -55,29 +52,28 @@ public class PatientDAO {
                 + " = " + id, null);
     }
 
-    public Observable<List<Patient>> getAllPatients() {
-        return createObservableIO(() -> {
-            List<Patient> patients = new ArrayList<>();
-            DBOpenHelper openHelper = OpenMRSDBOpenHelper.getInstance().getDBOpenHelper();
-            Cursor cursor = openHelper.getReadableDatabase().query(PatientTable.TABLE_NAME,
-                    null, null, null, null, null, null);
+    public List<Patient> getAllPatients() {
+        List<Patient> patients = new ArrayList<Patient>();
+        DBOpenHelper openHelper = OpenMRSDBOpenHelper.getInstance().getDBOpenHelper();
+        Cursor cursor = openHelper.getReadableDatabase().query(PatientTable.TABLE_NAME,
+                null, null, null, null, null, null);
 
-            if (null != cursor) {
-                try {
-                    while (cursor.moveToNext()) {
-                        Patient patient = cursorToPatient(cursor);
-                        patients.add(patient);
-                    }
-                } finally {
-                    cursor.close();
+        if (null != cursor) {
+            try {
+                while (cursor.moveToNext()) {
+                    Patient patient = cursorToPatient(cursor);
+                    patients.add(patient);
                 }
+            } finally {
+                cursor.close();
             }
-            return patients;
-        });
+        }
+        return patients;
     }
 
     private Patient cursorToPatient(Cursor cursor) {
         Patient patient = new Patient();
+        Person person = new Person();
 
         patient.setId(cursor.getLong(cursor.getColumnIndex(PatientTable.Column.ID)));
         patient.setDisplay(cursor.getString(cursor.getColumnIndex(PatientTable.Column.DISPLAY)));
@@ -93,15 +89,16 @@ public class PatientDAO {
         personName.setGivenName(cursor.getString(cursor.getColumnIndex(PatientTable.Column.GIVEN_NAME)));
         personName.setMiddleName(cursor.getString(cursor.getColumnIndex(PatientTable.Column.MIDDLE_NAME)));
         personName.setFamilyName(cursor.getString(cursor.getColumnIndex(PatientTable.Column.FAMILY_NAME)));
-        patient.getNames().add(personName);
+        person.getNames().add(personName);
 
-        patient.setGender(cursor.getString(cursor.getColumnIndex(PatientTable.Column.GENDER)));
-        patient.setBirthdate(cursor.getString(cursor.getColumnIndex(PatientTable.Column.BIRTH_DATE)));
+        person.setGender(cursor.getString(cursor.getColumnIndex(PatientTable.Column.GENDER)));
+        person.setBirthdate(cursor.getString(cursor.getColumnIndex(PatientTable.Column.BIRTH_DATE)));
         byte[] photoByteArray = cursor.getBlob(cursor.getColumnIndex(PatientTable.Column.PHOTO));
         if (photoByteArray != null)
-            patient.setPhoto(byteArrayToBitmap(photoByteArray));
-        patient.getAddresses().add(cursorToAddress(cursor));
+            person.setPhoto(byteArrayToBitmap(photoByteArray));
+        person.getAddresses().add(cursorToAddress(cursor));
 
+        patient.setPerson(person);
         return patient;
     }
 
@@ -181,8 +178,6 @@ public class PatientDAO {
             try {
                 if (cursor.moveToFirst()) {
                     patient = cursorToPatient(cursor);
-                } else {
-                    patient = null;
                 }
             } finally {
                 cursor.close();

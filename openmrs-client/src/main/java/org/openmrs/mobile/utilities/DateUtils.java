@@ -14,8 +14,6 @@
 
 package org.openmrs.mobile.utilities;
 
-import android.annotation.SuppressLint;
-
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -43,7 +41,7 @@ public final class DateUtils {
 
     public static String convertTime(long time, String dateFormat, TimeZone timeZone) {
         Date date = new Date(time);
-        @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat(dateFormat);
+        SimpleDateFormat format = new SimpleDateFormat(dateFormat);
         format.setTimeZone(timeZone);
         return format.format(date);
     }
@@ -61,11 +59,7 @@ public final class DateUtils {
     }
 
     public static Long convertTime(String dateAsString) {
-        if (isValidFormat(DEFAULT_DATE_FORMAT, dateAsString)) {
-            return convertTime(dateAsString, DEFAULT_DATE_FORMAT);
-        } else {
-            return convertTime(dateAsString, OPEN_MRS_RESPONSE_FORMAT);
-        }
+        return convertTime(dateAsString, OPEN_MRS_RESPONSE_FORMAT);
     }
 
     public static Long convertTime(String dateAsString, String dateFormat) {
@@ -85,7 +79,6 @@ public final class DateUtils {
                 }
             }
         }
-
         return time;
     }
 
@@ -102,16 +95,10 @@ public final class DateUtils {
     public static DateTime convertTimeString(String dateAsString) {
         DateTime date = null;
         if (StringUtils.notNull(dateAsString)) {
-            DateTimeFormatter originalFormat;
-            if (dateAsString.length() == OPEN_MRS_REQUEST_PATIENT_FORMAT.length()){
-                originalFormat = DateTimeFormat.forPattern(DateUtils.OPEN_MRS_REQUEST_PATIENT_FORMAT);
-            } else {
-                originalFormat = DateTimeFormat.forPattern(DateUtils.OPEN_MRS_REQUEST_FORMAT);
-            }
+            DateTimeFormatter originalFormat = DateTimeFormat.forPattern(DateUtils.OPEN_MRS_REQUEST_FORMAT);
             date = originalFormat.parseDateTime(dateAsString);
         }
         return date;
-
     }
 
     public static String convertTime1(String dateAsString, String dateFormat) {
@@ -121,134 +108,4 @@ public final class DateUtils {
         return dateAsString;
     }
 
-    public static Date getDateFromString(String dateAsString) {
-        return getDateFromString(dateAsString, DEFAULT_DATE_FORMAT);
-    }
-
-    public static Date getDateFromString(String dateAsString, String dateFormat) {
-        Date formattedDate = null;
-        if (StringUtils.notNull(dateAsString)) {
-            DateFormat format = new SimpleDateFormat(dateFormat);
-            try {
-                formattedDate = parseString(dateAsString, format);
-            } catch (ParseException e) {
-                try {
-                    formattedDate = parseString(dateAsString, new SimpleDateFormat(OPEN_MRS_REQUEST_PATIENT_FORMAT));
-                } catch (ParseException e1) {
-                    OpenMRS.getInstance().getOpenMRSLogger().w("Failed to parse date :" + dateAsString + " caused by " + e.toString());
-                }
-            }
-        }
-        return formattedDate;
-    }
-
-    public static String getCurrentDateTime() {
-        DateFormat dateFormat = new SimpleDateFormat(OPEN_MRS_RESPONSE_FORMAT);
-        Date date = new Date();
-        return dateFormat.format(date);
-    }
-
-    /**
-     * Validate a date and make sure it is between the minimum and maximum date
-     * Date format is dd/MM/yyyy
-     *
-     * @param dateString the date to check
-     * @param minDate    minimum date allowed
-     * @param maxDate    maximum date limit
-     * @return true if date is appropriate
-     */
-    public static boolean validateDate(String dateString, DateTime minDate, DateTime maxDate) {
-
-        if (minDate.isAfter(maxDate)) {
-            return false;
-        }
-
-        String s = dateString.trim();
-        // length must be min d/M/yyyy and max dd/MM/yyyy
-        if (s.isEmpty() || s.length() < 8 || s.length() > 10) {
-            return false;
-        }
-        // number of slashes must be 2
-        if (!s.contains("/")) {
-            return false;
-        }
-
-        int numberOfDashes = 0;
-        for (int i = 0; i < s.length(); i++) {
-            if (s.charAt(i) == '/') {
-                numberOfDashes++;
-            }
-        }
-        if (numberOfDashes != 2) {
-            return false;
-        } else {
-            // check day, month and year
-            String[] bundledDate = s.split("/");
-
-            int day = Integer.parseInt(bundledDate[0]),
-                    month = Integer.parseInt(bundledDate[1]),
-                    year = Integer.parseInt(bundledDate[2]);
-
-            int maxDays;
-            // Leap year on February -> 29 days
-            // Non leap year on February -> 28 days
-            // April, June, September, November -> 30 days
-            // January, March, May, July, August, October, December -> 31 days
-            if (month == 2) {
-                if (year % 4 == 0) {
-                    maxDays = 29;
-                } else {
-                    maxDays = 28;
-                }
-            } else if (day == 31 && month == 4 || month == 6 || month == 9 || month == 11) {
-                maxDays = 30;
-            } else {
-                maxDays = 31;
-            }
-
-            int maxMonths = 12;
-
-            if (day <= 0
-                    || day > maxDays
-                    || month <= 0
-                    || month > maxMonths
-                    || year <= minDate.getYear()
-                    || year > maxDate.getYear()) {
-                return false;
-            } else {
-                // Now we are able to convert the string into a DateTime variable
-                DateTimeFormatter formatter = DateTimeFormat.forPattern(DateUtils.DEFAULT_DATE_FORMAT);
-
-                DateTime dob = formatter.parseDateTime(s);
-
-                // Final check to ensure dob is between the minimum and maximum date (up to the second)
-                return dob.isAfter(minDate) && dob.isBefore(maxDate);
-            }
-
-        }
-    }
-
-    /**
-     * Validates a date against a given format
-     *
-     * @param format the format to check against
-     * @param dateAsString the value of raw date
-     * @return true if the given date matches the given format
-     */
-    public static boolean isValidFormat(String format, String dateAsString) {
-        Date date = null;
-        if (dateAsString != null) {
-            try {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
-                date = simpleDateFormat.parse(dateAsString);
-                if (!dateAsString.equals(simpleDateFormat.format(date))) {
-                    date = null;
-                }
-            } catch (ParseException exception) {
-                OpenMRS.getInstance().getOpenMRSLogger().w("Failed to validate date format :" + dateAsString + " caused by " + exception.toString());
-            }
-            return date != null;
-        }
-        return false;
-    }
 }

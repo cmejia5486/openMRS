@@ -1,17 +1,3 @@
-/*
- * The contents of this file are subject to the OpenMRS Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://license.openmrs.org
- *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
- */
-
 package org.openmrs.mobile.api;
 
 import org.openmrs.mobile.application.OpenMRS;
@@ -24,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -36,7 +21,7 @@ public class UserService {
         Call<Results<User>> call = restApi.getUserInfo(username);
         call.enqueue(new Callback<Results<User>>() {
             @Override
-            public void onResponse(@NonNull Call<Results<User>> call, @NonNull Response<Results<User>> response) {
+            public void onResponse(Call<Results<User>> call, Response<Results<User>> response) {
                 if (response.isSuccessful()) {
                     List<User> resultList = response.body().getResults();
                     boolean matchFound = false;
@@ -58,18 +43,18 @@ public class UserService {
             }
 
             @Override
-            public void onFailure(@NonNull Call<Results<User>> call, @NonNull Throwable t) {
+            public void onFailure(Call<Results<User>> call, Throwable t) {
                 ToastUtil.error(t.getMessage());
             }
         });
     }
 
-    private void fetchFullUserInformation(String uuid) {
+    public void fetchFullUserInformation(String uuid) {
         RestApi restApi = RestServiceBuilder.createService(RestApi.class);
         Call<User> call = restApi.getFullUserInfo(uuid);
         call.enqueue(new Callback<User>() {
             @Override
-            public void onResponse(@NonNull Call<User> call, @NonNull Response<User> response) {
+            public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful()) {
                     Map<String, String> userInfo = new HashMap<>();
                     userInfo.put(ApplicationConstants.UserKeys.USER_PERSON_NAME, response.body().getPerson().getDisplay());
@@ -82,7 +67,7 @@ public class UserService {
             }
 
             @Override
-            public void onFailure(@NonNull Call<User> call, @NonNull Throwable t) {
+            public void onFailure(Call<User> call, Throwable t) {
                 ToastUtil.error(t.getMessage());
             }
         });

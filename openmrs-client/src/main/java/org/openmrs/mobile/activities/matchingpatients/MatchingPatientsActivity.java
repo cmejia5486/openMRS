@@ -1,25 +1,10 @@
-/*
- * The contents of this file are subject to the OpenMRS Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://license.openmrs.org
- *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
- */
-
 package org.openmrs.mobile.activities.matchingpatients;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
-
-import androidx.appcompat.widget.Toolbar;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
@@ -35,10 +20,10 @@ public class MatchingPatientsActivity extends ACBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_matching_patients);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 
         if (toolbar != null) {
-            toolbar.setTitle(getString(R.string.matching_patients_toolbar_title));
+            toolbar.setTitle(getString(R.string.matching_patients_toolbar_tittle));
             setSupportActionBar(toolbar);
         }
 
@@ -78,7 +63,7 @@ public class MatchingPatientsActivity extends ACBaseActivity {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance());
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean("sync", false);
-        editor.apply();
+        editor.commit();
     }
 
 }

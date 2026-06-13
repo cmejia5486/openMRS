@@ -15,113 +15,69 @@
 
 package org.openmrs.mobile.activities.settings;
 
-import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseFragment;
-import org.openmrs.mobile.activities.logs.LogsActivity;
-import org.openmrs.mobile.services.ConceptDownloadService;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.ToastUtil;
+import org.openmrs.mobile.models.SettingsListItemDTO;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.widget.SwitchCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+public class SettingsFragment extends Fragment implements SettingsContract.View {
 
-public class SettingsFragment extends ACBaseFragment<SettingsContract.Presenter> implements SettingsContract.View {
+    private SettingsContract.Presenter mPresenter;
+    private List<SettingsListItemDTO> mListItem = new ArrayList<>();
 
-    private BroadcastReceiver bReceiver;
-
-    private TextView conceptsInDbTextView;
-    private ImageButton downloadConceptsButton;
-    private SwitchCompat darkModeSwitch;
-
-    private View root;
+    private RecyclerView settingsRecyclerView;
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        root = inflater.inflate(R.layout.fragment_settings, container, false);
+        View root = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        bReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                mPresenter.updateConceptsInDBTextView();
-            }
-        };
+        settingsRecyclerView = (RecyclerView) root.findViewById(R.id.settingsRecyclerView);
+        settingsRecyclerView.setHasFixedSize(true);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
+        settingsRecyclerView.setLayoutManager(linearLayoutManager);
 
-        setUpConceptsView();
         return root;
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        LocalBroadcastManager.getInstance(this.getActivity()).unregisterReceiver(bReceiver);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mPresenter.updateConceptsInDBTextView();
-        LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(bReceiver, new IntentFilter(ApplicationConstants.BroadcastActions.CONCEPT_DOWNLOAD_BROADCAST_INTENT_ID));
+        mPresenter.start();
     }
 
     @Override
-    public void setConceptsInDbText(String text) {
-        if(text.equals("0")){
-            downloadConceptsButton.setEnabled(true);
-            ToastUtil.showLongToast(getActivity(),
-                    ToastUtil.ToastType.WARNING,
-                    R.string.settings_no_concepts_toast);
-        }else{
-            downloadConceptsButton.setEnabled(false);
-        }
-        conceptsInDbTextView.setText(text);
+    public void onPause() {
+        super.onStop();
+        mListItem = new ArrayList<>();
+    }
+
+    @Override
+    public void setPresenter(SettingsContract.Presenter presenter) {
+        this.mPresenter = presenter;
+    }
+
+    @Override
+    public boolean isActive() {
+        return isAdded();
     }
 
     @Override
     public void addLogsInfo(long logSize, String logFilename) {
-        LinearLayout logsLl = root.findViewById(R.id.frag_settings_logs_ll);
-        TextView logsDesc1Tv = root.findViewById(R.id.frag_settings_logs_desc1_tv);
-        TextView logsDesc2Tv = root.findViewById(R.id.frag_settings_logs_desc2_tv);
-
-        logsDesc1Tv.setText(logFilename);
-        logsDesc2Tv.setText(getContext().getString(R.string.settings_frag_size) + logSize + "kB");
-        logsLl.setOnClickListener(view ->{
-            Intent i = new Intent(view.getContext() , LogsActivity.class);
-            startActivity(i);
-        });
-    }
-
-    @Override
-    public void setUpConceptsView() {
-        conceptsInDbTextView = root.findViewById(R.id.frag_settings_concepts_count_tv);
-
-        downloadConceptsButton = root.findViewById(R.id.frag_settings_concepts_download_btn);
-
-        downloadConceptsButton.setOnClickListener(view -> {
-            downloadConceptsButton.setEnabled(false);
-            Intent startIntent = new Intent(getActivity(), ConceptDownloadService.class);
-            startIntent.setAction(ApplicationConstants.ServiceActions.START_CONCEPT_DOWNLOAD_ACTION);
-            Objects.requireNonNull(getActivity()).startService(startIntent);
-        });
+        mListItem.add(new SettingsListItemDTO(getResources().getString(R.string.settings_logs),
+                logFilename,
+                "Size: " + logSize + "kB"));
     }
 
     @Override
@@ -142,54 +98,15 @@ public class SettingsFragment extends ACBaseFragment<SettingsContract.Presenter>
             mPresenter.logException("Failed to load meta-data, NullPointer: " + e.getMessage());
         }
 
-        TextView appName = root.findViewById(R.id.frag_settings_app_name_tv);
-        TextView version = root.findViewById(R.id.frag_settings_version_tv);
-
-        appName.setText(getResources().getString(R.string.app_name));
-        version.setText(versionName + getContext().getString(R.string.frag_settings_build) + buildVersion);
+        mListItem.add(new SettingsListItemDTO(getResources().getString(R.string.settings_about),
+                getResources().getString(R.string.app_name),
+                versionName + " Build: " + buildVersion));
     }
 
     @Override
-    public void addPrivacyPolicyInfo() {
-        LinearLayout privacyPolicyTv = root.findViewById(R.id.frag_settings_privacy_policy_ll);
-        privacyPolicyTv.setOnClickListener(view ->{
-            Intent i = new Intent(Intent.ACTION_VIEW);
-            i.setData(Uri.parse(view.getContext().getString(R.string.url_privacy_policy)));
-            startActivity(i);
-        });
-    }
-
-    @Override
-    public void rateUs() {
-        LinearLayout rateUsLL = root.findViewById(R.id.frag_settings_rate_us_ll);
-        rateUsLL.setOnClickListener(v -> {
-            Uri uri = Uri.parse("market://details?id=" + ApplicationConstants.PACKAGE_NAME);
-            Intent intent = new Intent(Intent.ACTION_VIEW,uri);
-
-            // Ignore Playstore backstack, on back press will take us back to our app
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
-                    Intent.FLAG_ACTIVITY_NEW_DOCUMENT |
-                    Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-
-            try{
-                startActivity(intent);
-            }catch (ActivityNotFoundException e){
-                startActivity(new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("http://play.google.com/store/apps/details?id=" + ApplicationConstants.PACKAGE_NAME)));
-            }
-        });
-
-    }
-
-    @Override
-    public void setDarkMode() {
-        darkModeSwitch = root.findViewById(R.id.frag_settings_dark_mode_switch);
-        darkModeSwitch.setChecked(mPresenter.isDarkModeActivated());
-
-        darkModeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            mPresenter.setDarkMode(isChecked);
-            getActivity().recreate();
-        });
+    public void applyChanges() {
+        SettingsRecyclerViewAdapter adapter = new SettingsRecyclerViewAdapter(mListItem);
+        settingsRecyclerView.setAdapter(adapter);
     }
 
     public static SettingsFragment newInstance() {

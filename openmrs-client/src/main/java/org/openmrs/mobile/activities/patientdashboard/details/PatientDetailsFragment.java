@@ -14,10 +14,12 @@
 
 package org.openmrs.mobile.activities.patientdashboard.details;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -27,27 +29,25 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseActivity;
-import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardFragment;
+import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
 import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.utilities.ApplicationConstants;
 import org.openmrs.mobile.utilities.DateUtils;
 import org.openmrs.mobile.utilities.FontsUtil;
-import org.openmrs.mobile.utilities.ImageUtils;
 import org.openmrs.mobile.utilities.StringUtils;
 import org.openmrs.mobile.utilities.ToastUtil;
+
+import java.io.ByteArrayOutputStream;
 
 public class PatientDetailsFragment extends PatientDashboardFragment implements PatientDashboardContract.ViewPatientDetails {
 
     private View rootView;
-    private PatientDashboardActivity mPatientDashboardActivity;
+
+    private PatientDashboardContract.PatientDetailsPresenter mPresenter;
 
     public static PatientDetailsFragment newInstance() {
         return new PatientDetailsFragment();
@@ -55,13 +55,12 @@ public class PatientDetailsFragment extends PatientDashboardFragment implements 
 
     @Override
     public void attachSnackbarToActivity() {
-        ((ACBaseActivity) getActivity()).showNoInternetConnectionSnackbar();
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        mPatientDashboardActivity = (PatientDashboardActivity) context;
+        Snackbar snackbar = Snackbar
+                .make(getActivity().findViewById(R.id.patientDashboardContentFrame), "Offline mode. Patient data may not be up to date.", Snackbar.LENGTH_INDEFINITE);
+        View view = snackbar.getView();
+        TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
+        tv.setTextColor(Color.WHITE);
+        snackbar.show();
     }
 
     @Override
@@ -81,7 +80,10 @@ public class PatientDetailsFragment extends PatientDashboardFragment implements 
         int id = item.getItemId();
         switch (id) {
             case R.id.actionSynchronize:
-                ((PatientDashboardDetailsPresenter) mPresenter).synchronizePatient();
+                mPresenter.synchronizePatient();
+                break;
+            case R.id.actionUpdatePatient:
+                startPatientUpdateActivity(mPresenter.getPatientId());
                 break;
             default:
                 // Do nothing
@@ -91,7 +93,7 @@ public class PatientDetailsFragment extends PatientDashboardFragment implements 
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         rootView = inflater.inflate(R.layout.fragment_patient_details, null, false);
         FontsUtil.setFont((ViewGroup) rootView);
         return rootView;
@@ -99,83 +101,97 @@ public class PatientDetailsFragment extends PatientDashboardFragment implements 
 
     @Override
     public void resolvePatientDataDisplay(final Patient patient) {
-        if (isAdded()) {
-            if (("M").equals(patient.getGender())) {
-                ((ImageView) rootView.findViewById(R.id.patientDetailsGenderIv)).setImageResource(R.mipmap.ic_male);
-                ((TextView) rootView.findViewById(R.id.patientDetailsGender)).setText(getString(R.string.male));
-            } else {
-                ((ImageView) rootView.findViewById(R.id.patientDetailsGenderIv)).setImageResource(R.mipmap.ic_female);
-                ((TextView) rootView.findViewById(R.id.patientDetailsGender)).setText(getString(R.string.female));
-            }
+        if (("M").equals(patient.getPerson().getGender())) {
+            ((TextView) rootView.findViewById(R.id.patientDetailsGender)).setText("Male");
+        } else {
+            ((TextView) rootView.findViewById(R.id.patientDetailsGender)).setText("Female");
         }
-        ImageView patientImageView = rootView.findViewById(R.id.patientPhoto);
+        ImageView patientImageView = (ImageView) rootView.findViewById(R.id.patientPhoto);
 
-        if (patient.getPhoto() != null) {
-            final Bitmap photo = patient.getResizedPhoto();
-            final String patientName = patient.getName().getNameString();
+        if (patient.getPerson().getPhoto() != null) {
+            final Bitmap photo = patient.getPerson().getPhoto();
+            final String patientName = patient.getPerson().getName().getNameString();
             patientImageView.setImageBitmap(photo);
-            mPatientDashboardActivity.setBackdropImage(photo, patientName);
-            patientImageView.setOnClickListener(view -> ImageUtils.showPatientPhoto(getContext(), photo, patientName));
+            patientImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    showPatientPhoto(photo, patientName);
+                }
+            });
         }
 
-        ((TextView) rootView.findViewById(R.id.patientDetailsName)).setText(patient.getName().getNameString());
+        ((TextView) rootView.findViewById(R.id.patientDetailsName)).setText(patient.getPerson().getName().getNameString());
 
-        Long longTime = DateUtils.convertTime(patient.getBirthdate());
-
+        Long longTime = DateUtils.convertTime(patient.getPerson().getBirthdate());
+        
         if (longTime != null) {
             ((TextView) rootView.findViewById(R.id.patientDetailsBirthDate)).setText(DateUtils.convertTime(longTime));
         }
 
-        if (null != patient.getAddress()) {
-            ((TextView) rootView.findViewById(R.id.addressDetailsStreet)).setText(patient.getAddress().getAddressString());
-            showAddressDetailsViewElement(R.id.addressDetailsStateLabel, R.id.addressDetailsState, patient.getAddress().getStateProvince());
-            showAddressDetailsViewElement(R.id.addressDetailsCountryLabel, R.id.addressDetailsCountry, patient.getAddress().getCountry());
-            showAddressDetailsViewElement(R.id.addressDetailsPostalCodeLabel, R.id.addressDetailsPostalCode, patient.getAddress().getPostalCode());
-            showAddressDetailsViewElement(R.id.addressDetailsCityLabel, R.id.addressDetailsCity, patient.getAddress().getCityVillage());
+        if (null != patient.getPerson().getAddress()) {
+            showAddressDetailsViewElement(rootView.findViewById(R.id.addressLayout), R.id.addressDetailsStreet, patient.getPerson().getAddress().getAddressString());
+            showAddressDetailsViewElement(rootView.findViewById(R.id.stateLayout), R.id.addressDetailsState, patient.getPerson().getAddress().getStateProvince());
+            showAddressDetailsViewElement(rootView.findViewById(R.id.countryLayout), R.id.addressDetailsCountry, patient.getPerson().getAddress().getCountry());
+            showAddressDetailsViewElement(rootView.findViewById(R.id.postalCodeLayout), R.id.addressDetailsPostalCode, patient.getPerson().getAddress().getPostalCode());
+            showAddressDetailsViewElement(rootView.findViewById(R.id.cityLayout), R.id.addressDetailsCity, patient.getPerson().getAddress().getCityVillage());
         }
     }
 
     @Override
     public void showDialog(int resId) {
-        mPatientDashboardActivity.showProgressDialog(resId);
+        ((PatientDashboardActivity) this.getActivity()).showProgressDialog(resId);
     }
 
-    private void showAddressDetailsViewElement(int detailsViewLabel, int detailsViewId, String detailsText) {
+    private void showAddressDetailsViewElement(View detailsLayout, int detailsViewId, String detailsText) {
         if (StringUtils.notNull(detailsText) && StringUtils.notEmpty(detailsText)) {
-            ((TextView) rootView.findViewById(detailsViewId)).setText(detailsText);
+            ((TextView) detailsLayout.findViewById(detailsViewId)).setText(detailsText);
         } else {
-            rootView.findViewById(detailsViewId).setVisibility(View.GONE);
-            rootView.findViewById(detailsViewLabel).setVisibility(View.GONE);
+            detailsLayout.setVisibility(View.GONE);
         }
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        mPresenter.start();
+    }
+
+    @Override
     public void dismissDialog() {
-        mPatientDashboardActivity.dismissCustomFragmentDialog();
+        ((PatientDashboardActivity) this.getActivity()).dismissCustomFragmentDialog();
     }
 
     @Override
     public void showToast(int stringRes, boolean error) {
         ToastUtil.ToastType toastType = error ? ToastUtil.ToastType.ERROR : ToastUtil.ToastType.SUCCESS;
-        ToastUtil.showShortToast(mPatientDashboardActivity, toastType, stringRes);
+        ToastUtil.showShortToast(this.getActivity() ,toastType ,stringRes);
     }
 
     @Override
     public void setMenuTitle(String nameString, String identifier) {
-        mPatientDashboardActivity.getSupportActionBar().setTitle(nameString);
-        mPatientDashboardActivity.getSupportActionBar().setSubtitle("#" + identifier);
+        ((PatientDashboardActivity) this.getActivity()).getSupportActionBar().setTitle(nameString);
+        ((PatientDashboardActivity) this.getActivity()).getSupportActionBar().setSubtitle("#" + identifier);
     }
 
     @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if (isVisibleToUser) {
-            try {
-                PatientDashboardActivity.hideFABs(false);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    public void setPresenter(PatientDashboardContract.PatientDashboardMainPresenter presenter) {
+        this.mPresenter = ((PatientDashboardContract.PatientDetailsPresenter) presenter);
     }
 
+    @Override
+    public void startPatientUpdateActivity(long patientId) {
+        Intent updatePatient = new Intent(this.getActivity(), AddEditPatientActivity.class);
+        updatePatient.putExtra(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE,
+                String.valueOf(patientId));
+        startActivity(updatePatient);
+    }
+
+    public void showPatientPhoto(Bitmap photo, String patientName) {
+        Intent intent = new Intent(getContext(), PatientPhotoActivity.class);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        photo.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        intent.putExtra("photo", byteArrayOutputStream.toByteArray());
+        intent.putExtra("name", patientName);
+        startActivity(intent);
+    }
 }

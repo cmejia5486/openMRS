@@ -23,23 +23,20 @@ import net.sqlcipher.database.SQLiteStatement;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.application.OpenMRS;
-import org.openmrs.mobile.databases.tables.ConceptTable;
 import org.openmrs.mobile.databases.tables.EncounterTable;
 import org.openmrs.mobile.databases.tables.LocationTable;
 import org.openmrs.mobile.databases.tables.ObservationTable;
 import org.openmrs.mobile.databases.tables.PatientTable;
 import org.openmrs.mobile.databases.tables.Table;
 import org.openmrs.mobile.databases.tables.VisitTable;
-import org.openmrs.mobile.models.Concept;
 import org.openmrs.mobile.models.Encounter;
 import org.openmrs.mobile.models.Location;
 import org.openmrs.mobile.models.Observation;
 import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.models.Visit;
-
 import java.io.ByteArrayOutputStream;
-import java.util.concurrent.Callable;
 
+import java.util.concurrent.Callable;
 import rx.Observable;
 import rx.schedulers.Schedulers;
 
@@ -49,7 +46,6 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
     private static final String WHERE_ID_CLAUSE = String.format("%s = ?", Table.MasterColumn.ID);
 
     private PatientTable mPatientTable;
-    private ConceptTable mConceptTable;
     private VisitTable mVisitTable;
     private EncounterTable mEncounterTable;
     private ObservationTable mObservationTable;
@@ -58,7 +54,6 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
     public DBOpenHelper(Context context) {
         super(context, null, DATABASE_VERSION);
         this.mPatientTable = new PatientTable();
-        this.mConceptTable = new ConceptTable();
         this.mVisitTable = new VisitTable();
         this.mEncounterTable = new EncounterTable();
         this.mObservationTable = new ObservationTable();
@@ -68,10 +63,9 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         mLogger.d("Database creating...");
+
         sqLiteDatabase.execSQL(mPatientTable.createTableDefinition());
         logOnCreate(mPatientTable.toString());
-        sqLiteDatabase.execSQL(mConceptTable.createTableDefinition());
-        logOnCreate(mConceptTable.toString());
         sqLiteDatabase.execSQL(mVisitTable.createTableDefinition());
         logOnCreate(mVisitTable.toString());
         sqLiteDatabase.execSQL(mEncounterTable.createTableDefinition());
@@ -84,16 +78,14 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int currentVersion, int newVersion) {
-        switch (currentVersion) {
-            case 8:
-                sqLiteDatabase.execSQL(new ConceptTable().createTableDefinition());
-            case 9:
-                //upgrade from version 8 to 10
-                //db.execSQL("ALTER TABLE " + %tableName% + " ADD COLUMN " + %columnName + " %columnType%;");
-
-                //and so on.. do not add breaks so that switch will
-                //start at oldVersion, and run straight through to the latest
-        }
+        mLogger.w("Upgrading database from version " + currentVersion + " to "
+                + newVersion + ", which will destroy all old data");
+        sqLiteDatabase.execSQL(mPatientTable.dropTableDefinition());
+        sqLiteDatabase.execSQL(mVisitTable.dropTableDefinition());
+        sqLiteDatabase.execSQL(mEncounterTable.dropTableDefinition());
+        sqLiteDatabase.execSQL(mObservationTable.dropTableDefinition());
+        sqLiteDatabase.execSQL(mLocationTable.dropTableDefinition());
+        onCreate(sqLiteDatabase);
     }
 
     private void logOnCreate(String tableToString) {
@@ -107,38 +99,37 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
 
         try {
             db.beginTransaction();
-
-            bindString(1, patient.getName().getNameString(), patientStatement);
+            bindString(1, patient.getPerson().getName().getNameString(), patientStatement);
             bindString(2, Boolean.toString(patient.isSynced()),patientStatement);
-            
-            if (patient.getUuid() != null)
+
+            if(patient.getUuid()!=null)
                 bindString(3, patient.getUuid(), patientStatement);
             else
                 bindString(3, null, patientStatement);
 
-            if (patient.getIdentifier() != null)
+            if(patient.getIdentifier()!=null)
                 bindString(4, patient.getIdentifier().getIdentifier(), patientStatement);
             else
                 bindString(4, null, patientStatement);
 
-            bindString(5, patient.getName().getGivenName(), patientStatement);
-            bindString(6, patient.getName().getMiddleName(), patientStatement);
-            bindString(7, patient.getName().getFamilyName(), patientStatement);
-            bindString(8, patient.getGender(), patientStatement);
-            bindString(9, patient.getBirthdate(), patientStatement);
+            bindString(5, patient.getPerson().getName().getGivenName(), patientStatement);
+            bindString(6, patient.getPerson().getName().getMiddleName(), patientStatement);
+            bindString(7, patient.getPerson().getName().getFamilyName(), patientStatement);
+            bindString(8, patient.getPerson().getGender(), patientStatement);
+            bindString(9, patient.getPerson().getBirthdate(), patientStatement);
             bindLong(10, null, patientStatement);
             bindString(11, null, patientStatement);
             bindString(12, null, patientStatement);
-            if (null != patient.getPhoto()) {
-                bindBlob(13, bitmapToByteArray(patient.getPhoto()), patientStatement);
+            if (null != patient.getPerson().getPhoto()) {
+                bindBlob(13, bitmapToByteArray(patient.getPerson().getPhoto()), patientStatement);
             }
-            if (null != patient.getAddress()) {
-                bindString(14, patient.getAddress().getAddress1(), patientStatement);
-                bindString(15, patient.getAddress().getAddress2(), patientStatement);
-                bindString(16, patient.getAddress().getPostalCode(), patientStatement);
-                bindString(17, patient.getAddress().getCountry(), patientStatement);
-                bindString(18, patient.getAddress().getStateProvince(), patientStatement);
-                bindString(19, patient.getAddress().getCityVillage(), patientStatement);
+            if (null != patient.getPerson().getAddress()) {
+                bindString(14, patient.getPerson().getAddress().getAddress1(), patientStatement);
+                bindString(15, patient.getPerson().getAddress().getAddress2(), patientStatement);
+                bindString(16, patient.getPerson().getAddress().getPostalCode(), patientStatement);
+                bindString(17, patient.getPerson().getAddress().getCountry(), patientStatement);
+                bindString(18, patient.getPerson().getAddress().getStateProvince(), patientStatement);
+                bindString(19, patient.getPerson().getAddress().getCityVillage(), patientStatement);
             }
             bindString(20, patient.getEncounters(), patientStatement);
             bindString(21, null, patientStatement);
@@ -162,28 +153,28 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
         newValues.put(PatientTable.Column.DISPLAY, patient.getDisplay());
 
         newValues.put(PatientTable.Column.IDENTIFIER, patient.getIdentifier().getIdentifier());
-        newValues.put(PatientTable.Column.GIVEN_NAME, patient.getName().getGivenName());
-        newValues.put(PatientTable.Column.MIDDLE_NAME, patient.getName().getMiddleName());
+        newValues.put(PatientTable.Column.GIVEN_NAME, patient.getPerson().getName().getGivenName());
+        newValues.put(PatientTable.Column.MIDDLE_NAME, patient.getPerson().getName().getMiddleName());
 
-        newValues.put(PatientTable.Column.FAMILY_NAME, patient.getName().getFamilyName());
-        newValues.put(PatientTable.Column.GENDER, patient.getGender());
-        newValues.put(PatientTable.Column.BIRTH_DATE, patient.getBirthdate());
+        newValues.put(PatientTable.Column.FAMILY_NAME, patient.getPerson().getName().getFamilyName());
+        newValues.put(PatientTable.Column.GENDER, patient.getPerson().getGender());
+        newValues.put(PatientTable.Column.BIRTH_DATE, patient.getPerson().getBirthdate());
 
         newValues.put(PatientTable.Column.DEATH_DATE, (Long) null);
         newValues.put(PatientTable.Column.CAUSE_OF_DEATH, (String) null);
         newValues.put(PatientTable.Column.AGE, (String) null);
-        if (null != patient.getPhoto()) {
+        if (null != patient.getPerson().getPhoto()) {
             mLogger.i("inserting into db");
-            newValues.put(PatientTable.Column.PHOTO, bitmapToByteArray(patient.getPhoto()));
+            newValues.put(PatientTable.Column.PHOTO, bitmapToByteArray(patient.getPerson().getPhoto()));
         }
 
-        if (null != patient.getAddress()) {
-            newValues.put(PatientTable.Column.ADDRESS_1, patient.getAddress().getAddress1());
-            newValues.put(PatientTable.Column.ADDRESS_2, patient.getAddress().getAddress2());
-            newValues.put(PatientTable.Column.POSTAL_CODE, patient.getAddress().getPostalCode());
-            newValues.put(PatientTable.Column.COUNTRY, patient.getAddress().getCountry());
-            newValues.put(PatientTable.Column.STATE, patient.getAddress().getStateProvince());
-            newValues.put(PatientTable.Column.CITY, patient.getAddress().getCityVillage());
+        if (null != patient.getPerson().getAddress()) {
+            newValues.put(PatientTable.Column.ADDRESS_1, patient.getPerson().getAddress().getAddress1());
+            newValues.put(PatientTable.Column.ADDRESS_2, patient.getPerson().getAddress().getAddress2());
+            newValues.put(PatientTable.Column.POSTAL_CODE, patient.getPerson().getAddress().getPostalCode());
+            newValues.put(PatientTable.Column.COUNTRY, patient.getPerson().getAddress().getCountry());
+            newValues.put(PatientTable.Column.STATE, patient.getPerson().getAddress().getStateProvince());
+            newValues.put(PatientTable.Column.CITY, patient.getPerson().getAddress().getCityVillage());
 
         }
         newValues.put(PatientTable.Column.ENCOUNTERS, patient.getEncounters());
@@ -191,33 +182,6 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
         String[] whereArgs = new String[]{String.valueOf(patientID)};
 
         return db.update(PatientTable.TABLE_NAME, newValues, WHERE_ID_CLAUSE, whereArgs);
-    }
-
-    public long insertConcept(SQLiteDatabase db, Concept concept) {
-        long conceptId;
-        SQLiteStatement statement = db.compileStatement(mConceptTable.insertIntoTableDefinition());
-        try {
-            db.beginTransaction();
-            bindString(1, concept.getUuid(), statement);
-            bindString(2, concept.getDisplay(), statement);
-            conceptId = statement.executeInsert();
-            statement.clearBindings();
-            db.setTransactionSuccessful();
-        } finally {
-            db.endTransaction();
-            statement.close();
-        }
-        return conceptId;
-    }
-
-    public int updateConcept(SQLiteDatabase db, long conceptId, Concept concept) {
-        ContentValues newValues = new ContentValues();
-        newValues.put(ConceptTable.Column.UUID, concept.getUuid());
-        newValues.put(ConceptTable.Column.DISPLAY, concept.getDisplay());
-
-        String[] whereArgs = new String[]{String.valueOf(conceptId)};
-
-        return db.update(ConceptTable.TABLE_NAME, newValues, WHERE_ID_CLAUSE, whereArgs);
     }
 
     public long insertVisit(SQLiteDatabase db, Visit visit) {
@@ -316,7 +280,7 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
                 bindString(7, obs.getDiagnosisCertainty(), observationStatement);
             }
             bindString(8, obs.getDiagnosisNote(), observationStatement);
-            if (obs.getConcept() != null) {
+            if(obs.getConcept() != null){
                 bindString(9, obs.getConcept().getUuid(), observationStatement);
             }
             obsID = observationStatement.executeInsert();
@@ -381,10 +345,9 @@ public class DBOpenHelper extends OpenMRSSQLiteOpenHelper {
         return Observable.fromCallable(func)
                 .subscribeOn(Schedulers.io());
     }
-
     private byte[] bitmapToByteArray(Bitmap image) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        image.compress(Bitmap.CompressFormat.PNG, 0, outputStream);
+        image.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
         return outputStream.toByteArray();
     }
 }

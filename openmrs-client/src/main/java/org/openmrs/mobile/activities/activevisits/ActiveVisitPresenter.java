@@ -15,13 +15,12 @@
 package org.openmrs.mobile.activities.activevisits;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.dao.VisitDAO;
 import org.openmrs.mobile.utilities.FilterUtil;
 
 import rx.android.schedulers.AndroidSchedulers;
 
-public class ActiveVisitPresenter extends BasePresenter implements ActiveVisitsContract.Presenter{
+public class ActiveVisitPresenter implements ActiveVisitsContract.Presenter{
 
     private ActiveVisitsContract.View mActiveVisitsView;
     private VisitDAO visitDAO;
@@ -32,39 +31,28 @@ public class ActiveVisitPresenter extends BasePresenter implements ActiveVisitsC
         this.visitDAO = new VisitDAO();
     }
 
-    public ActiveVisitPresenter(ActiveVisitsContract.View mActiveVisitsView, VisitDAO visitDAO) {
-        this.mActiveVisitsView = mActiveVisitsView;
-        this.visitDAO = visitDAO;
-        this.mActiveVisitsView.setPresenter(this);
-    }
-
     @Override
-    public void subscribe() {
+    public void start() {
         updateVisitsInDatabaseList();
     }
 
     @Override
     public void updateVisitsInDatabaseList() {
         mActiveVisitsView.setEmptyListText(R.string.search_visits_no_results);
-        addSubscription(visitDAO.getActiveVisits()
+        visitDAO.getActiveVisits()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        visits -> mActiveVisitsView.updateListVisibility(visits),
-                        error -> mActiveVisitsView.setEmptyListText(R.string.search_visits_no_results)
-                ));
+                .subscribe(visits -> {
+                    mActiveVisitsView.updateListVisibility(visits);
+                });
     }
 
     public void updateVisitsInDatabaseList(final String query) {
         mActiveVisitsView.setEmptyListText(R.string.search_patient_no_result_for_query, query);
-        addSubscription(visitDAO.getActiveVisits()
+        visitDAO.getActiveVisits()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        visits -> {
-                            visits = FilterUtil.getPatientsWithActiveVisitsFilteredByQuery(visits, query);
-                            mActiveVisitsView.updateListVisibility(visits);
-                        },
-                        error -> mActiveVisitsView.setEmptyListText(R.string.search_patient_no_result_for_query, query)
-
-                ));
+                .subscribe(visits -> {
+                    visits = FilterUtil.getPatientsWithActiveVisitsFilteredByQuery(visits, query);
+                    mActiveVisitsView.updateListVisibility(visits);
+                });
     }
 }

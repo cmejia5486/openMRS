@@ -15,8 +15,6 @@ import com.google.gson.annotations.SerializedName;
 
 public class Concept extends Resource{
 
-    private Long id;
-
     @SerializedName("datatype")
     @Expose
     private Datatype datatype;
@@ -28,14 +26,6 @@ public class Concept extends Resource{
     @SerializedName("conceptClass")
     @Expose
     private ConceptClass conceptClass;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public Datatype getDatatype() {
         return datatype;

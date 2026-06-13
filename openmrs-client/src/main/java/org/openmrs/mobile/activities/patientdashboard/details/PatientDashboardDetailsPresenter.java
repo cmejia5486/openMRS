@@ -17,8 +17,8 @@ package org.openmrs.mobile.activities.patientdashboard.details;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardMainPresenterImpl;
-import org.openmrs.mobile.api.repository.PatientRepository;
-import org.openmrs.mobile.api.repository.VisitRepository;
+import org.openmrs.mobile.api.retrofit.PatientApi;
+import org.openmrs.mobile.api.retrofit.VisitApi;
 import org.openmrs.mobile.dao.PatientDAO;
 import org.openmrs.mobile.listeners.retrofit.DefaultResponseCallbackListener;
 import org.openmrs.mobile.listeners.retrofit.DownloadPatientCallbackListener;
@@ -28,28 +28,11 @@ import org.openmrs.mobile.utilities.NetworkUtils;
 public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresenterImpl implements PatientDashboardContract.PatientDetailsPresenter {
 
     private PatientDashboardContract.ViewPatientDetails mPatientDetailsView;
-    private VisitRepository visitRepository;
-    private PatientRepository patientRepository;
-    private PatientDAO patientDAO;
 
     public PatientDashboardDetailsPresenter(String id,
                                             PatientDashboardContract.ViewPatientDetails mPatientDetailsView) {
+        this.mPatient = new PatientDAO().findPatientByID(id);
         this.mPatientDetailsView = mPatientDetailsView;
-        this.visitRepository = new VisitRepository();
-        this.patientRepository = new PatientRepository();
-        this.patientDAO = new PatientDAO();
-        this.mPatient = patientDAO.findPatientByID(id);
-        this.mPatientDetailsView.setPresenter(this);
-    }
-
-    public PatientDashboardDetailsPresenter(Patient mPatient, PatientDAO patientDAO,
-                                            PatientDashboardContract.ViewPatientDetails mPatientDetailsView,
-                                            VisitRepository visitRepository, PatientRepository patientRepository) {
-        this.mPatientDetailsView = mPatientDetailsView;
-        this.visitRepository = visitRepository;
-        this.patientRepository = patientRepository;
-        this.patientDAO = patientDAO;
-        this.mPatient = mPatient;
         this.mPatientDetailsView.setPresenter(this);
     }
 
@@ -67,17 +50,9 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
         }
       }
 
-    public void updatePatientDataFromServer(){
-        if(NetworkUtils.isOnline()) {
-            syncDetailsData();
-            syncVisitsData();
-            syncVitalsData();
-        }
-    }
-
     private void updatePatientData(final Patient patient) {
-        if (patientDAO.updatePatient(mPatient.getId(), patient)) {
-            mPatient = patientDAO.findPatientByUUID(patient.getUuid());
+        if (new PatientDAO().updatePatient(mPatient.getId(), patient)) {
+            mPatient = new PatientDAO().findPatientByUUID(patient.getUuid());
             reloadPatientData(mPatient);
         } else {
             mPatientDetailsView.showToast(R.string.get_patient_from_database_error, true);
@@ -90,29 +65,27 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
     }
 
     @Override
-    public void subscribe() {
-        updatePatientDataFromServer();
-        mPatient = patientDAO.findPatientByID(mPatient.getId().toString());
-        mPatientDetailsView.resolvePatientDataDisplay(patientDAO.findPatientByID(mPatient.getId().toString()));
-        mPatientDetailsView.setMenuTitle(mPatient.getName().getNameString(), mPatient.getIdentifier().getIdentifier());
+    public void start() {
+        mPatient = new PatientDAO().findPatientByID(mPatient.getId().toString());
+        mPatientDetailsView.setMenuTitle(mPatient.getPerson().getName().getNameString(), mPatient.getIdentifier().getIdentifier());
+        mPatientDetailsView.resolvePatientDataDisplay(new PatientDAO().findPatientByID(mPatient.getId().toString()));
         if (!NetworkUtils.isOnline()) {
             mPatientDetailsView.attachSnackbarToActivity();
         }
-
     }
 
     /*
     * Sync Vitals
     */
     private void syncVitalsData() {
-        visitRepository.syncLastVitals(mPatient.getUuid());
+        new VisitApi().syncLastVitals(mPatient.getUuid());
     }
 
     /*
     * Sync Visits
     */
     private void syncVisitsData() {
-        visitRepository.syncVisitsData(mPatient, new DefaultResponseCallbackListener() {
+        new VisitApi().syncVisitsData(mPatient, new DefaultResponseCallbackListener() {
             @Override
             public void onResponse() {
                 mPatientDetailsView.showToast(R.string.synchronize_patient_successful, false);
@@ -131,7 +104,7 @@ public class PatientDashboardDetailsPresenter extends PatientDashboardMainPresen
     * Download Patient
     */
     private void syncDetailsData() {
-        patientRepository.downloadPatientByUuid(mPatient.getUuid(), new DownloadPatientCallbackListener() {
+        new PatientApi().downloadPatientByUuid(mPatient.getUuid(), new DownloadPatientCallbackListener() {
             @Override
             public void onPatientDownloaded(Patient patient) {
                 updatePatientData(patient);

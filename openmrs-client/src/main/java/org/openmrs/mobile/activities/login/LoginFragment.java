@@ -20,7 +20,11 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.text.Html;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v7.widget.AppCompatImageView;
 import android.text.InputType;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -29,6 +33,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -36,12 +41,7 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.textfield.TextInputLayout;
-
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseFragment;
-import org.openmrs.mobile.activities.dashboard.DashboardActivity;
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
 import org.openmrs.mobile.api.FormListService;
 import org.openmrs.mobile.application.OpenMRS;
@@ -58,20 +58,17 @@ import org.openmrs.mobile.utilities.URLValidator;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatImageView;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> implements LoginContract.View {
+public class LoginFragment extends Fragment implements LoginContract.View {
+
+    private LoginContract.Presenter mPresenter;
 
     private View mRootView;
     private TextView mForgotPass;
     private EditText mUrl;
     private EditText mUsername;
     private EditText mPassword;
-    private TextInputLayout mUrlInput;
-    private TextInputLayout mUsernameInput;
-    private TextInputLayout mPasswordInput;
     private CheckBox mShowPassword;
     private Button mLoginButton;
     private ProgressBar mSpinner;
@@ -88,15 +85,12 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
     private static List<Location> mLocationsList;
     final private String initialUrl = OpenMRS.getInstance().getServerUrl();
 
-    protected OpenMRS mOpenMRS = OpenMRS.getInstance();
-
     public static LoginFragment newInstance() {
         return new LoginFragment();
     }
 
-
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.fragment_login, container, false);
 
         initViewFields(mRootView);
@@ -110,118 +104,88 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
         hideURLDialog();
 
         // Font config
-        FontsUtil.setFont(this.getActivity().findViewById(android.R.id.content));
+        FontsUtil.setFont((ViewGroup) this.getActivity().findViewById(android.R.id.content));
 
         return mRootView;
     }
 
     private void initListeners() {
-        mLoginSyncButton.setOnClickListener(view -> {
-            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance());
-            boolean syncState = prefs.getBoolean("sync", true);
-            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance()).edit();
-            editor.putBoolean("sync", !syncState);
-            editor.apply();
-            setSyncButtonState(!syncState);
+        mLoginSyncButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance());
+                boolean syncState = prefs.getBoolean("sync", true);
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance()).edit();
+                editor.putBoolean("sync", !syncState);
+                editor.commit();
+                setSyncButtonState(!syncState);
+            }
         });
 
         loginValidatorWatcher = new LoginValidatorWatcher(mUrl, mUsername, mPassword, mDropdownLocation, mLoginButton);
 
-        mUrl.setOnFocusChangeListener((view, hasFocus) -> {
-            if (StringUtils.notEmpty(mUrl.getText().toString())
-                    && !view.isFocused()
-                    && loginValidatorWatcher.isUrlChanged()
-                    || (loginValidatorWatcher.isUrlChanged() && !view.isFocused()
-                    && loginValidatorWatcher.isLocationErrorOccurred())
-                    || (!loginValidatorWatcher.isUrlChanged() && !view.isFocused())) {
-                ((LoginFragment) getActivity()
-                        .getSupportFragmentManager()
-                        .findFragmentById(R.id.loginContentFrame))
-                        .setUrl(mUrl.getText().toString());
-                loginValidatorWatcher.setUrlChanged(false);
-            }
-
-            if (hasFocus) {
-                mUrl.setHint("");
-                mUrlInput.setHint(Html.fromHtml(getString(R.string.login_url_hint)));
-            } else if (mUrl.getText().toString().equals("")) {
-                mUrl.setHint(Html.fromHtml(getString(R.string.login_url_hint) + getString(R.string.req_star)));
-                mUrlInput.setHint("");
+        mUrl.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean b) {
+                if (StringUtils.notEmpty(mUrl.getText().toString())
+                        && !view.isFocused() 
+                        && loginValidatorWatcher.isUrlChanged()
+                        || (loginValidatorWatcher.isUrlChanged() && !view.isFocused()
+                        && loginValidatorWatcher.isLocationErrorOccurred())
+                        || (!loginValidatorWatcher.isUrlChanged()  && !view.isFocused())) {
+                    ((LoginFragment) getActivity()
+                            .getSupportFragmentManager()
+                            .findFragmentById(R.id.loginContentFrame))
+                            .setUrl(mUrl.getText().toString());
+                    loginValidatorWatcher.setUrlChanged(false);
+                }
             }
         });
 
-        mUsername.setOnFocusChangeListener((view, hasFocus) -> {
-            if (hasFocus) {
-                mUsername.setHint("");
-                mUsernameInput.setHint(Html.fromHtml(getString(R.string.login_username_hint)));
-            } else if (mUsername.getText().toString().equals("")) {
-                mUsername.setHint(Html.fromHtml(getString(R.string.login_username_hint) + getString(R.string.req_star)));
-                mUsernameInput.setHint("");
+        mLoginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPresenter.login(mUsername.getText().toString(),
+                        mPassword.getText().toString(),
+                        mUrl.getText().toString(),
+                        initialUrl);
             }
         });
 
-        mPassword.setOnFocusChangeListener((view, hasFocus) -> {
-            if (hasFocus) {
-                mPassword.setHint("");
-                mPasswordInput.setHint(Html.fromHtml(getString(R.string.login_password_hint)));
-            } else if (mPassword.getText().toString().equals("")) {
-                mPassword.setHint(Html.fromHtml(getString(R.string.login_password_hint) + getString(R.string.req_star)));
-                mPasswordInput.setHint("");
+        mForgotPass.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                forgotPassword();
             }
         });
 
-        mLoginButton.setOnClickListener(view -> mPresenter.login(mUsername.getText().toString(),
-                mPassword.getText().toString(),
-                mUrl.getText().toString(),
-                initialUrl));
-
-        mForgotPass.setOnClickListener(view -> forgotPassword());
-
-        mShowPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            int cursorPosition = mPassword.getSelectionStart();
-            if (isChecked) {
-                mPassword.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-            } else {
-                mPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        mShowPassword.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked){
+                    mPassword.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                }
+                else {
+                    mPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                }
             }
-            mPassword.setSelection(cursorPosition);
         });
     }
 
     private void initViewFields(View root) {
-        mUrl = root.findViewById(R.id.loginUrlField);
-        mUrl.setHint(Html.fromHtml(getString(R.string.login_url_hint)));
-        mUrlInput = root.findViewById(R.id.textInputLayoutLoginURL);
-        mUrlInput.setHint(Html.fromHtml(getString(R.string.login_url_hint)));
-
-        mUsername = root.findViewById(R.id.loginUsernameField);
+        mUrl = (EditText) root.findViewById(R.id.loginUrlField);
+        mUsername = (EditText) root.findViewById(R.id.loginUsernameField);
         mUsername.setText(OpenMRS.getInstance().getUsername());
-        mUsernameInput = root.findViewById(R.id.textInputLayoutUsername);
-
-        // If we have no cached username from previous sessions, we want the hint to be set
-        // directly at the EditText. Otherwise, we set it on the TextInputLayout which will
-        // be floating above the saved entry for the username.
-        if (mUsername.getText().toString().equals(""))
-            mUsername.setHint(Html.fromHtml(getString(R.string.login_username_hint) + getString(R.string.req_star)));
-        else
-            mUsernameInput.setHint(Html.fromHtml(getString(R.string.login_username_hint)));
-
-        mPassword = root.findViewById(R.id.loginPasswordField);
-        mPassword.setHint(Html.fromHtml(getString(R.string.login_password_hint) + getString(R.string.req_star)));
-        mPasswordInput = root.findViewById(R.id.textInputLayoutPassword);
-
-        TextView mRequired = root.findViewById(R.id.loginRequiredLabel);
-        mRequired.setText(Html.fromHtml(getString(R.string.req_star) + getString(R.string.login_required)));
-
-        mShowPassword = root.findViewById(R.id.checkboxShowPassword);
-        mLoginButton = root.findViewById(R.id.loginButton);
-        mSpinner = root.findViewById(R.id.loginLoading);
-        mLoginFormView = root.findViewById(R.id.loginFormView);
-        mLoginSyncButton = root.findViewById(R.id.loginSyncButton);
-        mSyncStateLabel = root.findViewById(R.id.syncLabel);
-        mDropdownLocation = root.findViewById(R.id.locationSpinner);
-        mForgotPass = root.findViewById(R.id.forgotPass);
-        mLocationLoadingProgressBar = root.findViewById(R.id.locationLoadingProgressBar);
+        mPassword = (EditText) root.findViewById(R.id.loginPasswordField);
+        mShowPassword = (CheckBox) root.findViewById(R.id.checkboxShowPassword);
+        mLoginButton = (Button) root.findViewById(R.id.loginButton);
+        mSpinner = (ProgressBar) root.findViewById(R.id.loginLoading);
+        mLoginFormView = (LinearLayout) root.findViewById(R.id.loginFormView);
+        mLoginSyncButton = ((AppCompatImageView) root.findViewById(R.id.loginSyncButton));
+        mSyncStateLabel = ((TextView) root.findViewById(R.id.syncLabel));
+        mDropdownLocation = (Spinner) root.findViewById(R.id.locationSpinner);
+        mForgotPass = (TextView) root.findViewById(R.id.forgotPass);
+        mLocationLoadingProgressBar = (ProgressBar) root.findViewById(R.id.locationLoadingProgressBar);
     }
 
     @Override
@@ -233,6 +197,7 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
         setSyncButtonState(syncState);
         hideUrlLoadingAnimation();
 
+        mPresenter.start();
         bindDrawableResources();
     }
 
@@ -243,19 +208,30 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
     }
 
     @Override
-    public void hideSoftKeys() {
+    public boolean isActive() {
+        return isAdded();
+    }
+
+    @Override
+    public void hideSoftKeys(){
         View view = this.getActivity().getCurrentFocus();
         if (view == null) {
             view = new View(this.getActivity());
         }
-        InputMethodManager inputMethodManager = (InputMethodManager) this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        InputMethodManager inputMethodManager = (InputMethodManager)this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    @Override
+    public void setPresenter(@NonNull LoginContract.Presenter presenter) {
+        this.mPresenter = checkNotNull(presenter);
     }
 
     private void setSyncButtonState(boolean syncEnabled) {
         if (syncEnabled) {
             mSyncStateLabel.setText(getString(R.string.login_online));
-        } else {
+        }
+        else {
             mSyncStateLabel.setText(getString(R.string.login_offline));
         }
         mLoginSyncButton.setSelected(syncEnabled);
@@ -311,9 +287,14 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
         getActivity().finish();
     }
 
+    @Override
+    public void sendIntentBroadcast(String message) {
+        getActivity().sendBroadcast(new Intent(message));
+    }
+
     private void bindDrawableResources() {
         mBitmapCache = new SparseArray<>();
-        ImageView openMrsLogoImage = getActivity().findViewById(R.id.openmrsLogo);
+        ImageView openMrsLogoImage = (ImageView) getActivity().findViewById(R.id.openmrsLogo);
         createImageBitmap(R.drawable.openmrs_logo, openMrsLogoImage.getLayoutParams());
         openMrsLogoImage.setImageBitmap(mBitmapCache.get(R.drawable.openmrs_logo));
     }
@@ -345,20 +326,10 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
         mLoginButton.setEnabled(false);
         mSpinner.setVisibility(View.GONE);
         mLoginFormView.setVisibility(View.VISIBLE);
-        if (locationsList.isEmpty()) {
-            mDropdownLocation.setVisibility(View.GONE);
-            mLoginButton.setEnabled(true);
-        } else {
-            mDropdownLocation.setVisibility(View.VISIBLE);
-            mLoginButton.setEnabled(false);
-        }
     }
 
     @Override
     public void userAuthenticated() {
-        Intent intent = new Intent(mOpenMRS.getApplicationContext(), DashboardActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        mOpenMRS.getApplicationContext().startActivity(intent);
         mPresenter.saveLocationsToDatabase(mLocationsList, mDropdownLocation.getSelectedItem().toString());
     }
 
@@ -370,54 +341,37 @@ public class LoginFragment extends ACBaseFragment<LoginContract.Presenter> imple
 
     @Override
     public void showInvalidURLSnackbar(String message) {
-        createSnackbar(message)
-                .setAction(getResources().getString(R.string.snackbar_edit), view -> {
-                    mUrl.requestFocus();
-                    mUrl.selectAll();
-                })
-                .show();
-    }
-
-    @Override
-    public void showInvalidLoginOrPasswordSnackbar() {
-        String message = getResources().getString(R.string.invalid_login_or_password_message);
-        createSnackbar(message)
-                .setAction(getResources().getString(R.string.snackbar_edit), view -> {
-                    mPassword.requestFocus();
-                    mPassword.selectAll();
-                })
-                .show();
-    }
-
-    private Snackbar createSnackbar(String message) {
-        return Snackbar
-                .make(mRootView, message, Snackbar.LENGTH_LONG);
+        Snackbar snackbar = Snackbar
+                .make(mRootView, message, Snackbar.LENGTH_LONG)
+                .setAction("EDIT", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        mUrl.requestFocus();
+                        mUrl.selectAll();
+                    }
+                });
+        snackbar.show();
     }
 
     @Override
     public void setLocationErrorOccurred(boolean errorOccurred) {
         this.loginValidatorWatcher.setLocationErrorOccurred(errorOccurred);
-        mDropdownLocation.setVisibility(View.GONE);
         mLoginButton.setEnabled(!errorOccurred);
     }
 
     @Override
     public void showToast(String message, ToastUtil.ToastType toastType) {
-        if (getActivity() != null) {
-            ToastUtil.showShortToast(getActivity(), toastType, message);
-        }
+        ToastUtil.showShortToast(getContext(), toastType, message);
     }
 
     @Override
     public void showToast(int textId, ToastUtil.ToastType toastType) {
-        if (getActivity() != null) {
-            ToastUtil.showShortToast(getActivity(), toastType, getResources().getString(textId));
-        }
+        ToastUtil.showShortToast(getContext(), toastType, getResources().getString(textId));
     }
 
 
     private List<String> getLocationStringList(List<Location> locationList) {
-        List<String> list = new ArrayList<>();
+        List<String> list = new ArrayList<String>();
         list.add(getString(R.string.login_location_select));
         for (int i = 0; i < locationList.size(); i++) {
             list.add(locationList.get(i).getDisplay());

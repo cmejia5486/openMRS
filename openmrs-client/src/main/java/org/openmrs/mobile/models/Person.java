@@ -15,8 +15,6 @@ import android.graphics.Bitmap;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import org.openmrs.mobile.utilities.ImageUtils;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +23,7 @@ public class Person extends Resource implements Serializable {
 
     @SerializedName("names")
     @Expose
-    private List<PersonName> names = new ArrayList<>();
+    private List<PersonName> names = new ArrayList<PersonName>();
     @SerializedName("gender")
     @Expose
     private String gender;
@@ -37,10 +35,10 @@ public class Person extends Resource implements Serializable {
     private boolean birthdateEstimated;
     @SerializedName("addresses")
     @Expose
-    private List<PersonAddress> addresses = new ArrayList<>();
+    private List<PersonAddress> addresses = new ArrayList<PersonAddress>();
     @SerializedName("attributes")
     @Expose
-    private List<PersonAttribute> attributes = new ArrayList<>();
+    private List<PersonAttribute> attributes = new ArrayList<PersonAttribute>();
 
     private Bitmap photo;
 
@@ -172,10 +170,6 @@ public class Person extends Resource implements Serializable {
 
     public Bitmap getPhoto() {
         return photo;
-    }
-
-    public Bitmap getResizedPhoto() {
-        return ImageUtils.resizePhoto(this.photo);
     }
 
     public void setPhoto(Bitmap patientPhoto) {

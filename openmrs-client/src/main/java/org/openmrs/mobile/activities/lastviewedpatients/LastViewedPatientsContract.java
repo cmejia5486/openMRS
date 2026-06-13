@@ -14,9 +14,9 @@
 
 package org.openmrs.mobile.activities.lastviewedpatients;
 
-import android.os.Bundle;
+import android.support.annotation.NonNull;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 import org.openmrs.mobile.models.Patient;
 
@@ -26,9 +26,13 @@ public interface LastViewedPatientsContract {
 
     interface View extends BaseView<Presenter> {
 
+        boolean isActive();
+
+        void setPresenter(@NonNull Presenter presenter);
+
         void enableSwipeRefresh(boolean enabled);
 
-        void setProgressBarVisibility(boolean visibility);
+        void setSpinnerVisibility(boolean visibility);
 
         void setEmptyListVisibility(boolean visibility);
 
@@ -45,13 +49,9 @@ public interface LastViewedPatientsContract {
         void showErrorToast(String message);
 
         void showOpenPatientSnackbar(Long patientId);
-
-        void addPatientsToList(List<Patient> patients);
-
-        void showRecycleViewProgressBar(boolean visibility);
     }
 
-    interface Presenter extends BasePresenterContract {
+    interface Presenter extends BasePresenter {
 
         void refresh();
 
@@ -59,10 +59,5 @@ public interface LastViewedPatientsContract {
 
         void findPatients(String query);
 
-        void loadMorePatients();
-
-        void onSaveInstanceState(Bundle outState);
-
-        void setStartIndex(int startIndex);
     }
 }

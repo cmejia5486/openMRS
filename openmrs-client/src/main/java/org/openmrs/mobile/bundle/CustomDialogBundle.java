@@ -18,7 +18,6 @@ import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
 import org.openmrs.mobile.models.Patient;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 public class CustomDialogBundle implements Serializable {
@@ -32,8 +31,6 @@ public class CustomDialogBundle implements Serializable {
     private String rightButtonText;
     private String progressViewMessage;
     private List<Patient> patientsList;
-    private List<String> locationList;
-    private ArrayList<Patient> selectedItems = new ArrayList<>();
     private Patient newPatient;
     private boolean loadingBar;
     private boolean progressDialog;
@@ -69,14 +66,6 @@ public class CustomDialogBundle implements Serializable {
 
     public void setRightButtonAction(CustomFragmentDialog.OnClickAction rightButtonAction) {
         this.rightButtonAction = rightButtonAction;
-    }
-
-    public void setSelectedItems(ArrayList<Patient> toDelete){
-        this.selectedItems = toDelete;
-    }
-
-    public ArrayList<Patient> getSelectedItems() {
-        return selectedItems;
     }
 
     public String getTextViewMessage() {
@@ -145,13 +134,5 @@ public class CustomDialogBundle implements Serializable {
 
     public void setNewPatient(Patient newPatient) {
         this.newPatient = newPatient;
-    }
-
-    public List<String> getLocationList() {
-        return locationList;
-    }
-
-    public void setLocationList(List<String> locationList) {
-        this.locationList = locationList;
     }
 }

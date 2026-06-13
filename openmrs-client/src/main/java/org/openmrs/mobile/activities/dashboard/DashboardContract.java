@@ -14,18 +14,24 @@
 
 package org.openmrs.mobile.activities.dashboard;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import android.support.annotation.NonNull;
+
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 
 public interface DashboardContract {
 
     interface View extends BaseView<Presenter> {
 
+        boolean isActive();
+
+        void setPresenter(@NonNull Presenter presenter);
+
         void bindDrawableResources();
 
     }
 
-    interface Presenter extends BasePresenterContract {
+    interface Presenter extends BasePresenter {
 
     }
 

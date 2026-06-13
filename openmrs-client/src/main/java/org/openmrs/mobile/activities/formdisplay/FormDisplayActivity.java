@@ -13,18 +13,17 @@ http://www.androprogrammer.com/2015/06/view-pager-with-circular-indicator.html*/
 
 package org.openmrs.mobile.activities.formdisplay;
 
+import android.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.viewpager.widget.ViewPager;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
@@ -53,6 +52,11 @@ public class FormDisplayActivity extends ACBaseActivity implements FormDisplayCo
         setContentView(R.layout.activity_form_display);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
         Bundle bundle = getIntent().getExtras();
         String valuereference = null;
@@ -74,13 +78,7 @@ public class FormDisplayActivity extends ACBaseActivity implements FormDisplayCo
     @Override
     public void onResume() {
         super.onResume();
-        mPresenter.subscribe();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mPresenter.unsubscribe();
+        mPresenter.start();
     }
 
     @Override
@@ -116,20 +114,30 @@ public class FormDisplayActivity extends ACBaseActivity implements FormDisplayCo
     }
 
     @Override
-    public void setPresenter(FormDisplayContract.Presenter.MainPresenter presenter) {
-        this.mPresenter = presenter;
+    public void setPresenter(FormDisplayContract.Presenter presenter) {
+        this.mPresenter = ((FormDisplayContract.Presenter.MainPresenter) presenter);
     }
 
     private void initViewComponents(String valueRef) {
-        FormPageAdapter formPageAdapter = new FormPageAdapter(getSupportFragmentManager(), valueRef);
-        LinearLayout pagerIndicator = findViewById(R.id.viewPagerCountDots);
+        FormPageAdapter formPageAdapter = new FormPageAdapter(getFragmentManager(), valueRef);
+        LinearLayout pagerIndicator = (LinearLayout) findViewById(R.id.viewPagerCountDots);
 
-        mBtnNext = findViewById(R.id.btn_next);
-        mBtnFinish = findViewById(R.id.btn_finish);
+        mBtnNext = (Button) findViewById(R.id.btn_next);
+        mBtnFinish = (Button) findViewById(R.id.btn_finish);
 
-        mBtnNext.setOnClickListener(view -> mViewPager.setCurrentItem(mViewPager.getCurrentItem()+1));
-        mBtnFinish.setOnClickListener(view -> mPresenter.createEncounter());
-        mViewPager = findViewById(R.id.container);
+        mBtnNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mViewPager.setCurrentItem(mViewPager.getCurrentItem()+1);
+            }
+        });
+        mBtnFinish.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mPresenter.createEncounter();
+            }
+        });
+        mViewPager = (ViewPager) findViewById(R.id.container);
 
         mViewPager.setAdapter(formPageAdapter);
 
@@ -197,5 +205,5 @@ public class FormDisplayActivity extends ACBaseActivity implements FormDisplayCo
         String[] parts = fragmentTag.split(":");
         return Integer.parseInt(parts[3]);
     }
-    
+
 }

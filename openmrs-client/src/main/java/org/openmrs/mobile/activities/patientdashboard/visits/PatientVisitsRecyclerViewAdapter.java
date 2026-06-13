@@ -14,21 +14,19 @@
 
 package org.openmrs.mobile.activities.patientdashboard.visits;
 
-import android.graphics.drawable.Drawable;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.models.Visit;
 import org.openmrs.mobile.utilities.DateUtils;
 import org.openmrs.mobile.utilities.FontsUtil;
+import org.openmrs.mobile.utilities.ImageUtils;
 
 import java.util.List;
 
@@ -42,16 +40,15 @@ public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
         this.mVisits = items;
     }
 
-    @NonNull
     @Override
-    public VisitViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_patient_visit, parent, false);
+    public VisitViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.patient_visit_row, parent, false);
         FontsUtil.setFont((ViewGroup) itemView);
         return new VisitViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VisitViewHolder visitViewHolder, final int position) {
+    public void onBindViewHolder(VisitViewHolder visitViewHolder, final int position) {
         final int adapterPos = visitViewHolder.getAdapterPosition();
         Visit visit = mVisits.get(adapterPos);
         visitViewHolder.mVisitStart.setText(DateUtils.convertTime1(visit.getStartDatetime(), DateUtils.DATE_WITH_TIME_FORMAT));
@@ -59,26 +56,31 @@ public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
             visitViewHolder.mVisitEnd.setVisibility(View.VISIBLE);
             visitViewHolder.mVisitEnd.setText(DateUtils.convertTime1((visit.getStopDatetime()), DateUtils.DATE_WITH_TIME_FORMAT));
 
-            Drawable icon = mContext.getResources().getDrawable(R.drawable.past_visit_dot);
-            icon.setBounds(0, 0, icon.getIntrinsicHeight(), icon.getIntrinsicWidth());
-            visitViewHolder.mVisitStatus.setCompoundDrawables(icon, null, null, null);
+            visitViewHolder.mVisitStatusIcon.setImageBitmap(
+                    ImageUtils.decodeBitmapFromResource(mContext.getResources(), R.drawable.past_visit_dot,
+                            visitViewHolder.mVisitStatusIcon.getLayoutParams().width, visitViewHolder.mVisitStatusIcon.getLayoutParams().height));
             visitViewHolder.mVisitStatus.setText(mContext.getString(R.string.past_visit_label));
         } else {
             visitViewHolder.mVisitEnd.setVisibility(View.INVISIBLE);
-            Drawable icon = mContext.getResources().getDrawable(R.drawable.active_visit_dot);
-            icon.setBounds(0, 0, icon.getIntrinsicHeight(), icon.getIntrinsicWidth());
-            visitViewHolder.mVisitStatus.setCompoundDrawables(icon, null, null, null);
+            visitViewHolder.mVisitStatusIcon.setImageBitmap(
+                    ImageUtils.decodeBitmapFromResource(mContext.getResources(), R.drawable.active_visit_dot,
+                            visitViewHolder.mVisitStatusIcon.getLayoutParams().width, visitViewHolder.mVisitStatusIcon.getLayoutParams().height));
             visitViewHolder.mVisitStatus.setText(mContext.getString(R.string.active_visit_label));
         }
         if (visit.getLocation() != null) {
             visitViewHolder.mVisitPlace.setText(mContext.getString(R.string.visit_in, visit.getLocation().getDisplay()));
         }
 
-        visitViewHolder.mCardView.setOnClickListener(view -> mContext.goToVisitDashboard(mVisits.get(adapterPos).getId()));
+        visitViewHolder.mRelativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mContext.goToVisitDashboard(mVisits.get(adapterPos).getId());
+            }
+        });
     }
 
     @Override
-    public void onViewDetachedFromWindow(@NonNull VisitViewHolder holder) {
+    public void onViewDetachedFromWindow(VisitViewHolder holder) {
         holder.clearAnimation();
     }
 
@@ -87,24 +89,25 @@ public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
         return mVisits.size();
     }
 
-    class VisitViewHolder extends RecyclerView.ViewHolder {
+    class VisitViewHolder extends RecyclerView.ViewHolder{
         private TextView mVisitPlace;
         private TextView mVisitStart;
         private TextView mVisitEnd;
         private TextView mVisitStatus;
-        private CardView mCardView;
+        private RelativeLayout mRelativeLayout;
+        private ImageView mVisitStatusIcon;
 
         public VisitViewHolder(View itemView) {
             super(itemView);
-            mCardView = (CardView) itemView;
-            mVisitStart = itemView.findViewById(R.id.patientVisitStartDate);
-            mVisitEnd = itemView.findViewById(R.id.patientVisitEndDate);
-            mVisitPlace = itemView.findViewById(R.id.patientVisitPlace);
-            mVisitStatus = itemView.findViewById(R.id.visitStatusLabel);
+            mRelativeLayout = (RelativeLayout) itemView;
+            mVisitStart = (TextView) itemView.findViewById(R.id.patientVisitStartDate);
+            mVisitEnd = (TextView) itemView.findViewById(R.id.patientVisitEndDate);
+            mVisitPlace = (TextView) itemView.findViewById(R.id.patientVisitPlace);
+            mVisitStatusIcon = (ImageView) itemView.findViewById(R.id.visitStatusIcon);
+            mVisitStatus = (TextView) itemView.findViewById(R.id.visitStatusLabel);
         }
-
         public void clearAnimation() {
-            mCardView.clearAnimation();
+            mRelativeLayout.clearAnimation();
         }
     }
 }

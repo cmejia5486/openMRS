@@ -13,17 +13,19 @@
   ~ Copyright (C) OpenMRS, LLC.  All Rights Reserved.
   -->
 
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+<android.support.v4.widget.SwipeRefreshLayout
     android:id="@+id/swiperefreshLastPatients"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <FrameLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/swipe_container"
+        android:background="#fff3f3f3"
         tools:context=".activities.lastviewedpatients.LastViewedPatientsActivity">
 
         <RelativeLayout
@@ -31,11 +33,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <com.google.android.material.appbar.AppBarLayout
+            <android.support.design.widget.AppBarLayout
                 android:layout_width="match_parent"
                 android:elevation="0dp"
                 android:layout_height="wrap_content">
-            </com.google.android.material.appbar.AppBarLayout>
+            </android.support.design.widget.AppBarLayout>
 
             <TextView android:id="@+id/emptyLastViewedPatientList"
                 android:layout_width="match_parent"
@@ -43,9 +45,10 @@
                 android:gravity="center"
                 android:visibility="gone" />
 
-            <androidx.recyclerview.widget.RecyclerView android:id="@+id/lastViewedPatientRecyclerView"
+            <android.support.v7.widget.RecyclerView android:id="@+id/lastViewedPatientRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent"
+                android:layout_gravity="left|bottom" />
 
         </RelativeLayout>
 
@@ -66,4 +69,4 @@
 
         </RelativeLayout>
     </FrameLayout>
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</android.support.v4.widget.SwipeRefreshLayout>

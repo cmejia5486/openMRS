@@ -15,27 +15,24 @@
 package org.openmrs.mobile.activities.settings;
 
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
-
-import androidx.appcompat.app.ActionBar;
-
 public class SettingsActivity extends ACBaseActivity {
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setElevation(0);
-            actionBar.setDisplayHomeAsUpEnabled(true);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
-
+        mOpenMRSLogger.d("onCreate");
         // Create fragment
         SettingsFragment settingsFragment =
                 (SettingsFragment) getSupportFragmentManager().findFragmentById(R.id.settingsContentFrame);
@@ -71,6 +68,5 @@ public class SettingsActivity extends ACBaseActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
-
 
 }

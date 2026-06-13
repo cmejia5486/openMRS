@@ -15,14 +15,15 @@
 package org.openmrs.mobile.activities.activevisits;
 
 import android.os.Bundle;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
-
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.widget.SearchView;
+import org.openmrs.mobile.application.OpenMRS;
 
 public class ActiveVisitsActivity extends ACBaseActivity {
 
@@ -60,7 +61,11 @@ public class ActiveVisitsActivity extends ACBaseActivity {
         getMenuInflater().inflate(R.menu.find_visits_menu, menu);
         final SearchView findVisitView;
         MenuItem mFindVisitItem = menu.findItem(R.id.actionSearchLocalVisits);
-        findVisitView = (SearchView) mFindVisitItem.getActionView();
+        if (OpenMRS.getInstance().isRunningHoneycombVersionOrHigher()) {
+            findVisitView = (SearchView) mFindVisitItem.getActionView();
+        } else {
+            findVisitView = (SearchView) MenuItemCompat.getActionView(mFindVisitItem);
+        }
 
         findVisitView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override

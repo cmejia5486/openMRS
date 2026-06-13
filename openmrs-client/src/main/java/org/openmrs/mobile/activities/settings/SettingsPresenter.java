@@ -14,20 +14,16 @@
 
 package org.openmrs.mobile.activities.settings;
 
-import org.openmrs.mobile.activities.BasePresenter;
+import android.support.annotation.NonNull;
+
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.application.OpenMRSLogger;
-import org.openmrs.mobile.dao.ConceptDAO;
-import org.openmrs.mobile.utilities.ThemeUtils;
 
 import java.io.File;
 
-import androidx.annotation.NonNull;
-
-public class SettingsPresenter extends BasePresenter implements SettingsContract.Presenter {
+public class SettingsPresenter implements SettingsContract.Presenter {
 
     private static final int ONE_KB = 1024;
-    private ConceptDAO conceptDAO;
 
     @NonNull
     private final SettingsContract.View mSettingsView;
@@ -35,27 +31,18 @@ public class SettingsPresenter extends BasePresenter implements SettingsContract
     @NonNull
     private final OpenMRSLogger mOpenMRSLogger;
 
-    public SettingsPresenter(@NonNull SettingsContract.View view, @NonNull OpenMRSLogger logger ) {
+    public SettingsPresenter(@NonNull SettingsContract.View view, @NonNull OpenMRSLogger logger) {
         mSettingsView = view;
         mOpenMRSLogger = logger;
-        conceptDAO = new ConceptDAO();
-        view.setPresenter(this);
-    }
-
-    public SettingsPresenter(@NonNull SettingsContract.View view, @NonNull OpenMRSLogger logger, ConceptDAO conceptDAO) {
-        mSettingsView = view;
-        mOpenMRSLogger = logger;
-        this.conceptDAO = conceptDAO;
         view.setPresenter(this);
     }
 
     @Override
-    public void subscribe() {
-        updateViews();
-        mSettingsView.setConceptsInDbText(String.valueOf(conceptDAO.getConceptsCount()));
+    public void start() {
+        fillList();
     }
 
-    private void updateViews() {
+    private void fillList() {
         long size = 0;
         String filename = OpenMRS.getInstance().getOpenMRSDir()
                 + File.separator + mOpenMRSLogger.getLogFilename();
@@ -70,9 +57,7 @@ public class SettingsPresenter extends BasePresenter implements SettingsContract
 
         mSettingsView.addLogsInfo(size, filename);
         mSettingsView.addBuildVersionInfo();
-        mSettingsView.addPrivacyPolicyInfo();
-        mSettingsView.rateUs();
-        mSettingsView.setDarkMode();
+        mSettingsView.applyChanges();
     }
 
     @Override
@@ -80,18 +65,4 @@ public class SettingsPresenter extends BasePresenter implements SettingsContract
         mOpenMRSLogger.e(exception);
     }
 
-    @Override
-    public void updateConceptsInDBTextView() {
-        mSettingsView.setConceptsInDbText(String.valueOf(conceptDAO.getConceptsCount()));
-    }
-
-    @Override
-    public boolean isDarkModeActivated() {
-        return ThemeUtils.isDarkModeActivated();
-    }
-
-    @Override
-    public void setDarkMode(boolean darkMode) {
-        ThemeUtils.setDarkMode(darkMode);
-    }
 }

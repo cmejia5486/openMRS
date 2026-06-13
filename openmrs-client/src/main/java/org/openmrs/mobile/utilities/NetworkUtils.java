@@ -50,7 +50,7 @@ public final class NetworkUtils {
             {
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putBoolean("sync", false);
-                editor.apply();
+                editor.commit();
                 return false;
             }
 

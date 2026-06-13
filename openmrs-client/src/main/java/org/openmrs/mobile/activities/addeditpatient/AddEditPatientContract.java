@@ -14,7 +14,7 @@
 
 package org.openmrs.mobile.activities.addeditpatient;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 import org.openmrs.mobile.models.Patient;
 
@@ -24,6 +24,8 @@ public interface AddEditPatientContract {
 
     interface View extends BaseView<Presenter> {
 
+        boolean isActive();
+
         void finishPatientInfoActivity();
 
         void setErrorsVisibility(boolean givenNameError,
@@ -31,11 +33,7 @@ public interface AddEditPatientContract {
                                  boolean dayOfBirthError,
                                  boolean addressError,
                                  boolean countryError,
-                                 boolean genderError,
-                                 boolean countryNull,
-                                 boolean stateError,
-                                 boolean cityError,
-                                 boolean postalError);
+                                 boolean genderError);
 
         void scrollToTop();
 
@@ -48,11 +46,9 @@ public interface AddEditPatientContract {
         void startPatientDashbordActivity(Patient patient);
 
         void showUpgradeRegistrationModuleInfo();
-
-        boolean areFieldsNotEmpty();
     }
 
-    interface Presenter extends BasePresenterContract {
+    interface Presenter extends BasePresenter {
 
         Patient getPatientToUpdate();
 

@@ -12,7 +12,7 @@ package org.openmrs.mobile.activities.formdisplay;
 
 import android.widget.LinearLayout;
 
-import org.openmrs.mobile.activities.BasePresenterContract;
+import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.activities.BaseView;
 import org.openmrs.mobile.models.Question;
 import org.openmrs.mobile.utilities.InputField;
@@ -22,15 +22,15 @@ import java.util.List;
 
 public interface FormDisplayContract {
 
-    interface View {
+    interface View extends BaseView<Presenter> {
 
-        interface MainView extends BaseView<Presenter.MainPresenter> {
+        interface MainView extends View {
             void quitFormEntry();
             void enableSubmitButton(boolean enabled);
             void showToast(String errorMessage);
         }
 
-        interface PageView extends BaseView<Presenter.PagePresenter> {
+        interface PageView extends View {
             void attachSectionToView(LinearLayout linearLayout);
             void attachQuestionToSection(LinearLayout section, LinearLayout question);
             void createAndAttachNumericQuestionEditText(Question question, LinearLayout sectionLinearLayout);
@@ -46,15 +46,13 @@ public interface FormDisplayContract {
 
     }
 
-    interface Presenter {
+    interface Presenter extends BasePresenter {
 
-        interface MainPresenter extends BasePresenterContract {
+        interface MainPresenter extends Presenter {
             void createEncounter();
         }
 
-        interface PagePresenter extends BasePresenterContract {
-
-        }
+        interface PagePresenter extends Presenter{}
 
     }
 

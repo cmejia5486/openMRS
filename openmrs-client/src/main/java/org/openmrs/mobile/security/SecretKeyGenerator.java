@@ -51,15 +51,14 @@ public final class SecretKeyGenerator {
         }
 
         int len = data.length;
-        StringBuilder stringBuilder = new StringBuilder();
+        String str = "";
         for (int i = 0; i < len; i++) {
             if ((data[i] & 0xFF) < 16) {
-                stringBuilder.append('0');
-                stringBuilder.append(java.lang.Integer.toHexString(data[i] & 0xFF));
+                str = str + "0" + java.lang.Integer.toHexString(data[i] & 0xFF);
             } else {
-                stringBuilder.append(java.lang.Integer.toHexString(data[i] & 0xFF));
+                str = str + java.lang.Integer.toHexString(data[i] & 0xFF);
             }
         }
-        return stringBuilder.toString();
+        return str;
     }
 }

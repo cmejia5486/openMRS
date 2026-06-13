@@ -14,74 +14,70 @@
 
 package org.openmrs.mobile.activities.formlist;
 
+import com.activeandroid.query.Select;
 
-import org.openmrs.mobile.activities.BasePresenter;
-import org.openmrs.mobile.dao.EncounterDAO;
 import org.openmrs.mobile.models.EncounterType;
 import org.openmrs.mobile.models.FormResource;
-import org.openmrs.mobile.utilities.FormService;
-import org.openmrs.mobile.utilities.StringUtils;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class FormListPresenter extends BasePresenter implements FormListContract.Presenter {
+import static org.openmrs.mobile.utilities.FormService.getFormResourceList;
 
-    private static String[] formsStringArray = null;
+public class FormListPresenter implements FormListContract.Presenter {
+
+    private static String[] FORMS = null;
 
     private FormListContract.View view;
     private Long patientId;
     private List<FormResource> formResourceList;
-    private EncounterDAO encounterDAO;
+
+    public static EncounterType getEncounterType(String formname) {
+        return new Select()
+                .from(EncounterType.class)
+                .where("display = ?", formname)
+                .executeSingle();
+    }
 
     public FormListPresenter(FormListContract.View view, long patientId) {
         this.view = view;
-        this.view.setPresenter(this);
         this.patientId = patientId;
-        this.encounterDAO = new EncounterDAO();
-    }
-
-    public FormListPresenter(FormListContract.View view, long patientId, EncounterDAO encounterDAO) {
-        this.view = view;
-        this.view.setPresenter(this);
-        this.patientId = patientId;
-        this.encounterDAO = encounterDAO;
+        view.setPresenter(this);
     }
 
     @Override
-    public void subscribe() {
+    public void start() {
         loadFormResourceList();
     }
 
     @Override
     public void loadFormResourceList() {
-        formResourceList = new ArrayList<>();
-        List<FormResource> allFormResourcesList = FormService.getFormResourceList();
-        for (FormResource formResource : allFormResourcesList) {
+        formResourceList =getFormResourceList();
+
+        Iterator<FormResource> iterator= formResourceList.iterator();
+
+        while (iterator.hasNext())
+        {
+            FormResource formResource = iterator.next();
             List<FormResource> valueRef = formResource.getResourceList();
-            String valueRefString = null;
-
-            for (FormResource resource : valueRef) {
-                if (resource.getName().equals("json")) {
+            String valueRefString=null;
+            for(FormResource resource:valueRef)
+            {
+                if(resource.getName().equals("json"))
                     valueRefString = resource.getValueReference();
-                }
             }
-            if (!StringUtils.isBlank(valueRefString)) {
-                formResourceList.add(formResource);
-            } else {
-                if (view.formCreate(formResource.getUuid(), formResource.getName().toLowerCase())) {
-                    formResourceList.add(formResource);
-                }
+            if(valueRefString==null) {
+                iterator.remove();
             }
-
         }
 
-        int size = formResourceList.size();
-        formsStringArray = new String[size];
-        for (int i = 0; i < size; i++) {
-            formsStringArray[i] = formResourceList.get(i).getName();
+        int size= formResourceList.size();
+        FORMS=new String [size];
+        for (int i=0;i<size;i++)
+        {
+            FORMS[i]= formResourceList.get(i).getName();
         }
-        view.showFormList(formsStringArray);
+        view.showFormList(FORMS);
     }
 
     @Override
@@ -93,7 +89,7 @@ public class FormListPresenter extends BasePresenter implements FormListContract
                 valueRefString = resource.getValueReference();
         }
 
-        EncounterType encType = encounterDAO.getEncounterTypeByFormName(formsStringArray[position]);
+        EncounterType encType = getEncounterType(FORMS[position]);
         if (encType != null) {
             String encounterType = encType.getUuid();
             view.startFormDisplayActivity(formName, patientId, valueRefString, encounterType);

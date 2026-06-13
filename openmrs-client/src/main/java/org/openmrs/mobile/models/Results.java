@@ -20,19 +20,7 @@ public class Results<T> implements Serializable {
 
     @SerializedName("results")
     @Expose
-    private List<T> results = new ArrayList<>();
-
-    @SerializedName("links")
-    @Expose
-    private List<Link> links = new ArrayList<>();
-
-    public List<Link> getLinks() {
-        return links;
-    }
-
-    public void setLinks(List<Link> links) {
-        this.links = links;
-    }
+    private List<T> results = new ArrayList<T>();
 
     public List<T> getResults() {
         return results;

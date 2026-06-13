@@ -16,6 +16,9 @@ package org.openmrs.mobile.activities.patientdashboard.visits;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -23,11 +26,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
@@ -44,6 +42,8 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
 
     private RecyclerView visitRecyclerView;
     private TextView emptyList;
+
+    private PatientDashboardContract.PatientVisitsPresenter mPresenter;
 
     public static final int REQUEST_CODE_FOR_VISIT = 1;
 
@@ -68,7 +68,7 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
         int id = item.getItemId();
         switch (id) {
             case R.id.actionStartVisit:
-                ((PatientDashboardVisitsPresenter) mPresenter).syncVisits();
+                mPresenter.syncVisits();
                 break;
             default:
                 // Do nothing
@@ -78,30 +78,43 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        mPresenter.start();
+    }
+
+    @Override
     public void showErrorToast(String message) {
         ToastUtil.error(message);
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.fragment_patient_visit, null, false);
-        visitRecyclerView = root.findViewById(R.id.patientVisitRecyclerView);
+        visitRecyclerView = (RecyclerView) root.findViewById(R.id.patientVisitRecyclerView);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         visitRecyclerView.setHasFixedSize(true);
         visitRecyclerView.setLayoutManager(linearLayoutManager);
 
-        emptyList = root.findViewById(R.id.emptyVisitsList);
+        emptyList = (TextView) root.findViewById(R.id.emptyVisitsList);
 
         return root;
     }
 
     public void startVisit() {
-        ((PatientDashboardVisitsPresenter) mPresenter).startVisit();
+        showStartVisitDialog();
+        mPresenter.startVisit();
+        }
+
+    @Override
+    public void showStartVisitDialog() {
+        ((PatientDashboardActivity) getActivity())
+                .showProgressDialog(R.string.action_start_visit);
     }
 
     @Override
-    public void dismissCurrentDialog() {
+    public void dismissStartVisitDialog() {
         ((PatientDashboardActivity) getActivity()).dismissCustomFragmentDialog();
     }
 
@@ -145,19 +158,7 @@ public class PatientVisitsFragment extends PatientDashboardFragment implements P
     }
 
     @Override
-    public void showStartVisitProgressDialog() {
-        ((PatientDashboardActivity) getActivity()).showProgressDialog(R.string.action_starting_visit);
-    }
-
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if (isVisibleToUser) {
-            try {
-                PatientDashboardActivity.hideFABs(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    public void setPresenter(PatientDashboardContract.PatientDashboardMainPresenter presenter) {
+        this.mPresenter = ((PatientDashboardVisitsPresenter) presenter);
     }
 }

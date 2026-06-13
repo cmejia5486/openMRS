@@ -15,14 +15,15 @@
 package org.openmrs.mobile.activities.formentrypatientlist;
 
 import android.os.Bundle;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import androidx.appcompat.widget.SearchView;
-import androidx.appcompat.widget.Toolbar;
-
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
+import org.openmrs.mobile.application.OpenMRS;
 
 public class FormEntryPatientListActivity extends ACBaseActivity {
 
@@ -32,6 +33,11 @@ public class FormEntryPatientListActivity extends ACBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.activity_form_entry_patient_list);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
         // Create fragment
         FormEntryPatientListFragment formEntryPatientListFragment =
@@ -54,7 +60,11 @@ public class FormEntryPatientListActivity extends ACBaseActivity {
         getMenuInflater().inflate(R.menu.form_entry_patient_list_menu, menu);
         final SearchView findPatientView;
         MenuItem mFindPatientMenuItem = menu.findItem(R.id.actionSearchRemoteFormEntry);
-        findPatientView = (SearchView) mFindPatientMenuItem.getActionView();
+        if (OpenMRS.getInstance().isRunningHoneycombVersionOrHigher()) {
+            findPatientView = (SearchView) mFindPatientMenuItem.getActionView();
+        } else {
+            findPatientView = (SearchView) MenuItemCompat.getActionView(mFindPatientMenuItem);
+        }
 
         // Search function
         findPatientView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {

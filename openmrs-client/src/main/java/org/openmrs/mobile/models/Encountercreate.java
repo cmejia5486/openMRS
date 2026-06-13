@@ -133,11 +133,13 @@ public class Encountercreate extends Model implements Serializable{
 
     public void setObslist()
     {
-        this.obslist = gson.toJson(observations,obscreatetype);
+        this.obslist=gson.toJson(observations,obscreatetype);
     }
 
     public void pullObslist() {
-        this.observations = gson.fromJson(this.obslist,obscreatetype);
+
+        List<Obscreate> obscreateList=gson.fromJson(this.obslist,obscreatetype);
+        this.observations=obscreateList;
     }
 
 

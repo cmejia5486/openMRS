@@ -50,9 +50,4 @@ public class User extends Resource{
     public void setPerson(Person person) {
         this.person = person;
     }
-
-    @Override
-    public String toString() {
-        return "Username: " + username;
-    }
 }

@@ -27,13 +27,9 @@ import org.openmrs.mobile.utilities.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-import rx.Observable;
-
-import static org.openmrs.mobile.databases.DBOpenHelper.createObservableIO;
-
 public class LocationDAO {
-    public Observable<Long> saveLocation(Location location) {
-        return createObservableIO(() -> new LocationTable().insert(location));
+    public long saveLocation(Location location) {
+        return new LocationTable().insert(location);
     }
 
     public void deleteAllLocations() {
@@ -43,28 +39,27 @@ public class LocationDAO {
         OpenMRS.getInstance().getOpenMRSLogger().d("All Locations deleted");
     }
 
-    public Observable<List<Location>> getLocations() {
-        return createObservableIO(() -> {
-            List<Location> locations = new ArrayList<>();
-            DBOpenHelper openHelper = OpenMRSDBOpenHelper.getInstance().getDBOpenHelper();
-            Cursor cursor = openHelper.getReadableDatabase().query(LocationTable.TABLE_NAME,
-                    null, null, null, null, null, null);
+    public static List<Location> getLocations() {
+        List<Location> locations = new ArrayList<Location>();
+        DBOpenHelper openHelper = OpenMRSDBOpenHelper.getInstance().getDBOpenHelper();
+        Cursor cursor = openHelper.getReadableDatabase().query(LocationTable.TABLE_NAME,
+                null, null, null, null, null, null);
 
-            if (null != cursor) {
-                try {
-                    while (cursor.moveToNext()) {
-                        Location location = cursorToLocation(cursor);
-                        locations.add(location);
-                    }
-                } finally {
-                    cursor.close();
+        if (null != cursor) {
+            try {
+                while (cursor.moveToNext()) {
+                    Location location = cursorToLocation(cursor);
+                    locations.add(location);
                 }
+            } finally {
+                cursor.close();
             }
-            return locations;
-        });
+        }
+
+        return locations;
     }
 
-    public Location findLocationByName(String name) {
+    public static Location findLocationByName(String name) {
         if(!StringUtils.notNull(name)){
             return null;
         }
@@ -86,7 +81,7 @@ public class LocationDAO {
         return location;
     }
 
-    private Location cursorToLocation(Cursor cursor) {
+    private static Location cursorToLocation(Cursor cursor) {
         Location location = new Location();
         location.setId(cursor.getLong(cursor.getColumnIndex(LocationTable.Column.ID)));
         location.setUuid(cursor.getString(cursor.getColumnIndex(LocationTable.Column.UUID)));

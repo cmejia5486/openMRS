@@ -10,8 +10,10 @@
 
 package org.openmrs.mobile.activities.formdisplay;
 
+import android.app.Fragment;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -28,12 +30,7 @@ import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-
-import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar;
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseFragment;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.bundle.FormFieldsWrapper;
 import org.openmrs.mobile.models.Answer;
@@ -47,10 +44,11 @@ import org.openmrs.mobile.utilities.ToastUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.Presenter.PagePresenter> implements FormDisplayContract.View.PageView {
+public class FormDisplayPageFragment extends Fragment implements FormDisplayContract.View.PageView {
 
     private List<InputField> inputFields =new ArrayList<>();
     private List<SelectOneField> selectOneFields = new ArrayList<>();
+    private FormDisplayContract.Presenter.PagePresenter mPresenter;
     private LinearLayout mParent;
 
     public static FormDisplayPageFragment newInstance() {
@@ -58,18 +56,20 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_form_display, container, false);
         getActivity().getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-        mParent = root.findViewById(R.id.sectionContainer);
+        mParent = (LinearLayout) root.findViewById(R.id.sectionContainer);
+        mPresenter.start();
+
         return root;
     }
 
     @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
+    public void onSaveInstanceState(Bundle outState) {
         FormFieldsWrapper formFieldsWrapper = new FormFieldsWrapper(getInputFields(), getSelectOneFields());
         outState.putSerializable(ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE, formFieldsWrapper);
         super.onSaveInstanceState(outState);
@@ -81,15 +81,9 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         if (savedInstanceState != null) {
             FormFieldsWrapper formFieldsWrapper = (FormFieldsWrapper) savedInstanceState.getSerializable(ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE);
             inputFields = formFieldsWrapper.getInputFields();
-
             for(InputField field:inputFields){
-                View v = getActivity().findViewById(field.getId());
-                if(v != null && v instanceof DiscreteSeekBar) {
-                    DiscreteSeekBar sb = (DiscreteSeekBar) v;
-                    sb.setProgress(field.getValue().intValue());
-                }
                 if(field.isRed()){
-                    RangeEditText ed = getActivity().findViewById(field.getId());
+                    RangeEditText ed = (RangeEditText) getActivity().findViewById(field.getId());
                     ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
                 }
             }
@@ -113,39 +107,37 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
         RangeEditText ed = new RangeEditText(getActivity());
-        DiscreteSeekBar dsb = new DiscreteSeekBar(getActivity());
+        ed.setName(question.getLabel());
+        ed.setSingleLine(true);
+        if (question.getQuestionOptions().getMax() != null) {
+            ed.setHint(" [" + question.getQuestionOptions().getMin() + "-" +
+                    question.getQuestionOptions().getMax() + "]");
+            ed.setUpperlimit(Double.parseDouble(question.getQuestionOptions().getMax()));
+            ed.setLowerlimit(Double.parseDouble(question.getQuestionOptions().getMin()));
+        } else {
+            ed.setHint(question.getLabel());
+            ed.setLowerlimit(-1.0);
+            ed.setUpperlimit(-1.0);
+        }
+        ed.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        if (question.getQuestionOptions().isAllowDecimal()) {
+            ed.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        } else {
+            ed.setInputType(InputType.TYPE_CLASS_NUMBER);
+        }
         InputField field = new InputField(question.getQuestionOptions().getConcept());
+        ed.setId(field.getId());
         InputField inputField = getInputField(field.getConcept());
         if (inputField != null) {
             inputField.setId(field.getId());
+            Double value = inputField.getValue();
+            if (-1.0 != value) ed.setText(value.toString());
         } else {
             field.setConcept(question.getQuestionOptions().getConcept());
             inputFields.add(field);
         }
         sectionLinearLayout.addView(generateTextView(question.getLabel()));
-
-        if ((question.getQuestionOptions().getMax() != null) && (!(question.getQuestionOptions().isAllowDecimal())) ){
-            dsb.setMax((int) Double.parseDouble(question.getQuestionOptions().getMax()));
-            dsb.setMin((int) Double.parseDouble(question.getQuestionOptions().getMin()));
-            dsb.setId(field.getId());
-            sectionLinearLayout.addView(dsb,layoutParams);
-        }
-        else {
-            ed.setName(question.getLabel());
-            ed.setSingleLine(true);
-            ed.setHint(question.getLabel());
-            ed.setLowerlimit(-1.0);
-            ed.setUpperlimit(-1.0);
-            ed.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-            if (question.getQuestionOptions().isAllowDecimal()) {
-                ed.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-            } else {
-                ed.setInputType(InputType.TYPE_CLASS_NUMBER);
-            }
-            ed.setId(field.getId());
-            sectionLinearLayout.addView(ed, layoutParams);
-        }
-
+        sectionLinearLayout.addView(ed, layoutParams);
     }
 
     private View generateTextView(String text) {
@@ -274,10 +266,13 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
     }
 
     private void setOnCheckedChangeListener(RadioGroup radioGroup, final SelectOneField radioGroupField) {
-        radioGroup.setOnCheckedChangeListener((radioGroup1, i) -> {
-            View radioButton = radioGroup1.findViewById(i);
-            int idx = radioGroup1.indexOfChild(radioButton);
-            radioGroupField.setAnswer(idx);
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                View radioButton = radioGroup.findViewById(i);
+                int idx = radioGroup.indexOfChild(radioButton);
+                radioGroupField.setAnswer(idx);
+            }
         });
     }
 
@@ -334,8 +329,7 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
     @Override
     public List<InputField> getInputFields() {
         for (InputField field:inputFields) {
-            try{
-                RangeEditText ed = getActivity().findViewById(field.getId());
+            RangeEditText ed=(RangeEditText) getActivity().findViewById(field.getId());
             if(!isEmpty(ed)){
                 field.setValue(Double.parseDouble(ed.getText().toString()));
                 boolean isRed = (ed.getCurrentTextColor()==ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
@@ -345,12 +339,6 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
                 field.setValue(-1.0);
             }
         }
-            catch (ClassCastException e ) {
-                DiscreteSeekBar dsb = getActivity().findViewById(field.getId());
-                field.setValue((double) dsb.getProgress());
-            }
-        }
-
         return inputFields;
     }
 
@@ -368,26 +356,22 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         boolean allEmpty = true;
         boolean valid=true;
         for (InputField field:inputFields) {
-            try {
-                RangeEditText ed = getActivity().findViewById(field.getId());
+            RangeEditText ed = (RangeEditText) getActivity().findViewById(field.getId());
             if (!isEmpty(ed)) {
                 allEmpty = false;
                 if (ed.getText().toString().charAt(0) != '.') {
                     Double inp = Double.parseDouble(ed.getText().toString());
                     if (ed.getUpperlimit() != -1.0 && ed.getUpperlimit() != -1.0 && (ed.getUpperlimit() < inp || ed.getLowerlimit() > inp)) {
+                        ToastUtil.error("Value for " + ed.getName() + " is out of range. Value should be between " +
+                                ed.getLowerlimit() + " and " + ed.getUpperlimit());
                         ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
                         valid = false;
                     }
                 }
                 else {
+                    ToastUtil.error("Comma cannot be first character of " +  ed.getName() + " value.");
                     ed.setTextColor(ContextCompat.getColor(OpenMRS.getInstance(), R.color.red));
                     valid = false;
-                }
-            }}
-            catch (ClassCastException e){
-                DiscreteSeekBar dsb = getActivity().findViewById(field.getId());
-                if (dsb.getProgress() > dsb.getMin()) {
-                    allEmpty = false;
                 }
             }
         }
@@ -409,4 +393,8 @@ public class FormDisplayPageFragment extends ACBaseFragment<FormDisplayContract.
         return etText.getText().toString().trim().length() == 0;
     }
 
+    @Override
+    public void setPresenter(FormDisplayContract.Presenter presenter) {
+        this.mPresenter = (FormDisplayContract.Presenter.PagePresenter) presenter;
+    }
 }

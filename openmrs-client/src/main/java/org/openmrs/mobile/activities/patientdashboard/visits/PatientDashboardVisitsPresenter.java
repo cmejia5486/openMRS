@@ -16,13 +16,13 @@ package org.openmrs.mobile.activities.patientdashboard.visits;
 
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardMainPresenterImpl;
-import org.openmrs.mobile.api.repository.VisitRepository;
+import org.openmrs.mobile.api.retrofit.VisitApi;
 import org.openmrs.mobile.dao.PatientDAO;
 import org.openmrs.mobile.dao.VisitDAO;
 import org.openmrs.mobile.listeners.retrofit.DefaultResponseCallbackListener;
 import org.openmrs.mobile.listeners.retrofit.StartVisitResponseListenerCallback;
-import org.openmrs.mobile.models.Patient;
 import org.openmrs.mobile.utilities.NetworkUtils;
+import org.openmrs.mobile.utilities.ToastUtil;
 
 import rx.android.schedulers.AndroidSchedulers;
 
@@ -30,46 +30,16 @@ public class PatientDashboardVisitsPresenter extends PatientDashboardMainPresent
 
     private PatientDashboardContract.ViewPatientVisits mPatientVisitsView;
     private VisitDAO visitDAO;
-    private VisitRepository visitRepository;
 
     public PatientDashboardVisitsPresenter(String id, PatientDashboardContract.ViewPatientVisits mPatientVisitsView) {
         this.mPatient = new PatientDAO().findPatientByID(id);
         this.mPatientVisitsView = mPatientVisitsView;
         this.mPatientVisitsView.setPresenter(this);
         this.visitDAO = new VisitDAO();
-        this.visitRepository = new VisitRepository();
-    }
-
-    public PatientDashboardVisitsPresenter(Patient patient,
-                                           PatientDashboardContract.ViewPatientVisits mPatientVisitsView,
-                                           VisitDAO visitDAO,
-                                           VisitRepository visitRepository) {
-        this.mPatient = patient;
-        this.mPatientVisitsView = mPatientVisitsView;
-        this.visitRepository = visitRepository;
-        this.visitDAO = visitDAO;
-        this.mPatientVisitsView.setPresenter(this);
     }
 
     @Override
-    public void subscribe() {
-        addSubscription(visitDAO.getVisitsByPatientID(mPatient.getId())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(patientVisits -> {
-                    if (patientVisits !=null && patientVisits.isEmpty()) {
-                        mPatientVisitsView.toggleRecyclerListVisibility(false);
-                    }
-                    else {
-                        mPatientVisitsView.toggleRecyclerListVisibility(true);
-                        mPatientVisitsView.setVisitsToDisplay(patientVisits);
-                    }
-                }));
-        getVisitFromDB();
-        getVisitFromServer();
-    }
-
-
-    public void getVisitFromDB(){
+    public void start() {
         visitDAO.getVisitsByPatientID(mPatient.getId())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(patientVisits -> {
@@ -83,25 +53,9 @@ public class PatientDashboardVisitsPresenter extends PatientDashboardMainPresent
                 });
     }
 
-    public void getVisitFromServer(){
-        if (NetworkUtils.isOnline()) {
-            new VisitRepository().syncVisitsData(mPatient, new DefaultResponseCallbackListener() {
-                @Override
-                public void onResponse() {
-                    getVisitFromDB();
-                }
-
-                @Override
-                public void onErrorResponse(String errorMessage) {
-                    mPatientVisitsView.showErrorToast(errorMessage);
-                }
-            });
-        }
-
-    }
     @Override
     public void showStartVisitDialog() {
-        addSubscription(visitDAO.getActiveVisitByPatientId(mPatient.getId())
+        new VisitDAO().getActiveVisitByPatientId(mPatient.getId())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(visit -> {
                     if(visit != null){
@@ -110,42 +64,40 @@ public class PatientDashboardVisitsPresenter extends PatientDashboardMainPresent
                         mPatientVisitsView.showErrorToast("Cannot start a visit manually in offline mode." +
                                 "If you want to add encounters please do so in the Form Entry section, " +
                                 "they will be synced with an automatic new visit.");
-                    } else {
+                    }
+                    else {
                         mPatientVisitsView.showStartVisitDialog(true);
                     }
-                }));
+                });
     }
 
     @Override
     public void syncVisits() {
-        mPatientVisitsView.showStartVisitProgressDialog();
-        visitRepository.syncVisitsData(mPatient, new DefaultResponseCallbackListener() {
+        new VisitApi().syncVisitsData(mPatient, new DefaultResponseCallbackListener() {
             @Override
             public void onResponse() {
-                addSubscription(visitDAO.getVisitsByPatientID(mPatient.getId())
+                VisitDAO visitDAO = new VisitDAO();
+                visitDAO.getVisitsByPatientID(mPatient.getId())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(visList -> {
-                            mPatientVisitsView.dismissCurrentDialog();
                             mPatientVisitsView.setVisitsToDisplay(visList);
                             showStartVisitDialog();
-                        }));
+                        });
             }
             @Override
             public void onErrorResponse(String errorMessage) {
-                mPatientVisitsView.dismissCurrentDialog();
-                mPatientVisitsView.showErrorToast(errorMessage);
+                ToastUtil.error(errorMessage);
             }
         });
     }
 
     @Override
     public void startVisit() {
-        mPatientVisitsView.showStartVisitProgressDialog();
-        visitRepository.startVisit(mPatient, new StartVisitResponseListenerCallback() {
+        new VisitApi().startVisit(mPatient, new StartVisitResponseListenerCallback() {
             @Override
             public void onStartVisitResponse(long id) {
                 mPatientVisitsView.goToVisitDashboard(id);
-                mPatientVisitsView.dismissCurrentDialog();
+                mPatientVisitsView.dismissStartVisitDialog();
             }
             @Override
             public void onResponse() {
@@ -153,8 +105,7 @@ public class PatientDashboardVisitsPresenter extends PatientDashboardMainPresent
             }
             @Override
             public void onErrorResponse(String errorMessage) {
-                mPatientVisitsView.showErrorToast(errorMessage);
-                mPatientVisitsView.dismissCurrentDialog();
+                mPatientVisitsView.dismissStartVisitDialog();
             }
         });
     }

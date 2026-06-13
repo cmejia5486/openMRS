@@ -14,9 +14,8 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.util.Log;
 
-import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.matchingpatients.MatchingPatientsActivity;
-import org.openmrs.mobile.api.repository.PatientRepository;
+import org.openmrs.mobile.api.retrofit.PatientApi;
 import org.openmrs.mobile.dao.PatientDAO;
 import org.openmrs.mobile.models.Module;
 import org.openmrs.mobile.models.Patient;
@@ -63,8 +62,8 @@ public class PatientService extends IntentService {
                 startActivity(intent1);
             }
         } else {
-            ToastUtil.error(getString(R.string.activity_no_internet_connection) +
-                    getString(R.string.activity_sync_after_connection));
+            ToastUtil.error("No internet connection. Patient Registration data is saved locally " +
+                    "and will sync when internet connection is restored. ");
         }
     }
     private void fetchSimilarPatients(final Patient patient, final PatientAndMatchesWrapper patientAndMatchesWrapper) {
@@ -89,14 +88,14 @@ public class PatientService extends IntentService {
     private void fetchPatientsAndCalculateLocally(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws IOException {
         calculatedLocally = true;
         RestApi restApi = RestServiceBuilder.createService(RestApi.class);
-        Call<Results<Patient>> patientCall = restApi.getPatients(patient.getName().getGivenName(), ApplicationConstants.API.FULL);
+        Call<Results<Patient>> patientCall = restApi.getPatients(patient.getPerson().getName().getGivenName(), ApplicationConstants.API.FULL);
         Response<Results<Patient>> resp = patientCall.execute();
         if(resp.isSuccessful()){
             List<Patient> similarPatient = new PatientComparator().findSimilarPatient(resp.body().getResults(), patient);
             if(!similarPatient.isEmpty()){
                 patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatient));
             } else {
-                new PatientRepository().syncPatient(patient);
+                new PatientApi().syncPatient(patient);
             }
         }
     }
@@ -111,7 +110,7 @@ public class PatientService extends IntentService {
             if (!patientList.isEmpty()) {
                 patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, patientList));
             } else {
-                new PatientRepository().syncPatient(patient);
+                new PatientApi().syncPatient(patient);
             }
         }
     }

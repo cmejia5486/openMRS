@@ -20,7 +20,7 @@ public class IdGenPatientIdentifiers {
 
     @SerializedName("identifiers")
     @Expose
-    private List<String> identifiers = new ArrayList<>();
+    private List<String> identifiers = new ArrayList<String>();
 
     /**
      *

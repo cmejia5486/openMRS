@@ -16,6 +16,7 @@ package org.openmrs.mobile.activities.patientdashboard.vitals;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,12 +26,8 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.formdisplay.FormDisplayActivity;
-import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardContract;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardFragment;
 import org.openmrs.mobile.application.OpenMRSInflater;
@@ -52,6 +49,8 @@ public class PatientVitalsFragment extends PatientDashboardFragment implements P
 
     private LayoutInflater mInflater;
 
+    private PatientDashboardContract.PatientVitalsPresenter mPresenter;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,17 +60,22 @@ public class PatientVitalsFragment extends PatientDashboardFragment implements P
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_patient_vitals, null, false);
-        mContent = root.findViewById(R.id.vitalsDetailsContent);
-        mEmptyList = root.findViewById(R.id.lastVitalsNoneLabel);
-        mLastVitalsDate = root.findViewById(R.id.lastVitalsDate);
-        mFormHeader = root.findViewById(R.id.lastVitalsLayout);
+        mContent = (LinearLayout) root.findViewById(R.id.vitalsDetailsContent);
+        mEmptyList = (TextView) root.findViewById(R.id.lastVitalsNoneLabel);
+        mLastVitalsDate = (TextView) root.findViewById(R.id.lastVitalsDate);
+        mFormHeader = (LinearLayout) root.findViewById(R.id.lastVitalsLayout);
 
-        TextView lastVitalsLabel = root.findViewById(R.id.lastVitalsLabel);
-        ImageButton formEditIcon = root.findViewById(R.id.form_edit_icon);
+        TextView lastVitalsLabel = (TextView) root.findViewById(R.id.lastVitalsLabel);
+        ImageButton formEditIcon = (ImageButton) root.findViewById(R.id.form_edit_icon);
 
-        formEditIcon.setOnClickListener(view -> ((PatientDashboardVitalsPresenter) mPresenter).startFormDisplayActivityWithEncounter());
+        formEditIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mPresenter.startFormDisplayActivityWithEncounter();
+            }
+        });
 
         this.mInflater = inflater;
 
@@ -85,6 +89,17 @@ public class PatientVitalsFragment extends PatientDashboardFragment implements P
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         // This method is intentionally empty
+    }
+
+    @Override
+    public void setPresenter(PatientDashboardContract.PatientDashboardMainPresenter presenter) {
+        this.mPresenter = ((PatientDashboardContract.PatientVitalsPresenter) presenter);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mPresenter.start();
     }
 
     @Override
@@ -117,7 +132,7 @@ public class PatientVitalsFragment extends PatientDashboardFragment implements P
             intent.putParcelableArrayListExtra(ApplicationConstants.BundleKeys.FORM_FIELDS_LIST_BUNDLE, FormFieldsWrapper.create(encounter));
             startActivity(intent);
         } else {
-            ToastUtil.notify(getString(R.string.form_error));
+            ToastUtil.notify("This form is not supported");
         }
 
     }
@@ -129,17 +144,5 @@ public class PatientVitalsFragment extends PatientDashboardFragment implements P
 
     public static PatientVitalsFragment newInstance() {
         return new PatientVitalsFragment();
-    }
-
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if (isVisibleToUser) {
-            try {
-                PatientDashboardActivity.hideFABs(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

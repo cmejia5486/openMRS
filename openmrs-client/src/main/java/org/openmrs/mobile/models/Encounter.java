@@ -40,10 +40,10 @@ public class Encounter extends Resource implements Serializable{
     private EncounterType encounterType;
     @SerializedName("obs")
     @Expose
-    private List<Observation> observations = new ArrayList<>();
+    private List<Observation> observations = new ArrayList<Observation>();
     @SerializedName("orders")
     @Expose
-    private List<Object> orders = new ArrayList<>();
+    private List<Object> orders = new ArrayList<Object>();
     @SerializedName("voided")
     @Expose
     private Boolean voided;
@@ -52,7 +52,7 @@ public class Encounter extends Resource implements Serializable{
     private Visit visit;
     @SerializedName("encounterProviders")
     @Expose
-    private List<Resource> encounterProviders = new ArrayList<>();
+    private List<Resource> encounterProviders = new ArrayList<Resource>();
     @SerializedName("resourceVersion")
     @Expose
     private String resourceVersion;
@@ -129,9 +129,7 @@ public class Encounter extends Resource implements Serializable{
         return DateUtils.convertTime(encounterDatetime);
     }
 
-    public String getEncounterDate(){
-        return encounterDatetime;
-    }
+
     /**
      *
      * @param encounterDatetime

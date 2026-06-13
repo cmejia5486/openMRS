@@ -20,7 +20,7 @@
               android:layout_width="fill_parent"
               android:layout_height="50dp"
               android:orientation="horizontal"
-              android:focusable="true">
+              android:background="@color/dark_teal">
 
     <TextView
         android:id="@+id/openmrsTitleView"
@@ -31,7 +31,6 @@
         android:layout_marginBottom="14dp"
         android:layout_marginTop="14dp"
         android:layout_marginLeft="10dp"
-        android:layout_marginStart="10dp"
         android:textSize="22sp"
         android:background="@color/dark_teal"/>
 

@@ -17,6 +17,8 @@ package org.openmrs.mobile.activities.visitdashboard;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -24,10 +26,7 @@ import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.ACBaseFragment;
 import org.openmrs.mobile.activities.formlist.FormListActivity;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.models.Encounter;
@@ -40,22 +39,40 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-public class VisitDashboardFragment extends ACBaseFragment<VisitDashboardContract.Presenter> implements VisitDashboardContract.View{
+public class VisitDashboardFragment extends Fragment implements VisitDashboardContract.View{
+
+    private VisitDashboardContract.Presenter mPresenter;
 
     private ExpandableListView mExpandableListView;
     private TextView mEmptyListView;
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_visit_dashboard, container, false);
 
-        mEmptyListView = root.findViewById(R.id.visitDashboardEmpty);
+        mEmptyListView = (TextView) root.findViewById(R.id.visitDashboardEmpty);
         FontsUtil.setFont(mEmptyListView, FontsUtil.OpenFonts.OPEN_SANS_BOLD);
-        mExpandableListView = root.findViewById(R.id.visitDashboardExpList);
+        mExpandableListView = (ExpandableListView) root.findViewById(R.id.visitDashboardExpList);
         mExpandableListView.setEmptyView(mEmptyListView);
         setEmptyListVisibility(false);
         return root;
+    }
+
+    @Override
+    public boolean isActive() {
+        return isAdded();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mPresenter.start();
+    }
+
+    @Override
+    public void setPresenter(@NonNull VisitDashboardContract.Presenter presenter) {
+        this.mPresenter = presenter;
     }
 
     @Override
@@ -119,16 +136,6 @@ public class VisitDashboardFragment extends ACBaseFragment<VisitDashboardContrac
     public void setActiveVisitMenu() {
         Menu menu = ((VisitDashboardActivity) getActivity()).menu;
         (getActivity()).getMenuInflater().inflate(R.menu.active_visit_menu, menu);
-    }
-
-    @Override
-    public void showErrorToast(String message) {
-        ToastUtil.error(message);
-    }
-
-    @Override
-    public void showErrorToast(int messageId) {
-        ToastUtil.error(getString(messageId));
     }
 
 }

@@ -10,11 +10,11 @@
 
 package org.openmrs.mobile.activities.formdisplay;
 
+import android.app.Fragment;
 import android.os.Bundle;
 import android.util.SparseArray;
 
 import org.joda.time.LocalDateTime;
-import org.openmrs.mobile.activities.BasePresenter;
 import org.openmrs.mobile.api.EncounterService;
 import org.openmrs.mobile.dao.PatientDAO;
 import org.openmrs.mobile.listeners.retrofit.DefaultResponseCallbackListener;
@@ -29,11 +29,9 @@ import org.openmrs.mobile.utilities.ToastUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.fragment.app.Fragment;
-
 import static org.openmrs.mobile.utilities.FormService.getFormResourceByName;
 
-public class FormDisplayMainPresenter extends BasePresenter implements FormDisplayContract.Presenter.MainPresenter {
+public class FormDisplayMainPresenter implements FormDisplayContract.Presenter.MainPresenter {
 
     private final long mPatientID;
     private final String mEncountertype;
@@ -53,7 +51,7 @@ public class FormDisplayMainPresenter extends BasePresenter implements FormDispl
     }
 
     @Override
-    public void subscribe() {
+    public void start() {
         // This method is intentionally empty
     }
 
