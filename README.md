@@ -1,204 +1,249 @@
-# ChartLite
+[![Logo](http://i.imgur.com/fpVkTZk.png)](http://www.openmrs.org)
 
-Voice-first clinical documentation for primary healthcare. Record patient encounters by voice, get structured clinical data automatically, and work fully offline on low-cost Android devices.
+OpenMRS Android Client
+==============================
 
-Built for sub-Saharan Africa first, expanding globally.
+[![Build Status Travis](https://travis-ci.org/openmrs/openmrs-contrib-android-client.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-contrib-android-client) [![Build Status AppVeyor](https://ci.appveyor.com/api/projects/status/github/openmrs/openmrs-contrib-android-client?branch=master&svg=true)](https://ci.appveyor.com/project/AvijitGhosh82/openmrs-contrib-android-client) [![Demo Server](https://img.shields.io/badge/demo-online-green.svg)](http://devtest04.openmrs.org:8080/openmrs) [![GitHub version](https://d25lcipzij17d.cloudfront.net/badge.svg?id=gh&type=6&v=2.6.1&x2=0)](https://github.com/openmrs/openmrs-contrib-android-client/releases/latest) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/37fa8e86a3cb4256a3b7ffcc644f13c6)](https://www.codacy.com/app/marzeion-tomasz/openmrs-contrib-android-client?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=openmrs/openmrs-contrib-android-client&amp;utm_campaign=Badge_Grade) [![codecov](https://codecov.io/gh/openmrs/openmrs-contrib-android-client/branch/master/graph/badge.svg)](https://codecov.io/gh/f4ww4z/openmrs-contrib-android-client) [![IRC](https://img.shields.io/badge/IRC-%23openmrs-1e72ff.svg?style=flat)](http://irc.openmrs.org)
 
-## Features
+## Table of Contents
+- [OpenMRS Android Client](#OpenMRS-Android-Client)
+	- [Table of Contents](#Table-of-Contents)
+- [Description](#Description)
+			- [Key Features](#Key-Features)
+- [Screenshots](#Screenshots)
+- [GSoC 2017](#GSoC-2017)
+- [Development](#Development)
+		- [Code Style](#Code-Style)
+		- [Model pattern](#Model-pattern)
+		- [HTTP call debugging](#HTTP-call-debugging)
+- [Quick Start](#Quick-Start)
+		- [Steps to set up:](#Steps-to-set-up)
+- [Demo Server](#Demo-Server)
+				- [Demo Username: admin](#Demo-Username-admin)
+				- [Demo Password: Admin123](#Demo-Password-Admin123)
+- [Releasing [Collaborators only]](#Releasing-Collaborators-only)
+- [Release Notes](#Release-Notes)
+        - [Version 2.8.0](#Version-280)
+		- [Version 2.7.4](#Version-274)
+		- [Summary:](#Summary)
+		- [Version 2.7.3](#Version-273)
+		- [Summary:](#Summary-1)
+		- [Version 2.7.2](#Version-272)
+		- [Summary:](#Summary-2)
+		- [Version 2.7.1](#Version-271)
+		- [Summary:](#Summary-3)
+		- [Version 2.7.0](#Version-270)
+		- [Summary:](#Summary-4)
+		- [Version 2.6.2](#Version-262)
+		- [Summary:](#Summary-5)
+		- [Version 2.6.1](#Version-261)
+		- [Summary:](#Summary-6)
+		- [Version 2.6.0](#Version-260)
+		- [Summary:](#Summary-7)
+		- [Version 2.5](#Version-25)
+		- [Summary:](#Summary-8)
+		- [Version 2.4](#Version-24)
+		- [Summary:](#Summary-9)
+- [Objectives](#Objectives)
+		- [Goals:](#Goals)
+- [User Manual](#User-Manual)
+- [License](#License)
+- [Resources](#Resources)
 
-- **Voice-to-Clinical Data** - Record encounters, get ICD-10 diagnoses, medications, vitals, and follow-up plans extracted automatically
-- **Ambient Scribing** - Capture full patient-doctor conversations and generate formatted clinical summaries with markdown rendering
-- **Omnilingual Offline ASR** - Meta Omnilingual ASR (1600+ languages) runs on-device via ONNX Runtime. Supports Zulu, Xhosa, Amharic, Chichewa, and all other target languages offline. 300M model (365 MB) for low-end devices, 1B model (1 GB) for higher accuracy
-- **On-Device LLM Extraction** - Qwen 3.5 runs entirely on-device via llama.cpp (built from source) with flash attention, Q8 KV cache, and on-device RAG retrieval; no internet required
-- **Smart Context Retrieval** - TF-IDF vector store indexes 300 ICD-10 codes and 515 formulary drugs, retrieves only relevant entries per transcript (80% context reduction)
-- **Battery-Aware Batched Inference** - Extraction queue processes multiple patient transcripts in a single model load; urgent cases (referrals/emergencies) bypass the queue for immediate processing
-- **Selectable Clinical Extraction** - Qwen 3.5 on-device or a selected Claude, OpenAI, or Gemini cloud model, with Regex fallback when model extraction is unavailable
-- **Offline-First Architecture** - SQLCipher-encrypted local database, works without any network connection
-- **SMS as Portable Health Record** - V4 binary encoding (92 bytes, 1 SMS) carries the current visit plus accumulated health history: chronic conditions, abnormal vitals, allergies, growth metrics, immunization records, and clinical status flags (HIV, TB, pregnancy, malaria, etc.). AES-256-GCM encrypted with optional PIN for shared-phone privacy
-- **Insurance Claims** - ICD-10 to CPT/HCPCS mapping, E/M level scoring (2021 MDM guidelines), SOAP note generation, PDF export
-- **Clinical Decision Support** - Drug-allergy checks, drug-drug interactions, dosage validation, vital sign alerts
-- **Multi-Station Workflow** - Reception, triage, consultation, pharmacy, and billing stations with patient queue management and role-based routing
-- **Facility Directory & Referrals** - Searchable facility directory with filtering by type, service, and province; integrated referral generation with urgency levels
-- **Peer-to-Peer Sync** - Same-facility bulk sync and cross-facility patient-scoped sync via Bluetooth/WiFi Direct, with automatic PIN stripping for privacy
-- **Growth Charts & Immunizations** - Pediatric growth tracking with WHO z-scores, immunization history, encoded in SMS health records
-- **Multi-Country Support** - South Africa (active), Ethiopia, Malawi (ready), Kenya, Nigeria, US, UK, India (planned)
+# Description
+The purpose of this project is to provide an OpenMRS 2.x client for Android devices. The app is designed to cover most of the functionality currently on the web application.
+The app communicates with OpenMRS instances using REST. It supports working offline (without network connection). The database on the device is encrypted and password protected to secure patient data.
+For more information on the client, visit https://wiki.openmrs.org/display/projects/OpenMRS+2.x+Android+Client
 
-## Architecture
+#### Key Features
+- Connect to OpenMRS server and sync all data
+- Register and Edit patients
+- Record Visits and Encounters
+- View patient data (Details, Diagnoses, Visits, and Vitals)
+- Offline access
 
-ChartLite is organized into 8 modules:
+# Screenshots
+![Login](http://i.imgur.com/zinrnCK.png) ![Dashboard](http://i.imgur.com/TLIwMoy.png) ![Register Patient](http://i.imgur.com/n7LaeKS.png)
 
-| Module | Directory | Purpose |
-|--------|-----------|---------|
-| ASR | `asr/` | Meta Omnilingual ASR (1600+ langs, ONNX CTC) + cloud fallback (Gemini, OpenAI, Deepgram) |
-| Clinical Extraction | `extraction/` | Qwen (on-device RAG) or a selected Claude/OpenAI/Gemini cloud model, plus Regex fallback |
-| Local Database | `database/` | Room + SQLCipher encrypted schema (17 entities, v15), FHIR R4 export on-demand |
-| SMS Health Record | `sms/` | V4 binary encode (92 bytes) with health history, growth, immunization + AES-256-GCM |
-| Clinical Decision Support | `cdss/` | Drug-allergy, drug-drug, dosage, vital alerts |
-| Patient ID | `patientid/` | 8-character base28 IDs (e.g., KFMT-4WRN) |
-| Billing | `billing/` | ICD-10 &rarr; CPT engine, SOAP notes, PDF export, SAMA tariffs |
-| Sync | `sync/` | Bluetooth/WiFi P2P + cross-facility sync + 3-tier connectivity |
+# GSoC 2017
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design documentation.
+The project has been selected as a candidate for Google Summer of Code 2017. Please visit the [Project Wiki Page](https://wiki.openmrs.org/display/projects/OpenMRS+Android+Client+Feature+Parity+and+Improvements+-+GSoC+2017) for more details.
 
-## Requirements
+The project was also a part of GSoC 2016, the details of which can be seen in the [GSoC_2016.md](GSoC_2016.md) file.
 
-- Android 8.0+ (SDK 26)
-- 3 GB RAM minimum (4 GB recommended for larger models)
-- ~365 MB storage for ASR model (Omnilingual 300M int8) + ~533 MB for on-device LLM (Qwen 3.5 0.8B Q4_K_M)
-- Microphone permission for voice recording
+# Development
+We use JIRA to track issues and monitor project development. Refer to this link to view all issues and project summary: [Android Client JIRA](https://issues.openmrs.org/browse/AC)
+To get started contributing, try working on [introductory issues](https://issues.openmrs.org/issues/?filter=17165) in JIRA and check out [OpenMRS Pull Request Tips](https://wiki.openmrs.org/display/docs/Pull+Request+Tips). 
+Also, before creating a pull request, please run code review tools (Lint) and all tests.
 
-## Quick Start
+### Code Style
+The coding conventions used by OpenMRS are outlined [here](https://wiki.openmrs.org/display/docs/Coding+Conventions).
 
-### Prerequisites
+### Model pattern
+We are following [Google's MVP sample](https://github.com/googlesamples/android-architecture/tree/todo-mvp) for this application's development.
 
-- [Android Studio](https://developer.android.com/studio) (Ladybug or later)
-- JDK 17 (bundled with Android Studio)
-- Android SDK 36
 
-### Build
+### HTTP call debugging
+In order to debug HTTP calls, we have integrated [Android Snooper](https://github.com/jainsahab/AndroidSnooper) (a GUI based open source library) to track network calls. To use Android snooper, all you have to do is shake your device and snooper will present list of network calls made by OpenMRS app.
 
-```bash
-git clone https://github.com/prismindanalytics/chartlite.git
-cd chartlite
+# Quick Start
 
-# Build debug APK
-./gradlew assembleDebug
+As of February 2016, this project has been migrated to gradle to work successfully with Android Studio. 
 
-# Run unit tests
-./gradlew testDebugUnitTest
+### Steps to set up:
+1. Fork the repository and clone your fork.
+2. From the Android Studio menu select File > New > Import Project. Alternatively, from the Welcome screen, select Import project.
+3. Navigate to the folder where you have cloned this repo and select the build.gradle file inside. Select "Import".
+4. Done! Wait for dependencies to load and download from Maven, then you're ready to go! 
+5. Make sure that you have the latest SDK and build tools downloaded, as we always build against the latest release.
 
-# Install on connected device
-./gradlew installDebug
-```
+[In-depth tutorial](https://github.com/codepath/android_guides/wiki/Getting-Started-with-Gradle)
 
-### Configuration
+Note:
+- If you are working behind a proxy, check [this](https://wiki.appcelerator.org/display/guides2/Using+Studio+From+Behind+a+Proxy) to get things working.
+- To start development on a local server, type http://10.0.2.2:8080/openmrs (for Android Studio AVD) or http://10.0.3.2:8080/openmrs (for Genymotion) as URL.
 
-1. **On-Device LLM**: Download the appropriate Qwen 3.5 model during setup or in Settings (533 MB for devices with <4 GB RAM, 1.28 GB for 4+ GB RAM). The RAG vector store indexes automatically on first launch.
+# Demo Server
 
-2. **Cloud Extraction (optional)**: In Settings, enter API keys for Claude, OpenAI, or Gemini to enable cloud-based extraction with automatic offline fallback.
+The demo test server dedicated to the client is (https://demo.openmrs.org/openmrs/).
 
-3. **Cloud ASR (optional)**: Select from Gemini Flash Lite (recommended for African accents), OpenAI gpt-4o Transcribe, or Deepgram Nova for higher-accuracy transcription when online.
+##### Demo Username: admin
+##### Demo Password: Admin123
 
-4. **SMS Health Record (optional)**: Configure Twilio credentials in Settings for encrypted SMS. Each SMS sent becomes a portable health record containing the patient's complete significant clinical history. Patients can set an optional PIN for shared-phone privacy.
+# Releasing [Collaborators only]
 
-5. **ASR Model (Omnilingual)**: Download Meta Omnilingual ASR in setup or Settings (365 MB for <4 GB RAM, 1 GB for 4+ GB RAM). Supports 1600+ languages offline. Models can also be sideloaded from USB/SD card for zero-connectivity deployments.
+We follow the sprint model for development. Read more about it here: [OpenMRS Sprints](https://wiki.openmrs.org/display/RES/Development+Sprints).
 
-## Screens
+To release the application, make sure to do these steps **in order**:
 
-ChartLite has 30 screens covering the full clinical workflow:
+1. Update the [version variable in build.gradle](https://github.com/openmrs/openmrs-contrib-android-client/blob/master/openmrs-client/build.gradle#L21) prior to the release.
+3. Update the [Release notes](#Release-Notes) section.
+4. Update the [release notes text file](https://github.com/openmrs/openmrs-contrib-android-client/blob/master/openmrs-client/src/main/play/release-notes/en-US/default.txt) to publish in the Play store. Ideally change the wording so that normal end users understand.
+5. Now commit with the title `Release <version number here>` to the master branch.
+6. Tag the commit, using the version as the tag name. Make sure CI is green!
+7. Go to [the releases page](https://github.com/openmrs/openmrs-contrib-android-client/releases) and click the [Draft a new release](https://github.com/openmrs/openmrs-contrib-android-client/releases/new) button. It will create a new version tag in the repository and build the app. The tag name will be used as the version number for this. Be sure to bump unfinished issues to the next due version.
+8. Go to [JIRA's releases page](https://issues.openmrs.org/projects/AC?selectedItem=com.atlassian.jira.jira-projects-plugin:release-page), click on the three-dots on the right, and hit **Release**.
+9. [Optional] Post a new Talk thread and describe what is changed or improved in the release.
 
-**Clinical Workflow**: Home, Patient Registration, Patient Search, Patient Summary (vitals trending, conditions, meds), Patient Timeline (encounter history with edit/PIN management), Encounter Recording (voice + vitals), Encounter Review (Summary / Claim / SOAP tabs)
+# Release Notes
 
-**Specialty**: Immunization Tracking, Growth Charts (WHO z-scores), Family Planning, Lab Orders, Appointments, Appointment Reminders, Referrals (integrated with facility directory), Clinical Protocols, Pharmacy & Stock Management
+### Version 2.8.0
+### Summary:
+1. Add Dark mode to the app
+2. Provider management: admins can now find, add, edit and delete providers
 
-**Facility & Sync**: Facility Dashboard (analytics, DHIS2 export), Facility Directory (searchable, filterable), Sync (P2P + cross-facility), DHIS2 Export
+### Version 2.7.4
+### Summary:
+1. Make UI more consistent and follow more of the material design specs
+2. Implement Initial Provider Management
+3. Remove redundant type cast
+4. Add Floating Action Button in patient's details tab
 
-**SMS & Records**: SMS Decrypt (read portable health records), SMS History
+<a name="version-2.7.3"></a>
+### Version 2.7.3
+### Summary:
+1. Remove Apache HTTP API Client library
+2. Patient now extends Person
+3. Make Search primary function for Find Patients
+4. Revamp Settings Page (new material design!)
+5. Integrated android snooper for debugging purpose
 
-**Admin**: Setup (onboarding wizard), Login, Lock Screen, Settings (AI, speech, operations, regions, admin), User Management, Extraction Queue, Queued Extraction Review
+<a name="version-2.7.2"></a>
+### Version 2.7.2
+### Summary:
+1. Added Kotlin dependency to app level build.gradle file
+2. Added release folder to gitignore
+3. Initialized SQLCipher, made app 64-bit compliant
+4. Changed Gradle to latest version
+5. Fixed Play Publisher not publishing to Play store
 
-## Project Structure
+<a name="version-2.7.1"></a>
+### Version 2.7.1
+### Summary:
+1. Fixed bug on showing/hiding the password during login
+2. Visit Notes can now correctly show details
+3. Use Codecov as the code coverage tool
+4. Add privacy policy link to Settings page
+5. Re-developed OpenMRSLogger - faster loading times
+6. Most buttons now follow the material design guideline
+7. User is now taken back to the completed form on clicking cancel during registration
+8. Replace country selection with a country picker
+9. Setup Android Room and create entities
+10. Add Contextual Action Bar in Synced Patients to delete multiple patients at once
 
-```
-app/src/main/kotlin/com/chartlite/app/
-  App.kt                    # Application root, dependency wiring
-  config/AppConfig.kt       # Encrypted credential storage
-  asr/                      # Speech recognition (ONNX + cloud fallback)
-  extraction/               # Clinical data extraction pipeline
-    ExtractionOrchestrator.kt   # 6-strategy fallback chain coordinator
-    ClinicalVectorStore.kt      # TF-IDF vector store for on-device RAG
-    ExtractionQueue.kt          # Batched inference queue with urgent path
-    QwenExtractionStrategy.kt   # On-device Qwen via llama.cpp + RAG
-    ClaudeExtractionStrategy.kt # Cloud Claude API extraction
-    OpenAIExtractionStrategy.kt # Cloud OpenAI extraction
-    GeminiExtractionStrategy.kt # Cloud Gemini extraction
-    GeminiNanoExtractionStrategy.kt # On-device Gemini Nano (AI Edge)
-    RegexExtractionStrategy.kt  # Keyword/regex fallback (always works)
-    ToonFormat.kt               # TOON parser (40-60% token savings vs JSON)
-    LlmModelManager.kt          # Model download + llama.cpp lifecycle
-    LlmResponseParser.kt        # TOON + JSON parsing + hallucination guard
-  database/                 # Room + SQLCipher (17 entities, v15 schema)
-  sms/                      # SMS portable health record
-    BinaryEncoder.kt            # V1-V4 encoding (V4: growth, immunization, status flags)
-    PatientHealthSummary.kt     # Aggregates chronic conditions + abnormal vitals
-    SMSEncryption.kt            # AES-256-GCM with PBKDF2 key derivation
-    SMSSender.kt                # Dual provider (Twilio + native SIM)
-  cdss/                     # Clinical decision support alerts
-  billing/                  # Claims, SOAP notes, PDF export, tariffs
-  patientid/                # Patient ID generation
-  sync/                     # Peer-to-peer + cross-facility sync
-  ui/screens/               # 30 Jetpack Compose screens
-  ui/components/            # Reusable components (MarkdownText, PinPad, etc.)
-app/src/main/assets/
-  formulary/za_formulary.json   # 515 South African drugs
-  icd10/phc_top300.json         # 300 primary healthcare ICD-10 codes
-llm/                        # Native llama.cpp JNI bridge module
-  src/main/cpp/chartlite_llm.cpp  # Flash attention, Q8 KV cache, batch threading
-```
+<a name="version-2.7.0"></a>
+### Version 2.7.0
+### Summary: 
+1. Implement RxJava in DAOs and migration to AndroidX
+2. Pick patient photo when registering
+3. Login form improved and doesn't require login locations when no locations are configured
+4. Add data validation when registering patients
+5. Encrypted the database with BCrypt, derived from username and password
+6. Show toasts when toggling sync button and fixed crash when updating non-synced patient
+7. Saving user input when device is rotated, or when app instance is lost
+8. Added a Privacy Policy 
+9. Renewed GitHub API Key
+10. Set a Custom Path to look for the Release APK
 
-## SMS as Portable Health Record
 
-Each SMS sent to a patient is a self-contained, encrypted health record. The patient stores only the latest SMS and it contains all significant clinical details from every visit. Any clinician can decrypt it with the patient's phone number, with an optional PIN for shared-phone scenarios.
+<a name="version-2.6.2"></a>
+### Version 2.6.2
+### Summary:
+1. Add patient picture 
+2. Bug Fixes
 
-**V4 wire format (92 bytes, 1 SMS):**
-- **Current encounter**: date, 3 diagnoses, 3 medications, vitals, allergies, follow-up
-- **Health history**: chronic conditions (ICD-10 codes seen in 2+ visits), most recent abnormal vitals with dates, cumulative allergy flags, total visit count
-- **Growth & immunization**: latest weight/height, WHO growth z-scores, up to 3 recent immunization records
-- **Clinical status flags** (16-bit): HIV, TB, pregnancy, syphilis, hepatitis B, malaria, anemia, sickle cell, and more
-- **Encryption**: AES-256-GCM (PBKDF2 key from phone number, optional phone+PIN mode)
+<a name="version-2.6.1"></a>
+### Version 2.6.1
+### Summary:
+1. Handle camera and storage  permissions manually
+2. Bug Fixes
 
-See the [SMS Health Record documentation](https://chartlite.health) for a detailed walkthrough.
+<a name="version-2.6.0"></a>
+### Version 2.6.0
+### Summary:
+1. Fixed patient selection when changing orientation
+2. More user-friendly register form
+3. Added unit tests
+4. Filter patients by given/middle/family names at the same time
+5. Get data from DB in background task
+6. Lint check to GitHub Pull Requests
 
-## Security
+<a name="version-2.5"></a>
+### Version 2.5
+### Summary:
+1. Log in offline
+2. Coded fields in forms
+3. Edit forms
+4. Edit patients
+5. Lots of bug fixes
 
-- **Forced admin setup** - First-use requires creating an admin account before any access
-- **Role-based access control (RBAC)** - 6 roles (Admin, Doctor, Nurse, Pharmacist, Community Health Worker, Registration Clerk) with per-route and per-station guards
-- **PIN authentication** - PBKDF2-hashed PINs with salt, lockout after 5 failed attempts (2-minute cooldown)
-- **Biometric authentication** - Optional fingerprint/face unlock
-- **SQLCipher encryption** - All local data encrypted at rest (AES-256)
-- **Encrypted credentials** - EncryptedSharedPreferences (AES-256-SIV + AES-256-GCM) for API keys and settings
-- **Audit logging** - All clinical and administrative actions logged with user, timestamp, and affected data
-- **Duplicate username prevention** - Enforced at both creation and facility-join flows
-- **Sync privacy** - Patient PINs automatically stripped from cross-facility sync payloads
+<a name="version-2.4"></a>
+### Version 2.4 
+### Summary: 
+1. Added merging patients registered offline
+2. Find Patient storyboard refactoring
+3. Fixed bugs
 
-## On-Device AI Pipeline
+# Objectives
 
-| Component | Model | Size | Purpose |
-|-----------|-------|------|---------|
-| ASR (low-end) | Omnilingual 300M int8 | 365 MB | 1600+ language speech recognition |
-| ASR (mid-range) | Omnilingual 1B int8 | 1.03 GB | Higher accuracy ASR |
-| ASR (English) | Moonshine Tiny/Base v2 | 43-140 MB | Lightweight English-specific |
-| LLM (low-end) | Qwen 3.5 0.8B Q4_K_M | 533 MB | Clinical extraction on 3 GB RAM |
-| LLM (mid-range) | Qwen 3.5 2B | 1.28 GB | Higher accuracy extraction |
-| RAG | TF-IDF vector store | In-memory | 300 ICD-10 + 515 drugs, cosine similarity retrieval |
+<a name="version-2.8"></a>
+### Version 2.8 (next release)
+### Goals: 
+1. Forgot Password
+2. Provider Module
+3. UI Improvements
+4. Analytics
 
-**Optimizations**: Flash attention, Q8_0 KV cache, configurable batch/generation threads, model auto-unload after 30s idle, batched inference queue (load model once for N patients).
 
-## Clinical Data
+# User Manual
+Check this link for the manual: [Version 2.x](https://wiki.openmrs.org/download/attachments/74252444/User%20Manual%202.0.pdf?version=1&modificationDate=1414759790000&api=v2)
 
-| Dataset | Size | Source |
-|---------|------|--------|
-| ICD-10 codes | 300 | WHO primary healthcare subset |
-| Formulary drugs | 515 | South Africa STG/EML (S1-S6 schedules) |
-| CPT mappings | 40+ | ICD-10 category &rarr; CPT |
-| E/M levels | 5 | 2021 MDM guidelines |
-| SAMA tariffs | ZAR + USD | South Africa medical aid rates |
-| Local language terms | Zulu, Xhosa, Amharic | Community health worker input |
+# License
+This project is licensed under the OpenMRS Public License, see the [copyright](copyright/copyright) file for details.
 
-## Contributing
-
-We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
-
-For security vulnerabilities, please see [SECURITY.md](SECURITY.md).
-
-## License
-
-This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
-
-## Acknowledgments
-
-- [llama.cpp](https://github.com/ggml-org/llama.cpp) - LLM inference engine, built from source for latest model support
-- [Meta Omnilingual ASR](https://huggingface.co/csukuangfj/sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-int8-2025-11-12) - 1600+ language speech recognition via sherpa-onnx ONNX export (Apache 2.0)
-- [ONNX Runtime](https://onnxruntime.ai/) - On-device speech recognition inference
-- [SQLCipher](https://www.zetetic.net/sqlcipher/) - Encrypted local database
-- South Africa National Department of Health - Standard Treatment Guidelines and Essential Medicines List
+# Resources
+- JIRA https://issues.openmrs.org/browse/AC/?selectedTab=com.atlassian.jira.jira-projects-plugin:summary-panel 
+- Sprint board https://issues.openmrs.org/secure/RapidBoard.jspa?rapidView=60
+- Dashboard https://issues.openmrs.org/secure/Dashboard.jspa?selectPageId=12851
+- CI https://travis-ci.org/openmrs/openmrs-contrib-android-client
+- Google Play https://play.google.com/store/apps/details?id=org.openmrs.mobile

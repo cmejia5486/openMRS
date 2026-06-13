@@ -1,0 +1,2 @@
+- Add Dark mode to the app
+- Provider management: admins can now find, add, edit and delete providers

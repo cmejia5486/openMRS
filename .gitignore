@@ -1,51 +1,45 @@
-# Build outputs
-/build/
-/app/build/
-**/build/
-**/.cxx/
+#gradle 
+import-summary.txt
 
-# IDE
-/.idea/
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.next
+release.properties
+
+#android project
+build/*
 *.iml
-local.properties
-
-# Gradle
-/.gradle/
+tests/*.iml
 .gradle/
+.idea/
+local.properties
+tests/bin/*
+bin/*
+tests/gen/*
+gen/*
+tests/out/*
+out/*
+/openmrs-client/build
+/openmrs-client/release
+/odkcollect/build
 
-# ASR / LLM models (too large for git)
-app/src/main/assets/models/*.onnx
-!app/src/main/assets/models/silero_vad.onnx
-*.gguf
+*.DS_Store
 
-# Signing keys
-*.keystore
-*.jks
-keystore.properties
+modules/support/appcompat/gen/*
+modules/support/appcompat/bin/*
+modules/support/appcompat/out/*
+modules/support/gridlayout/gen/*
+modules/support/gridlayout/bin/*
+modules/support/gridlayout/out/*
+modules/odk.collect/gen/*
+modules/odk.collect/bin/*
+modules/odk.collect/android/*
 
-# Secrets and environment
-*.env
-.env.*
-secrets.properties
+#git patches
+*.patch
 
-# Test and coverage reports
-**/test-results/
-**/coverage/
-*.exec
-
-# OS
-.DS_Store
-Thumbs.db
-*~
-.wrangler/
-ChartLite_Pitch_Deck.pptx
-
-# Internal/dev-only
-.claude/
-docs/
-ai/
-
-# Google service account keys
-worker/*.json
-!worker/package.json
-!worker/tsconfig.json
+# Eclipse files
+*.project
+*.classpath
+.settings/

@@ -1,3 +1,0 @@
-[submodule "external/MNN"]
-	path = external/MNN
-	url = https://github.com/alibaba/MNN.git
