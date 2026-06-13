@@ -14,6 +14,18 @@
 
     package org.openmrs.mobile.utilities;
 
+    import static junit.framework.Assert.assertFalse;
+    import static junit.framework.TestCase.assertTrue;
+    import static org.junit.Assert.assertEquals;
+    import static org.junit.Assert.assertNotSame;
+    import static org.junit.Assert.assertNull;
+    import static org.mockito.Mockito.when;
+
+    import java.text.SimpleDateFormat;
+    import java.util.Date;
+    import java.util.Locale;
+    import java.util.TimeZone;
+
     import android.content.res.Resources;
 
     import com.openmrs.android_sdk.utilities.DateUtils;
@@ -22,30 +34,18 @@
     import org.joda.time.DateTimeZone;
     import org.joda.time.format.DateTimeFormat;
     import org.joda.time.format.DateTimeFormatter;
+    import org.junit.AfterClass;
     import org.junit.Before;
+    import org.junit.BeforeClass;
     import org.junit.Rule;
     import org.junit.Test;
-    import org.junit.runner.RunWith;
     import org.mockito.Answers;
     import org.mockito.Mock;
+    import org.mockito.MockedStatic;
+    import org.mockito.Mockito;
     import org.openmrs.mobile.application.OpenMRS;
-    import org.powermock.api.mockito.PowerMockito;
     import org.powermock.core.classloader.annotations.PrepareForTest;
-    import org.powermock.modules.junit4.PowerMockRunner;
 
-    import java.text.SimpleDateFormat;
-    import java.util.Date;
-    import java.util.Locale;
-    import java.util.TimeZone;
-
-    import static junit.framework.Assert.assertFalse;
-    import static junit.framework.TestCase.assertTrue;
-    import static org.junit.Assert.assertEquals;
-    import static org.junit.Assert.assertNotSame;
-    import static org.junit.Assert.assertNull;
-    import static org.powermock.api.mockito.PowerMockito.when;
-
-    @RunWith(PowerMockRunner.class)
     @PrepareForTest({OpenMRS.class, Resources.class})
     public class DateUtilsTest {
         private static final String TEST_TIMEZONE;
@@ -123,12 +123,23 @@
 
         @Mock(answer = Answers.RETURNS_DEEP_STUBS)
         private OpenMRS openMRS;
+        private static MockedStatic<OpenMRS> OpenMRSMock;
+
         @Rule
         public TimeZoneRule timeZoneRule = new TimeZoneRule(TimeZone.getTimeZone("PST8PDT"));
 
+        @BeforeClass
+        public static void beforeClass() {
+            OpenMRSMock = Mockito.mockStatic(OpenMRS.class);
+        }
+
+        @AfterClass
+        public static void afterClass() {
+            OpenMRSMock.close();
+        }
+
         @Before
         public void setUp() {
-            PowerMockito.mockStatic(OpenMRS.class);
             when(OpenMRS.getInstance()).thenReturn(openMRS);
             Locale.setDefault(Locale.US);
             TimeZone.setDefault(TimeZone.getTimeZone(TEST_TIMEZONE));
