@@ -14,34 +14,35 @@
 
 package com.openmrs.android_sdk.library.api.workers.provider;
 
+import java.io.IOException;
+
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
+import retrofit2.Response;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
+import androidx.hilt.work.HiltWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.openmrs.android_sdk.R;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.api.RestApi;
-import com.openmrs.android_sdk.library.api.RestServiceBuilder;
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO;
-import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.models.Provider;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
-import java.io.IOException;
-
-import retrofit2.Response;
-
 /**
  * The type Update provider worker.
  */
+@HiltWorker
 public class UpdateProviderWorker extends Worker {
-    ProviderRoomDAO providerRoomDao;
-    RestApi restApi;
+    private final ProviderRoomDAO providerRoomDao;
+    private final RestApi restApi;
 
     /**
      * Instantiates a new Update provider worker.
@@ -49,10 +50,13 @@ public class UpdateProviderWorker extends Worker {
      * @param context      the context
      * @param workerParams the worker params
      */
-    public UpdateProviderWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+    @AssistedInject
+    public UpdateProviderWorker(@Assisted @NonNull Context context,
+                                @Assisted @NonNull WorkerParameters workerParams,
+                                ProviderRoomDAO providerRoomDao, RestApi restApi) {
         super(context, workerParams);
-        restApi = RestServiceBuilder.createService(RestApi.class);
-        providerRoomDao = AppDatabase.getDatabase(getApplicationContext()).providerRoomDAO();
+        this.providerRoomDao = providerRoomDao;
+        this.restApi = restApi;
     }
 
     @NonNull
@@ -69,7 +73,7 @@ public class UpdateProviderWorker extends Worker {
             if (updateProvider(restApi, provider)) {
                 new Handler(Looper.getMainLooper()).post(() -> {
                     ToastUtil.success(OpenmrsAndroid.getInstance().getString(R.string.edit_provider_success_msg));
-                    OpenmrsAndroid.getOpenMRSLogger().e(OpenmrsAndroid.getInstance().getString(R.string.edit_provider_success_msg));
+                    OpenmrsAndroid.getOpenMRSLogger().i(OpenmrsAndroid.getInstance().getString(R.string.edit_provider_success_msg));
                 });
                 return Result.success();
             } else {
@@ -81,7 +85,7 @@ public class UpdateProviderWorker extends Worker {
     private boolean updateProvider(RestApi restApi, Provider provider) {
         if (NetworkUtils.isOnline()) {
             try {
-                Response<Provider> response = restApi.UpdateProvider(provider.getUuid(), provider).execute();
+                Response<Provider> response = restApi.updateProvider(provider.getUuid(), provider).execute();
                 if (response.isSuccessful()) {
                     providerRoomDao.updateProviderByUuid(response.body().getDisplay(), provider.getId(), response.body().getPerson(), response.body().getUuid(),
                             response.body().getIdentifier());

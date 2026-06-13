@@ -11,7 +11,6 @@ The first step to starting to contribute to the Android Client is installing Git
 * [Download Git Bash for Linux/UNIX](https://git-scm.com/download/linux) 
 * [Download Github Desktop](https://desktop.github.com/)      
  
-
 ## Steps to set up:
 1. Fork the repository and clone your fork.
 2. From the Android Studio menu select `File` > `New` > `Import Project`. Alternatively, from the `Welcome screen`, select `Import project`.

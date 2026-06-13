@@ -14,6 +14,7 @@
     -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="org.openmrs.mobile">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -107,6 +108,7 @@
         <activity
             android:name=".activities.patientdashboard.PatientDashboardActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
 
             <!-- Parent activity meta-data to support 4.0 and lower -->
@@ -190,7 +192,7 @@
             android:name=".services.PatientService"
             android:enabled="true" />
         <service
-            android:name="com.openmrs.android_sdk.library.api.services.EncounterService"
+            android:name=".services.EncounterService"
             android:enabled="true" />
         <service
             android:name=".services.FormListService"
@@ -250,9 +252,10 @@
             android:configChanges="keyboardHidden|screenSize"
             android:label="@string/provider_manager"
             android:launchMode="singleTop"
+            android:parentActivityName=".activities.dashboard.DashboardActivity"
             android:theme="@style/AppThemeOrig" />
         <activity
-            android:name=".activities.providermanagerdashboard.addprovider.AddProviderActivity"
+            android:name=".activities.addeditprovider.AddEditProviderActivity"
             android:label="@string/title_provider_info"
             android:parentActivityName=".activities.providermanagerdashboard.ProviderManagerDashboardActivity"
             android:theme="@style/AppThemeOrig"
@@ -279,6 +282,11 @@
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
+
+        <provider
+            android:name="androidx.work.impl.WorkManagerInitializer"
+            android:authorities="${applicationId}.workmanager-init"
+            tools:node="remove"/>
     </application>
 
 </manifest>
