@@ -14,8 +14,9 @@
 
 package com.openmrs.android_sdk.library;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import android.os.AsyncTask;
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -25,13 +26,9 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
 
-import android.os.AsyncTask;
-import android.util.Log;
-
 /**
  * The type Open mrs logger.
  */
-@Singleton
 public class OpenMRSLogger {
     private static String mTAG = "OpenMRS";
     private static final boolean IS_DEBUGGING_ON = true;
@@ -48,7 +45,6 @@ public class OpenMRSLogger {
     /**
      * Instantiates a new Open mrs logger.
      */
-    @Inject
     public OpenMRSLogger() {
         logger = this;
         androidDefaultUEH = Thread.getDefaultUncaughtExceptionHandler();

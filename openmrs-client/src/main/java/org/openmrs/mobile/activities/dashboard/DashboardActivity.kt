@@ -18,11 +18,10 @@ import android.os.Bundle
 import android.os.Handler
 import androidx.navigation.fragment.NavHostFragment
 import com.openmrs.android_sdk.utilities.ToastUtil
-import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
 
-@AndroidEntryPoint
+
 class DashboardActivity : ACBaseActivity() {
 
     /*TODO: Permission handling to be coded later, moving to SDK 22 for now.
@@ -100,7 +99,9 @@ class DashboardActivity : ACBaseActivity() {
         super.onResume()
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.dashboard_nav_host_fragment) as NavHostFragment
         val dashboardFragment: DashboardFragment? = navHostFragment.childFragmentManager.primaryNavigationFragment as DashboardFragment?
-        dashboardFragment?.bindDrawableResources()
+        if (dashboardFragment != null) {
+            DashboardPresenter(dashboardFragment)
+        }
     }
 
     override fun onBackPressed() {

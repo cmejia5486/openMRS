@@ -15,11 +15,9 @@ package org.openmrs.mobile.activities.logs
 
 import android.os.Bundle
 import android.view.Menu
-import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
 
-@AndroidEntryPoint
 class LogsActivity : ACBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +37,8 @@ class LogsActivity : ACBaseActivity() {
             addFragmentToActivity(supportFragmentManager,
                     logsFragment, R.id.logsContentFragment)
         }
+        // Create the presenter
+        LogsPresenter(logsFragment, mOpenMRSLogger)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
