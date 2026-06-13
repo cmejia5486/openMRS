@@ -72,5 +72,14 @@
       "has_dynamic_session_evidence",
       "has_dynamic_http_traffic_detected"
     ]
+  },
+  "patched_rules": {
+    "privacy_trackers": {
+      "source": "MobSF trackers.trackers[] and concrete tracker SDK identifiers in source code",
+      "change": "Tracker flags are positive only when MobSF detected_trackers > 0 with concrete tracker entries, or when source code contains concrete known tracker SDK identifiers. total_trackers and appsec.total_trackers are MobSF signature database metadata and are ignored.",
+      "yes_when": "trackers.trackers[] contains entries matching tracker, crash reporting, or analytics categories, or source code contains concrete SDK identifiers such as FirebaseAnalytics, FirebaseCrashlytics, io.sentry, MixpanelAPI, Amplitude, or AppEventsLogger.",
+      "no_when": "MobSF tracker scan is available and detected_trackers == 0, and no concrete tracker SDK identifier is present in source code.",
+      "na_when": "MobSF static report and source code are both unavailable."
+    }
   }
 }

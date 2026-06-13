@@ -507,19 +507,42 @@ jobs:
           set -euo pipefail
 
           publish_dir="/mnt/data/artifact_publish/vision360-bundle"
-          mkdir -p "$publish_dir"
+          evidence_dir="$publish_dir/evidence-inputs"
+          mkdir -p "$publish_dir" "$evidence_dir"
 
           test -f /mnt/data/vision360_fingerprint.json
           test -f /mnt/data/vision360_output.json
+          test -f /mnt/data/vision360_trace.json
+          test -f /mnt/data/vision360_effective_config.json
 
           cp /mnt/data/vision360_fingerprint.json "$publish_dir/vision360_fingerprint.json"
           cp /mnt/data/vision360_output.json "$publish_dir/vision_360_output.json"
+          cp /mnt/data/vision360_trace.json "$publish_dir/vision360_trace.json"
+          cp /mnt/data/vision360_effective_config.json "$publish_dir/vision360_effective_config.json"
+
+          # Keep the normalized scanner inputs with the bundle for audit traceability.
+          # This prevents later reviews from depending only on the flattened fingerprint.
+          for artifact in \
+            mobsf-report.zip \
+            mobsf-dynamic-report.zip \
+            sast-findings.zip \
+            trivy-payload.zip \
+            openMRS.zip
+          do
+            if [ -f "/mnt/data/$artifact" ]; then
+              cp "/mnt/data/$artifact" "$evidence_dir/$artifact"
+            else
+              echo "[WARN] normalized input not found for publish bundle: $artifact"
+            fi
+          done
 
           test -f "$publish_dir/vision360_fingerprint.json"
           test -f "$publish_dir/vision_360_output.json"
+          test -f "$publish_dir/vision360_trace.json"
+          test -f "$publish_dir/vision360_effective_config.json"
 
-          echo "[ARTIFACT] vision360-bundle will publish only:"
-          ls -lah "$publish_dir"
+          echo "[ARTIFACT] vision360-bundle will publish:"
+          find "$publish_dir" -maxdepth 3 -type f -print -exec ls -lh {} \;
 
       - name: Upload VISION360 outputs
         uses: actions/upload-artifact@v6
@@ -529,3 +552,6 @@ jobs:
           path: |
             /mnt/data/artifact_publish/vision360-bundle/vision360_fingerprint.json
             /mnt/data/artifact_publish/vision360-bundle/vision_360_output.json
+            /mnt/data/artifact_publish/vision360-bundle/vision360_trace.json
+            /mnt/data/artifact_publish/vision360-bundle/vision360_effective_config.json
+            /mnt/data/artifact_publish/vision360-bundle/evidence-inputs/*.zip

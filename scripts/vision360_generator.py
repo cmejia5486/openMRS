@@ -143,13 +143,43 @@ def sort_paths_by_hints(paths: List[str], hints: List[str]) -> List[str]:
 # ZIP readers
 # ------------------------------------------------------------
 
+def _member_aliases(member_name: str) -> List[str]:
+    aliases = [member_name]
+    alias_map = {
+        "mobsf_results.json": ["mobsf-report.json", "mobsf_results.json"],
+        "mobsf_dynamic_results.json": ["mobsf-dynamic-report.json", "mobsf_dynamic_results.json"],
+        "trivy.json": ["trivy.json"],
+        "agent_payload.json": ["agent_payload.json"],
+        "merged.sarif": ["merged.sarif"],
+        "semgrep.sarif": ["semgrep.sarif"],
+    }
+    for item in alias_map.get(member_name, []):
+        if item not in aliases:
+            aliases.append(item)
+    return aliases
+
+
+def _read_zip_member_with_aliases(zip_path: Path, member_name: str) -> bytes | None:
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            names = zf.namelist()
+            names_norm = {n.replace("\\", "/").strip("/").lower(): n for n in names}
+            names_base = {os.path.basename(n.replace("\\", "/").strip("/").lower()): n for n in names}
+            for alias in _member_aliases(member_name):
+                key = alias.replace("\\", "/").strip("/").lower()
+                chosen = names_norm.get(key) or names_base.get(os.path.basename(key))
+                if chosen:
+                    return zf.read(chosen)
+    except Exception:
+        return None
+    return None
+
+
 def read_json_from_zip(zip_path: Path, member_name: str) -> Any:
     if not zip_path.exists():
         return {}
-    try:
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            raw = zf.read(member_name)
-    except Exception:
+    raw = _read_zip_member_with_aliases(zip_path, member_name)
+    if raw is None:
         return {}
     for enc in ("utf-8", "cp1252", "latin-1"):
         try:
@@ -228,11 +258,22 @@ def artifact_status(zip_path: Path, required_members: List[str] | None = None) -
         with zipfile.ZipFile(zip_path, "r") as zf:
             members = zf.namelist()
         members_norm = {m.replace("\\", "/").strip("/").lower() for m in members}
-        required_norm = [m.replace("\\", "/").strip("/").lower() for m in required_members]
+        members_base = {os.path.basename(m.replace("\\", "/").strip("/").lower()) for m in members}
+        missing = []
+        for required in required_members:
+            aliases = _member_aliases(required)
+            found = False
+            for alias in aliases:
+                key = alias.replace("\\", "/").strip("/").lower()
+                if key in members_norm or os.path.basename(key) in members_base:
+                    found = True
+                    break
+            if not found:
+                missing.append(required)
         status.update({
             "is_zip": True,
             "members_count": len(members),
-            "missing_required_members": [required_members[i] for i, m in enumerate(required_norm) if m not in members_norm],
+            "missing_required_members": missing,
         })
     except Exception as exc:
         status["error"] = f"{type(exc).__name__}: {exc}"
@@ -1924,14 +1965,81 @@ def _collect_sast_bucket_evidence(data: Dict[str, Any], bucket: str, max_hits: i
     return hits
 
 
+def _tracker_text_matches(item: Dict[str, Any], tokens: List[str]) -> bool:
+    blob = " ".join(str(item.get(k, "")) for k in ("name", "categories", "url", "network_signature", "code_signature")).lower()
+    return any(tok.lower() in blob for tok in tokens if tok)
+
+
+def _iter_mobsf_detected_trackers(mobsf_static: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Return trackers that MobSF actually detected in the APK.
+
+    MobSF reports both the number of trackers detected in the application and
+    the total size of its tracker signature database. The latter commonly
+    appears as ``total_trackers = 432`` and must not be interpreted as evidence
+    that the app contains trackers. This helper intentionally reads only the
+    explicit detected tracker list.
+    """
+    trackers_block = mobsf_static.get("trackers") if isinstance(mobsf_static, dict) else {}
+    if not isinstance(trackers_block, dict):
+        return []
+    detected_count = trackers_block.get("detected_trackers")
+    trackers = trackers_block.get("trackers")
+    if not isinstance(trackers, list) or not trackers:
+        return []
+    try:
+        if detected_count is not None and int(detected_count) <= 0:
+            return []
+    except Exception:
+        pass
+    out: List[Dict[str, Any]] = []
+    for item in trackers:
+        if isinstance(item, dict):
+            out.append(item)
+        elif isinstance(item, str) and item.strip():
+            out.append({"name": item.strip()})
+    return out
+
+
 def _collect_tracker_evidence(data: Dict[str, Any], tokens: List[str], rule_id: str, max_hits: int = 8) -> List[Dict[str, str]]:
+    """Collect privacy tracker evidence without false positives from MobSF metadata.
+
+    Positive MobSF evidence must come from trackers.trackers[], not from
+    total_trackers, appsec.total_trackers, generic log text, or the phrase
+    "Detecting Trackers". Optional source-code evidence is restricted to
+    known tracker SDK identifiers and is used only when source code is present.
+    """
     hits: List[Dict[str, str]] = []
     mobsf_static = data.get("mobsf_static") or {}
-    hits.extend(_collect_json_text_evidence("MobSF_STATIC", mobsf_static.get("trackers") or {}, tokens, rule_id, max_hits))
-    if len(hits) < max_hits:
-        hits.extend(_collect_json_text_evidence("MobSF_STATIC", mobsf_static, tokens + ["tracker"], rule_id, max_hits - len(hits)))
-    if len(hits) < max_hits:
-        hits.extend(_collect_source_evidence(data, [re.escape(t) for t in tokens], rule_id, max_hits - len(hits), runtime_only=False))
+    for idx, item in enumerate(_iter_mobsf_detected_trackers(mobsf_static)):
+        if not _tracker_text_matches(item, tokens):
+            continue
+        name = str(item.get("name") or "unknown tracker")
+        category = str(item.get("categories") or "")
+        url = str(item.get("url") or "")
+        excerpt = _compact_text(name, category, url)
+        hits.append(ev("MobSF_STATIC", f"mobsf_results.json:trackers.trackers[{idx}]", rule_id, excerpt))
+        if len(hits) >= max_hits:
+            return hits[:max_hits]
+
+    # Source fallback: use concrete SDK/package identifiers rather than generic words
+    # like "tracker" or "analytics", which create false positives in documentation.
+    sdk_patterns = []
+    for tok in tokens:
+        low = tok.lower().strip()
+        if low in {"firebase analytics", "google analytics", "analytics"}:
+            sdk_patterns.extend([r"FirebaseAnalytics", r"com\.google\.firebase\.analytics", r"google-services\.json"])
+        elif low in {"crashlytics", "crash reporting"}:
+            sdk_patterns.extend([r"FirebaseCrashlytics", r"com\.google\.firebase\.crashlytics", r"fabric\.io"])
+        elif low == "sentry":
+            sdk_patterns.extend([r"io\.sentry", r"Sentry\.init"])
+        elif low == "mixpanel":
+            sdk_patterns.extend([r"com\.mixpanel", r"MixpanelAPI"])
+        elif low == "amplitude":
+            sdk_patterns.extend([r"com\.amplitude", r"Amplitude"])
+        elif low == "facebook":
+            sdk_patterns.extend([r"com\.facebook\.appevents", r"AppEventsLogger"])
+    if sdk_patterns and len(hits) < max_hits:
+        hits.extend(_collect_source_evidence(data, sorted(set(sdk_patterns)), rule_id, max_hits - len(hits), runtime_only=True))
     return hits[:max_hits]
 
 
