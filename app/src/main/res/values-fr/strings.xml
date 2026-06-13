@@ -1,0 +1,1302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ChartLite</string>
+
+    <!-- Common -->
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="back">Retour</string>
+    <string name="close">Fermer</string>
+    <string name="search">Rechercher</string>
+    <string name="loading">Chargement…</string>
+    <string name="error">Erreur</string>
+    <string name="success">Succès</string>
+    <string name="confirm">Confirmer</string>
+    <string name="delete">Supprimer</string>
+    <string name="edit">Modifier</string>
+    <string name="add">Ajouter</string>
+    <string name="done">Terminé</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+    <string name="ok">OK</string>
+    <string name="none">Aucun</string>
+    <string name="status">Statut</string>
+
+    <!-- Home Screen -->
+    <string name="new_patient">Nouveau Patient</string>
+    <string name="find_patient">Chercher Patient</string>
+    <string name="dashboard">Tableau de Bord</string>
+    <string name="settings">Paramètres</string>
+    <string name="sync">Synchroniser</string>
+    <string name="read_sms">Lire SMS</string>
+    <string name="quick_actions">ACTIONS RAPIDES</string>
+    <string name="recent_encounters">CONSULTATIONS RÉCENTES</string>
+    <string name="stock">Stock</string>
+    <string name="protocols">Protocoles</string>
+    <string name="reminders">Rappels</string>
+    <string name="facilities">Établissements</string>
+    <string name="no_encounters_yet">Aucune consultation pour le moment</string>
+    <string name="no_encounters_subtitle">Appuyez sur \'Nouveau Patient\' pour enregistrer votre première consultation</string>
+    <string name="no_patients_waiting">Aucun patient en attente</string>
+    <string name="patients_will_appear">Les patients apparaîtront ici lorsqu\'ils seront envoyés à %1$s</string>
+    <string name="waiting">En attente</string>
+    <string name="in_queue">En file</string>
+    <string name="next_patient">Patient Suivant</string>
+    <string name="patients">Patients</string>
+    <string name="recent">Récent</string>
+    <string name="extraction_queue_title">File d\'Extraction</string>
+    <string name="queued_format">%1$d en file</string>
+    <string name="ready_format">%1$d prêts</string>
+    <string name="failed_format">%1$d échoués</string>
+    <string name="process_batch">Traiter le Lot</string>
+    <string name="open_queue">Ouvrir la File</string>
+    <string name="cancel_batch">Annuler</string>
+    <string name="batch_running">Extraction par Lot en Cours</string>
+    <string name="processing_queued">Traitement des notes en file\u2026</string>
+    <string name="queue_header_format">FILE %1$s</string>
+    <string name="admin_access_required_settings">Accès administrateur requis pour les Paramètres</string>
+    <string name="admin_access_required_sync">Accès administrateur requis pour la Synchronisation</string>
+    <string name="voice_first_subtitle">Documentation clinique par la voix</string>
+    <string name="offline_ready">Prêt hors ligne</string>
+    <string name="offline_not_ready">Non prêt hors ligne</string>
+    <string name="asr_error">Erreur ASR</string>
+    <string name="national_id">Numéro d\'identité nationale</string>
+    <string name="date_of_birth_format">Date de naissance (%1$s)</string>
+    <string name="date_format_hint">Format : %1$s</string>
+
+    <!-- Patient Registration -->
+    <string name="patient_registration">Inscription du Patient</string>
+    <string name="first_name">Prénom</string>
+    <string name="last_name">Nom</string>
+    <string name="date_of_birth">Date de Naissance</string>
+    <string name="gender">Sexe</string>
+    <string name="male">Masculin</string>
+    <string name="female">Féminin</string>
+    <string name="phone_number">Numéro de Téléphone</string>
+    <string name="address">Adresse</string>
+    <string name="register_patient">Inscrire le Patient</string>
+    <string name="patient_id">ID du Patient</string>
+
+    <!-- Encounter -->
+    <string name="encounter_record">Fiche de Consultation</string>
+    <string name="start_recording">Démarrer l\'Enregistrement</string>
+    <string name="stop_recording">Arrêter l\'Enregistrement</string>
+    <string name="save_encounter">Enregistrer la Consultation</string>
+    <string name="encounter_review">Revue de Consultation</string>
+    <string name="transcript">Transcription</string>
+    <string name="vitals">Signes Vitaux</string>
+    <string name="diagnoses">Diagnostics</string>
+    <string name="medications">Médicaments</string>
+    <string name="chief_complaint">Motif de Consultation</string>
+    <string name="follow_up">Suivi</string>
+    <string name="referral">Référence</string>
+
+    <!-- Lab Orders -->
+    <string name="lab_orders">Analyses de Laboratoire</string>
+    <string name="order_lab_test">Demander une Analyse</string>
+    <string name="test_name">Nom de l\'Analyse</string>
+    <string name="priority">Priorité</string>
+    <string name="routine">Routine</string>
+    <string name="urgent">Urgent</string>
+    <string name="stat">URGENT</string>
+    <string name="result">Résultat</string>
+    <string name="enter_result">Saisir le Résultat</string>
+    <string name="ordered">Commandé</string>
+    <string name="collected">Prélevé</string>
+    <string name="resulted">Résultat Reçu</string>
+    <string name="cancelled">Annulé</string>
+    <string name="pending">En Attente</string>
+    <string name="abnormal">Anormal</string>
+    <string name="normal">Normal</string>
+
+    <!-- Appointments -->
+    <string name="appointments">Rendez-vous</string>
+    <string name="schedule_appointment">Planifier un Rendez-vous</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="scheduled">Planifié</string>
+    <string name="checked_in">Enregistré</string>
+    <string name="in_progress">En Cours</string>
+    <string name="completed">Terminé</string>
+    <string name="no_show">Absent</string>
+    <string name="check_in">S\'Enregistrer</string>
+    <string name="start_visit">Commencer la Visite</string>
+    <string name="complete">Terminer</string>
+
+    <!-- Referrals -->
+    <string name="referrals">Références</string>
+    <string name="create_referral">Créer une Référence</string>
+    <string name="to_facility">Vers l\'Établissement</string>
+    <string name="reason">Motif</string>
+    <string name="urgency">Urgence</string>
+    <string name="emergency">Urgence</string>
+    <string name="accepted">Accepté</string>
+
+    <!-- Stock Management -->
+    <string name="stock_management">Gestion des Stocks</string>
+    <string name="add_stock_item">Ajouter un Article</string>
+    <string name="receive_stock">Réception de Stock</string>
+    <string name="dispense">Dispensation</string>
+    <string name="quantity">Quantité</string>
+    <string name="low_stock">Stock Faible</string>
+    <string name="out_of_stock">Rupture de Stock</string>
+    <string name="expiring_soon">Expire Bientôt</string>
+    <string name="drug_name">Nom du Médicament</string>
+    <string name="batch_number">Numéro de Lot</string>
+
+    <!-- Immunizations -->
+    <string name="immunizations">Vaccinations</string>
+    <string name="record_immunization">Enregistrer Vaccination</string>
+    <string name="vaccine">Vaccin</string>
+    <string name="dose">Dose</string>
+    <string name="next_dose_due">Prochaine Dose</string>
+    <string name="overdue">En Retard</string>
+    <string name="immunization_card">Carnet de Vaccination</string>
+
+    <!-- Family Planning -->
+    <string name="family_planning">Planification Familiale</string>
+    <string name="current_method">Méthode Actuelle</string>
+    <string name="record_visit">Enregistrer Visite</string>
+    <string name="next_follow_up">Prochain Suivi</string>
+
+    <!-- Growth Charts -->
+    <string name="growth_chart">Courbe de Croissance</string>
+    <string name="weight">Poids</string>
+    <string name="height">Taille</string>
+    <string name="head_circumference">Périmètre Crânien</string>
+    <string name="muac">PB</string>
+    <string name="z_score">Score-Z</string>
+    <string name="malnutrition_alert">Alerte Malnutrition</string>
+    <string name="severe_malnutrition">Malnutrition Sévère</string>
+    <string name="moderate_malnutrition">Malnutrition Modérée</string>
+
+    <!-- DHIS2 -->
+    <string name="dhis2_export">Export DHIS2</string>
+    <string name="dhis2_integration">Intégration DHIS2</string>
+    <string name="push_to_dhis2">Envoyer vers DHIS2</string>
+    <string name="preview_payload">Aperçu des Données</string>
+    <string name="test_connection">Tester la Connexion</string>
+    <string name="server_url">URL du Serveur</string>
+    <string name="connected">Connecté</string>
+
+    <!-- Settings -->
+    <string name="language_settings">Langue</string>
+    <string name="country">Pays</string>
+    <string name="user_management">Gestion des Utilisateurs</string>
+    <string name="auto_lock">Verrouillage Auto</string>
+    <string name="biometric">Biométrie</string>
+    <string name="about">À Propos</string>
+    <string name="settings_tab_essentials">Essentiels</string>
+    <string name="settings_tab_ai_speech">IA et Parole</string>
+    <string name="settings_tab_operations">Opérations</string>
+    <string name="settings_tab_regions">Régions</string>
+    <string name="settings_tab_admin">Admin</string>
+    <string name="settings_general">Général</string>
+    <string name="settings_asr_interface_lang">ASR et langue de l\'interface</string>
+    <string name="settings_formulary_clinical">Formulaire et données cliniques</string>
+    <string name="settings_speech_recognition">Reconnaissance Vocale</string>
+    <string name="settings_offline_mode">Mode Hors Ligne</string>
+    <string name="settings_offline_onnx">Utilisation de l\'ASR sur appareil (1600+ langues)</string>
+    <string name="settings_offline_google">Utilisation de Google en ligne (nécessite internet)</string>
+    <string name="settings_clinical_extraction">Extraction Clinique</string>
+    <string name="settings_note_processing">IA de Traitement des Notes</string>
+    <string name="settings_consultation_workflow">Flux de Traitement</string>
+    <string name="settings_recording">Enregistrement</string>
+    <string name="settings_max_recording">Durée Maximale d\'Enregistrement</string>
+    <string name="settings_minutes_format">%1$d minutes</string>
+    <string name="settings_audio_retention">Conservation Audio</string>
+    <string name="settings_delete_immediately">Supprimer immédiatement</string>
+    <string name="settings_days_format">%1$d jours</string>
+    <string name="settings_capture_mode">Mode de Capture par Défaut</string>
+    <string name="settings_ambient">Transcription Complète</string>
+    <string name="settings_ambient_desc">Idéal pour les conversations complètes patient-médecin.</string>
+    <string name="settings_snippet">Dictée Courte</string>
+    <string name="settings_snippet_desc">Idéal pour les dictées structurées courtes.</string>
+    <string name="settings_security">Sécurité</string>
+    <string name="settings_biometric_unlock">Déverrouillage Biométrique</string>
+    <string name="settings_biometric_subtitle">Utilisez l\'empreinte ou le visage pour déverrouiller</string>
+    <string name="settings_autolock_subtitle">%1$d minutes d\'inactivité</string>
+    <string name="settings_sms_referrals">Références par SMS</string>
+    <string name="settings_send_via_sim">Envoyer par SIM du téléphone</string>
+    <string name="settings_sim_active">Actif — utilise la carte SIM de votre téléphone.</string>
+    <string name="settings_sim_inactive">Inactif — Twilio est configuré ci-dessous</string>
+    <string name="settings_clinic_workflow">Flux de Travail Clinique</string>
+    <string name="settings_multi_station">Mode Multi-postes</string>
+    <string name="settings_multi_station_on">Les patients passent par les postes activés</string>
+    <string name="settings_multi_station_off">Mode solo — un seul praticien</string>
+    <string name="settings_active_stations">Postes Actifs :</string>
+    <string name="settings_stations_hint">Activez uniquement les postes utilisés par votre établissement. Une personne peut basculer entre les postes activés.</string>
+    <string name="settings_switch_region">Changer de Région</string>
+    <string name="settings_show_regions">Afficher les régions disponibles</string>
+    <string name="settings_hide_regions">Masquer les options de région</string>
+    <string name="settings_administration">Administration</string>
+    <string name="settings_user_mgmt_subtitle">Créer, modifier et gérer les comptes utilisateurs</string>
+    <string name="settings_facility_qr">Afficher le QR de l\'Établissement</string>
+    <string name="settings_facility_qr_subtitle">Nécessite le PIN Admin, puis affiche le QR pour rejoindre un nouveau téléphone</string>
+    <string name="settings_provider">Praticien</string>
+    <string name="settings_facility">Établissement</string>
+    <string name="settings_version">Version 1.0.0</string>
+    <string name="settings_change_country">Changer de Pays ?</string>
+    <string name="settings_change">Changer</string>
+
+    <!-- Auth -->
+    <string name="login">Connexion</string>
+    <string name="logout">Déconnexion</string>
+    <string name="enter_pin">Saisir le Code PIN</string>
+    <string name="pin_incorrect">Code PIN incorrect</string>
+    <string name="select_user">Sélectionner l\'Utilisateur</string>
+
+    <!-- PDF / SOAP -->
+    <string name="export_pdf">Exporter PDF</string>
+    <string name="soap_note">Note SOAP</string>
+    <string name="share">Partager</string>
+    <string name="generated_by_chartlite">Généré par ChartLite v1.0</string>
+
+    <!-- Pharmacy -->
+    <string name="pharmacy">Pharmacie</string>
+    <string name="dispense_medications">Distribuer les Médicaments</string>
+
+    <!-- Dashboard -->
+    <string name="facility_dashboard">Tableau de Bord</string>
+    <string name="encounters_today">Consultations Aujourd\'hui</string>
+    <string name="encounters_week">Cette Semaine</string>
+    <string name="encounters_month">Ce Mois</string>
+    <string name="top_diagnoses">Principaux Diagnostics</string>
+    <string name="medications_prescribed">Médicaments Prescrits</string>
+    <string name="disease_burden">Charge de Morbidité</string>
+
+    <!-- Patient Registration (extended) -->
+    <string name="discard_changes">Abandonner les Modifications ?</string>
+    <string name="discard_changes_body">Vous avez des données patient non enregistrées. Êtes-vous sûr de vouloir revenir en arrière ?</string>
+    <string name="discard">Abandonner</string>
+    <string name="link_existing_patient">Lier un Patient Existant</string>
+    <string name="register_new">Nouveau</string>
+    <string name="link_existing">Lier Existant</string>
+    <string name="link_existing_instruction">Saisissez l\'ID ChartLite du patient depuis sa carte, un SMS ou un autre établissement.</string>
+    <string name="patient_id_label">ID du Patient (ex. KFMT-4WRN)</string>
+    <string name="invalid_patient_id">Format d\'ID patient invalide</string>
+    <string name="patient_not_in_local_db">Patient absent de la base de données locale. Remplissez les informations ci-dessous pour l\'inscrire avec cet ID.</string>
+    <string name="look_up_link">Rechercher &amp; Lier</string>
+    <string name="listening_say_details">Écoute en cours… dites les informations du patient</string>
+    <string name="voice_extract_failed">Impossible d\'extraire les informations du patient. Veuillez réessayer ou saisir manuellement.</string>
+    <string name="no_speech_detected">Aucune parole détectée. Veuillez réessayer.</string>
+    <string name="stop">Arrêter</string>
+    <string name="preparing_voice_model">Préparation du Modèle Vocal…</string>
+    <string name="voice_registration">Inscription Vocale</string>
+    <string name="please_wait_before_speaking">Veuillez patienter quelques secondes avant de parler.</string>
+    <string name="voice_example">Dites : « Nom Jean Dupont, âge 45 ans, masculin, téléphone 072 123 4567, allergique à la pénicilline »</string>
+    <string name="voice_input">Saisie vocale</string>
+    <string name="preparing">Préparation…</string>
+    <string name="speak_patient_details">Dicter les Informations du Patient</string>
+    <string name="voice_filled_fields">La voix a rempli %1$d champ(s) — veuillez vérifier ci-dessous</string>
+    <string name="personal_information">Informations Personnelles</string>
+    <string name="first_name_required">Prénom *</string>
+    <string name="last_name_required">Nom *</string>
+    <string name="dob_format_label">DDN (%1$s)</string>
+    <string name="or">ou</string>
+    <string name="age_years">Âge (ans)</string>
+    <string name="age_range">0–150</string>
+    <string name="contact_details">Coordonnées</string>
+    <string name="national_id_optional">%1$s (Facultatif)</string>
+    <string name="phone_optional">Numéro de Téléphone (Facultatif)</string>
+    <string name="phone_enables_sms">Permet l\'envoi de dossiers cliniques chiffrés par SMS au patient</string>
+    <string name="optional_pin">PIN Facultatif (téléphone partagé)</string>
+    <string name="pin_shared_phone_hint">Pour les patients partageant un téléphone avec leur famille</string>
+    <string name="clinical">Clinique</string>
+    <string name="known_allergies">Allergies Connues</string>
+    <string name="allergies_hint">Séparées par des virgules (ex. pénicilline, sulfamides)</string>
+    <string name="consent_checkbox">Le patient consent à la collecte et au stockage de ses données</string>
+    <string name="done_patient_queued">Terminé — Patient en File d\'Attente pour le Triage</string>
+    <string name="start_encounter">Démarrer la Consultation</string>
+    <string name="voice">voix</string>
+
+    <!-- Auth / Login (extended) -->
+    <string name="sign_in_to_continue">Connectez-vous pour continuer</string>
+    <string name="select_your_account">Sélectionnez votre compte</string>
+    <string name="no_users_found">Aucun utilisateur trouvé pour cet établissement.\nDemandez un code d\'accès à votre administrateur, ou contactez un responsable.</string>
+    <string name="join_facility">Rejoindre l\'Établissement</string>
+    <string name="enter_your_pin">Saisissez votre PIN</string>
+    <string name="switch_user">Changer d\'Utilisateur</string>
+    <string name="invalid_or_expired_code">Code invalide ou expiré</string>
+    <string name="invalid_qr_code">Code QR invalide</string>
+    <string name="your_details">Vos Informations</string>
+    <string name="create_pin">Créer un PIN</string>
+    <string name="scan_qr_instruction">Scannez le code QR de votre administrateur, ou saisissez le code à 6 chiffres manuellement.</string>
+    <string name="scan_qr_prompt">Scannez le QR du code d\'accès de votre administrateur</string>
+    <string name="scan_qr_code">Scanner le Code QR</string>
+    <string name="or_enter_code">ou saisir le code</string>
+    <string name="join_code">Code d\'Accès</string>
+    <string name="join_code_placeholder">000000</string>
+    <string name="your_full_name">Votre Nom Complet</string>
+    <string name="username">Nom d\'utilisateur</string>
+    <string name="username_hint">Lettres, chiffres et points uniquement</string>
+    <string name="pin_label">PIN (4–6 chiffres)</string>
+    <string name="confirm_pin">Confirmer le PIN</string>
+    <string name="pins_dont_match">Les PIN ne correspondent pas</string>
+    <string name="next">Suivant</string>
+    <string name="username_already_taken">Nom d\'utilisateur déjà pris</string>
+    <string name="username_exists_format">Le nom d\'utilisateur \'%1$s\' existe déjà</string>
+    <string name="create_account">Créer un Compte</string>
+    <string name="keep_editing">Continuer la Modification</string>
+
+    <!-- Setup Screen -->
+    <string name="setup_welcome">Bienvenue sur ChartLite</string>
+    <string name="setup_welcome_subtitle">Documentation clinique vocale pour les praticiens de soins primaires.</string>
+    <string name="setup_create_new_facility">Créer un Nouvel Établissement</string>
+    <string name="setup_join_existing_facility">Rejoindre un Établissement Existant</string>
+    <string name="setup_select_country">Sélectionnez Votre Pays</string>
+    <string name="setup_provider_details">Informations du Praticien</string>
+    <string name="setup_full_name">Nom Complet</string>
+    <string name="setup_qualification">Qualification (ex. Médecin, Officier Clinique, Infirmier)</string>
+    <string name="setup_facility_details">Informations de l\'Établissement</string>
+    <string name="setup_create_new">Créer un nouvel établissement</string>
+    <string name="setup_join_existing">Rejoindre un établissement existant</string>
+    <string name="setup_facility_name">Nom de l\'Établissement</string>
+    <string name="setup_location_address">Localisation / Adresse</string>
+    <string name="setup_join_instruction">Rejoindre lie ce téléphone à un établissement existant. Scannez un QR d\'invitation admin pour recevoir votre rôle attribué.</string>
+    <string name="setup_existing_facility_id">ID de l\'Établissement Existant</string>
+    <string name="setup_scan_invitation_qr">Scanner le QR d\'Invitation</string>
+    <string name="setup_facility_name_optional">Nom de l\'Établissement (facultatif)</string>
+    <string name="setup_set_your_pin">Définir Votre PIN</string>
+    <string name="setup_pin_instruction">Vous utiliserez ce PIN pour vous connecter sur cet appareil.</string>
+    <string name="setup_joining_as">Inscription en tant que : %1$s</string>
+    <string name="setup_ai_setup">Configuration IA</string>
+    <string name="setup_speech_recognition">Reconnaissance Vocale</string>
+    <string name="setup_on_device">Sur l\'Appareil</string>
+    <string name="setup_on_device_desc">Fonctionne hors ligne. Nécessite le téléchargement du modèle.</string>
+    <string name="setup_google_speech">Google Speech</string>
+    <string name="setup_google_speech_desc">Utilise les services Google. Nécessite internet.</string>
+    <string name="setup_cloud_asr">ASR Cloud</string>
+    <string name="setup_cloud_asr_desc">Meilleure précision. Nécessite internet.</string>
+    <string name="setup_download_speech_model">Télécharger le Modèle Vocal</string>
+    <string name="setup_downloading_progress">Téléchargement : %1$s / %2$s Mo</string>
+    <string name="setup_downloading">Téléchargement…</string>
+    <string name="setup_verifying_download">Vérification du téléchargement…</string>
+    <string name="setup_speech_model_ready">Modèle vocal prêt</string>
+    <string name="setup_resume_download">Reprendre le Téléchargement</string>
+    <string name="setup_retry">Réessayer</string>
+    <string name="setup_import_model_folder">Importer le Dossier du Modèle</string>
+    <string name="setup_import_onnx">Importer ONNX</string>
+    <string name="setup_import_tokens">Importer tokens.txt</string>
+    <string name="setup_clinical_note_ai">IA de Notes Cliniques</string>
+    <string name="setup_ai_instruction">Comment les transcriptions doivent-elles être transformées en notes cliniques structurées ?</string>
+    <string name="setup_cloud_ai">IA Cloud</string>
+    <string name="setup_cloud_ai_desc">Meilleure précision. Nécessite internet.</string>
+    <string name="setup_on_device_ai_desc">Fonctionne entièrement hors ligne.</string>
+    <string name="setup_auto">Auto</string>
+    <string name="setup_auto_desc">Cloud si en ligne, sur l\'appareil en secours.</string>
+    <string name="setup_claude_api_key">Clé API Claude</string>
+    <string name="setup_claude_api_placeholder">sk-ant-…</string>
+    <string name="setup_claude_api_hint">Obtenez une clé sur console.anthropic.com</string>
+    <string name="setup_on_device_model">Modèle sur l\'Appareil</string>
+    <string name="setup_download_model_format">Télécharger %1$s</string>
+    <string name="setup_downloading_size">Téléchargement : %1$s Mo</string>
+    <string name="setup_model_ready_format">%1$s prêt</string>
+    <string name="setup_import_gguf">Importer GGUF</string>
+    <string name="setup_complete_setup">Terminer la Configuration</string>
+    <string name="setup_offline_models_warning">Modèles hors ligne pas encore téléchargés</string>
+    <string name="setup_offline_asr_needed">Modèle ASR nécessaire pour la voix hors ligne. </string>
+    <string name="setup_offline_llm_needed">Modèle Qwen nécessaire pour l\'extraction de notes sur l\'appareil. </string>
+    <string name="setup_offline_fallback">Vous pouvez terminer la configuration — l\'application utilisera le cloud/Google en secours jusqu\'au téléchargement des modèles.</string>
+    <string name="setup_recommended_format">%1$s (%2$d Mo) — Recommandé</string>
+    <string name="setup_note_processing">Traitement des Notes</string>
+    <string name="setup_immediate">Traiter immédiatement</string>
+    <string name="setup_batch">Mettre en file d\'attente</string>
+    <string name="setup_recording_mode">Mode d\'Enregistrement par Défaut</string>
+
+    <!-- Missing translations added below -->
+
+    <!-- Common (missing) -->
+    <string name="required">Requis</string>
+    <string name="must_be_valid_url">Doit être une URL valide</string>
+
+    <!-- Lab Orders (extended) -->
+    <string name="new_order">Nouvelle Demande</string>
+    <string name="no_lab_orders_yet">Aucune analyse de laboratoire</string>
+    <string name="tap_plus_to_create_order">Appuyez sur + pour créer une demande</string>
+    <string name="priority_format">Priorité : %1$s</string>
+    <string name="ordered_format">Commandé : %1$s</string>
+    <string name="result_format">Résultat : %1$s</string>
+    <string name="result_with_unit_format">Résultat : %1$s %2$s</string>
+    <string name="reference_format">Référence : %1$s</string>
+    <string name="abnormal_label">ANORMAL</string>
+    <string name="mark_collected">Marquer Prélevé</string>
+    <string name="search_tests">Rechercher des analyses</string>
+    <string name="selected_test_format">Sélectionné : %1$s (%2$s)</string>
+    <string name="order">Demander</string>
+    <string name="enter_result_format">Saisir le Résultat : %1$s</string>
+    <string name="result_value">Valeur du Résultat</string>
+    <string name="unit_optional">Unité (facultatif)</string>
+    <string name="reference_range_optional">Plage de Référence (facultatif)</string>
+    <string name="abnormal_result">Résultat Anormal</string>
+    <string name="save_result">Enregistrer le Résultat</string>
+
+    <!-- Stock Management (extended) -->
+    <string name="out_of_stock_label">RUPTURE DE STOCK</string>
+    <string name="all">Tout</string>
+    <string name="expiring">Expire bientôt</string>
+    <string name="no_stock_items">Aucun article en stock</string>
+    <string name="tap_plus_to_add_inventory">Appuyez sur + pour ajouter un article</string>
+    <string name="low_stock_reorder_format">Stock faible (seuil de réapprovisionnement : %1$d)</string>
+    <string name="batch_format">Lot : %1$s</string>
+    <string name="expires_format">Expire : %1$s</string>
+    <string name="receive">Réceptionner</string>
+    <string name="drug_code">Code du Médicament</string>
+    <string name="initial_quantity">Quantité Initiale</string>
+    <string name="reorder_level">Seuil de Réapprovisionnement</string>
+    <string name="unit">Unité</string>
+    <string name="batch_number_optional">N° de Lot (facultatif)</string>
+    <string name="receive_drug_format">Réceptionner : %1$s</string>
+    <string name="current_stock_format">Stock actuel : %1$d %2$s</string>
+    <string name="quantity_received">Quantité Reçue</string>
+    <string name="notes_optional">Notes (facultatif)</string>
+
+    <!-- DHIS2 (extended) -->
+    <string name="dhis2_subtitle">Intégration pour le rapportage sanitaire national</string>
+    <string name="preview">Aperçu</string>
+    <string name="server_url_placeholder">https://dhis2.example.org</string>
+    <string name="connection_failed_format">Connexion échouée : %1$s</string>
+    <string name="export_summary">Résumé de l\'Export</string>
+    <string name="period_format">Période : %1$s</string>
+    <string name="encounters">Consultations</string>
+    <string name="lab_orders_label">Analyses de Laboratoire</string>
+    <string name="server_configuration">Configuration du Serveur</string>
+    <string name="hide">Masquer</string>
+    <string name="organisation_unit_id">ID de l\'Unité d\'Organisation</string>
+    <string name="org_unit_placeholder">ex. O6uvpzGd5pu</string>
+    <string name="password">Mot de Passe</string>
+    <string name="configuration_saved">Configuration enregistrée</string>
+    <string name="export_actions">Actions d\'Export</string>
+    <string name="export_success_format">Succès ! Importés : %1$d, Mis à jour : %2$d, Ignorés : %3$d</string>
+    <string name="export_failed_format">Export échoué : %1$s</string>
+    <string name="about_dhis2_integration">À propos de l\'intégration DHIS2</string>
+    <string name="dhis2_description">DHIS2 (District Health Information Software) est utilisé par les ministères de la Santé dans plus de 100 pays pour le rapportage sanitaire national. Cette intégration transmet les indicateurs mensuels agrégés de votre établissement à l\'instance DHIS2 nationale.</string>
+    <string name="dhis2_supported">Pris en charge : dataValueSets (agrégé), événements tracker (dossiers individuels)</string>
+    <string name="dhis2_payload_preview">Aperçu du Payload DHIS2</string>
+    <string name="server_label_format">Serveur : %1$s</string>
+    <string name="org_unit_label_format">Unité d\'Org. : %1$s</string>
+
+    <!-- Dashboard (extended) -->
+    <string name="dashboard_subtitle">Généré automatiquement à partir des consultations cliniques</string>
+    <string name="disease_burden_icd10">Charge de Morbidité par Chapitre ICD-10</string>
+    <string name="total">Total</string>
+    <string name="registered">enregistrés</string>
+    <string name="active">actifs</string>
+    <string name="providers">Praticiens</string>
+    <string name="no_encounters_recorded">Aucune consultation enregistrée</string>
+    <string name="no_medications_recorded">Aucun médicament enregistré</string>
+    <string name="no_diagnoses_recorded">Aucun diagnostic enregistré</string>
+
+    <!-- Extraction Queue -->
+    <string name="extraction_queue">File d\'Extraction</string>
+    <string name="batch_extraction_running">Extraction par Lot en Cours</string>
+    <string name="batch_extraction_subtitle">Les transcriptions en file sont en cours de traitement. Le modèle de notes reste chargé pour un traitement plus efficace du lot.</string>
+    <string name="queue_status_format">%1$d en file \u2022 %2$d prêts%3$s. Le traitement par lot charge le modèle une seule fois pour tous les patients.</string>
+    <string name="failed_suffix_format"> \u2022 %1$d échoués</string>
+    <string name="process_queue">Traiter la File</string>
+
+    <!-- DHIS2 Export Screen -->
+    <string name="dhis2_export_description">Exportez les données de l\'établissement vers DHIS2 pour le rapportage sanitaire national. L\'aperçu affiche le payload dataValueSets exact.</string>
+    <string name="dhis2_period_format">Période : %1$s \u00B7 %2$d consultations \u00B7 %3$d types de diagnostics</string>
+    <string name="preview_dhis2_payload">Aperçu du Payload DHIS2</string>
+    <string name="dhis2_data_value_sets">DHIS2 dataValueSets</string>
+    <string name="dhis2_post_description">Ce payload serait envoyé par POST à /api/dataValueSets sur votre instance DHIS2.</string>
+    <string name="dhis2_payload_copied">Payload DHIS2 copié</string>
+    <string name="copy">Copier</string>
+
+    <!-- Encounter Review -->
+    <string name="review_tab_summary">Résumé</string>
+    <string name="review_tab_claim_preview">Aperçu de Demande</string>
+    <string name="review_tab_soap_note">Note SOAP</string>
+    <string name="patient_id_format">Patient : %1$s</string>
+    <string name="unknown_date">Date inconnue</string>
+    <string name="sms_sent">SMS Envoyé</string>
+    <string name="sms_pending">SMS en Attente</string>
+    <string name="sms_failed">Échec du SMS</string>
+    <string name="sms_sent_description">Résumé clinique chiffré envoyé au patient</string>
+    <string name="sms_pending_description">Le SMS chiffré est en cours d\'envoi au patient…</string>
+    <string name="sms_failed_description">L\'envoi du SMS a échoué — le patient n\'a pas été notifié</string>
+    <string name="suggested_diagnoses">Diagnostics Suggérés</string>
+    <string name="suggested_diagnoses_hint">Appuyez sur + pour ajouter aux diagnostics confirmés de cette consultation.</string>
+    <string name="add_diagnosis">Ajouter un diagnostic</string>
+    <string name="exam_findings">Résultats de l\'Examen</string>
+    <string name="investigations">Investigations</string>
+    <string name="clinical_plan">Plan Clinique</string>
+    <string name="return_in_days_format">Retour dans %1$d jours</string>
+    <string name="refer_to_format">Référer à : %1$s</string>
+    <string name="refer_to_specialty_format">Référer à : %1$s (%2$s)</string>
+    <string name="urgency_format">Urgence : %1$s</string>
+    <string name="social_history">Antécédents Sociaux</string>
+    <string name="clinical_notes">Notes Cliniques</string>
+    <string name="allergies">Allergies</string>
+
+    <!-- Insurance Claim Preview -->
+    <string name="insurance_claim_preview">Aperçu de la Demande d\'Assurance</string>
+    <string name="claim_id_format">ID de Demande : %1$s</string>
+    <string name="em_level_format">Niveau E/M %1$d</string>
+    <string name="patient_label">Patient</string>
+    <string name="payer_type">Type de Payeur</string>
+    <string name="icd10_diagnosis_codes">Codes de Diagnostic ICD-10</string>
+    <string name="no_diagnoses_claim_warning">Aucun diagnostic enregistré — la demande nécessite au moins un code ICD-10.</string>
+    <string name="cpt_procedure_codes">Codes de Procédure CPT</string>
+    <string name="cpt_header">CPT</string>
+    <string name="description_header">Description</string>
+    <string name="zar_header">ZAR</string>
+    <string name="total_label">TOTAL</string>
+    <string name="how_this_works">Comment ça Fonctionne</string>
+    <string name="claim_mapping_explanation">ChartLite associe automatiquement vos diagnostics ICD-10 aux codes de procédure CPT les plus courants et calcule les tarifs en utilisant les références SAMA (South African Medical Association). En production, cela s\'intègre au barème de votre assurance maladie pour des montants de remboursement précis.</string>
+    <string name="preview_837p_submission">Aperçu de la Soumission 837P</string>
+    <string name="electronic_claim_837p">Demande Électronique 837P</string>
+    <string name="edi_payload_description">Ceci est le payload X12N v5010A1 qui serait transmis à l\'assurance/payeur via EDI.</string>
+    <string name="claim_837p_copied">Demande 837P copiée</string>
+    <string name="claim_copied">Demande copiée dans le presse-papiers</string>
+    <string name="copy_claim_as_text">Copier la Demande en Texte</string>
+
+    <!-- SOAP Note -->
+    <string name="soap_note_generated">Note SOAP Générée</string>
+    <string name="soap_note_word_count_format">%1$d mots · Générée à partir de la consultation vocale</string>
+    <string name="subjective">Subjectif</string>
+    <string name="objective">Objectif</string>
+    <string name="assessment">Évaluation</string>
+    <string name="plan">Plan</string>
+    <string name="soap_note_copied">Note SOAP copiée dans le presse-papiers</string>
+    <string name="copy_full_soap_note">Copier la Note SOAP Complète</string>
+    <string name="export_as_pdf">Exporter en PDF</string>
+    <string name="cloud_enhanced_notes">Notes Améliorées par le Cloud (Tier 3)</string>
+    <string name="cloud_enhanced_notes_desc">Lorsque connecté à internet, ChartLite peut enrichir les notes SOAP avec des modèles de langage clinique — générant des diagnostics différentiels, des justifications thérapeutiques fondées sur les preuves et des scores de confiance pour le codage ICD-10.</string>
+
+    <!-- Pharmacy Order -->
+    <string name="pharmacy_order">Ordonnance Pharmacie</string>
+    <string name="prescription_copied">Ordonnance copiée</string>
+    <string name="copy_rx">Copier Rx</string>
+    <string name="send_to_pharmacy">Envoyer à la Pharmacie</string>
+    <string name="fhir_medication_request">FHIR MedicationRequest</string>
+    <string name="fhir_payload_description">Ce bundle FHIR R4 serait envoyé par POST au point d\'accès MedicationRequest de la pharmacie.</string>
+    <string name="fhir_payload_copied">Payload FHIR copié</string>
+    <string name="send_claim">Envoyer la demande</string>
+    <string name="copy_soap_note">Copier la note SOAP</string>
+    <string name="copy_claim">Copier la demande</string>
+    <string name="copy_prescription">Copier l\'ordonnance</string>
+    <string name="send_to_pharmacy_icon">Envoyer à la pharmacie</string>
+    <string name="suggested_label">Suggéré</string>
+
+    <!-- Encounter Record Screen -->
+    <string name="discard_recording_title">Abandonner l\'Enregistrement ?</string>
+    <string name="discard_snippets_format">Vous avez %1$d extrait(s) capturé(s). Êtes-vous sûr de vouloir les supprimer ?</string>
+    <string name="discard_active_recording">Vous avez un enregistrement en cours. Êtes-vous sûr de vouloir revenir ? L\'enregistrement sera perdu.</string>
+    <string name="keep_recording">Garder l\'Enregistrement</string>
+    <string name="triage">Triage</string>
+    <string name="consultation">Consultation</string>
+    <string name="record_encounter">Enregistrer une Consultation</string>
+    <string name="batch_mode">Mode par lot</string>
+    <string name="process_immediately">Traiter immédiatement</string>
+    <string name="microphone_access_required">L\'accès au microphone est requis pour l\'enregistrement vocal.</string>
+    <string name="grant_microphone_access">Autoriser l\'Accès au Microphone</string>
+    <string name="generating_clinical_note">Génération de la note clinique…</string>
+    <string name="ai_writing_draft">L\'IA rédige un brouillon de note à partir de votre enregistrement</string>
+    <string name="processing_snippet">Traitement de l\'extrait…</string>
+    <string name="extracting_structured_data">Extraction des données structurées…</string>
+    <string name="coding_from_note">Codage des diagnostics, médicaments et signes vitaux à partir de votre note</string>
+    <string name="draft_clinical_note">Brouillon de Note Clinique</string>
+    <string name="review_before_extracting">Vérifiez et modifiez avant l\'extraction des données structurées</string>
+    <string name="generated_by_format">Généré par %1$s</string>
+    <string name="approve_and_extract">Approuver &amp; Extraire</string>
+    <string name="re_record">Ré-enregistrer</string>
+    <string name="original_transcript">Transcription Originale</string>
+    <string name="captured_snippets_format">Capturés (%1$d extrait%2$s)</string>
+    <string name="preparing_voice_model_hint">Préparation du modèle vocal…</string>
+    <string name="listening_release_to_capture">Écoute en cours… Relâchez pour capturer</string>
+    <string name="recording_consultation">Enregistrement de la consultation…</string>
+    <string name="hold_to_add_more">Maintenez pour ajouter · Appuyez sur Terminé pour finir</string>
+    <string name="tap_to_scribe">Appuyez pour transcrire · Maintenez pour dicter</string>
+    <string name="done_recording">Enregistrement Terminé</string>
+    <string name="live_transcript_label">Transcription en Direct</string>
+    <string name="queue_snippets_format">Mettre en file %1$d extrait%2$s</string>
+    <string name="process_review_snippets_format">Traiter &amp; Vérifier (%1$d extrait%2$s)</string>
+    <string name="clear_all">Tout Effacer</string>
+    <string name="type_manually_instead">Saisir manuellement</string>
+    <string name="clinical_encounter_label">Consultation clinique</string>
+    <string name="clinical_encounter_placeholder">ex. Le patient présente une toux et de la fièvre depuis 3 jours. TA 130/85. Diagnostic IVRS aiguë. Amoxicilline 500mg 3x/jour pendant 7 jours.</string>
+    <string name="queue_for_batch_review">Mettre en File pour Révision par Lot</string>
+    <string name="process_notes">Traiter les Notes</string>
+    <string name="back_to_voice_recording">Retour à l\'enregistrement vocal</string>
+    <string name="review_and_edit">Vérifier &amp; Modifier</string>
+    <string name="tap_section_to_edit">Appuyez sur une section pour modifier avant d\'enregistrer</string>
+    <string name="low_confidence_warning">Faible confiance — veuillez vérifier attentivement.</string>
+    <string name="clinical_summary">Résumé Clinique</string>
+    <string name="patient_instructions_sms">Instructions Patient (SMS)</string>
+    <string name="confirmed_diagnoses">Diagnostics Confirmés</string>
+    <string name="dictation_snippets">Extraits de Dictée</string>
+    <string name="save_send_consultation">Enregistrer &amp; Envoyer en Consultation</string>
+    <string name="save_send_pharmacy">Enregistrer &amp; Envoyer à la Pharmacie</string>
+    <string name="save_complete_visit">Enregistrer &amp; Terminer la Visite</string>
+    <string name="save_and_review">Enregistrer &amp; Vérifier</string>
+    <string name="add_more_snippets">Ajouter des Extraits</string>
+    <string name="try_again">Réessayer</string>
+    <string name="done_editing">Modification terminée</string>
+    <string name="edit_section_format">Modifier %1$s</string>
+    <string name="add_section_format">Ajouter %1$s…</string>
+    <string name="queued_batch_toast">Mis en file pour le traitement par lot. Consultez-le plus tard depuis la File d\'Extraction.</string>
+    <string name="sms_sending_format">Envoi du SMS chiffré à %1$s (%2$d diagnostics, %3$d médicaments)</string>
+
+    <!-- Settings (extended) -->
+    <string name="settings_speech_mode">Mode de Parole</string>
+    <string name="settings_asr_on_device_onnx">Sur l\'Appareil (ONNX)</string>
+    <string name="settings_asr_on_device_onnx_desc">Entièrement hors ligne. Nécessite le téléchargement du modèle.</string>
+    <string name="settings_asr_google_free">Google (gratuit)</string>
+    <string name="settings_asr_google_free_desc">Utilise Android SpeechRecognizer. Nécessite internet.</string>
+    <string name="settings_asr_cloud">ASR Cloud</string>
+    <string name="settings_asr_cloud_desc">Fournisseurs premium (Google STT, OpenAI, Deepgram). Meilleure précision multilingue.</string>
+    <string name="settings_api_key_mode">Mode de Clé API</string>
+    <string name="settings_chartlite_cloud">ChartLite Cloud</string>
+    <string name="settings_chartlite_cloud_desc">Aucune clé API nécessaire. Acheminé via nos serveurs.</string>
+    <string name="settings_chartlite_enrollment_code">ChartLite Cloud enrollment code</string>
+    <string name="settings_chartlite_enrollment_code_desc">Required once on devices without Google Play Services. Leave blank on standard Android devices.</string>
+    <string name="settings_byok">Apportez Votre Propre Clé</string>
+    <string name="settings_byok_desc">Utilisez vos propres clés API pour un accès direct aux fournisseurs.</string>
+    <string name="settings_cloud_provider">Fournisseur Cloud</string>
+    <string name="settings_google_cloud_stt">Google Cloud STT</string>
+    <string name="settings_google_cloud_stt_desc">Idéal pour les langues africaines (zoulou, xhosa, amharique, swahili)</string>
+    <string name="settings_deepgram_nova">Deepgram Nova-3</string>
+    <string name="settings_deepgram_nova_desc">Horodatage par mot, diarisation. Modèle médical (anglais uniquement)</string>
+    <string name="settings_openai_transcribe">OpenAI Transcribe</string>
+    <string name="settings_openai_transcribe_desc">Multilingue économique. Pas de prise en charge Ogg/Opus.</string>
+    <string name="settings_google_cloud_api_key">Clé API Google Cloud</string>
+    <string name="settings_deepgram_api_key">Clé API Deepgram</string>
+    <string name="settings_openai_api_key">Clé API OpenAI</string>
+    <string name="settings_api_key_label">Clé API</string>
+    <string name="settings_claude_api_key_extraction">Clé API Claude (pour l\'extraction)</string>
+    <string name="settings_enter_api_key_hint">Saisissez votre clé API pour activer la reconnaissance vocale cloud.</string>
+    <string name="settings_recommended_for_device">Recommandé pour votre appareil</string>
+    <string name="settings_other_models_expanded">Autres modèles ▾</string>
+    <string name="settings_other_models_collapsed">Autres modèles ▸</string>
+    <string name="settings_more_models_available">%1$d autres modèles disponibles</string>
+    <string name="settings_sideload_usb_sd">Charger depuis USB/SD</string>
+    <string name="settings_import_model_folder">Importer le Dossier du Modèle</string>
+    <string name="settings_import_onnx">Importer ONNX</string>
+    <string name="settings_import_tokens">Importer tokens.txt</string>
+    <string name="settings_configure_model_url">Configurer l\'URL du Modèle</string>
+    <string name="settings_model_url_label">URL du Modèle (.onnx)</string>
+    <string name="settings_vocab_url_label">URL du Vocabulaire (.txt)</string>
+    <string name="settings_save_urls">Enregistrer les URL</string>
+    <string name="settings_meta_mms_model">Modèle Meta MMS</string>
+    <string name="settings_note_processing_ai">IA de Traitement des Notes</string>
+    <string name="settings_note_processing_ai_desc">Contrôle comment les notes cliniques sont extraites des transcriptions.</string>
+    <string name="settings_cloud_ai">IA Cloud</string>
+    <string name="settings_cloud_ai_desc">Meilleure précision. Nécessite internet.</string>
+    <string name="settings_on_device_qwen">Qwen sur l\'Appareil</string>
+    <string name="settings_on_device_qwen_desc">Entièrement hors ligne.</string>
+    <string name="settings_auto_mode">Auto</string>
+    <string name="settings_auto_mode_desc">Cloud en priorité, repli sur l\'appareil.</string>
+    <string name="settings_consultation_processing_workflow">Flux de Traitement des Consultations</string>
+    <string name="settings_batch_recommended">Traitement par lot recommandé pour cet appareil.</string>
+    <string name="settings_immediate">Immédiat</string>
+    <string name="settings_immediate_desc">Traiter les notes immédiatement.</string>
+    <string name="settings_batch_queue">File par Lot</string>
+    <string name="settings_batch_queue_desc">Enregistrer maintenant, traiter plus tard.</string>
+    <string name="settings_claude_extraction_mode">Mode d\'Extraction Claude</string>
+    <string name="settings_byok_claude_desc">Utilisez votre propre clé API Claude directement.</string>
+    <string name="settings_claude_api_key">Clé API Claude</string>
+    <string name="settings_claude_api_placeholder">sk-ant-…</string>
+    <string name="settings_claude_api_hint">Obtenez une clé sur console.anthropic.com</string>
+    <string name="settings_on_device_qwen_model">Modèle Qwen sur l\'Appareil</string>
+    <string name="settings_device_ram_format">RAM de l\'appareil : %1$s Go</string>
+    <string name="settings_no_checksum_format">Aucune somme de contrôle vérifiée pour %1$s. Téléchargement bloqué.</string>
+    <string name="settings_on_device_ai_unavailable">IA sur l\'appareil indisponible (nécessite 64 bits).</string>
+    <string name="settings_recommended_suffix"> — Recommandé</string>
+    <string name="settings_download_tier_format">Télécharger %1$s</string>
+    <string name="settings_downloading_size_format">Téléchargement : %1$s / %2$s Mo</string>
+    <string name="settings_downloading_mb_only_format">Téléchargement : %1$s Mo</string>
+    <string name="settings_tier_ready_format">%1$s prêt (%2$s Mo)</string>
+    <string name="settings_delete_model">Supprimer le Modèle</string>
+    <string name="settings_download_paused">Téléchargement en pause</string>
+    <string name="settings_resume">Reprendre</string>
+    <string name="settings_verifying_download">Vérification du téléchargement\u2026</string>
+    <string name="settings_import_gguf">Importer GGUF</string>
+    <string name="settings_default_consultation_capture">Capture de Consultation par Défaut</string>
+    <string name="settings_ambient_full_transcript">Transcription Complète Ambiante</string>
+    <string name="settings_ambient_full_transcript_desc">Idéal pour les conversations complètes patient-médecin.</string>
+    <string name="settings_dictation_snippets">Extraits de Dictée</string>
+    <string name="settings_dictation_snippets_desc">Idéal pour les dictées structurées courtes.</string>
+    <string name="settings_sim_active_sms_permission">Actif — utilise la carte SIM de votre téléphone. Permission SMS requise.</string>
+    <string name="settings_twilio_advanced">Twilio (avancé — pour les SMS à l\'échelle d\'une clinique)</string>
+    <string name="settings_twilio_hint">Nécessaire uniquement si votre clinique envoie de gros volumes de SMS ou a besoin d\'un numéro dédié. La plupart des utilisateurs devraient utiliser la carte SIM ci-dessus.</string>
+    <string name="settings_account_sid">Account SID</string>
+    <string name="settings_auth_token">Auth Token</string>
+    <string name="settings_from_number">Numéro d\'Envoi</string>
+    <string name="settings_save_verify">Enregistrer &amp; Vérifier</string>
+    <string name="settings_clear">Effacer</string>
+    <string name="settings_available_regions">Régions Disponibles</string>
+    <string name="settings_tap_to_switch">Appuyez pour changer — le formulaire et la facturation se mettent à jour instantanément</string>
+    <string name="settings_coming_soon">Bientôt Disponible</string>
+    <string name="settings_africa">Afrique</string>
+    <string name="settings_international">International</string>
+    <string name="settings_technical_details">Détails Techniques</string>
+    <string name="settings_nhs_standards">Normes NHS</string>
+    <string name="settings_abdm_details">Détails ABDM</string>
+    <string name="settings_switch_button">Changer</string>
+    <string name="settings_country_change_body">Le passage à %1$s rechargera le formulaire de médicaments et les données cliniques. Les données patient existantes seront conservées, mais le formulaire utilisé pour les nouvelles consultations changera.</string>
+    <string name="settings_confirm_admin_pin">Confirmer le PIN Admin</string>
+    <string name="settings_enter_pin_for_qr">Saisissez votre PIN pour afficher le code QR de l\'établissement.</string>
+    <string name="settings_admin_pin">PIN Admin</string>
+    <string name="settings_verify">Vérifier</string>
+    <string name="settings_too_many_attempts">Trop de tentatives. Réessayez dans %1$ds.</string>
+    <string name="settings_incorrect_pin">PIN incorrect.</string>
+    <string name="settings_facility_qr_title">QR de l\'Établissement</string>
+    <string name="settings_facility_id_format">ID : %1$s</string>
+    <string name="settings_facility_qr_instructions">Sur le nouveau téléphone : Configuration -> Rejoindre un Établissement Existant -> Scanner le QR d\'Invitation. Ce QR accorde le rôle ADMIN et expire dans 10 minutes.</string>
+    <string name="settings_time_left_format">Temps restant : %1$dm</string>
+    <string name="settings_non_admin_staff_hint">Pour le personnel non administrateur, utilisez Gestion des Utilisateurs -> Générer un Code d\'Accès QR.</string>
+    <string name="settings_download_model_size_format">Télécharger le Modèle (~%1$d Mo)</string>
+    <string name="settings_ready">Prêt</string>
+    <string name="settings_remove">Supprimer</string>
+    <string name="settings_not_downloaded">Non téléchargé</string>
+    <string name="settings_downloading_ellipsis">Téléchargement\u2026</string>
+    <string name="settings_verifying_ellipsis">Vérification\u2026</string>
+    <string name="settings_ready_size_format">Prêt (%1$s)</string>
+    <string name="settings_download_failed">Échec du téléchargement</string>
+    <string name="settings_paused">En pause</string>
+    <string name="settings_verifying_integrity">Vérification de l\'intégrité\u2026</string>
+    <string name="settings_downloaded_progress">%1$s téléchargé\u2026</string>
+    <string name="settings_download_progress_format">%1$s / %2$s (%3$d%%)</string>
+
+    <!-- Content Descriptions -->
+    <string name="content_desc_back">Retour</string>
+    <string name="content_desc_browse_files">Parcourir les fichiers</string>
+    <string name="content_desc_download">Télécharger</string>
+    <string name="content_desc_active">Actif</string>
+    <string name="content_desc_users">Utilisateurs</string>
+    <string name="content_desc_open">Ouvrir</string>
+    <string name="content_desc_facility_qr">QR de l\'Établissement</string>
+    <string name="content_desc_app_info">Infos de l\'application</string>
+    <string name="content_desc_provider">Praticien</string>
+    <string name="content_desc_facility">Établissement</string>
+    <string name="content_desc_not_downloaded">Non téléchargé</string>
+    <string name="content_desc_ready">Prêt</string>
+    <string name="content_desc_error">Erreur</string>
+    <string name="content_desc_paused">En pause</string>
+    <string name="content_desc_collapse">Réduire</string>
+    <string name="content_desc_expand">Développer</string>
+
+    <!-- Sync Screen -->
+    <string name="sync_devices">Synchroniser les Appareils</string>
+    <string name="sync_verify_connection">Vérifier la Connexion</string>
+    <string name="sync_device_wants_to_connect">L\'appareil « %1$s » souhaite se connecter.</string>
+    <string name="sync_verify_code_matches">Vérifiez que ce code correspond sur les deux appareils :</string>
+    <string name="sync_accept">Accepter</string>
+    <string name="sync_reject">Refuser</string>
+    <string name="sync_incoming_patient_data">Données Patient Entrantes</string>
+    <string name="sync_from_format">De : %1$s</string>
+    <string name="sync_facility_id_format">ID Établissement : %1$s</string>
+    <string name="sync_payload_summary">%1$d patient(s), %2$d consultation(s), %3$d visite(s)</string>
+    <string name="sync_patient_format">• Patient : %1$s</string>
+    <string name="sync_merge_note">Les dossiers seront fusionnés dans votre base de données locale. Les consultations conserveront leur attribution d\'établissement d\'origine.</string>
+    <string name="sync_accept_merge">Accepter &amp; Fusionner</string>
+    <string name="sync_peer_to_peer">Synchronisation Pair-à-Pair</string>
+    <string name="sync_peer_to_peer_desc">Synchronisez les données patient entre appareils ChartLite via Bluetooth ou WiFi Direct. Aucun internet requis.</string>
+    <string name="sync_same_facility">Même Établissement</string>
+    <string name="sync_cross_facility">Inter-Établissements</string>
+    <string name="sync_continuous">Synchronisation Continue</string>
+    <string name="sync_connected_devices">Connecté à %1$d appareil(s). Les données se synchronisent automatiquement.</string>
+    <string name="sync_records_synced_format">%1$d dossiers synchronisés</string>
+    <string name="sync_records_merged_format"> • %1$d fusionnés</string>
+    <string name="sync_searching_clinic_devices">Recherche d\'appareils de la clinique\u2026 Assurez-vous que les autres appareils ont le mode multi-postes activé.</string>
+    <string name="sync_stop">Arrêter la Synchronisation</string>
+    <string name="sync_restart">Redémarrer la Synchronisation</string>
+    <string name="sync_manual">SYNCHRONISATION MANUELLE</string>
+    <string name="sync_send_patients_format">Envoyer %1$d Patient(s)</string>
+    <string name="sync_select_patients_hint">Sélectionnez les patients ci-dessus, puis connectez-vous à l\'appareil destinataire.</string>
+    <string name="sync_find_nearby_devices">Rechercher les Appareils à Proximité</string>
+    <string name="sync_both_devices_hint">Assurez-vous que les deux appareils ont ChartLite ouvert et sont sur cet écran.</string>
+    <string name="sync_searching">Recherche d\'appareils à proximité\u2026</string>
+    <string name="sync_other_device_searching">Assurez-vous que l\'autre appareil est aussi en recherche.</string>
+    <string name="sync_tap_to_send">Appuyez pour envoyer les données patient</string>
+    <string name="sync_tap_to_connect">Appuyez pour connecter</string>
+    <string name="sync_connecting">Connexion\u2026</string>
+    <string name="sync_waiting_confirmation">En attente de votre confirmation\u2026</string>
+    <string name="sync_review_dialog">Un établissement envoie des données patient. Consultez la boîte de dialogue ci-dessus.</string>
+    <string name="sync_sending_patient_data">Envoi des données patient\u2026</string>
+    <string name="sync_syncing_data">Synchronisation des données\u2026</string>
+    <string name="sync_keep_devices_close">Veuillez garder les appareils proches l\'un de l\'autre.</string>
+    <string name="sync_complete">Synchronisation Terminée !</string>
+    <string name="sync_cross_facility_transfer">Transfert Inter-Établissements</string>
+    <string name="sync_from_label">De</string>
+    <string name="sync_patients_label">Patients</string>
+    <string name="sync_encounters_label">Consultations</string>
+    <string name="sync_visits_label">Visites</string>
+    <string name="sync_duration_label">Durée</string>
+    <string name="sync_duration_format">%1$dms</string>
+    <string name="sync_patients_sent">Patients envoyés</string>
+    <string name="sync_encounters_sent">Consultations envoyées</string>
+    <string name="sync_visits_sent">Visites envoyées</string>
+    <string name="sync_patients_received">Patients reçus</string>
+    <string name="sync_encounters_received">Consultations reçues</string>
+    <string name="sync_visits_received">Visites reçues</string>
+    <string name="sync_records_merged_label">Dossiers fusionnés</string>
+    <string name="sync_error_title">Erreur de Synchronisation</string>
+    <string name="sync_unknown_error">Une erreur inconnue s\'est produite</string>
+    <string name="sync_retry">Réessayer</string>
+    <string name="sync_go_back">Retour</string>
+    <string name="sync_select_patients_to_share">Sélectionner les Patients à Partager</string>
+    <string name="sync_enter_patient_id_hint">Saisissez l\'ID ChartLite de chaque patient dont vous souhaitez envoyer les dossiers à un autre établissement.</string>
+    <string name="sync_patient_id_label">ID du Patient (ex. KFMT-4WRN)</string>
+    <string name="sync_look_up">Rechercher</string>
+    <string name="sync_add_patient">Ajouter un Patient</string>
+    <string name="sync_patients_selected_format">%1$d patient(s) sélectionné(s) :</string>
+    <string name="sync_remove">Retirer</string>
+    <string name="sync_invalid_patient_id">Format d\'ID patient invalide</string>
+    <string name="sync_patient_already_added">Patient déjà ajouté</string>
+    <string name="sync_patient_not_found_local">Patient introuvable dans la base de données locale</string>
+    <string name="sync_patient_not_found">Patient introuvable</string>
+
+    <!-- User Management -->
+    <string name="user_mgmt_join_code">Code d\'Accès</string>
+    <string name="user_mgmt_add_user">Ajouter un Utilisateur</string>
+    <string name="user_mgmt_no_users">Aucun utilisateur</string>
+    <string name="user_mgmt_tap_to_create">Appuyez sur + pour créer le premier utilisateur</string>
+    <string name="user_mgmt_active_join_codes">Codes d\'Accès Actifs</string>
+    <string name="user_mgmt_deactivated">Désactivé</string>
+    <string name="user_mgmt_deactivate">Désactiver</string>
+    <string name="user_mgmt_activate">Activer</string>
+    <string name="user_mgmt_create_user">Créer un Utilisateur</string>
+    <string name="user_mgmt_display_name">Nom d\'Affichage</string>
+    <string name="user_mgmt_role">Rôle</string>
+    <string name="user_mgmt_pin_label">PIN (4-6 chiffres)</string>
+    <string name="user_mgmt_confirm_pin">Confirmer le PIN</string>
+    <string name="user_mgmt_pins_dont_match">Les PIN ne correspondent pas</string>
+    <string name="user_mgmt_create">Créer</string>
+    <string name="user_mgmt_revoke">Révoquer</string>
+    <string name="user_mgmt_generate_join_code">Générer un Code d\'Accès</string>
+    <string name="user_mgmt_join_code_ready">Code d\'Accès Prêt</string>
+    <string name="user_mgmt_generate_code_desc">Générez un code à usage unique pour que le nouveau personnel rejoigne cet établissement. Le code expire dans 24 heures.</string>
+    <string name="user_mgmt_role_for_new_user">Rôle pour le nouvel utilisateur</string>
+    <string name="user_mgmt_share_code_hint">Partagez ce code avec le nouveau membre du personnel :</string>
+    <string name="user_mgmt_joining_as_format">Inscription en tant que : %1$s</string>
+    <string name="user_mgmt_qr_scan_hint">Le nouvel utilisateur peut scanner ce code QR. Il contient le code d\'accès, l\'ID de l\'établissement et le rôle attribué. Expire dans 24 heures, usage unique.</string>
+    <string name="user_mgmt_generate">Générer</string>
+    <string name="user_mgmt_edit_user">Modifier l\'Utilisateur</string>
+    <string name="user_mgmt_reset_pin">Réinitialiser le PIN</string>
+    <string name="user_mgmt_new_pin_label">Nouveau PIN (4-6 chiffres)</string>
+    <string name="user_mgmt_confirm_new_pin">Confirmer le Nouveau PIN</string>
+    <string name="user_mgmt_username_exists">Le nom d\'utilisateur \'%1$s\' existe déjà. Veuillez en choisir un autre.</string>
+    <string name="user_mgmt_time_left_format">%1$sh %2$sm restants</string>
+
+    <!-- SMS Decrypt Screen -->
+    <string name="read_patient_sms">Lire les SMS Patient</string>
+    <string name="decrypt_clinical_sms">Déchiffrer les SMS cliniques</string>
+    <string name="sms_decrypt_instruction">Sélectionnez un SMS reçu et saisissez le numéro de téléphone du patient pour consulter son dossier clinique.</string>
+    <string name="received_clinical_sms_count">SMS Cliniques Reçus (%1$d)</string>
+    <string name="from_sender">De : %1$s</string>
+    <string name="no_clinical_sms_received">Aucun SMS clinique reçu</string>
+    <string name="sms_auto_appear">Lorsqu\'un patient reçoit un SMS chiffré, il apparaîtra ici automatiquement.</string>
+    <string name="hide_manual_input">Masquer la saisie manuelle</string>
+    <string name="paste_sms_manually">Coller le SMS manuellement</string>
+    <string name="paste_encrypted_sms">Collez le contenu du SMS chiffré</string>
+    <string name="patient_phone_number">Numéro de Téléphone du Patient</string>
+    <string name="hide_pin_field">Masquer le champ PIN</string>
+    <string name="patient_has_pin">Le patient a un PIN ?</string>
+    <string name="optional_pin_4digits">PIN facultatif (4 chiffres)</string>
+    <string name="decrypt">Déchiffrer</string>
+    <string name="decryption_failed">Échec du déchiffrement. Vérifiez le numéro de téléphone et le contenu du SMS.</string>
+    <string name="decrypted_record">Dossier Déchiffré</string>
+
+    <!-- Patient Summary / Health History -->
+    <string name="patient_health_history">Historique de Santé du Patient</string>
+    <string name="total_visits_format">%1$d visite(s) au total</string>
+    <string name="recurring_conditions">Pathologies Récurrentes</string>
+    <string name="abnormal_vitals_history">Historique des Signes Vitaux Anormaux</string>
+    <string name="known_allergies_label">Allergies Connues</string>
+    <string name="import_patient_format">Importer le Patient %1$s</string>
+    <string name="register_patient_from_sms">Inscrire le Patient depuis le SMS</string>
+
+    <!-- Immunization (extended) -->
+    <string name="immunization_record">Dossier de Vaccination</string>
+    <string name="no_immunizations_recorded">Aucune vaccination enregistrée</string>
+    <string name="tap_plus_record_vaccination">Appuyez sur + pour enregistrer une vaccination</string>
+    <string name="dose_format">Dose %1$d</string>
+    <string name="code_format">Code : %1$s</string>
+    <string name="given_format">Administré : %1$s</string>
+    <string name="site_format">Site : %1$s</string>
+    <string name="batch_label_format">Lot : %1$s</string>
+    <string name="next_dose_format">Prochaine dose : %1$s</string>
+    <string name="next_dose_overdue_format">Prochaine dose : %1$s (EN RETARD)</string>
+    <string name="quick_select">Sélection Rapide :</string>
+    <string name="vaccine_code">Code du Vaccin</string>
+    <string name="vaccine_name">Nom du Vaccin</string>
+    <string name="dose_number">Numéro de Dose</string>
+    <string name="site_optional">Site (facultatif)</string>
+    <string name="batch_optional">N° de Lot (facultatif)</string>
+    <string name="record">Enregistrer</string>
+
+    <!-- Appointments (extended) -->
+    <string name="new_appointment">Nouveau Rendez-vous</string>
+    <string name="previous_day">Jour Précédent</string>
+    <string name="next_day">Jour Suivant</string>
+    <string name="appointments_count_format">%1$d rendez-vous</string>
+    <string name="no_appointments">Aucun rendez-vous</string>
+    <string name="tap_plus_schedule">Appuyez sur + pour planifier un rendez-vous</string>
+    <string name="walk_in">Sans rendez-vous</string>
+    <string name="patient_short_format">Patient : %1$s</string>
+    <string name="duration_min_format">%1$d min</string>
+    <string name="type_label">Type</string>
+    <string name="time_optional">Heure (HH:mm, facultatif)</string>
+    <string name="duration_minutes">Durée (minutes)</string>
+    <string name="schedule">Planifier</string>
+    <string name="patient_id_not_found">ID du patient introuvable. Veuillez vérifier et réessayer.</string>
+
+    <!-- Patient Summary -->
+    <string name="patient_summary">Résumé du Patient</string>
+    <string name="already_checked_in">Déjà Enregistré</string>
+    <string name="new_encounter">Nouvelle Consultation</string>
+    <string name="age_format">Âge : %1$d ans</string>
+    <string name="phone_format">Téléphone : %1$s</string>
+    <string name="allergies_format">Allergies : %1$s</string>
+    <string name="patient_journey">Parcours du Patient</string>
+    <string name="visits_label">Visites</string>
+    <string name="conditions_label">Pathologies</string>
+    <string name="active_meds_label">Médicaments Actifs</string>
+    <string name="span_label">Durée</string>
+    <string name="conditions_tracked">Pathologies Suivies</string>
+    <string name="latest_vitals">Derniers Signes Vitaux</string>
+    <string name="referral_on_file">Référence au dossier</string>
+    <string name="sms_synced">SMS synchronisé</string>
+    <string name="encounters_count_format">Consultations (%1$d)</string>
+    <string name="no_encounters_recorded_yet">Aucune consultation enregistrée.</string>
+    <string name="latest">Récent</string>
+    <string name="referred">Référé</string>
+    <string name="new_visit">Nouvelle Visite</string>
+    <string name="none_recorded">Aucun enregistrement</string>
+    <string name="next_follow_up_format">Prochain suivi : %1$s</string>
+    <string name="next_follow_up_overdue_format">Prochain suivi : %1$s (EN RETARD)</string>
+    <string name="no_fp_visits">Aucune visite de PF enregistrée</string>
+    <string name="notes_format">Notes : %1$s</string>
+    <string name="dispensed_visit_format">Distribué : %1$s (x%2$s)</string>
+    <string name="side_effects_format">Effets secondaires : %1$s</string>
+
+    <!-- Family Planning (extended) -->
+    <string name="record_fp_visit">Enregistrer une Visite PF</string>
+    <string name="method">Méthode</string>
+    <string name="counseling_notes">Notes de Conseil</string>
+    <string name="commodity_dispensed">Produit Distribué</string>
+
+    <!-- Appointment Reminders -->
+    <string name="sms_reminders">Rappels SMS</string>
+    <string name="send_all_reminders">Envoyer Tous les Rappels ?</string>
+    <string name="send_all_reminders_body">Cela enverra des rappels SMS à %1$d patient(s). Chaque message utilisera des crédits SMS.</string>
+    <string name="send_all">Tout Envoyer</string>
+    <string name="send_all_count_format">Tout Envoyer (%1$d)</string>
+    <string name="sms_permission_required">Permission SMS requise</string>
+    <string name="grant_sms_permission">Accordez la permission pour envoyer des rappels SMS natifs.</string>
+    <string name="grant">Accorder</string>
+    <string name="batch_send_complete">Envoi par Lot Terminé</string>
+    <string name="batch_result_format">%1$d envoyés, %2$d échoués sur %3$d au total</string>
+    <string name="tomorrow">Demain</string>
+    <string name="missed">Manqué</string>
+    <string name="no_reminders_tomorrow">Aucun rappel en attente pour demain</string>
+    <string name="no_same_day_reminders">Aucun rappel pour aujourd\'hui</string>
+    <string name="no_missed_appointments">Aucun rendez-vous manqué</string>
+    <string name="date_colon_format">Date : %1$s</string>
+    <string name="send_sms">Envoyer SMS</string>
+
+    <!-- Growth Charts (extended) -->
+    <string name="add_measurement">Ajouter une Mesure</string>
+    <string name="no_growth_measurements">Aucune mesure de croissance</string>
+    <string name="tap_plus_record_weight">Appuyez sur + pour enregistrer le poids/la taille</string>
+    <string name="latest_z_scores">Derniers Scores-Z</string>
+    <string name="severe_malnutrition_referral">MALNUTRITION SÉVÈRE — Référence urgente nécessaire</string>
+    <string name="moderate_malnutrition_support">MALNUTRITION MODÉRÉE — Soutien nutritionnel nécessaire</string>
+    <string name="record_growth_measurement">Enregistrer une Mesure de Croissance</string>
+    <string name="weight_kg">Poids (kg)</string>
+    <string name="height_cm">Taille (cm)</string>
+    <string name="head_circumference_cm">Périmètre Crânien (cm)</string>
+    <string name="muac_cm">PB (cm)</string>
+    <string name="age_months_zscore">Âge (mois) — pour le Score-Z</string>
+
+    <!-- Patient Search -->
+    <string name="search_by_id_name_phone">Rechercher par ID, nom ou téléphone</string>
+    <string name="recent_patients">Patients Récents</string>
+    <string name="no_patients_registered">Aucun patient inscrit.\nInscrivez votre premier patient pour commencer.</string>
+    <string name="no_patients_found_format">Aucun patient trouvé pour « %1$s »</string>
+
+    <!-- Referrals (extended) -->
+    <string name="no_referrals">Aucune référence</string>
+    <string name="referrals_created_during_encounters">Les références sont créées pendant les consultations</string>
+    <string name="today_uppercase">AUJOURD\'HUI</string>
+    <string name="within_days_format">dans %1$dj</string>
+    <string name="sms_sent_to_patient">SMS envoyé au patient</string>
+    <string name="accept">Accepter</string>
+    <string name="mark_completed">Marquer Terminé</string>
+
+    <!-- Queued Note Review -->
+    <string name="queued_note_review">Révision de Note en File</string>
+    <string name="queued_note_not_found">Note en file introuvable.</string>
+    <string name="unable_to_load_queued_note">Impossible de charger la note en file.</string>
+    <string name="ready_for_review_label">Prêt pour révision</string>
+    <string name="on_device_ai">IA sur l\'appareil</string>
+    <string name="cloud_ai">IA Cloud</string>
+    <string name="pattern_matching_label">Correspondance de motifs</string>
+    <string name="fallbacks_attempted">Replis Tentés</string>
+    <string name="action_error_title">Erreur d\'Action</string>
+    <string name="queue_status_queued">Cette note est en attente dans la file par lot. Vous pouvez la traiter maintenant ou la laisser pour le prochain lot.</string>
+    <string name="queue_status_interrupted">Le traitement précédent sur l\'appareil a été interrompu. Vous pouvez réessayer maintenant.</string>
+    <string name="queue_status_processing_now">Cette note est en cours de traitement.</string>
+    <string name="last_processing_failed">La dernière tentative de traitement a échoué.</string>
+    <string name="retry_processing">Réessayer le Traitement</string>
+    <string name="process_this_note">Traiter Cette Note</string>
+    <string name="review_edit_title">Vérifier &amp; Modifier</string>
+    <string name="edit_any_field">Modifiez n\'importe quel champ avant d\'enregistrer</string>
+    <string name="medications_one_per_line">Médicaments (un par ligne)</string>
+    <string name="plan_one_per_line">Plan (un par ligne)</string>
+    <string name="allergies_one_per_line">Allergies (une par ligne)</string>
+    <string name="exam_findings_one_per_line">Résultats d\'examen (un par ligne)</string>
+    <string name="remove_from_queue">Retirer de la File</string>
+
+    <!-- Extraction Queue Screen -->
+    <string name="no_queued_jobs">Aucune tâche de traitement de notes en file.</string>
+    <string name="queue_batch_hint">Utilisez « Mettre en File pour Révision par Lot » depuis l\'écran de consultation pour regrouper plusieurs notes et les traiter plus tard.</string>
+    <string name="pending_count_format">%1$d en attente</string>
+    <string name="ready_count_format">%1$d prêts</string>
+    <string name="failed_count_format">%1$d échoués</string>
+    <string name="processing_queued_notes_title">Traitement des Notes en File</string>
+    <string name="processing_queued_subtitle">Les transcriptions enregistrées sont en cours d\'extraction. Vous pouvez quitter cet écran et consulter les résultats quand ils seront prêts.</string>
+    <string name="cancel_batch_label">Annuler le Lot</string>
+    <string name="process_queued_notes">Traiter les Notes en File</string>
+    <string name="ready_for_review_section">Prêt pour Révision</string>
+    <string name="review_and_save">Vérifier &amp; Enregistrer</string>
+    <string name="remove">Retirer</string>
+    <string name="review_transcript">Revoir la Transcription</string>
+    <string name="pending_section">En Attente</string>
+    <string name="retry_label">Réessayer</string>
+    <string name="failed_section">Échoué</string>
+
+    <!-- Pharmacy / Dispensing -->
+    <string name="complete_dispensing_title">Terminer la Dispensation ?</string>
+    <string name="pending_meds_format">%1$d médicament(s) n\'ont pas encore de statut de dispensation. Êtes-vous sûr de vouloir terminer ?</string>
+    <string name="finalize_dispensing">Cela finalisera le dossier de dispensation et terminera la visite.</string>
+    <string name="failed_to_load_visit">Échec du chargement de la visite. Veuillez réessayer.</string>
+    <string name="visit_not_found">Visite introuvable</string>
+    <string name="prescribed_medications_header">MÉDICAMENTS PRESCRITS</string>
+    <string name="no_medications_prescribed">Aucun médicament prescrit</string>
+    <string name="no_prescriptions_consultation">Cette consultation ne comprenait aucune prescription.</string>
+    <string name="complete_dispensing">Terminer la Dispensation</string>
+    <string name="failed_to_save">Échec de l\'enregistrement. Veuillez réessayer.</string>
+    <string name="dispensed_chip">Distribué</string>
+    <string name="substituted">Substitué</string>
+
+    <!-- Clinical Protocols -->
+    <string name="clinical_protocols">Protocoles Cliniques</string>
+    <string name="search_protocols_hint">Rechercher par maladie, ICD-10 ou étape de traitement</string>
+
+    <!-- Facility Directory -->
+    <string name="facility_directory">Répertoire des Établissements</string>
+    <string name="toggle_filters">Basculer les Filtres</string>
+    <string name="search_facilities_hint">Rechercher des établissements\u2026</string>
+    <string name="facility_type_filter">Type d\'Établissement :</string>
+    <string name="province_filter">Province :</string>
+    <string name="services_filter">Services :</string>
+    <string name="facilities_found_format">%1$d établissements trouvés</string>
+    <string name="beds_format">%1$d lits</string>
+    <string name="available_services">Services Disponibles</string>
+    <string name="location_label">Localisation</string>
+    <string name="coordinates_format">Coordonnées : %1$s, %2$s</string>
+    <string name="gps_navigation_hint">Les coordonnées GPS peuvent être utilisées pour les applications de navigation</string>
+    <string name="select_for_referral">Sélectionner pour Référence</string>
+
+    <!-- Triage -->
+    <string name="triage_button">Triage</string>
+    <string name="enter_manually_instead">Saisir manuellement</string>
+    <string name="voice_transcript">Transcription vocale</string>
+    <string name="chief_complaint_field">Motif de consultation</string>
+    <string name="priority_label">Priorité</string>
+    <string name="priority_normal">Normal</string>
+    <string name="priority_priority">Prioritaire</string>
+    <string name="priority_emergency">Urgence</string>
+    <string name="save_validation_error">Saisissez au moins un signe vital ou un motif de consultation</string>
+    <string name="full_triage">Triage Complet \u25B8</string>
+    <string name="microphone_permission_required">Permission du microphone requise</string>
+    <string name="grant_permission">Accorder la Permission</string>
+    <string name="preparing_offline_asr">Préparation de l\'ASR hors ligne\u2026</string>
+    <string name="tap_to_dictate">Appuyez pour dicter les signes vitaux et le motif de consultation</string>
+    <string name="first_load_slow">Le premier chargement est plus lent sur les téléphones à faible RAM.</string>
+    <string name="dictation_example">ex. « TA 130 sur 85, temp 37.5, pouls 88, spo2 98, poids 72 kilos. Céphalées depuis 3 jours. »</string>
+    <string name="loading_voice_model">Chargement du modèle vocal\u2026</string>
+    <string name="listening_tap_to_stop">Écoute en cours\u2026 appuyez pour arrêter</string>
+
+    <!-- Missing translations batch -->
+    <string name="active_conditions">Conditions Actives</string>
+    <string name="age_label">Âge</string>
+    <string name="blood_pressure">Tension Artérielle</string>
+    <string name="content_desc_confirm">Confirmer</string>
+    <string name="content_desc_done">Terminé</string>
+    <string name="content_desc_import_vocab">Importer le vocabulary</string>
+    <string name="content_desc_join_facility">Rejoindre l\'établissement</string>
+    <string name="content_desc_scan_qr_code">Scanner le code QR</string>
+    <string name="content_desc_sim">SIM</string>
+    <string name="enter_pin_to_unlock">Entrez le PIN pour déverrouiller</string>
+    <string name="heart_rate">Fréquence Cardiaque</string>
+    <string name="incorrect_pin">PIN incorrect</string>
+    <string name="locked">Verrouillé</string>
+    <string name="oxygen_saturation">Saturation en Oxygène</string>
+    <string name="patient_not_found">Patient introuvable</string>
+    <string name="recent_encounters_section">Consultations Récentes</string>
+    <string name="recent_medications">Médicaments Récents</string>
+    <string name="sex_label">Sexe</string>
+    <string name="temperature">Température</string>
+    <string name="timeline">Chronologie</string>
+    <string name="too_many_attempts_format">Trop de tentatives. Réessayez dans %1$ds</string>
+    <string name="vital_signs_trend">Tendance des Signes Vitaux</string>
+
+
+    <!-- TODO: translate — English fallback strings below -->
+    <!-- TODO: translate -->
+    <string name="ai_mode_cloud_desc">Notes generated using cloud-based clinical language models for enhanced accuracy.</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_cloud_title">Powered by Cloud AI</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_device_desc">Notes processed locally using on-device model — no internet required.</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_device_title">On-Device Processing</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_fallback_desc">No internet connection — notes processed using local fallback.</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_fallback_title">Cloud Unavailable</string>
+    <!-- TODO: translate -->
+    <string name="change_sms_pin">Change SMS PIN</string>
+    <!-- TODO: translate -->
+    <string name="copy_summary">Copy Summary</string>
+    <!-- TODO: translate -->
+    <string name="edit_patient">Edit Patient</string>
+    <!-- TODO: translate -->
+    <string name="extracted_fields">Extracted Fields</string>
+    <!-- TODO: translate -->
+    <string name="hide_original_transcript">Hide Original Transcript</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_cloud">Cloud</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_downloading">Downloading</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_error">Error</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_not_ready">Not set up</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_ready">Ready</string>
+    <!-- TODO: translate -->
+    <string name="home_meds_to_dispense">Medications to dispense</string>
+    <!-- TODO: translate -->
+    <string name="home_no_complaint">No chief complaint recorded</string>
+    <!-- TODO: translate -->
+    <string name="home_sync_connected_format">%1$d synced</string>
+    <!-- TODO: translate -->
+    <string name="home_sync_no_peers">No peers</string>
+    <!-- TODO: translate -->
+    <string name="home_unknown_patient">Unknown</string>
+    <!-- TODO: translate -->
+    <string name="note_generated_via">Note generated via %1$s</string>
+    <!-- TODO: translate -->
+    <string name="open_in_maps">Open in Maps</string>
+    <!-- TODO: translate -->
+    <string name="phone_label">Phone Number</string>
+    <!-- TODO: translate -->
+    <string name="regenerate_note">Regenerate Note</string>
+    <!-- TODO: translate -->
+    <string name="remove_sms_pin">Remove PIN</string>
+    <!-- TODO: translate -->
+    <string name="review_note_before_saving">Review the AI-generated clinical note, then check the extracted fields below</string>
+    <!-- TODO: translate -->
+    <string name="set_sms_pin">Set SMS PIN</string>
+    <!-- TODO: translate -->
+    <string name="settings_clinical_notes_card">Clinical Notes AI</string>
+    <!-- TODO: translate -->
+    <string name="settings_how_you_record">How do you record?</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_batch">In batches</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_batch_desc">Queue notes and process together. Better for slower devices.</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_immediately">Real-time</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_immediately_desc">Notes generated right away. Best with fast devices or cloud.</string>
+    <!-- TODO: translate -->
+    <string name="settings_processing_workflow">When to process notes?</string>
+    <!-- TODO: translate -->
+    <string name="settings_voice_recognition_card">Voice Recognition</string>
+    <!-- TODO: translate -->
+    <string name="setup_advanced_settings">Advanced settings</string>
+    <!-- TODO: translate -->
+    <string name="setup_all_models_ready">All models downloaded</string>
+    <!-- TODO: translate -->
+    <string name="setup_cancel_download">Cancel</string>
+    <!-- TODO: translate -->
+    <string name="setup_device_info_format">%1$s · %2$s GB RAM</string>
+    <!-- TODO: translate -->
+    <string name="setup_download_all">Download All Models</string>
+    <!-- TODO: translate -->
+    <string name="setup_download_failed_retry">Download failed. Tap to try again.</string>
+    <!-- TODO: translate -->
+    <string name="setup_downloading_notes_ai">Downloading notes AI…</string>
+    <!-- TODO: translate -->
+    <string name="setup_downloading_voice">Downloading voice model…</string>
+    <!-- TODO: translate -->
+    <string name="setup_downloads_required">Downloads Required</string>
+    <!-- TODO: translate -->
+    <string name="setup_enrollment_helper">Enter the code from your facility administrator</string>
+    <!-- TODO: translate -->
+    <string name="setup_no_downloads_needed">No downloads needed — you\'re ready to go!</string>
+    <!-- TODO: translate -->
+    <string name="setup_notes_internet_desc">Notes processed securely in the cloud. Better accuracy for complex cases.</string>
+    <!-- TODO: translate -->
+    <string name="setup_notes_model_label">Notes AI model</string>
+    <!-- TODO: translate -->
+    <string name="setup_notes_offline_desc">Notes processed entirely on this device. Your data stays private.</string>
+    <!-- TODO: translate -->
+    <string name="setup_offline_not_supported">This device doesn\'t support offline AI. Internet mode will be used.</string>
+    <!-- TODO: translate -->
+    <string name="setup_size_mb_format">%1$d MB</string>
+    <!-- TODO: translate -->
+    <string name="setup_total_size">Total</string>
+    <!-- TODO: translate -->
+    <string name="setup_uses_internet">Uses Internet</string>
+    <!-- TODO: translate -->
+    <string name="setup_voice_internet_desc">Voice processed in the cloud. More accurate, but needs a data connection.</string>
+    <!-- TODO: translate -->
+    <string name="setup_voice_model_label">Voice model</string>
+    <!-- TODO: translate -->
+    <string name="setup_voice_offline_desc">Models downloaded to your device. No internet needed during consultations.</string>
+    <!-- TODO: translate -->
+    <string name="setup_works_offline">Works Offline</string>
+    <!-- TODO: translate -->
+    <string name="show_original_transcript">Show Original Transcript</string>
+    <!-- TODO: translate -->
+    <string name="sms_history">SMS History</string>
+    <!-- TODO: translate -->
+    <string name="sms_pin_explanation">A 4-digit PIN adds privacy to encrypted SMS health records. Use this when the patient shares a phone with family members.</string>
+    <!-- TODO: translate -->
+    <string name="sms_pin_label">SMS PIN (4 digits)</string>
+    <!-- TODO: translate -->
+    <string name="summary_copied">Summary copied to clipboard</string>
+    <!-- TODO: translate -->
+    <string name="sync_or_select_individual">Or select individual patients:</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_format">Send All %1$d Patients</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_hint">All patient records will be shared with the receiving device.</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_patients">Send All Patients</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_patients_desc">Share all %1$d patient records with the receiving facility</string>
+    <!-- TODO: translate -->
+    <string name="tap_new_encounter_hint">Tap + New Encounter to start recording</string>
+    <!-- TODO: translate -->
+    <string name="tap_to_edit">Tap to edit</string>
+    <!-- TODO: translate -->
+    <string name="twilio_cleared_native_sms">Cleared — using phone SIM</string>
+    <!-- TODO: translate -->
+    <string name="twilio_credentials_verified">Credentials verified</string>
+    <!-- TODO: translate -->
+    <string name="twilio_invalid_credentials">Invalid credentials</string>
+    <!-- TODO: translate -->
+    <string name="twilio_saved_native_sms">Saved — will use phone SIM</string>
+    <string name="scan_analyzing">Analyzing...</string>
+    <string name="scan_button_label">Scan Lab / RDT / Vitals</string>
+    <string name="content_desc_scan">Scan clinical document</string>
+    <string name="scan_result_prefix">Scanned: %1$s</string>
+</resources>

@@ -1,0 +1,4949 @@
+{
+  "version": "2026.1",
+  "source": "Based on WHO ICD-10 Classification, adapted for Primary Health Care in sub-Saharan Africa",
+  "codes": [
+    {
+      "code": "A00.9",
+      "description": "Cholera, unspecified",
+      "keywords": [
+        "cholera",
+        "rice water stool",
+        "severe diarrhea",
+        "dehydration",
+        "watery diarrhea",
+        "cholera outbreak"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sohudo olukhulu"
+        ],
+        "xh": [
+          "ikholera"
+        ],
+        "am": [
+          "ኮሌራ"
+        ],
+        "sw": [
+          "kipindupindu"
+        ],
+        "yo": [
+          "àrùn kọ́lẹ́rà",
+          "ìgbẹ́ gbuuru"
+        ],
+        "ha": [
+          "kwalara"
+        ],
+        "ny": [
+          "kolera"
+        ]
+      }
+    },
+    {
+      "code": "A01.0",
+      "description": "Typhoid fever",
+      "keywords": [
+        "typhoid",
+        "enteric fever",
+        "salmonella typhi",
+        "typhoid fever",
+        "step ladder fever"
+      ],
+      "localTerms": {
+        "zu": [
+          "ithayifoyidi"
+        ],
+        "xh": [
+          "ithayifoyidi"
+        ],
+        "am": [
+          "ታይፎይድ"
+        ],
+        "sw": [
+          "homa ya matumbo",
+          "taifodi"
+        ],
+        "yo": [
+          "ibà taifọ́ìdì"
+        ],
+        "ha": [
+          "zazzabin taifot"
+        ],
+        "ny": [
+          "taifoyidi"
+        ]
+      }
+    },
+    {
+      "code": "A02.0",
+      "description": "Salmonella enteritis",
+      "keywords": [
+        "salmonella",
+        "food poisoning",
+        "salmonella gastroenteritis",
+        "salmonellosis"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A03.9",
+      "description": "Shigellosis, unspecified",
+      "keywords": [
+        "shigella",
+        "dysentery",
+        "bacillary dysentery",
+        "bloody diarrhea",
+        "shigellosis"
+      ],
+      "localTerms": {
+        "am": [
+          "ሺጌላ"
+        ]
+      }
+    },
+    {
+      "code": "A05.9",
+      "description": "Bacterial foodborne intoxication, unspecified",
+      "keywords": [
+        "food poisoning",
+        "foodborne illness",
+        "gastroenteritis food",
+        "contaminated food"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukudla okubi"
+        ],
+        "xh": [
+          "ukutya okubi"
+        ]
+      }
+    },
+    {
+      "code": "A06.9",
+      "description": "Amoebiasis, unspecified",
+      "keywords": [
+        "amoeba",
+        "amoebiasis",
+        "amoebic dysentery",
+        "entamoeba",
+        "amebiasis"
+      ],
+      "localTerms": {
+        "am": [
+          "አሜባ"
+        ]
+      }
+    },
+    {
+      "code": "A09",
+      "description": "Infectious gastroenteritis and colitis, unspecified",
+      "keywords": [
+        "gastroenteritis",
+        "diarrhea",
+        "diarrhoea",
+        "vomiting diarrhea",
+        "gastro",
+        "GE",
+        "AGE",
+        "stomach bug"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sohudo"
+        ],
+        "xh": [
+          "isifo sohudo"
+        ],
+        "am": [
+          "ተቅማጥ"
+        ],
+        "af": [
+          "gastro"
+        ],
+        "sw": [
+          "kuharisha",
+          "kuhara"
+        ],
+        "yo": [
+          "ìgbẹ́ gbuuru"
+        ],
+        "ha": [
+          "zawo",
+          "gudawa"
+        ],
+        "ny": [
+          "kutsegula",
+          "chimbudzi"
+        ]
+      }
+    },
+    {
+      "code": "A15.0",
+      "description": "Tuberculosis of lung, confirmed by sputum microscopy",
+      "keywords": [
+        "pulmonary TB",
+        "PTB",
+        "lung TB",
+        "sputum positive TB",
+        "TB confirmed",
+        "Koch disease"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifuba esidla amathambo"
+        ],
+        "xh": [
+          "isifo sephepha"
+        ],
+        "am": [
+          "ቲቢ",
+          "የሳንባ ቲቢ"
+        ],
+        "sw": [
+          "kifua kikuu",
+          "TB"
+        ],
+        "yo": [
+          "ikọ́ ẹ̀gbẹ",
+          "TB"
+        ],
+        "ha": [
+          "tarin fuka",
+          "TB"
+        ],
+        "ny": [
+          "chifuwa chachikulu",
+          "TB"
+        ]
+      }
+    },
+    {
+      "code": "A15.3",
+      "description": "Tuberculosis of lung, confirmed by unspecified means",
+      "keywords": [
+        "TB lung",
+        "tuberculosis lung",
+        "pulmonary tuberculosis",
+        "PTB"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sephepha"
+        ],
+        "am": [
+          "ቲቢ"
+        ],
+        "sw": [
+          "kifua kikuu",
+          "TB"
+        ],
+        "yo": [
+          "ikọ́ ẹ̀gbẹ",
+          "TB"
+        ],
+        "ha": [
+          "tarin fuka",
+          "TB"
+        ],
+        "ny": [
+          "chifuwa chachikulu",
+          "TB"
+        ]
+      }
+    },
+    {
+      "code": "A16.9",
+      "description": "Respiratory tuberculosis, unspecified",
+      "keywords": [
+        "TB",
+        "tuberculosis",
+        "respiratory TB",
+        "unconfirmed TB",
+        "TB NOS"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sephepha"
+        ],
+        "am": [
+          "ቲቢ"
+        ],
+        "sw": [
+          "kifua kikuu",
+          "TB"
+        ],
+        "yo": [
+          "ikọ́ ẹ̀gbẹ",
+          "TB"
+        ],
+        "ha": [
+          "tarin fuka",
+          "TB"
+        ],
+        "ny": [
+          "chifuwa chachikulu",
+          "TB"
+        ]
+      }
+    },
+    {
+      "code": "A17.0",
+      "description": "Tuberculous meningitis",
+      "keywords": [
+        "TB meningitis",
+        "TBM",
+        "tuberculous meningitis",
+        "TB brain"
+      ],
+      "localTerms": {
+        "am": [
+          "የቲቢ ሜኒንጃይቲስ"
+        ]
+      }
+    },
+    {
+      "code": "A18.0",
+      "description": "Tuberculosis of bones and joints",
+      "keywords": [
+        "bone TB",
+        "spinal TB",
+        "Pott disease",
+        "skeletal TB",
+        "TB spine",
+        "joint TB"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A18.2",
+      "description": "Tuberculous peripheral lymphadenopathy",
+      "keywords": [
+        "TB lymph nodes",
+        "TB adenitis",
+        "scrofula",
+        "lymph node TB",
+        "TB glands"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A19.9",
+      "description": "Miliary tuberculosis, unspecified",
+      "keywords": [
+        "miliary TB",
+        "disseminated TB",
+        "widespread TB",
+        "TB disseminated"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A30.9",
+      "description": "Leprosy, unspecified",
+      "keywords": [
+        "leprosy",
+        "Hansen disease",
+        "mycobacterium leprae",
+        "skin lesion numbness"
+      ],
+      "localTerms": {
+        "am": [
+          "ለምጽ"
+        ]
+      }
+    },
+    {
+      "code": "A33",
+      "description": "Tetanus neonatorum",
+      "keywords": [
+        "neonatal tetanus",
+        "tetanus newborn",
+        "lockjaw newborn"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A35",
+      "description": "Other tetanus",
+      "keywords": [
+        "tetanus",
+        "lockjaw",
+        "clostridium tetani",
+        "wound tetanus",
+        "trismus"
+      ],
+      "localTerms": {
+        "am": [
+          "ቴታነስ"
+        ]
+      }
+    },
+    {
+      "code": "A37.9",
+      "description": "Whooping cough, unspecified",
+      "keywords": [
+        "whooping cough",
+        "pertussis",
+        "hundred day cough",
+        "paroxysmal cough"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukukhwehlela okunamandla"
+        ],
+        "am": [
+          "ማሳል"
+        ],
+        "sw": [
+          "kifaduro",
+          "kikohozi cha mvua"
+        ]
+      }
+    },
+    {
+      "code": "A39.0",
+      "description": "Meningococcal meningitis",
+      "keywords": [
+        "meningococcal",
+        "meningitis bacterial",
+        "meningococcus",
+        "neck stiffness fever rash"
+      ],
+      "localTerms": {
+        "am": [
+          "ሜኒንጃይቲስ"
+        ]
+      }
+    },
+    {
+      "code": "A41.9",
+      "description": "Sepsis, unspecified",
+      "keywords": [
+        "sepsis",
+        "septicemia",
+        "blood poisoning",
+        "septic",
+        "bacteremia",
+        "SIRS"
+      ],
+      "localTerms": {
+        "am": [
+          "ሴፕሲስ"
+        ],
+        "sw": [
+          "sumu ya damu"
+        ],
+        "yo": [
+          "àkóràn inú ẹ̀jẹ̀"
+        ],
+        "ha": [
+          "guba cikin jini"
+        ],
+        "ny": [
+          "kachirombo m'magazi"
+        ]
+      }
+    },
+    {
+      "code": "A51.9",
+      "description": "Early syphilis, unspecified",
+      "keywords": [
+        "syphilis",
+        "primary syphilis",
+        "secondary syphilis",
+        "chancre",
+        "treponema",
+        "VDRL positive",
+        "RPR positive"
+      ],
+      "localTerms": {
+        "zu": [
+          "ugcunsula"
+        ],
+        "am": [
+          "ቂጥኝ"
+        ],
+        "sw": [
+          "kaswende"
+        ]
+      }
+    },
+    {
+      "code": "A53.9",
+      "description": "Syphilis, unspecified",
+      "keywords": [
+        "syphilis",
+        "late syphilis",
+        "tertiary syphilis",
+        "syphilis NOS",
+        "lues"
+      ],
+      "localTerms": {
+        "zu": [
+          "ugcunsula"
+        ],
+        "sw": [
+          "kaswende"
+        ]
+      }
+    },
+    {
+      "code": "A54.9",
+      "description": "Gonococcal infection, unspecified",
+      "keywords": [
+        "gonorrhea",
+        "gonorrhoea",
+        "GC",
+        "gonococcus",
+        "clap",
+        "drip",
+        "urethral discharge"
+      ],
+      "localTerms": {
+        "zu": [
+          "idrop"
+        ],
+        "xh": [
+          "idrop"
+        ],
+        "am": [
+          "ጨብጥ"
+        ],
+        "sw": [
+          "kisonono"
+        ],
+        "yo": [
+          "àtọ̀sí"
+        ],
+        "ha": [
+          "ciwon sanyi"
+        ],
+        "ny": [
+          "chinzonono"
+        ]
+      }
+    },
+    {
+      "code": "A56.2",
+      "description": "Chlamydial infection of genitourinary tract, unspecified",
+      "keywords": [
+        "chlamydia",
+        "chlamydial infection",
+        "STI",
+        "urethritis",
+        "cervicitis chlamydia"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A59.9",
+      "description": "Trichomoniasis, unspecified",
+      "keywords": [
+        "trichomoniasis",
+        "trichomonas",
+        "trich",
+        "green discharge",
+        "frothy discharge"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A60.0",
+      "description": "Herpesviral infection of genitalia and urogenital tract",
+      "keywords": [
+        "genital herpes",
+        "herpes genitalis",
+        "HSV genital",
+        "herpes simplex genital",
+        "herpes ulcer"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A63.0",
+      "description": "Anogenital (venereal) warts",
+      "keywords": [
+        "genital warts",
+        "condylomata",
+        "HPV warts",
+        "venereal warts",
+        "anogenital warts"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "A64",
+      "description": "Unspecified sexually transmitted disease",
+      "keywords": [
+        "STI",
+        "STD",
+        "sexually transmitted",
+        "venereal disease",
+        "sexual infection"
+      ],
+      "localTerms": {
+        "zu": [
+          "izifo zocansi"
+        ],
+        "xh": [
+          "izifo zasesondweni"
+        ],
+        "sw": [
+          "magonjwa ya zinaa"
+        ],
+        "yo": [
+          "àrùn ìbálòpọ̀"
+        ],
+        "ha": [
+          "cututtukan da ake ɗauka ta hanyar jima'i"
+        ],
+        "ny": [
+          "matenda opatsirana pogonana"
+        ]
+      }
+    },
+    {
+      "code": "A82.9",
+      "description": "Rabies, unspecified",
+      "keywords": [
+        "rabies",
+        "dog bite rabies",
+        "hydrophobia",
+        "animal bite"
+      ],
+      "localTerms": {
+        "zu": [
+          "ulaka"
+        ],
+        "am": [
+          "ውሻ በሽታ",
+          "ከልብ በሽታ"
+        ]
+      }
+    },
+    {
+      "code": "A90",
+      "description": "Dengue fever",
+      "keywords": [
+        "dengue",
+        "dengue fever",
+        "breakbone fever",
+        "dengue hemorrhagic"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B00.9",
+      "description": "Herpesviral infection, unspecified",
+      "keywords": [
+        "herpes",
+        "herpes simplex",
+        "HSV",
+        "cold sore",
+        "fever blister"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B01.9",
+      "description": "Varicella without complication",
+      "keywords": [
+        "chickenpox",
+        "varicella",
+        "chicken pox",
+        "itchy blisters",
+        "vesicular rash"
+      ],
+      "localTerms": {
+        "zu": [
+          "inkukhu"
+        ],
+        "xh": [
+          "inkukhu"
+        ],
+        "am": [
+          "ኩፍኝ"
+        ],
+        "af": [
+          "waterpokkies"
+        ],
+        "sw": [
+          "tetekuwanga"
+        ]
+      }
+    },
+    {
+      "code": "B02.9",
+      "description": "Zoster without complication",
+      "keywords": [
+        "shingles",
+        "herpes zoster",
+        "zoster",
+        "painful rash band"
+      ],
+      "localTerms": {
+        "af": [
+          "gordelroos"
+        ]
+      }
+    },
+    {
+      "code": "B05.9",
+      "description": "Measles without complication",
+      "keywords": [
+        "measles",
+        "rubeola",
+        "morbilli",
+        "red rash fever",
+        "koplik spots"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sezingane",
+          "amasimba"
+        ],
+        "xh": [
+          "isimungumungwane"
+        ],
+        "am": [
+          "ኩፍኝ"
+        ],
+        "sw": [
+          "surua"
+        ],
+        "yo": [
+          "ìgbóná ara"
+        ],
+        "ha": [
+          "kyanda"
+        ],
+        "ny": [
+          "chikuku"
+        ]
+      }
+    },
+    {
+      "code": "B06.9",
+      "description": "Rubella without complication",
+      "keywords": [
+        "rubella",
+        "German measles",
+        "three day measles"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B15.9",
+      "description": "Hepatitis A without hepatic coma",
+      "keywords": [
+        "hepatitis A",
+        "hep A",
+        "jaundice virus",
+        "viral hepatitis A"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B16.9",
+      "description": "Acute hepatitis B without delta-agent and without hepatic coma",
+      "keywords": [
+        "hepatitis B",
+        "hep B",
+        "HBV",
+        "viral hepatitis B"
+      ],
+      "localTerms": {
+        "am": [
+          "ሄፓታይተስ ቢ"
+        ]
+      }
+    },
+    {
+      "code": "B17.1",
+      "description": "Acute hepatitis C",
+      "keywords": [
+        "hepatitis C",
+        "hep C",
+        "HCV",
+        "viral hepatitis C"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B18.1",
+      "description": "Chronic viral hepatitis B without delta-agent",
+      "keywords": [
+        "chronic hep B",
+        "chronic hepatitis B",
+        "HBV chronic",
+        "HBsAg positive"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B20",
+      "description": "Human immunodeficiency virus [HIV] disease",
+      "keywords": [
+        "HIV",
+        "AIDS",
+        "human immunodeficiency virus",
+        "HIV positive",
+        "retroviral disease",
+        "ARV",
+        "ART"
+      ],
+      "localTerms": {
+        "zu": [
+          "ingculaza"
+        ],
+        "xh": [
+          "intsholongwane kaGawulayo"
+        ],
+        "am": [
+          "ኤች አይ ቪ",
+          "ኤድስ"
+        ],
+        "af": [
+          "MIV"
+        ],
+        "sw": [
+          "ukimwi",
+          "VVU"
+        ],
+        "yo": [
+          "kòkòrò HIV",
+          "àrùn AIDS"
+        ],
+        "ha": [
+          "cutar kanjamau",
+          "HIV"
+        ],
+        "ny": [
+          "kachilombo ka HIV",
+          "edzi"
+        ]
+      }
+    },
+    {
+      "code": "B24",
+      "description": "Unspecified human immunodeficiency virus [HIV] disease",
+      "keywords": [
+        "HIV unspecified",
+        "HIV disease NOS",
+        "AIDS NOS"
+      ],
+      "localTerms": {
+        "zu": [
+          "ingculaza"
+        ],
+        "sw": [
+          "ukimwi",
+          "VVU"
+        ],
+        "yo": [
+          "kòkòrò HIV",
+          "àrùn AIDS"
+        ],
+        "ha": [
+          "cutar kanjamau",
+          "HIV"
+        ],
+        "ny": [
+          "kachilombo ka HIV",
+          "edzi"
+        ]
+      }
+    },
+    {
+      "code": "B35.0",
+      "description": "Tinea barbae and tinea capitis",
+      "keywords": [
+        "ringworm scalp",
+        "tinea capitis",
+        "scalp fungal",
+        "head ringworm"
+      ],
+      "localTerms": {
+        "zu": [
+          "isichitho"
+        ]
+      }
+    },
+    {
+      "code": "B35.3",
+      "description": "Tinea pedis",
+      "keywords": [
+        "athletes foot",
+        "tinea pedis",
+        "foot fungus",
+        "fungal feet"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B35.6",
+      "description": "Tinea cruris",
+      "keywords": [
+        "jock itch",
+        "tinea cruris",
+        "groin fungal",
+        "ringworm groin"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B36.0",
+      "description": "Pityriasis versicolor",
+      "keywords": [
+        "tinea versicolor",
+        "pityriasis versicolor",
+        "skin discoloration fungal",
+        "sun spots fungal"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B37.0",
+      "description": "Candidal stomatitis",
+      "keywords": [
+        "oral thrush",
+        "mouth thrush",
+        "candida mouth",
+        "white patches mouth",
+        "oral candidiasis"
+      ],
+      "localTerms": {
+        "zu": [
+          "isidwadwa"
+        ],
+        "am": [
+          "የአፍ ፈንገስ"
+        ],
+        "sw": [
+          "utomvu"
+        ]
+      }
+    },
+    {
+      "code": "B37.3",
+      "description": "Candidiasis of vulva and vagina",
+      "keywords": [
+        "vaginal thrush",
+        "vaginal candidiasis",
+        "yeast infection",
+        "vulvovaginal candida"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B50.9",
+      "description": "Plasmodium falciparum malaria, unspecified",
+      "keywords": [
+        "malaria",
+        "falciparum malaria",
+        "P. falciparum",
+        "cerebral malaria",
+        "severe malaria"
+      ],
+      "localTerms": {
+        "zu": [
+          "umalaleveva"
+        ],
+        "xh": [
+          "umalaleveva"
+        ],
+        "am": [
+          "ወባ"
+        ],
+        "af": [
+          "malaria"
+        ],
+        "sw": [
+          "malaria",
+          "homa ya malaria"
+        ],
+        "yo": [
+          "ibà"
+        ],
+        "ha": [
+          "zazzabi",
+          "malaria"
+        ],
+        "ny": [
+          "malungo"
+        ]
+      }
+    },
+    {
+      "code": "B51.9",
+      "description": "Plasmodium vivax malaria without complication",
+      "keywords": [
+        "vivax malaria",
+        "P. vivax",
+        "benign tertian malaria",
+        "relapsing malaria"
+      ],
+      "localTerms": {
+        "am": [
+          "ወባ"
+        ],
+        "sw": [
+          "malaria",
+          "homa ya malaria"
+        ]
+      }
+    },
+    {
+      "code": "B54",
+      "description": "Unspecified malaria",
+      "keywords": [
+        "malaria",
+        "malaria unspecified",
+        "malaria NOS",
+        "fever chills malaria"
+      ],
+      "localTerms": {
+        "zu": [
+          "umalaleveva"
+        ],
+        "am": [
+          "ወባ"
+        ],
+        "sw": [
+          "malaria",
+          "homa ya malaria"
+        ],
+        "yo": [
+          "ibà"
+        ],
+        "ha": [
+          "zazzabi",
+          "malaria"
+        ],
+        "ny": [
+          "malungo"
+        ]
+      }
+    },
+    {
+      "code": "B65.1",
+      "description": "Schistosomiasis due to Schistosoma mansoni",
+      "keywords": [
+        "schistosomiasis",
+        "bilharzia",
+        "snail fever",
+        "blood fluke",
+        "schistosoma"
+      ],
+      "localTerms": {
+        "zu": [
+          "isichenene"
+        ],
+        "am": [
+          "ቢልሃርዚያ"
+        ],
+        "sw": [
+          "kichocho"
+        ]
+      }
+    },
+    {
+      "code": "B76.9",
+      "description": "Hookworm disease, unspecified",
+      "keywords": [
+        "hookworm",
+        "ancylostoma",
+        "necator",
+        "anemia worm",
+        "ground itch"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "B77.9",
+      "description": "Ascariasis, unspecified",
+      "keywords": [
+        "roundworm",
+        "ascaris",
+        "ascariasis",
+        "worm infestation",
+        "intestinal worm"
+      ],
+      "localTerms": {
+        "zu": [
+          "izilo"
+        ],
+        "am": [
+          "ትላትል"
+        ],
+        "sw": [
+          "minyoo"
+        ]
+      }
+    },
+    {
+      "code": "B82.9",
+      "description": "Intestinal parasitism, unspecified",
+      "keywords": [
+        "worms",
+        "intestinal parasites",
+        "helminthiasis",
+        "deworming",
+        "parasitic worms"
+      ],
+      "localTerms": {
+        "zu": [
+          "izilwanyana"
+        ],
+        "xh": [
+          "iintsholongwane"
+        ],
+        "am": [
+          "የሆድ ትላትል"
+        ],
+        "sw": [
+          "minyoo ya tumbo"
+        ]
+      }
+    },
+    {
+      "code": "B85.0",
+      "description": "Pediculosis due to Pediculus humanus capitis",
+      "keywords": [
+        "head lice",
+        "lice",
+        "pediculosis",
+        "nits",
+        "itchy scalp lice"
+      ],
+      "localTerms": {
+        "zu": [
+          "intwala"
+        ]
+      }
+    },
+    {
+      "code": "B86",
+      "description": "Scabies",
+      "keywords": [
+        "scabies",
+        "sarcoptes",
+        "itch mite",
+        "seven year itch",
+        "itchy rash burrows"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuluma kwesikhumba"
+        ],
+        "xh": [
+          "isikhwekhwe"
+        ],
+        "am": [
+          "እንቅርት"
+        ],
+        "af": [
+          "skurfte"
+        ],
+        "sw": [
+          "upele wa kuwasha"
+        ],
+        "yo": [
+          "ẹ̀kúrú ara"
+        ],
+        "ha": [
+          "ƙaiƙayi"
+        ],
+        "ny": [
+          "chinyalala"
+        ]
+      }
+    },
+    {
+      "code": "C18.9",
+      "description": "Malignant neoplasm of colon, unspecified",
+      "keywords": [
+        "colon cancer",
+        "colorectal cancer",
+        "bowel cancer",
+        "rectal cancer"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "C34.9",
+      "description": "Malignant neoplasm of bronchus or lung, unspecified",
+      "keywords": [
+        "lung cancer",
+        "bronchial cancer",
+        "pulmonary malignancy",
+        "lung mass"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "C46.9",
+      "description": "Kaposi sarcoma, unspecified",
+      "keywords": [
+        "Kaposi sarcoma",
+        "KS",
+        "HIV cancer",
+        "purple lesions",
+        "Kaposi"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "C50.9",
+      "description": "Malignant neoplasm of breast, unspecified",
+      "keywords": [
+        "breast cancer",
+        "breast lump malignant",
+        "breast carcinoma",
+        "mammary cancer"
+      ],
+      "localTerms": {
+        "zu": [
+          "umdlavuza webele"
+        ],
+        "am": [
+          "የጡት ካንሰር"
+        ]
+      }
+    },
+    {
+      "code": "C53.9",
+      "description": "Malignant neoplasm of cervix uteri, unspecified",
+      "keywords": [
+        "cervical cancer",
+        "cervix cancer",
+        "cervical carcinoma",
+        "pap smear abnormal cancer"
+      ],
+      "localTerms": {
+        "zu": [
+          "umdlavuza wesibeletho"
+        ],
+        "am": [
+          "የማህፀን በር ካንሰር"
+        ]
+      }
+    },
+    {
+      "code": "C56",
+      "description": "Malignant neoplasm of ovary",
+      "keywords": [
+        "ovarian cancer",
+        "ovary cancer",
+        "ovarian mass malignant"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "C61",
+      "description": "Malignant neoplasm of prostate",
+      "keywords": [
+        "prostate cancer",
+        "prostatic carcinoma",
+        "PSA elevated cancer",
+        "prostate malignancy"
+      ],
+      "localTerms": {
+        "am": [
+          "የፕሮስቴት ካንሰር"
+        ]
+      }
+    },
+    {
+      "code": "C67.9",
+      "description": "Malignant neoplasm of bladder, unspecified",
+      "keywords": [
+        "bladder cancer",
+        "bladder carcinoma",
+        "hematuria cancer"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "C85.9",
+      "description": "Non-Hodgkin lymphoma, unspecified type",
+      "keywords": [
+        "lymphoma",
+        "non-Hodgkin lymphoma",
+        "NHL",
+        "lymph node cancer"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "C95.9",
+      "description": "Leukaemia, unspecified",
+      "keywords": [
+        "leukemia",
+        "leukaemia",
+        "blood cancer",
+        "white blood cell cancer"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "D50.9",
+      "description": "Iron deficiency anaemia, unspecified",
+      "keywords": [
+        "iron deficiency anemia",
+        "anaemia",
+        "low iron",
+        "low hemoglobin",
+        "low haemoglobin",
+        "pale",
+        "IDA"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukushoda kwegazi"
+        ],
+        "xh": [
+          "ukuswela igazi"
+        ],
+        "am": [
+          "የደም ማነስ"
+        ],
+        "sw": [
+          "upungufu wa damu"
+        ],
+        "yo": [
+          "àìtó ẹ̀jẹ̀"
+        ],
+        "ha": [
+          "karancin jini"
+        ],
+        "ny": [
+          "kuchepa magazi"
+        ]
+      }
+    },
+    {
+      "code": "D51.9",
+      "description": "Vitamin B12 deficiency anaemia, unspecified",
+      "keywords": [
+        "B12 deficiency",
+        "vitamin B12 anemia",
+        "pernicious anemia",
+        "megaloblastic anemia"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "D52.9",
+      "description": "Folate deficiency anaemia, unspecified",
+      "keywords": [
+        "folate deficiency",
+        "folic acid deficiency",
+        "folate anemia",
+        "megaloblastic"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "D56.9",
+      "description": "Thalassaemia, unspecified",
+      "keywords": [
+        "thalassemia",
+        "thalassaemia",
+        "Mediterranean anemia",
+        "hemoglobin disorder"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "D57.1",
+      "description": "Sickle-cell disease without crisis",
+      "keywords": [
+        "sickle cell",
+        "sickle cell disease",
+        "SCD",
+        "HbSS",
+        "sickle cell anemia"
+      ],
+      "localTerms": {
+        "am": [
+          "ሲክል ሴል"
+        ]
+      }
+    },
+    {
+      "code": "D57.0",
+      "description": "Sickle-cell disease with crisis",
+      "keywords": [
+        "sickle cell crisis",
+        "vaso-occlusive crisis",
+        "SCD crisis",
+        "sickle pain crisis"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "D64.9",
+      "description": "Anaemia, unspecified",
+      "keywords": [
+        "anemia",
+        "anaemia",
+        "low blood",
+        "pale",
+        "anemia NOS",
+        "low Hb"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukushoda kwegazi"
+        ],
+        "am": [
+          "የደም ማነስ"
+        ],
+        "sw": [
+          "upungufu wa damu"
+        ],
+        "yo": [
+          "àìtó ẹ̀jẹ̀"
+        ],
+        "ha": [
+          "karancin jini"
+        ],
+        "ny": [
+          "kuchepa magazi"
+        ]
+      }
+    },
+    {
+      "code": "D69.6",
+      "description": "Thrombocytopenia, unspecified",
+      "keywords": [
+        "thrombocytopenia",
+        "low platelets",
+        "low platelet count",
+        "ITP",
+        "bleeding tendency"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E03.9",
+      "description": "Hypothyroidism, unspecified",
+      "keywords": [
+        "hypothyroid",
+        "underactive thyroid",
+        "low thyroid",
+        "TSH high",
+        "myxedema",
+        "thyroid low"
+      ],
+      "localTerms": {
+        "am": [
+          "ታይሮይድ"
+        ]
+      }
+    },
+    {
+      "code": "E05.9",
+      "description": "Thyrotoxicosis, unspecified",
+      "keywords": [
+        "hyperthyroid",
+        "overactive thyroid",
+        "thyrotoxicosis",
+        "Graves disease",
+        "TSH low",
+        "goitre toxic"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E04.9",
+      "description": "Nontoxic goitre, unspecified",
+      "keywords": [
+        "goitre",
+        "goiter",
+        "thyroid enlargement",
+        "neck swelling thyroid",
+        "iodine deficiency goitre"
+      ],
+      "localTerms": {
+        "zu": [
+          "isiphundu"
+        ],
+        "am": [
+          "ጉሮሮ ዕጢ"
+        ]
+      }
+    },
+    {
+      "code": "E10.9",
+      "description": "Type 1 diabetes mellitus without complications",
+      "keywords": [
+        "type 1 diabetes",
+        "T1DM",
+        "insulin dependent",
+        "IDDM",
+        "juvenile diabetes"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sikashukela"
+        ],
+        "am": [
+          "ስኳር በሽታ ዓይነት 1"
+        ]
+      }
+    },
+    {
+      "code": "E11.9",
+      "description": "Type 2 diabetes mellitus without complications",
+      "keywords": [
+        "diabetes",
+        "type 2 diabetes",
+        "T2DM",
+        "NIDDM",
+        "sugar disease",
+        "DM2",
+        "high sugar",
+        "hyperglycemia"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sikashukela"
+        ],
+        "xh": [
+          "isifo seswekile"
+        ],
+        "am": [
+          "የስኳር በሽታ"
+        ],
+        "af": [
+          "suikersiekte"
+        ],
+        "sw": [
+          "kisukari",
+          "ugonjwa wa sukari"
+        ],
+        "yo": [
+          "àtọ̀gbẹ",
+          "àrùn ṣúgà"
+        ],
+        "ha": [
+          "ciwon suga"
+        ],
+        "ny": [
+          "shuga",
+          "matenda a shuga"
+        ]
+      }
+    },
+    {
+      "code": "E11.2",
+      "description": "Type 2 diabetes mellitus with kidney complications",
+      "keywords": [
+        "diabetic nephropathy",
+        "diabetic kidney",
+        "DM kidney",
+        "diabetes renal"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E11.3",
+      "description": "Type 2 diabetes mellitus with ophthalmic complications",
+      "keywords": [
+        "diabetic retinopathy",
+        "diabetic eye",
+        "DM eye",
+        "diabetes blind"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E11.4",
+      "description": "Type 2 diabetes mellitus with neurological complications",
+      "keywords": [
+        "diabetic neuropathy",
+        "diabetic nerve",
+        "DM neuropathy",
+        "tingling feet diabetes",
+        "burning feet"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E11.5",
+      "description": "Type 2 diabetes mellitus with peripheral circulatory complications",
+      "keywords": [
+        "diabetic foot",
+        "diabetic ulcer",
+        "DM peripheral vascular",
+        "diabetic gangrene"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E11.6",
+      "description": "Type 2 diabetes mellitus with other specified complications",
+      "keywords": [
+        "diabetic complications",
+        "DM complications",
+        "diabetic arthropathy"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E16.2",
+      "description": "Hypoglycaemia, unspecified",
+      "keywords": [
+        "hypoglycemia",
+        "low sugar",
+        "low blood sugar",
+        "hypo",
+        "insulin reaction"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E40",
+      "description": "Kwashiorkor",
+      "keywords": [
+        "kwashiorkor",
+        "protein malnutrition",
+        "edematous malnutrition",
+        "swollen belly child",
+        "nutritional edema"
+      ],
+      "localTerms": {
+        "zu": [
+          "inkwashiyoka"
+        ],
+        "xh": [
+          "ikwashiyoka"
+        ],
+        "am": [
+          "ኩዋሺዮርኮር"
+        ],
+        "sw": [
+          "utapiamlo"
+        ],
+        "yo": [
+          "àìjẹunrekànpọ̀"
+        ],
+        "ha": [
+          "tamowa",
+          "rashin abinci mai gina jiki"
+        ],
+        "ny": [
+          "kunyentchera"
+        ]
+      }
+    },
+    {
+      "code": "E41",
+      "description": "Nutritional marasmus",
+      "keywords": [
+        "marasmus",
+        "severe wasting",
+        "severe malnutrition",
+        "protein-energy malnutrition",
+        "PEM"
+      ],
+      "localTerms": {
+        "am": [
+          "ማራዝመስ"
+        ],
+        "sw": [
+          "utapiamlo"
+        ],
+        "yo": [
+          "àìjẹunrekànpọ̀"
+        ],
+        "ha": [
+          "tamowa",
+          "rashin abinci mai gina jiki"
+        ],
+        "ny": [
+          "kunyentchera"
+        ]
+      }
+    },
+    {
+      "code": "E43",
+      "description": "Unspecified severe protein-energy malnutrition",
+      "keywords": [
+        "severe malnutrition",
+        "SAM",
+        "severe acute malnutrition",
+        "wasting severe"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukungondleki"
+        ],
+        "am": [
+          "ከባድ የአመጋገብ እጥረት"
+        ],
+        "sw": [
+          "utapiamlo"
+        ],
+        "yo": [
+          "àìjẹunrekànpọ̀"
+        ],
+        "ha": [
+          "tamowa",
+          "rashin abinci mai gina jiki"
+        ],
+        "ny": [
+          "kunyentchera"
+        ]
+      }
+    },
+    {
+      "code": "E44.0",
+      "description": "Moderate protein-energy malnutrition",
+      "keywords": [
+        "moderate malnutrition",
+        "MAM",
+        "moderate acute malnutrition",
+        "underweight"
+      ],
+      "localTerms": {
+        "sw": [
+          "utapiamlo"
+        ],
+        "yo": [
+          "àìjẹunrekànpọ̀"
+        ],
+        "ha": [
+          "tamowa",
+          "rashin abinci mai gina jiki"
+        ],
+        "ny": [
+          "kunyentchera"
+        ]
+      }
+    },
+    {
+      "code": "E46",
+      "description": "Unspecified protein-energy malnutrition",
+      "keywords": [
+        "malnutrition",
+        "undernutrition",
+        "malnourished",
+        "PEM",
+        "failure to thrive"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukungondleki"
+        ],
+        "am": [
+          "የአመጋገብ እጥረት"
+        ],
+        "sw": [
+          "utapiamlo"
+        ],
+        "yo": [
+          "àìjẹunrekànpọ̀"
+        ],
+        "ha": [
+          "tamowa",
+          "rashin abinci mai gina jiki"
+        ],
+        "ny": [
+          "kunyentchera"
+        ]
+      }
+    },
+    {
+      "code": "E55.9",
+      "description": "Vitamin D deficiency, unspecified",
+      "keywords": [
+        "vitamin D deficiency",
+        "rickets",
+        "osteomalacia",
+        "low vitamin D"
+      ],
+      "localTerms": {
+        "sw": [
+          "upungufu wa vitamini D"
+        ]
+      }
+    },
+    {
+      "code": "E66.9",
+      "description": "Obesity, unspecified",
+      "keywords": [
+        "obesity",
+        "obese",
+        "overweight",
+        "BMI high",
+        "morbid obesity"
+      ],
+      "localTerms": {
+        "af": [
+          "vetsug"
+        ]
+      }
+    },
+    {
+      "code": "E78.5",
+      "description": "Hyperlipidaemia, unspecified",
+      "keywords": [
+        "cholesterol",
+        "hyperlipidemia",
+        "dyslipidemia",
+        "high cholesterol",
+        "high triglycerides",
+        "lipids high"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "E86",
+      "description": "Volume depletion",
+      "keywords": [
+        "dehydration",
+        "volume depletion",
+        "dry",
+        "fluid loss",
+        "hypovolemia"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukoma"
+        ],
+        "am": [
+          "ድርቀት"
+        ],
+        "sw": [
+          "upungufu wa maji mwilini"
+        ]
+      }
+    },
+    {
+      "code": "F10.2",
+      "description": "Mental and behavioural disorders due to use of alcohol, dependence syndrome",
+      "keywords": [
+        "alcohol dependence",
+        "alcoholism",
+        "alcohol addiction",
+        "alcohol abuse",
+        "drinking problem"
+      ],
+      "localTerms": {
+        "zu": [
+          "ubudakwa"
+        ],
+        "xh": [
+          "ubudlwembe"
+        ],
+        "am": [
+          "የአልኮል ሱስ"
+        ],
+        "af": [
+          "alkoholisme"
+        ]
+      }
+    },
+    {
+      "code": "F10.0",
+      "description": "Mental and behavioural disorders due to use of alcohol, acute intoxication",
+      "keywords": [
+        "alcohol intoxication",
+        "drunk",
+        "intoxicated",
+        "alcohol poisoning",
+        "acute alcohol"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F12.2",
+      "description": "Mental and behavioural disorders due to use of cannabinoids, dependence syndrome",
+      "keywords": [
+        "cannabis dependence",
+        "marijuana addiction",
+        "dagga abuse",
+        "cannabis use disorder"
+      ],
+      "localTerms": {
+        "zu": [
+          "insangu"
+        ],
+        "af": [
+          "dagga"
+        ]
+      }
+    },
+    {
+      "code": "F11.2",
+      "description": "Mental and behavioural disorders due to use of opioids, dependence syndrome",
+      "keywords": [
+        "opioid dependence",
+        "heroin addiction",
+        "opioid abuse",
+        "opioid use disorder",
+        "codeine abuse"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F19.9",
+      "description": "Mental and behavioural disorders due to multiple drug use, unspecified",
+      "keywords": [
+        "substance abuse",
+        "drug abuse",
+        "polysubstance",
+        "multiple drug use",
+        "tik",
+        "nyaope"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F20.9",
+      "description": "Schizophrenia, unspecified",
+      "keywords": [
+        "schizophrenia",
+        "psychosis",
+        "hearing voices",
+        "hallucinations",
+        "delusions",
+        "thought disorder"
+      ],
+      "localTerms": {
+        "am": [
+          "ስኪዞፍሬኒያ"
+        ]
+      }
+    },
+    {
+      "code": "F23",
+      "description": "Acute and transient psychotic disorders",
+      "keywords": [
+        "acute psychosis",
+        "brief psychotic episode",
+        "psychotic break",
+        "transient psychosis"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F31.9",
+      "description": "Bipolar affective disorder, unspecified",
+      "keywords": [
+        "bipolar",
+        "manic depressive",
+        "bipolar disorder",
+        "mania",
+        "mood swings extreme"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F32.9",
+      "description": "Depressive episode, unspecified",
+      "keywords": [
+        "depression",
+        "depressed",
+        "low mood",
+        "sadness",
+        "major depression",
+        "depressive episode",
+        "MDD"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukukhathazeka"
+        ],
+        "xh": [
+          "uxinzelelo"
+        ],
+        "am": [
+          "ድብርት"
+        ],
+        "af": [
+          "depressie"
+        ]
+      }
+    },
+    {
+      "code": "F41.0",
+      "description": "Panic disorder",
+      "keywords": [
+        "panic disorder",
+        "panic attack",
+        "anxiety attack",
+        "sudden fear",
+        "palpitations anxiety"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F41.1",
+      "description": "Generalized anxiety disorder",
+      "keywords": [
+        "anxiety",
+        "GAD",
+        "generalized anxiety",
+        "worry",
+        "anxious",
+        "nervousness"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukukhathazeka"
+        ],
+        "am": [
+          "ጭንቀት"
+        ]
+      }
+    },
+    {
+      "code": "F43.1",
+      "description": "Post-traumatic stress disorder",
+      "keywords": [
+        "PTSD",
+        "post traumatic stress",
+        "trauma",
+        "flashbacks",
+        "nightmares trauma"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "F51.0",
+      "description": "Nonorganic insomnia",
+      "keywords": [
+        "insomnia",
+        "sleeplessness",
+        "cannot sleep",
+        "difficulty sleeping",
+        "poor sleep"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukungalali"
+        ],
+        "am": [
+          "እንቅልፍ ማጣት"
+        ]
+      }
+    },
+    {
+      "code": "F03",
+      "description": "Unspecified dementia",
+      "keywords": [
+        "dementia",
+        "cognitive decline",
+        "memory loss",
+        "confusion elderly",
+        "Alzheimer",
+        "senility"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G03.9",
+      "description": "Meningitis, unspecified",
+      "keywords": [
+        "meningitis",
+        "meningeal infection",
+        "neck stiffness",
+        "photophobia fever",
+        "stiff neck fever"
+      ],
+      "localTerms": {
+        "am": [
+          "ሜኒንጃይቲስ"
+        ]
+      }
+    },
+    {
+      "code": "G20",
+      "description": "Parkinson disease",
+      "keywords": [
+        "Parkinson",
+        "Parkinsonism",
+        "tremor",
+        "rigidity",
+        "bradykinesia",
+        "shuffling gait"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G40.9",
+      "description": "Epilepsy, unspecified",
+      "keywords": [
+        "epilepsy",
+        "seizure",
+        "fits",
+        "convulsion",
+        "fitting",
+        "epileptic",
+        "tonic clonic"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sokuwa"
+        ],
+        "xh": [
+          "isifo sokuwa"
+        ],
+        "am": [
+          "ሚጥሌ",
+          "የሚጥል በሽታ"
+        ],
+        "af": [
+          "epilepsie"
+        ],
+        "sw": [
+          "kifafa"
+        ],
+        "yo": [
+          "warapa",
+          "gìrì"
+        ],
+        "ha": [
+          "farfadiya"
+        ],
+        "ny": [
+          "khunyu",
+          "matenda a khunyu"
+        ]
+      }
+    },
+    {
+      "code": "G40.3",
+      "description": "Generalized idiopathic epilepsy and epileptic syndromes",
+      "keywords": [
+        "generalized epilepsy",
+        "grand mal",
+        "tonic clonic seizure",
+        "absence seizure"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G43.9",
+      "description": "Migraine, unspecified",
+      "keywords": [
+        "migraine",
+        "severe headache",
+        "one sided headache",
+        "aura headache",
+        "throbbing headache"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G44.2",
+      "description": "Tension-type headache",
+      "keywords": [
+        "tension headache",
+        "stress headache",
+        "band headache",
+        "pressure headache"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G51.0",
+      "description": "Bell palsy",
+      "keywords": [
+        "Bell palsy",
+        "facial palsy",
+        "facial nerve",
+        "drooping face",
+        "facial weakness"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G62.9",
+      "description": "Polyneuropathy, unspecified",
+      "keywords": [
+        "neuropathy",
+        "peripheral neuropathy",
+        "tingling hands feet",
+        "numbness",
+        "nerve damage"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "G80.9",
+      "description": "Cerebral palsy, unspecified",
+      "keywords": [
+        "cerebral palsy",
+        "CP",
+        "spastic child",
+        "motor disability child"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "H10.9",
+      "description": "Conjunctivitis, unspecified",
+      "keywords": [
+        "conjunctivitis",
+        "pink eye",
+        "red eye",
+        "eye infection",
+        "eye discharge",
+        "sore eyes"
+      ],
+      "localTerms": {
+        "zu": [
+          "amehlo abomvu"
+        ],
+        "xh": [
+          "amehlo abomvu"
+        ],
+        "am": [
+          "የዓይን ኢንፌክሽን"
+        ],
+        "af": [
+          "pienk oog"
+        ]
+      }
+    },
+    {
+      "code": "H25.9",
+      "description": "Senile cataract, unspecified",
+      "keywords": [
+        "cataract",
+        "cloudy lens",
+        "blurred vision elderly",
+        "cataract surgery",
+        "white pupil"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukufiphala kwamehlo"
+        ],
+        "am": [
+          "ድመና"
+        ]
+      }
+    },
+    {
+      "code": "H40.9",
+      "description": "Glaucoma, unspecified",
+      "keywords": [
+        "glaucoma",
+        "eye pressure",
+        "intraocular pressure",
+        "tunnel vision",
+        "IOP high"
+      ],
+      "localTerms": {
+        "am": [
+          "ግላኮማ"
+        ]
+      }
+    },
+    {
+      "code": "H52.7",
+      "description": "Disorder of refraction, unspecified",
+      "keywords": [
+        "refractive error",
+        "need glasses",
+        "blurred vision",
+        "myopia",
+        "hyperopia",
+        "astigmatism"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "H71",
+      "description": "Trachoma",
+      "keywords": [
+        "trachoma",
+        "chlamydia eye",
+        "blindness trachoma",
+        "eyelid scarring"
+      ],
+      "localTerms": {
+        "am": [
+          "ትራኮማ"
+        ]
+      }
+    },
+    {
+      "code": "H60.9",
+      "description": "Otitis externa, unspecified",
+      "keywords": [
+        "otitis externa",
+        "swimmers ear",
+        "outer ear infection",
+        "ear canal infection"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "H66.9",
+      "description": "Otitis media, unspecified",
+      "keywords": [
+        "otitis media",
+        "ear infection",
+        "middle ear infection",
+        "ear pain",
+        "otalgia"
+      ],
+      "localTerms": {
+        "zu": [
+          "indlebe ebuhlungu"
+        ],
+        "xh": [
+          "indlebe ebuhlungu"
+        ],
+        "am": [
+          "የጆሮ ኢንፌክሽን"
+        ]
+      }
+    },
+    {
+      "code": "H91.9",
+      "description": "Hearing loss, unspecified",
+      "keywords": [
+        "hearing loss",
+        "deafness",
+        "hard of hearing",
+        "deaf",
+        "hearing impairment"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukungezwa"
+        ],
+        "am": [
+          "የመስማት ችግር"
+        ]
+      }
+    },
+    {
+      "code": "I10",
+      "description": "Essential (primary) hypertension",
+      "keywords": [
+        "hypertension",
+        "high blood pressure",
+        "HTN",
+        "BP high",
+        "elevated blood pressure",
+        "essential hypertension"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo somfutho wegazi",
+          "umfutho ophezulu"
+        ],
+        "xh": [
+          "uxinzelelo lwegazi"
+        ],
+        "am": [
+          "የደም ግፊት"
+        ],
+        "af": [
+          "hoe bloeddruk"
+        ],
+        "sw": [
+          "shinikizo la damu",
+          "presha"
+        ],
+        "yo": [
+          "ẹ̀jẹ̀ rírú",
+          "ìfún ẹ̀jẹ̀ ga"
+        ],
+        "ha": [
+          "hawan jini"
+        ],
+        "ny": [
+          "kuthamanga kwa magazi",
+          "BP"
+        ]
+      }
+    },
+    {
+      "code": "I13.9",
+      "description": "Hypertensive heart and renal disease, unspecified",
+      "keywords": [
+        "hypertensive heart and kidney",
+        "HTN heart kidney",
+        "hypertensive nephropathy"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I20.9",
+      "description": "Angina pectoris, unspecified",
+      "keywords": [
+        "angina",
+        "chest pain cardiac",
+        "ischaemic chest pain",
+        "angina pectoris",
+        "stable angina"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I21.9",
+      "description": "Acute myocardial infarction, unspecified",
+      "keywords": [
+        "heart attack",
+        "MI",
+        "myocardial infarction",
+        "STEMI",
+        "NSTEMI",
+        "AMI",
+        "coronary"
+      ],
+      "localTerms": {
+        "zu": [
+          "inhliziyo eshayayo"
+        ],
+        "am": [
+          "የልብ ድካም"
+        ],
+        "af": [
+          "hartaanval"
+        ]
+      }
+    },
+    {
+      "code": "I25.9",
+      "description": "Chronic ischaemic heart disease, unspecified",
+      "keywords": [
+        "IHD",
+        "ischaemic heart",
+        "coronary artery disease",
+        "CAD",
+        "chronic IHD"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I42.9",
+      "description": "Cardiomyopathy, unspecified",
+      "keywords": [
+        "cardiomyopathy",
+        "enlarged heart",
+        "dilated cardiomyopathy",
+        "heart muscle disease"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I48",
+      "description": "Atrial fibrillation and flutter",
+      "keywords": [
+        "atrial fibrillation",
+        "AF",
+        "AFib",
+        "irregular heartbeat",
+        "atrial flutter"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I50.9",
+      "description": "Heart failure, unspecified",
+      "keywords": [
+        "heart failure",
+        "CCF",
+        "congestive cardiac failure",
+        "cardiac failure",
+        "CHF",
+        "fluid overload"
+      ],
+      "localTerms": {
+        "zu": [
+          "inhliziyo ebuthakathaka"
+        ],
+        "am": [
+          "የልብ ድካም"
+        ],
+        "sw": [
+          "moyo kushindwa kufanya kazi"
+        ]
+      }
+    },
+    {
+      "code": "I61.9",
+      "description": "Intracerebral haemorrhage, unspecified",
+      "keywords": [
+        "brain bleed",
+        "hemorrhagic stroke",
+        "intracerebral hemorrhage",
+        "bleeding brain"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I63.9",
+      "description": "Cerebral infarction, unspecified",
+      "keywords": [
+        "stroke",
+        "CVA",
+        "cerebral infarction",
+        "ischemic stroke",
+        "brain attack"
+      ],
+      "localTerms": {
+        "zu": [
+          "istrowuki"
+        ],
+        "am": [
+          "ስትሮክ"
+        ],
+        "af": [
+          "beroerte"
+        ]
+      }
+    },
+    {
+      "code": "I64",
+      "description": "Stroke, not specified as haemorrhage or infarction",
+      "keywords": [
+        "stroke",
+        "CVA",
+        "cerebrovascular accident",
+        "brain attack",
+        "stroke NOS"
+      ],
+      "localTerms": {
+        "zu": [
+          "istrowuki"
+        ],
+        "am": [
+          "ስትሮክ"
+        ]
+      }
+    },
+    {
+      "code": "I73.9",
+      "description": "Peripheral vascular disease, unspecified",
+      "keywords": [
+        "peripheral vascular disease",
+        "PVD",
+        "PAD",
+        "poor circulation",
+        "claudication"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I80.2",
+      "description": "Phlebitis and thrombophlebitis of other deep vessels of lower extremities",
+      "keywords": [
+        "DVT",
+        "deep vein thrombosis",
+        "leg clot",
+        "deep venous thrombosis",
+        "swollen leg clot"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I83.9",
+      "description": "Varicose veins of lower extremities without ulcer or inflammation",
+      "keywords": [
+        "varicose veins",
+        "varicosities",
+        "leg veins",
+        "twisted veins"
+      ],
+      "localTerms": {
+        "af": [
+          "spatare"
+        ]
+      }
+    },
+    {
+      "code": "I01.9",
+      "description": "Acute rheumatic heart disease, unspecified",
+      "keywords": [
+        "rheumatic heart",
+        "rheumatic fever",
+        "RHD acute",
+        "valvular heart disease rheumatic"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I05.9",
+      "description": "Rheumatic mitral valve disease, unspecified",
+      "keywords": [
+        "mitral valve disease",
+        "rheumatic mitral",
+        "mitral stenosis",
+        "mitral regurgitation"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "I26.9",
+      "description": "Pulmonary embolism without mention of acute cor pulmonale",
+      "keywords": [
+        "pulmonary embolism",
+        "PE",
+        "lung clot",
+        "pulmonary thromboembolism"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J00",
+      "description": "Acute nasopharyngitis [common cold]",
+      "keywords": [
+        "common cold",
+        "cold",
+        "runny nose",
+        "coryza",
+        "nasal congestion",
+        "sneezing"
+      ],
+      "localTerms": {
+        "zu": [
+          "umkhuhlane"
+        ],
+        "xh": [
+          "umkhuhlane"
+        ],
+        "am": [
+          "ጉንፋን"
+        ],
+        "af": [
+          "verkoue"
+        ],
+        "sw": [
+          "mafua",
+          "homa"
+        ],
+        "yo": [
+          "oríṣíṣẹ́"
+        ],
+        "ha": [
+          "mura"
+        ],
+        "ny": [
+          "chimfine"
+        ]
+      }
+    },
+    {
+      "code": "J01.9",
+      "description": "Acute sinusitis, unspecified",
+      "keywords": [
+        "sinusitis",
+        "sinus infection",
+        "sinus pain",
+        "facial pain sinus",
+        "nasal congestion sinus"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J02.9",
+      "description": "Acute pharyngitis, unspecified",
+      "keywords": [
+        "pharyngitis",
+        "sore throat",
+        "throat infection",
+        "red throat",
+        "strep throat"
+      ],
+      "localTerms": {
+        "zu": [
+          "umphimbo obuhlungu"
+        ],
+        "xh": [
+          "umqala obuhlungu"
+        ],
+        "am": [
+          "የጉሮሮ ህመም"
+        ],
+        "sw": [
+          "koo kuuma"
+        ]
+      }
+    },
+    {
+      "code": "J03.9",
+      "description": "Acute tonsillitis, unspecified",
+      "keywords": [
+        "tonsillitis",
+        "tonsils",
+        "swollen tonsils",
+        "tonsillar abscess",
+        "quinsy"
+      ],
+      "localTerms": {
+        "zu": [
+          "amatonsili"
+        ],
+        "af": [
+          "tonsillitis"
+        ],
+        "sw": [
+          "tezi kuvimba"
+        ]
+      }
+    },
+    {
+      "code": "J04.0",
+      "description": "Acute laryngitis",
+      "keywords": [
+        "laryngitis",
+        "voice loss",
+        "hoarse voice",
+        "croaky voice",
+        "lost voice"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J05.0",
+      "description": "Acute obstructive laryngitis [croup]",
+      "keywords": [
+        "croup",
+        "barking cough",
+        "stridor",
+        "laryngotracheitis",
+        "croup child"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J06.9",
+      "description": "Acute upper respiratory infection, unspecified",
+      "keywords": [
+        "URTI",
+        "upper respiratory infection",
+        "cold",
+        "flu-like",
+        "cough fever",
+        "URI"
+      ],
+      "localTerms": {
+        "zu": [
+          "umkhuhlane",
+          "isifuba"
+        ],
+        "xh": [
+          "umkhuhlane"
+        ],
+        "am": [
+          "ጉንፋን"
+        ],
+        "af": [
+          "boonste lugweginfeksie"
+        ],
+        "sw": [
+          "homa ya mapafu"
+        ],
+        "yo": [
+          "àìsàn imu àti ọ̀fun"
+        ],
+        "ha": [
+          "ciwon hanci da makogwaro"
+        ],
+        "ny": [
+          "chifuwa"
+        ]
+      }
+    },
+    {
+      "code": "J10.1",
+      "description": "Influenza with other respiratory manifestations, identified influenza virus",
+      "keywords": [
+        "influenza",
+        "flu",
+        "seasonal flu",
+        "influenza virus"
+      ],
+      "localTerms": {
+        "zu": [
+          "umkhuhlane omkhulu"
+        ],
+        "am": [
+          "ኢንፍሉዌንዛ"
+        ]
+      }
+    },
+    {
+      "code": "J11.1",
+      "description": "Influenza with other respiratory manifestations, virus not identified",
+      "keywords": [
+        "flu",
+        "influenza like illness",
+        "ILI",
+        "flu NOS",
+        "viral respiratory"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J18.9",
+      "description": "Pneumonia, unspecified organism",
+      "keywords": [
+        "pneumonia",
+        "chest infection",
+        "LRTI",
+        "lower respiratory infection",
+        "lung infection"
+      ],
+      "localTerms": {
+        "zu": [
+          "inyumoniya",
+          "isifuba"
+        ],
+        "xh": [
+          "inyumoniya"
+        ],
+        "am": [
+          "የሳንባ ምች"
+        ],
+        "af": [
+          "longontsteking"
+        ],
+        "sw": [
+          "nimonia",
+          "homa ya mapafu"
+        ],
+        "yo": [
+          "ẹ̀dọ̀fóró wíwú"
+        ],
+        "ha": [
+          "ciwon huhu"
+        ],
+        "ny": [
+          "chifuwa chopweteka",
+          "numonia"
+        ]
+      }
+    },
+    {
+      "code": "J20.9",
+      "description": "Acute bronchitis, unspecified",
+      "keywords": [
+        "bronchitis",
+        "acute bronchitis",
+        "chest cold",
+        "productive cough",
+        "bronchial infection"
+      ],
+      "localTerms": {
+        "sw": [
+          "bronkaiti"
+        ]
+      }
+    },
+    {
+      "code": "J21.9",
+      "description": "Acute bronchiolitis, unspecified",
+      "keywords": [
+        "bronchiolitis",
+        "RSV",
+        "wheezy baby",
+        "respiratory syncytial",
+        "infant wheeze"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J22",
+      "description": "Unspecified acute lower respiratory infection",
+      "keywords": [
+        "LRTI",
+        "lower respiratory infection",
+        "chest infection",
+        "lower airway infection"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J30.4",
+      "description": "Allergic rhinitis, unspecified",
+      "keywords": [
+        "allergic rhinitis",
+        "hay fever",
+        "nasal allergy",
+        "sneezing",
+        "runny nose allergy"
+      ],
+      "localTerms": {
+        "af": [
+          "hooikoors"
+        ]
+      }
+    },
+    {
+      "code": "J32.9",
+      "description": "Chronic sinusitis, unspecified",
+      "keywords": [
+        "chronic sinusitis",
+        "sinus chronic",
+        "post nasal drip",
+        "sinus headache chronic"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J44.9",
+      "description": "Chronic obstructive pulmonary disease, unspecified",
+      "keywords": [
+        "COPD",
+        "chronic obstructive",
+        "emphysema",
+        "chronic bronchitis",
+        "chronic lung disease"
+      ],
+      "localTerms": {
+        "af": [
+          "COPD"
+        ]
+      }
+    },
+    {
+      "code": "J44.1",
+      "description": "Chronic obstructive pulmonary disease with acute exacerbation, unspecified",
+      "keywords": [
+        "COPD exacerbation",
+        "AECOPD",
+        "COPD flare",
+        "worsening COPD"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J45.9",
+      "description": "Asthma, unspecified",
+      "keywords": [
+        "asthma",
+        "wheeze",
+        "wheezing",
+        "bronchospasm",
+        "reactive airway",
+        "chest tight"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifuba somoya"
+        ],
+        "xh": [
+          "isifuba somoya"
+        ],
+        "am": [
+          "አስም"
+        ],
+        "af": [
+          "asma"
+        ],
+        "sw": [
+          "pumu"
+        ],
+        "yo": [
+          "ìkọ́"
+        ],
+        "ha": [
+          "asma",
+          "ciwon tari"
+        ],
+        "ny": [
+          "asima"
+        ]
+      }
+    },
+    {
+      "code": "J46",
+      "description": "Status asthmaticus",
+      "keywords": [
+        "status asthmaticus",
+        "acute severe asthma",
+        "asthma attack severe",
+        "life threatening asthma"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "J90",
+      "description": "Pleural effusion, not elsewhere classified",
+      "keywords": [
+        "pleural effusion",
+        "fluid lung",
+        "water lung",
+        "pleural fluid"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K02.9",
+      "description": "Dental caries, unspecified",
+      "keywords": [
+        "dental caries",
+        "tooth decay",
+        "cavity",
+        "rotten tooth",
+        "toothache decay"
+      ],
+      "localTerms": {
+        "zu": [
+          "amazinyo abolile"
+        ],
+        "am": [
+          "የጥርስ መበስበስ"
+        ],
+        "af": [
+          "tandverval"
+        ]
+      }
+    },
+    {
+      "code": "K04.7",
+      "description": "Periapical abscess without sinus",
+      "keywords": [
+        "dental abscess",
+        "tooth abscess",
+        "gum abscess",
+        "toothache swelling"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K05.1",
+      "description": "Chronic gingivitis",
+      "keywords": [
+        "gingivitis",
+        "gum disease",
+        "bleeding gums",
+        "gum inflammation",
+        "periodontal"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K21.0",
+      "description": "Gastro-oesophageal reflux disease with oesophagitis",
+      "keywords": [
+        "reflux",
+        "GERD",
+        "GORD",
+        "heartburn",
+        "acid reflux",
+        "oesophagitis"
+      ],
+      "localTerms": {
+        "af": [
+          "sooibrand"
+        ]
+      }
+    },
+    {
+      "code": "K25.9",
+      "description": "Gastric ulcer, unspecified",
+      "keywords": [
+        "stomach ulcer",
+        "gastric ulcer",
+        "PUD",
+        "peptic ulcer",
+        "epigastric pain"
+      ],
+      "localTerms": {
+        "zu": [
+          "isilonda sesisu"
+        ],
+        "am": [
+          "የሆድ ቁስል"
+        ]
+      }
+    },
+    {
+      "code": "K26.9",
+      "description": "Duodenal ulcer, unspecified",
+      "keywords": [
+        "duodenal ulcer",
+        "DU",
+        "peptic ulcer",
+        "hunger pain",
+        "ulcer pain relieved by food"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K29.7",
+      "description": "Gastritis, unspecified",
+      "keywords": [
+        "gastritis",
+        "stomach inflammation",
+        "epigastric pain",
+        "dyspepsia",
+        "indigestion",
+        "stomach pain"
+      ],
+      "localTerms": {
+        "zu": [
+          "isisu esibuhlungu"
+        ],
+        "am": [
+          "ጋስትራይቲስ"
+        ],
+        "sw": [
+          "tumbo kuuma"
+        ]
+      }
+    },
+    {
+      "code": "K30",
+      "description": "Functional dyspepsia",
+      "keywords": [
+        "dyspepsia",
+        "indigestion",
+        "bloating",
+        "fullness",
+        "epigastric discomfort"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K35.9",
+      "description": "Acute appendicitis, unspecified",
+      "keywords": [
+        "appendicitis",
+        "appendix",
+        "RIF pain",
+        "right iliac fossa",
+        "McBurney point"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K40.9",
+      "description": "Unilateral or unspecified inguinal hernia, without obstruction or gangrene",
+      "keywords": [
+        "inguinal hernia",
+        "groin hernia",
+        "hernia",
+        "groin lump",
+        "hernia repair"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K42.9",
+      "description": "Umbilical hernia without obstruction or gangrene",
+      "keywords": [
+        "umbilical hernia",
+        "belly button hernia",
+        "navel hernia"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K58.9",
+      "description": "Irritable bowel syndrome without diarrhoea",
+      "keywords": [
+        "IBS",
+        "irritable bowel",
+        "spastic colon",
+        "abdominal cramps",
+        "functional bowel"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K59.0",
+      "description": "Constipation",
+      "keywords": [
+        "constipation",
+        "hard stool",
+        "difficulty passing stool",
+        "blocked bowel"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuqunjelwa"
+        ],
+        "am": [
+          "የሆድ ድርቀት"
+        ]
+      }
+    },
+    {
+      "code": "K64.9",
+      "description": "Haemorrhoids, unspecified",
+      "keywords": [
+        "hemorrhoids",
+        "haemorrhoids",
+        "piles",
+        "rectal bleeding",
+        "anal bleeding"
+      ],
+      "localTerms": {
+        "af": [
+          "aamborsels"
+        ]
+      }
+    },
+    {
+      "code": "K70.3",
+      "description": "Alcoholic cirrhosis of liver",
+      "keywords": [
+        "alcoholic cirrhosis",
+        "liver cirrhosis alcohol",
+        "alcoholic liver disease"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K74.6",
+      "description": "Other and unspecified cirrhosis of liver",
+      "keywords": [
+        "liver cirrhosis",
+        "cirrhosis",
+        "chronic liver disease",
+        "liver failure"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K80.2",
+      "description": "Calculus of gallbladder without cholecystitis",
+      "keywords": [
+        "gallstones",
+        "cholelithiasis",
+        "biliary colic",
+        "gallbladder stones"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K81.0",
+      "description": "Acute cholecystitis",
+      "keywords": [
+        "cholecystitis",
+        "gallbladder infection",
+        "gallbladder inflammation",
+        "Murphy sign"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "K85.9",
+      "description": "Acute pancreatitis, unspecified",
+      "keywords": [
+        "pancreatitis",
+        "acute pancreatitis",
+        "pancreas inflammation",
+        "epigastric pain radiating back"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "L01.0",
+      "description": "Impetigo",
+      "keywords": [
+        "impetigo",
+        "school sores",
+        "honey crusted sores",
+        "skin infection child"
+      ],
+      "localTerms": {
+        "zu": [
+          "amahlanzana"
+        ],
+        "sw": [
+          "vidonda vya ngozi"
+        ]
+      }
+    },
+    {
+      "code": "L02.9",
+      "description": "Cutaneous abscess, furuncle and carbuncle, unspecified",
+      "keywords": [
+        "abscess",
+        "boil",
+        "furuncle",
+        "skin abscess",
+        "carbuncle",
+        "pus collection"
+      ],
+      "localTerms": {
+        "zu": [
+          "ithumba"
+        ],
+        "xh": [
+          "ithumba"
+        ],
+        "sw": [
+          "jipu"
+        ]
+      }
+    },
+    {
+      "code": "L03.9",
+      "description": "Cellulitis, unspecified",
+      "keywords": [
+        "cellulitis",
+        "skin infection",
+        "red hot swollen",
+        "spreading skin infection",
+        "erythema"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "L08.9",
+      "description": "Local infection of skin and subcutaneous tissue, unspecified",
+      "keywords": [
+        "skin infection",
+        "wound infection",
+        "infected wound",
+        "pyoderma"
+      ],
+      "localTerms": {
+        "sw": [
+          "ugonjwa wa ngozi"
+        ]
+      }
+    },
+    {
+      "code": "L20.9",
+      "description": "Atopic dermatitis, unspecified",
+      "keywords": [
+        "eczema",
+        "atopic dermatitis",
+        "itchy skin",
+        "dry skin rash",
+        "atopic eczema"
+      ],
+      "localTerms": {
+        "zu": [
+          "isikhumba esomile"
+        ],
+        "am": [
+          "ኤክዚማ"
+        ],
+        "sw": [
+          "upele"
+        ]
+      }
+    },
+    {
+      "code": "L23.9",
+      "description": "Allergic contact dermatitis, unspecified cause",
+      "keywords": [
+        "contact dermatitis",
+        "allergic rash",
+        "skin allergy",
+        "contact allergy"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "L30.9",
+      "description": "Dermatitis, unspecified",
+      "keywords": [
+        "dermatitis",
+        "skin rash",
+        "rash",
+        "eczema NOS",
+        "itchy skin rash"
+      ],
+      "localTerms": {
+        "sw": [
+          "upele wa ngozi"
+        ]
+      }
+    },
+    {
+      "code": "L40.0",
+      "description": "Psoriasis vulgaris",
+      "keywords": [
+        "psoriasis",
+        "plaque psoriasis",
+        "scaly patches",
+        "silvery scales skin"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "L50.9",
+      "description": "Urticaria, unspecified",
+      "keywords": [
+        "urticaria",
+        "hives",
+        "allergic rash",
+        "wheals",
+        "itchy welts"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "L70.0",
+      "description": "Acne vulgaris",
+      "keywords": [
+        "acne",
+        "pimples",
+        "spots",
+        "acne vulgaris",
+        "facial acne",
+        "blackheads"
+      ],
+      "localTerms": {
+        "zu": [
+          "izinduna"
+        ],
+        "af": [
+          "aknee"
+        ]
+      }
+    },
+    {
+      "code": "L98.4",
+      "description": "Non-pressure chronic ulcer of skin, not elsewhere classified",
+      "keywords": [
+        "chronic wound",
+        "leg ulcer",
+        "non-healing wound",
+        "chronic skin ulcer"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M06.9",
+      "description": "Rheumatoid arthritis, unspecified",
+      "keywords": [
+        "rheumatoid arthritis",
+        "RA",
+        "joint inflammation",
+        "swollen joints",
+        "rheumatoid"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M10.9",
+      "description": "Gout, unspecified",
+      "keywords": [
+        "gout",
+        "gouty arthritis",
+        "big toe pain",
+        "uric acid",
+        "gouty attack",
+        "podagra"
+      ],
+      "localTerms": {
+        "af": [
+          "jig"
+        ]
+      }
+    },
+    {
+      "code": "M13.9",
+      "description": "Arthritis, unspecified",
+      "keywords": [
+        "arthritis",
+        "joint pain",
+        "joint swelling",
+        "arthralgia",
+        "polyarthritis"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo samathambo"
+        ],
+        "am": [
+          "የመገጣጠሚያ ህመም"
+        ]
+      }
+    },
+    {
+      "code": "M15.9",
+      "description": "Polyosteoarthritis, unspecified",
+      "keywords": [
+        "osteoarthritis",
+        "OA",
+        "degenerative joint",
+        "wear and tear arthritis",
+        "joint stiffness"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M16.9",
+      "description": "Osteoarthritis of hip, unspecified",
+      "keywords": [
+        "hip arthritis",
+        "hip OA",
+        "hip pain degenerative",
+        "hip joint pain"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M17.9",
+      "description": "Osteoarthritis of knee, unspecified",
+      "keywords": [
+        "knee arthritis",
+        "knee OA",
+        "knee pain",
+        "knee stiffness",
+        "knee degenerative"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M54.2",
+      "description": "Cervicalgia",
+      "keywords": [
+        "neck pain",
+        "cervical pain",
+        "stiff neck",
+        "cervicalgia",
+        "neck ache"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M54.5",
+      "description": "Low back pain",
+      "keywords": [
+        "back pain",
+        "lower back pain",
+        "lumbago",
+        "lumbar pain",
+        "backache",
+        "LBP"
+      ],
+      "localTerms": {
+        "zu": [
+          "ubuhlungu bomqolo"
+        ],
+        "am": [
+          "የወገብ ህመም"
+        ],
+        "af": [
+          "lae rugpyn"
+        ]
+      }
+    },
+    {
+      "code": "M65.9",
+      "description": "Synovitis and tenosynovitis, unspecified",
+      "keywords": [
+        "tendonitis",
+        "tendinitis",
+        "tendon pain",
+        "tenosynovitis",
+        "trigger finger"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M75.1",
+      "description": "Rotator cuff syndrome",
+      "keywords": [
+        "shoulder pain",
+        "rotator cuff",
+        "shoulder impingement",
+        "frozen shoulder"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M79.1",
+      "description": "Myalgia",
+      "keywords": [
+        "muscle pain",
+        "body aches",
+        "myalgia",
+        "muscle soreness",
+        "generalized pain"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "M81.9",
+      "description": "Osteoporosis, unspecified",
+      "keywords": [
+        "osteoporosis",
+        "brittle bones",
+        "bone loss",
+        "low bone density"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N10",
+      "description": "Acute tubulo-interstitial nephritis",
+      "keywords": [
+        "pyelonephritis",
+        "kidney infection",
+        "upper UTI",
+        "loin pain fever"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N17.9",
+      "description": "Acute renal failure, unspecified",
+      "keywords": [
+        "acute kidney injury",
+        "AKI",
+        "acute renal failure",
+        "ARF",
+        "kidney failure acute"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N18.9",
+      "description": "Chronic kidney disease, unspecified",
+      "keywords": [
+        "CKD",
+        "chronic kidney disease",
+        "renal failure",
+        "chronic renal failure",
+        "kidney disease"
+      ],
+      "localTerms": {
+        "am": [
+          "የኩላሊት በሽታ"
+        ]
+      }
+    },
+    {
+      "code": "N20.0",
+      "description": "Calculus of kidney",
+      "keywords": [
+        "kidney stones",
+        "renal calculus",
+        "nephrolithiasis",
+        "renal colic",
+        "flank pain"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N30.0",
+      "description": "Acute cystitis",
+      "keywords": [
+        "cystitis",
+        "bladder infection",
+        "burning urine",
+        "frequency urgency",
+        "dysuria"
+      ],
+      "localTerms": {
+        "sw": [
+          "maambukizi ya mkojo"
+        ]
+      }
+    },
+    {
+      "code": "N39.0",
+      "description": "Urinary tract infection, site not specified",
+      "keywords": [
+        "UTI",
+        "urinary tract infection",
+        "urine infection",
+        "dysuria",
+        "burning urine",
+        "bladder infection"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo somchamo"
+        ],
+        "xh": [
+          "isifo somchamo"
+        ],
+        "am": [
+          "የሽንት ቧንቧ ኢንፌክሽን"
+        ],
+        "sw": [
+          "maambukizi ya njia ya mkojo"
+        ],
+        "yo": [
+          "àrùn àpòòtí ìtò"
+        ],
+        "ha": [
+          "ciwon fitsari"
+        ],
+        "ny": [
+          "matenda a mkodzo"
+        ]
+      }
+    },
+    {
+      "code": "N40",
+      "description": "Hyperplasia of prostate",
+      "keywords": [
+        "BPH",
+        "prostate enlargement",
+        "benign prostatic hyperplasia",
+        "difficulty urinating",
+        "prostate"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N41.0",
+      "description": "Acute prostatitis",
+      "keywords": [
+        "prostatitis",
+        "prostate infection",
+        "painful urination male",
+        "perineal pain"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N70.9",
+      "description": "Salpingitis and oophoritis, unspecified",
+      "keywords": [
+        "PID",
+        "pelvic inflammatory disease",
+        "salpingitis",
+        "tubal infection",
+        "adnexitis"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N72",
+      "description": "Inflammatory disease of cervix uteri",
+      "keywords": [
+        "cervicitis",
+        "cervical infection",
+        "vaginal discharge",
+        "STI cervix"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N76.0",
+      "description": "Acute vaginitis",
+      "keywords": [
+        "vaginitis",
+        "vaginal infection",
+        "vaginal discharge",
+        "vulvovaginitis",
+        "itchy vagina"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N80.9",
+      "description": "Endometriosis, unspecified",
+      "keywords": [
+        "endometriosis",
+        "painful periods",
+        "pelvic pain chronic",
+        "endometrioma"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N83.2",
+      "description": "Other and unspecified ovarian cysts",
+      "keywords": [
+        "ovarian cyst",
+        "cyst ovary",
+        "ovarian mass benign",
+        "adnexal cyst"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N92.0",
+      "description": "Excessive and frequent menstruation with regular cycle",
+      "keywords": [
+        "menorrhagia",
+        "heavy periods",
+        "excessive menstruation",
+        "heavy bleeding period"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N92.6",
+      "description": "Irregular menstruation, unspecified",
+      "keywords": [
+        "irregular periods",
+        "irregular menstruation",
+        "abnormal uterine bleeding",
+        "AUB"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "N94.6",
+      "description": "Dysmenorrhoea, unspecified",
+      "keywords": [
+        "dysmenorrhea",
+        "painful periods",
+        "period pain",
+        "menstrual cramps",
+        "painful menstruation"
+      ],
+      "localTerms": {
+        "zu": [
+          "ubuhlungu besikhathi"
+        ],
+        "am": [
+          "የወር አበባ ህመም"
+        ]
+      }
+    },
+    {
+      "code": "N97.9",
+      "description": "Female infertility, unspecified",
+      "keywords": [
+        "infertility",
+        "cannot conceive",
+        "subfertility",
+        "barren",
+        "unable to fall pregnant"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O00.9",
+      "description": "Ectopic pregnancy, unspecified",
+      "keywords": [
+        "ectopic pregnancy",
+        "tubal pregnancy",
+        "ectopic",
+        "pregnancy outside uterus"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O03.9",
+      "description": "Complete or unspecified spontaneous abortion without complication",
+      "keywords": [
+        "miscarriage",
+        "spontaneous abortion",
+        "pregnancy loss",
+        "early pregnancy loss"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuphunza"
+        ],
+        "am": [
+          "ውርጃ"
+        ]
+      }
+    },
+    {
+      "code": "O06.9",
+      "description": "Unspecified abortion without complication",
+      "keywords": [
+        "abortion",
+        "incomplete abortion",
+        "missed abortion",
+        "pregnancy termination"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O14.1",
+      "description": "Severe pre-eclampsia",
+      "keywords": [
+        "severe preeclampsia",
+        "pre-eclampsia severe",
+        "hypertension pregnancy severe",
+        "HELLP"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O14.9",
+      "description": "Pre-eclampsia, unspecified",
+      "keywords": [
+        "preeclampsia",
+        "pre-eclampsia",
+        "pregnancy hypertension proteinuria",
+        "PET",
+        "toxemia"
+      ],
+      "localTerms": {
+        "am": [
+          "ፕሪ-ኢክላምፕሲያ"
+        ]
+      }
+    },
+    {
+      "code": "O15.0",
+      "description": "Eclampsia in pregnancy",
+      "keywords": [
+        "eclampsia",
+        "seizure pregnancy",
+        "convulsion pregnancy",
+        "eclamptic fit"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O20.0",
+      "description": "Threatened abortion",
+      "keywords": [
+        "threatened miscarriage",
+        "threatened abortion",
+        "bleeding in early pregnancy",
+        "spotting pregnant"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O24.4",
+      "description": "Gestational diabetes mellitus",
+      "keywords": [
+        "gestational diabetes",
+        "GDM",
+        "diabetes pregnancy",
+        "sugar in pregnancy"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O36.4",
+      "description": "Maternal care for intrauterine death",
+      "keywords": [
+        "intrauterine death",
+        "IUD",
+        "stillbirth",
+        "fetal death",
+        "IUFD"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O42.9",
+      "description": "Premature rupture of membranes, unspecified",
+      "keywords": [
+        "PROM",
+        "premature rupture membranes",
+        "waters broken early",
+        "ruptured membranes"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O44.1",
+      "description": "Placenta praevia with haemorrhage",
+      "keywords": [
+        "placenta previa",
+        "placenta praevia",
+        "antepartum hemorrhage",
+        "APH",
+        "low lying placenta"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O45.9",
+      "description": "Premature separation of placenta, unspecified",
+      "keywords": [
+        "placental abruption",
+        "abruptio placentae",
+        "antepartum hemorrhage",
+        "APH abruption"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O46.9",
+      "description": "Antepartum haemorrhage, unspecified",
+      "keywords": [
+        "antepartum hemorrhage",
+        "APH",
+        "vaginal bleeding pregnancy",
+        "third trimester bleeding"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O60.0",
+      "description": "Preterm labour without delivery",
+      "keywords": [
+        "preterm labor",
+        "premature labor",
+        "preterm contractions",
+        "PTL"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O64.9",
+      "description": "Obstructed labour due to unspecified cause",
+      "keywords": [
+        "obstructed labor",
+        "obstructed labour",
+        "failure to progress",
+        "prolonged labor"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O68.9",
+      "description": "Labour and delivery complicated by fetal stress, unspecified",
+      "keywords": [
+        "fetal distress",
+        "fetal stress",
+        "abnormal CTG",
+        "meconium stained liquor"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O72.1",
+      "description": "Other immediate postpartum haemorrhage",
+      "keywords": [
+        "postpartum hemorrhage",
+        "PPH",
+        "bleeding after delivery",
+        "post delivery bleeding"
+      ],
+      "localTerms": {
+        "am": [
+          "ከወሊድ በኋላ ደም መፍሰስ"
+        ]
+      }
+    },
+    {
+      "code": "O80",
+      "description": "Single spontaneous delivery",
+      "keywords": [
+        "normal delivery",
+        "NVD",
+        "vaginal delivery",
+        "spontaneous delivery",
+        "childbirth"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukubeletha"
+        ],
+        "xh": [
+          "ukuzala"
+        ],
+        "am": [
+          "ወሊድ"
+        ],
+        "sw": [
+          "kujifungua"
+        ],
+        "yo": [
+          "ìbímọ"
+        ],
+        "ha": [
+          "haihuwa"
+        ],
+        "ny": [
+          "kubereka"
+        ]
+      }
+    },
+    {
+      "code": "O82",
+      "description": "Single delivery by caesarean section",
+      "keywords": [
+        "caesarean section",
+        "C-section",
+        "cesarean delivery",
+        "CS",
+        "surgical delivery"
+      ],
+      "localTerms": {
+        "af": [
+          "keisersnit"
+        ],
+        "sw": [
+          "kujifungua"
+        ]
+      }
+    },
+    {
+      "code": "O85",
+      "description": "Puerperal sepsis",
+      "keywords": [
+        "puerperal sepsis",
+        "postpartum infection",
+        "puerperal fever",
+        "childbirth fever"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "O99.0",
+      "description": "Anaemia complicating pregnancy, childbirth and the puerperium",
+      "keywords": [
+        "anemia pregnancy",
+        "anaemia pregnancy",
+        "low hemoglobin pregnant",
+        "anemia in pregnancy"
+      ],
+      "localTerms": {
+        "sw": [
+          "upungufu wa damu wakati wa ujauzito"
+        ]
+      }
+    },
+    {
+      "code": "P07.3",
+      "description": "Other preterm infants",
+      "keywords": [
+        "preterm baby",
+        "premature baby",
+        "prematurity",
+        "preterm infant"
+      ],
+      "localTerms": {
+        "am": [
+          "ያልደረሰ ሕፃን"
+        ]
+      }
+    },
+    {
+      "code": "P07.1",
+      "description": "Other low birth weight",
+      "keywords": [
+        "low birth weight",
+        "LBW",
+        "small baby",
+        "underweight newborn"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "P21.9",
+      "description": "Birth asphyxia, unspecified",
+      "keywords": [
+        "birth asphyxia",
+        "perinatal asphyxia",
+        "newborn not breathing",
+        "neonatal asphyxia"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "P36.9",
+      "description": "Bacterial sepsis of newborn, unspecified",
+      "keywords": [
+        "neonatal sepsis",
+        "newborn sepsis",
+        "newborn infection",
+        "neonatal infection"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "P38",
+      "description": "Omphalitis of newborn with or without mild haemorrhage",
+      "keywords": [
+        "umbilical infection",
+        "omphalitis",
+        "cord infection",
+        "infected cord stump"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "P59.9",
+      "description": "Neonatal jaundice, unspecified",
+      "keywords": [
+        "neonatal jaundice",
+        "newborn jaundice",
+        "yellow baby",
+        "hyperbilirubinemia",
+        "baby yellow"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuba phuzi komntwana"
+        ],
+        "am": [
+          "የአራስ ቢጫነት"
+        ]
+      }
+    },
+    {
+      "code": "P70.4",
+      "description": "Other neonatal hypoglycaemia",
+      "keywords": [
+        "neonatal hypoglycemia",
+        "low sugar newborn",
+        "newborn hypoglycemia"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Q21.0",
+      "description": "Ventricular septal defect",
+      "keywords": [
+        "VSD",
+        "ventricular septal defect",
+        "hole in heart",
+        "congenital heart"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Q24.9",
+      "description": "Congenital malformation of heart, unspecified",
+      "keywords": [
+        "congenital heart disease",
+        "CHD",
+        "heart defect",
+        "heart murmur congenital"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Q35.9",
+      "description": "Cleft palate, unspecified",
+      "keywords": [
+        "cleft palate",
+        "cleft lip",
+        "hare lip",
+        "orofacial cleft"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Q05.9",
+      "description": "Spina bifida, unspecified",
+      "keywords": [
+        "spina bifida",
+        "neural tube defect",
+        "NTD",
+        "meningocele",
+        "myelomeningocele"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Q90.9",
+      "description": "Down syndrome, unspecified",
+      "keywords": [
+        "Down syndrome",
+        "trisomy 21",
+        "Down",
+        "mongolism"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "R05",
+      "description": "Cough",
+      "keywords": [
+        "cough",
+        "coughing",
+        "dry cough",
+        "productive cough",
+        "chronic cough"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukukhwehlela"
+        ],
+        "xh": [
+          "ukukhohlela"
+        ],
+        "am": [
+          "ሳል"
+        ]
+      }
+    },
+    {
+      "code": "R06.0",
+      "description": "Dyspnoea",
+      "keywords": [
+        "shortness of breath",
+        "dyspnea",
+        "breathlessness",
+        "SOB",
+        "difficulty breathing"
+      ],
+      "localTerms": {
+        "am": [
+          "የትንፋሽ ማጠር"
+        ]
+      }
+    },
+    {
+      "code": "R07.4",
+      "description": "Chest pain, unspecified",
+      "keywords": [
+        "chest pain",
+        "chest tightness",
+        "anterior chest pain",
+        "retrosternal pain"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "R10.4",
+      "description": "Other and unspecified abdominal pain",
+      "keywords": [
+        "abdominal pain",
+        "stomach ache",
+        "belly pain",
+        "tummy pain",
+        "abdo pain"
+      ],
+      "localTerms": {
+        "zu": [
+          "isisu esibuhlungu"
+        ],
+        "am": [
+          "የሆድ ህመም"
+        ]
+      }
+    },
+    {
+      "code": "R11",
+      "description": "Nausea and vomiting",
+      "keywords": [
+        "nausea",
+        "vomiting",
+        "emesis",
+        "feeling sick",
+        "throwing up"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuhlanza"
+        ],
+        "am": [
+          "ማቅለሽለሽ"
+        ]
+      }
+    },
+    {
+      "code": "R42",
+      "description": "Dizziness and giddiness",
+      "keywords": [
+        "dizziness",
+        "vertigo",
+        "lightheaded",
+        "giddy",
+        "feeling faint"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "R50.9",
+      "description": "Fever, unspecified",
+      "keywords": [
+        "fever",
+        "pyrexia",
+        "high temperature",
+        "febrile",
+        "PUO",
+        "temperature"
+      ],
+      "localTerms": {
+        "zu": [
+          "imfiva",
+          "ukushisa"
+        ],
+        "xh": [
+          "ifiva"
+        ],
+        "am": [
+          "ትኩሳት"
+        ],
+        "af": [
+          "koors"
+        ],
+        "sw": [
+          "homa"
+        ],
+        "yo": [
+          "ibà"
+        ],
+        "ha": [
+          "zazzabi"
+        ],
+        "ny": [
+          "kutentha thupi",
+          "malungo"
+        ]
+      }
+    },
+    {
+      "code": "R51",
+      "description": "Headache",
+      "keywords": [
+        "headache",
+        "head pain",
+        "cephalgia",
+        "head ache"
+      ],
+      "localTerms": {
+        "zu": [
+          "ikhanda elibuhlungu"
+        ],
+        "am": [
+          "ራስ ምታት"
+        ],
+        "sw": [
+          "kichwa kuuma"
+        ],
+        "yo": [
+          "ìdí orí"
+        ],
+        "ha": [
+          "ciwon kai"
+        ],
+        "ny": [
+          "mutu kuwawa"
+        ]
+      }
+    },
+    {
+      "code": "R55",
+      "description": "Syncope and collapse",
+      "keywords": [
+        "syncope",
+        "fainting",
+        "collapse",
+        "passed out",
+        "loss of consciousness"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S00.9",
+      "description": "Superficial injury of head, unspecified",
+      "keywords": [
+        "head injury",
+        "head wound",
+        "scalp laceration",
+        "bump on head"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S01.9",
+      "description": "Open wound of head, unspecified",
+      "keywords": [
+        "head laceration",
+        "head cut",
+        "scalp wound",
+        "head wound open"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S06.0",
+      "description": "Concussion",
+      "keywords": [
+        "concussion",
+        "head injury mild",
+        "brain concussion",
+        "knockout",
+        "TBI mild"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S22.3",
+      "description": "Fracture of rib",
+      "keywords": [
+        "rib fracture",
+        "broken rib",
+        "fractured rib",
+        "chest wall injury"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S42.0",
+      "description": "Fracture of clavicle",
+      "keywords": [
+        "broken collarbone",
+        "clavicle fracture",
+        "fractured clavicle"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S52.9",
+      "description": "Fracture of forearm, unspecified",
+      "keywords": [
+        "forearm fracture",
+        "broken arm",
+        "radius fracture",
+        "ulna fracture",
+        "wrist fracture"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukwaphuka kwengalo"
+        ]
+      }
+    },
+    {
+      "code": "S62.5",
+      "description": "Fracture of thumb",
+      "keywords": [
+        "broken thumb",
+        "thumb fracture",
+        "Bennett fracture"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S72.9",
+      "description": "Fracture of femur, unspecified",
+      "keywords": [
+        "broken hip",
+        "femur fracture",
+        "thigh bone fracture",
+        "hip fracture",
+        "NOF fracture"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S82.9",
+      "description": "Fracture of lower leg, unspecified",
+      "keywords": [
+        "leg fracture",
+        "tibia fracture",
+        "fibula fracture",
+        "broken leg",
+        "shin fracture"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "S93.4",
+      "description": "Sprain and strain of ankle",
+      "keywords": [
+        "ankle sprain",
+        "twisted ankle",
+        "ankle injury",
+        "sprained ankle",
+        "lateral ankle"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "T14.0",
+      "description": "Superficial injury of unspecified body region",
+      "keywords": [
+        "wound",
+        "laceration",
+        "cut",
+        "abrasion",
+        "graze",
+        "scratch"
+      ],
+      "localTerms": {
+        "zu": [
+          "inxeba"
+        ],
+        "xh": [
+          "inxeba"
+        ],
+        "sw": [
+          "jeraha"
+        ]
+      }
+    },
+    {
+      "code": "T14.1",
+      "description": "Open wound of unspecified body region",
+      "keywords": [
+        "open wound",
+        "deep cut",
+        "laceration deep",
+        "stab wound",
+        "knife wound"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "T30.0",
+      "description": "Burn of unspecified body region, unspecified degree",
+      "keywords": [
+        "burn",
+        "burn injury",
+        "thermal burn",
+        "scald",
+        "flame burn"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukushiswa"
+        ],
+        "am": [
+          "ቃጠሎ"
+        ]
+      }
+    },
+    {
+      "code": "T63.0",
+      "description": "Toxic effect of snake venom",
+      "keywords": [
+        "snakebite",
+        "snake bite",
+        "snake venom",
+        "envenomation",
+        "snake envenoming"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukulunywa yinyoka"
+        ],
+        "xh": [
+          "ukulunywa yinyoka"
+        ],
+        "am": [
+          "የእባብ ንክሻ"
+        ]
+      }
+    },
+    {
+      "code": "T65.9",
+      "description": "Toxic effect of unspecified substance",
+      "keywords": [
+        "poisoning",
+        "toxic ingestion",
+        "accidental poisoning",
+        "poison"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "T17.9",
+      "description": "Foreign body in respiratory tract, unspecified",
+      "keywords": [
+        "foreign body airway",
+        "choking",
+        "inhaled foreign body",
+        "aspiration foreign body"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "T78.2",
+      "description": "Anaphylactic shock, unspecified",
+      "keywords": [
+        "anaphylaxis",
+        "anaphylactic shock",
+        "severe allergic reaction",
+        "allergic shock"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "T78.4",
+      "description": "Allergy, unspecified",
+      "keywords": [
+        "allergy",
+        "allergic reaction",
+        "hypersensitivity",
+        "drug allergy",
+        "food allergy"
+      ],
+      "localTerms": {
+        "zu": [
+          "isifo sokungameli"
+        ],
+        "am": [
+          "አለርጂ"
+        ]
+      }
+    },
+    {
+      "code": "V89.2",
+      "description": "Person injured in unspecified motor vehicle accident, traffic",
+      "keywords": [
+        "road traffic accident",
+        "RTA",
+        "car accident",
+        "motor vehicle accident",
+        "MVA",
+        "road crash"
+      ],
+      "localTerms": {
+        "zu": [
+          "ingozi yemoto"
+        ],
+        "am": [
+          "የመኪና አደጋ"
+        ],
+        "af": [
+          "motorongeluk"
+        ]
+      }
+    },
+    {
+      "code": "W19",
+      "description": "Unspecified fall",
+      "keywords": [
+        "fall",
+        "fell",
+        "falling",
+        "fall injury",
+        "trip",
+        "slip and fall"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "X99",
+      "description": "Assault by sharp object",
+      "keywords": [
+        "assault",
+        "stab wound",
+        "knife attack",
+        "sharp object assault",
+        "violence"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuhlaselwa"
+        ]
+      }
+    },
+    {
+      "code": "Y09",
+      "description": "Assault by unspecified means",
+      "keywords": [
+        "assault",
+        "attack",
+        "GBV",
+        "gender based violence",
+        "physical assault",
+        "violence"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z00.0",
+      "description": "General medical examination",
+      "keywords": [
+        "general exam",
+        "medical checkup",
+        "health screening",
+        "routine exam",
+        "wellness check"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z00.1",
+      "description": "Routine child health examination",
+      "keywords": [
+        "well baby",
+        "child health visit",
+        "growth monitoring",
+        "RTHC",
+        "road to health"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z01.4",
+      "description": "Gynaecological examination",
+      "keywords": [
+        "pap smear",
+        "cervical screening",
+        "gynae exam",
+        "pap test",
+        "cervical cytology"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z11.3",
+      "description": "Special screening examination for infections with a predominantly sexual mode of transmission",
+      "keywords": [
+        "STI screening",
+        "HIV test",
+        "STD screening",
+        "VCT",
+        "HCT"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z20.6",
+      "description": "Contact with and exposure to human immunodeficiency virus [HIV]",
+      "keywords": [
+        "HIV exposure",
+        "HIV contact",
+        "PEP",
+        "post exposure prophylaxis",
+        "needle stick"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z21",
+      "description": "Asymptomatic human immunodeficiency virus [HIV] infection status",
+      "keywords": [
+        "HIV positive asymptomatic",
+        "HIV carrier",
+        "HIV status",
+        "asymptomatic HIV"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z23",
+      "description": "Need for immunization against single bacterial diseases",
+      "keywords": [
+        "immunization",
+        "vaccination",
+        "vaccine",
+        "immunize",
+        "EPI",
+        "booster"
+      ],
+      "localTerms": {
+        "zu": [
+          "umjovo"
+        ],
+        "xh": [
+          "umjovo"
+        ],
+        "am": [
+          "ክትባት"
+        ],
+        "af": [
+          "inenting"
+        ]
+      }
+    },
+    {
+      "code": "Z30.0",
+      "description": "General counselling and advice on contraception",
+      "keywords": [
+        "contraception",
+        "family planning",
+        "birth control",
+        "FP",
+        "contraceptive counseling"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukuzila",
+          "ukuvimba inzalo"
+        ],
+        "am": [
+          "የቤተሰብ ምጣኔ"
+        ],
+        "af": [
+          "voorbehoeding"
+        ]
+      }
+    },
+    {
+      "code": "Z30.1",
+      "description": "Insertion of (intrauterine) contraceptive device",
+      "keywords": [
+        "IUD insertion",
+        "IUCD",
+        "loop",
+        "intrauterine device",
+        "copper T"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z30.4",
+      "description": "Surveillance of contraceptive drugs",
+      "keywords": [
+        "contraceptive review",
+        "pill check",
+        "depo review",
+        "contraceptive follow up"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z34.9",
+      "description": "Supervision of normal pregnancy, unspecified",
+      "keywords": [
+        "antenatal care",
+        "ANC",
+        "pregnancy checkup",
+        "prenatal visit",
+        "antenatal visit"
+      ],
+      "localTerms": {
+        "zu": [
+          "ukukhulelwa"
+        ],
+        "xh": [
+          "ukukhulelwa"
+        ],
+        "am": [
+          "የቅድመ ወሊድ ክትትል"
+        ]
+      }
+    },
+    {
+      "code": "Z36",
+      "description": "Antenatal screening",
+      "keywords": [
+        "antenatal screening",
+        "prenatal screening",
+        "booking bloods",
+        "ANC screen",
+        "PMTCT"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z39.0",
+      "description": "Care and examination immediately after delivery",
+      "keywords": [
+        "postnatal care",
+        "postpartum visit",
+        "PNC",
+        "after delivery checkup",
+        "postnatal check"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z71.7",
+      "description": "Human immunodeficiency virus [HIV] counselling",
+      "keywords": [
+        "HIV counseling",
+        "HCT",
+        "HIV testing counseling",
+        "VCT",
+        "HIV support"
+      ],
+      "localTerms": {}
+    },
+    {
+      "code": "Z76.0",
+      "description": "Issue of repeat prescription",
+      "keywords": [
+        "repeat script",
+        "chronic medication",
+        "repeat prescription",
+        "refill",
+        "medication review"
+      ],
+      "localTerms": {}
+    }
+  ]
+}

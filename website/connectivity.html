@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChartLite | Data Sync & AI Strategy</title>
+  <meta name="description" content="How ChartLite adapts to your connectivity — from fully offline to cloud-connected.">
+  <meta name="theme-color" content="#F9F8F6">
+  <link rel="canonical" href="https://chartlite.health/connectivity">
+  <meta property="og:url" content="https://chartlite.health/connectivity">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ChartLite | Data Sync & AI Strategy">
+  <meta property="og:description" content="How ChartLite adapts to your connectivity — from fully offline to cloud-connected.">
+  <meta property="og:site_name" content="ChartLite">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #F9F8F6;
+      --text-color: #2b2b2b;
+      --text-muted: #666666;
+      --primary-dark: #1A2E35;
+      --accent: #A27B5C;
+      --accent-muted: #8A7A6B;
+      --surface: #FFFFFF;
+      --border: #E5E0D8;
+
+      /* Tier colors - muted neutral */
+      --tier-offline: #8A6E5C;
+      --tier-offline-bg: #F5F0EC;
+      --tier-occasional: #7A7A5C;
+      --tier-occasional-bg: #F3F2EE;
+      --tier-connected: #5C7A6E;
+      --tier-connected-bg: #EEF3F0;
+
+      /* Diagram colors */
+      --device-color: #5B8FA8;
+      --facility-color: #8FA87B;
+      --cloud-color: #7B7FA8;
+      --sms-color: var(--accent);
+      --bt-color: #6B8CA8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, .serif {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-dark);
+      font-weight: 400;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Navbar ── */
+    nav { padding: 32px 0; border-bottom: 1px solid var(--border); margin-bottom: 64px; }
+    .nav-inner { display: flex; justify-content: space-between; align-items: center; }
+    .logo {
+      font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600;
+      color: var(--primary-dark); text-decoration: none; letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a {
+      text-decoration: none; color: var(--text-color); font-size: 12px;
+      letter-spacing: 0.04em; text-transform: uppercase; font-weight: 500; transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a.active { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 4px; }
+    .nav-cta { border-bottom: 1px solid var(--primary-dark); padding-bottom: 4px; }
+
+    /* ── Hamburger Menu ── */
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      width: 32px; height: 24px; position: relative; z-index: 101;
+    }
+    .hamburger span {
+      display: block; width: 100%; height: 2px; background: var(--primary-dark);
+      position: absolute; left: 0; transition: all 0.3s ease;
+    }
+    .hamburger span:nth-child(1) { top: 2px; }
+    .hamburger span:nth-child(2) { top: 11px; }
+    .hamburger span:nth-child(3) { top: 20px; }
+    .hamburger.open span:nth-child(1) { top: 11px; transform: rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { top: 11px; transform: rotate(-45deg); }
+
+    .mobile-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(26, 46, 53, 0.95); z-index: 100; flex-direction: column;
+      justify-content: center; align-items: center; gap: 24px;
+    }
+    .mobile-overlay.open { display: flex; }
+    .mobile-overlay a {
+      text-decoration: none; color: #fff; font-size: 20px; font-weight: 400;
+      font-family: 'Playfair Display', serif; letter-spacing: 0.02em;
+      padding: 12px 0; transition: opacity 0.3s;
+    }
+    .mobile-overlay a:hover { opacity: 0.7; }
+    .mobile-overlay a.active { border-bottom: 1px solid var(--accent); color: var(--accent); }
+
+    /* ── Page Header ── */
+    .page-header { text-align: center; margin-bottom: 80px; }
+    .page-header h1 { font-size: 48px; margin-bottom: 20px; letter-spacing: -0.01em; }
+    .page-header p {
+      font-size: 18px; color: var(--text-muted); max-width: 640px;
+      margin: 0 auto; font-weight: 300;
+    }
+
+    /* ── Tier Selector ── */
+    .tier-selector {
+      display: flex; justify-content: center; gap: 0;
+      margin-bottom: 64px; position: relative;
+    }
+    .tier-btn {
+      padding: 20px 32px; border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; font-family: 'Inter', sans-serif; font-size: 14px;
+      font-weight: 500; letter-spacing: 0.03em; color: var(--text-muted);
+      transition: all 0.4s ease; position: relative; min-width: 220px; text-align: center;
+    }
+    .tier-btn:first-child { border-radius: 6px 0 0 6px; }
+    .tier-btn:last-child { border-radius: 0 6px 6px 0; }
+    .tier-btn:not(:last-child) { border-right: none; }
+    .tier-btn .tier-label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .tier-btn .tier-title { display: block; font-family: 'Playfair Display', serif; font-size: 18px; color: var(--primary-dark); }
+
+    .tier-btn[data-tier="offline"].active {
+      background: var(--tier-offline-bg); border-color: var(--tier-offline); color: var(--tier-offline); z-index: 1;
+    }
+    .tier-btn[data-tier="occasional"].active {
+      background: var(--tier-occasional-bg); border-color: var(--tier-occasional); color: var(--tier-occasional); z-index: 1;
+    }
+    .tier-btn[data-tier="connected"].active {
+      background: var(--tier-connected-bg); border-color: var(--tier-connected); color: var(--tier-connected); z-index: 1;
+    }
+    .tier-btn.active .tier-title { color: inherit; }
+
+    /* ── Signal Bars ── */
+    .signal-bars { display: inline-flex; gap: 2px; align-items: flex-end; margin-right: 8px; vertical-align: middle; }
+    .signal-bar { width: 4px; background: var(--border); border-radius: 1px; }
+    .signal-bar.active { background: currentColor; }
+
+    /* ── Diagram Container ── */
+    .diagram-section { margin-bottom: 80px; }
+    .diagram-wrapper {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 48px; min-height: 480px; position: relative; overflow: hidden;
+      transition: border-color 0.4s;
+    }
+    .diagram-wrapper.tier-offline { border-color: var(--tier-offline); }
+    .diagram-wrapper.tier-occasional { border-color: var(--tier-occasional); }
+    .diagram-wrapper.tier-connected { border-color: var(--tier-connected); }
+
+    /* ── SVG Diagram ── */
+    .diagram-svg { width: 100%; height: 420px; }
+    .diagram-svg text { font-family: 'Inter', sans-serif; }
+
+    /* Mobile fallback for diagram */
+    .diagram-mobile { display: none; }
+    .diagram-mobile-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;
+    }
+    .diagram-mobile-card .dmc-icon {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      background: #F3F2EE; border-radius: 8px; flex-shrink: 0;
+    }
+    .diagram-mobile-card .dmc-icon svg { width: 18px; height: 18px; stroke: var(--primary-dark); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .diagram-mobile-card h4 {
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+      color: var(--primary-dark); margin-bottom: 4px;
+    }
+    .diagram-mobile-card p {
+      font-size: 12px; color: var(--text-muted); line-height: 1.5;
+    }
+    .diagram-mobile-card .dmc-arrow {
+      text-align: center; color: var(--border); font-size: 18px; padding: 4px 0;
+    }
+
+    /* ── Animated data flow ── */
+    @keyframes flowRight {
+      0% { transform: translateX(-20px); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateX(20px); opacity: 0; }
+    }
+    @keyframes flowUp {
+      0% { transform: translateY(20px); opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateY(-20px); opacity: 0; }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; r: 4; }
+      50% { opacity: 1; r: 6; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .data-dot { animation: pulse 2s ease-in-out infinite; }
+    .data-dot-delayed { animation: pulse 2s ease-in-out infinite 0.6s; }
+    .data-dot-delayed2 { animation: pulse 2s ease-in-out infinite 1.2s; }
+
+    .flow-path {
+      stroke-dasharray: 8 4; animation: dash 1.5s linear infinite;
+    }
+    @keyframes dash { to { stroke-dashoffset: -24; } }
+
+    .element-hidden { opacity: 0; pointer-events: none; transition: opacity 0.5s, transform 0.5s; transform: translateY(8px); }
+    .element-visible { opacity: 1; pointer-events: auto; transition: opacity 0.5s, transform 0.5s; transform: translateY(0); }
+
+    /* ── Capabilities Panel ── */
+    .capabilities { margin-bottom: 80px; }
+    .capabilities-header { text-align: center; margin-bottom: 48px; }
+    .capabilities-header h2 { font-size: 32px; margin-bottom: 12px; }
+    .capabilities-header p { color: var(--text-muted); font-size: 16px; font-weight: 300; }
+
+    .capability-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+
+    .capability-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 28px; transition: all 0.5s ease; position: relative; overflow: hidden;
+    }
+    .capability-card.locked {
+      opacity: 0.35; filter: grayscale(0.5);
+    }
+    .capability-card.unlocked {
+      opacity: 1; filter: none;
+    }
+    .capability-card.newly-unlocked {
+      animation: fadeIn 0.6s ease-out;
+      border-color: var(--tier-connected);
+      box-shadow: 0 2px 12px rgba(61, 122, 95, 0.08);
+    }
+
+    .capability-card .cap-icon {
+      width: 36px; height: 36px; margin-bottom: 12px; display: flex;
+      align-items: center; justify-content: center;
+      background: #F3F2EE; border-radius: 8px; flex-shrink: 0;
+    }
+    .capability-card .cap-icon svg { width: 18px; height: 18px; stroke: var(--primary-dark); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .capability-card h4 {
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
+      color: var(--primary-dark); margin-bottom: 8px;
+    }
+    .capability-card p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.6; font-weight: 300;
+    }
+    .capability-card .tier-badge {
+      display: inline-block; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 3px 8px; border-radius: 3px;
+      font-weight: 500; margin-top: 12px;
+      background: #F3F2EE; color: var(--accent-muted);
+    }
+
+    /* Lock overlay */
+    .lock-overlay {
+      position: absolute; top: 12px; right: 12px;
+      width: 16px; height: 16px; opacity: 0.3; transition: opacity 0.4s;
+    }
+    .lock-overlay svg { width: 16px; height: 16px; stroke: var(--primary-dark); fill: none; stroke-width: 1.5; }
+    .capability-card.unlocked .lock-overlay { opacity: 0; }
+
+    /* ── AI Strategy Section ── */
+    .ai-section { padding: 80px 0; border-top: 1px solid var(--border); margin-bottom: 0; }
+    .ai-header { text-align: center; margin-bottom: 56px; }
+    .ai-header h2 { font-size: 32px; margin-bottom: 12px; }
+    .ai-header p { color: var(--text-muted); font-size: 16px; font-weight: 300; max-width: 600px; margin: 0 auto; }
+
+    .ai-tiers { display: flex; flex-direction: column; gap: 24px; }
+
+    .ai-tier-row {
+      display: grid; grid-template-columns: 180px 1fr; gap: 32px;
+      align-items: start; padding: 32px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 8px;
+      transition: all 0.4s;
+    }
+    .ai-tier-row.active { border-color: var(--tier-connected); box-shadow: 0 2px 16px rgba(0,0,0,0.04); }
+
+    .ai-tier-label {
+      font-family: 'Playfair Display', serif; font-size: 18px; color: var(--primary-dark);
+    }
+    .ai-tier-label small { display: block; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+
+    .ai-pipeline { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .ai-stage {
+      padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      letter-spacing: 0.02em; position: relative; transition: all 0.4s;
+      border: 1px solid var(--border);
+    }
+    .ai-stage.active { background: var(--tier-connected-bg); border-color: var(--tier-connected); color: var(--tier-connected); }
+    .ai-stage.inactive { background: #f5f5f5; color: #bbb; border-color: #eee; }
+    .ai-stage .stage-label { display: block; font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+    .ai-arrow { color: var(--border); font-size: 18px; }
+
+    /* ── Footer ── */
+    footer { padding: 64px 0; text-align: center; border-top: 1px solid var(--border); }
+    footer .logo { display: inline-block; margin-bottom: 24px; }
+    footer p { color: var(--text-muted); font-size: 13px; }
+    .footer-links { margin-top: 24px; display: flex; justify-content: center; gap: 24px; }
+    .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; }
+    .footer-links a:hover { color: var(--primary-dark); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 0; margin-bottom: 40px; }
+      .nav-links { gap: 16px; }
+      .nav-links a { font-size: 12px; }
+      .page-header h1 { font-size: 32px; }
+      .tier-selector { flex-direction: column; align-items: stretch; max-width: 400px; margin-left: auto; margin-right: auto; }
+      .tier-btn { border-right: 1px solid var(--border) !important; min-width: 0; }
+      .tier-btn:first-child { border-radius: 6px 6px 0 0; }
+      .tier-btn:last-child { border-radius: 0 0 6px 6px; }
+      .tier-btn:not(:last-child) { border-bottom: none; }
+      .capability-grid { grid-template-columns: 1fr; }
+      .ai-tier-row { grid-template-columns: 1fr; }
+      .diagram-wrapper { padding: 24px; }
+      .diagram-svg { height: 360px; }
+    }
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .hamburger { display: block; }
+      .page-header h1 { font-size: 26px; }
+      .diagram-svg { display: none; }
+      .diagram-mobile { display: block; }
+      .diagram-wrapper { padding: 16px; min-height: auto; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <div class="nav-links">
+        <a href="approach.html">Our Approach</a>
+        <a href="technology.html">Technology</a>
+        <a href="sms-demo.html">Portable Record</a>
+        <a href="connectivity.html" class="active">Connectivity</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="ai-pipeline.html">AI Pipeline</a>
+        <a href="index.html#download" class="nav-cta">Get Started</a>
+      </div>
+      <button class="hamburger" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-overlay" id="mobileMenu" role="dialog" aria-label="Navigation menu">
+    <a href="approach.html">Our Approach</a>
+    <a href="technology.html">Technology</a>
+    <a href="sms-demo.html">Portable Record</a>
+    <a href="connectivity.html" class="active">Connectivity</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="ai-pipeline.html">AI Pipeline</a>
+    <a href="index.html#download">Get Started</a>
+  </div>
+
+  <main class="container">
+
+    <!-- Page Header -->
+    <section class="page-header">
+      <h1>Adapts to your reality.</h1>
+      <p>ChartLite delivers full clinical documentation at every connectivity level. As conditions improve, new capabilities unlock automatically.</p>
+    </section>
+
+    <!-- Tier Selector -->
+    <div class="tier-selector">
+      <button class="tier-btn active" data-tier="offline" onclick="selectTier('offline')">
+        <span class="tier-label">
+          <span class="signal-bars">
+            <span class="signal-bar active" style="height:6px;"></span>
+            <span class="signal-bar" style="height:10px;"></span>
+            <span class="signal-bar" style="height:14px;"></span>
+          </span>
+          Tier 1
+        </span>
+        <span class="tier-title">No Connection</span>
+      </button>
+      <button class="tier-btn" data-tier="occasional" onclick="selectTier('occasional')">
+        <span class="tier-label">
+          <span class="signal-bars">
+            <span class="signal-bar active" style="height:6px;"></span>
+            <span class="signal-bar active" style="height:10px;"></span>
+            <span class="signal-bar" style="height:14px;"></span>
+          </span>
+          Tier 2
+        </span>
+        <span class="tier-title">Occasional</span>
+      </button>
+      <button class="tier-btn" data-tier="connected" onclick="selectTier('connected')">
+        <span class="tier-label">
+          <span class="signal-bars">
+            <span class="signal-bar active" style="height:6px;"></span>
+            <span class="signal-bar active" style="height:10px;"></span>
+            <span class="signal-bar active" style="height:14px;"></span>
+          </span>
+          Tier 3
+        </span>
+        <span class="tier-title">Connected</span>
+      </button>
+    </div>
+
+    <!-- Interactive Diagram -->
+    <section class="diagram-section">
+      <div class="diagram-wrapper tier-offline" id="diagramWrapper">
+        <svg class="diagram-svg" id="diagram" viewBox="0 0 1000 420" preserveAspectRatio="xMidYMid meet">
+
+          <!-- ═══ FACILITY A ═══ -->
+          <rect x="20" y="60" width="420" height="310" rx="12" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="6 3"/>
+          <text x="230" y="48" text-anchor="middle" font-size="13" font-weight="600" fill="var(--primary-dark)" letter-spacing="0.06em">FACILITY A</text>
+
+          <!-- Device 1 -->
+          <rect x="50" y="100" width="140" height="80" rx="8" fill="#EDF4F8" stroke="var(--device-color)" stroke-width="1.5"/>
+          <text x="120" y="132" text-anchor="middle" font-size="11" font-weight="500" fill="var(--device-color)">Device 1</text>
+          <text x="120" y="150" text-anchor="middle" font-size="10" fill="var(--text-muted)">Clinician</text>
+          <!-- AI indicator on device -->
+          <rect x="60" y="162" width="120" height="20" rx="4" fill="var(--device-color)" opacity="0.1"/>
+          <text x="120" y="176" text-anchor="middle" font-size="9" fill="var(--device-color)">On-Device AI</text>
+
+          <!-- Local DB -->
+          <rect x="60" y="220" width="120" height="56" rx="6" fill="#FFF8EC" stroke="var(--accent)" stroke-width="1"/>
+          <text x="120" y="244" text-anchor="middle" font-size="10" font-weight="500" fill="var(--accent)">SQLCipher DB</text>
+          <text x="120" y="260" text-anchor="middle" font-size="9" fill="var(--text-muted)">Encrypted</text>
+          <!-- Arrow device → DB -->
+          <line x1="120" y1="180" x2="120" y2="220" stroke="var(--device-color)" stroke-width="1.2" marker-end="url(#arrowBlue)"/>
+
+          <!-- SMS out (always visible) -->
+          <g id="smsFlow">
+            <rect x="60" y="300" width="120" height="44" rx="6" fill="var(--tier-offline-bg)" stroke="var(--tier-offline)" stroke-width="1"/>
+            <text x="120" y="318" text-anchor="middle" font-size="10" font-weight="500" fill="var(--tier-offline)">SMS to Patient</text>
+            <text x="120" y="332" text-anchor="middle" font-size="9" fill="var(--text-muted)">AES-256-GCM</text>
+            <line x1="120" y1="276" x2="120" y2="300" stroke="var(--accent)" stroke-width="1" marker-end="url(#arrowAccent)"/>
+          </g>
+
+          <!-- Device 2 (Tier 2+) -->
+          <g id="device2" class="element-hidden">
+            <rect x="250" y="100" width="140" height="80" rx="8" fill="#EDF4F8" stroke="var(--device-color)" stroke-width="1.5"/>
+            <text x="320" y="132" text-anchor="middle" font-size="11" font-weight="500" fill="var(--device-color)">Device 2</text>
+            <text x="320" y="150" text-anchor="middle" font-size="10" fill="var(--text-muted)">Nurse / CHW</text>
+            <rect x="260" y="162" width="120" height="20" rx="4" fill="var(--device-color)" opacity="0.1"/>
+            <text x="320" y="176" text-anchor="middle" font-size="9" fill="var(--device-color)">On-Device AI</text>
+            <!-- Local DB for device 2 -->
+            <rect x="260" y="220" width="120" height="56" rx="6" fill="#FFF8EC" stroke="var(--accent)" stroke-width="1"/>
+            <text x="320" y="244" text-anchor="middle" font-size="10" font-weight="500" fill="var(--accent)">SQLCipher DB</text>
+            <text x="320" y="260" text-anchor="middle" font-size="9" fill="var(--text-muted)">Encrypted</text>
+            <line x1="320" y1="180" x2="320" y2="220" stroke="var(--device-color)" stroke-width="1.2" marker-end="url(#arrowBlue)"/>
+          </g>
+
+          <!-- P2P Sync between devices (Tier 2+) -->
+          <g id="p2pSync" class="element-hidden">
+            <line x1="190" y1="248" x2="260" y2="248" stroke="var(--bt-color)" stroke-width="1.5" class="flow-path"/>
+            <circle cx="225" cy="248" r="4" fill="var(--bt-color)" class="data-dot"/>
+            <text x="225" y="236" text-anchor="middle" font-size="9" font-weight="500" fill="var(--bt-color)">P2P Sync</text>
+          </g>
+
+          <!-- ═══ FACILITY B (Tier 2+) ═══ -->
+          <g id="facilityB" class="element-hidden">
+            <rect x="560" y="60" width="420" height="310" rx="12" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="6 3"/>
+            <text x="770" y="48" text-anchor="middle" font-size="13" font-weight="600" fill="var(--primary-dark)" letter-spacing="0.06em">FACILITY B</text>
+
+            <rect x="630" y="100" width="140" height="80" rx="8" fill="#EDF4F8" stroke="var(--device-color)" stroke-width="1.5"/>
+            <text x="700" y="132" text-anchor="middle" font-size="11" font-weight="500" fill="var(--device-color)">Device 3</text>
+            <text x="700" y="150" text-anchor="middle" font-size="10" fill="var(--text-muted)">Clinician</text>
+            <rect x="640" y="162" width="120" height="20" rx="4" fill="var(--device-color)" opacity="0.1"/>
+            <text x="700" y="176" text-anchor="middle" font-size="9" fill="var(--device-color)">On-Device AI</text>
+
+            <rect x="640" y="220" width="120" height="56" rx="6" fill="#FFF8EC" stroke="var(--accent)" stroke-width="1"/>
+            <text x="700" y="244" text-anchor="middle" font-size="10" font-weight="500" fill="var(--accent)">SQLCipher DB</text>
+            <text x="700" y="260" text-anchor="middle" font-size="9" fill="var(--text-muted)">Encrypted</text>
+            <line x1="700" y1="180" x2="700" y2="220" stroke="var(--device-color)" stroke-width="1.2" marker-end="url(#arrowBlue)"/>
+
+            <!-- SMS from Facility B -->
+            <rect x="640" y="300" width="120" height="44" rx="6" fill="var(--tier-offline-bg)" stroke="var(--tier-offline)" stroke-width="1"/>
+            <text x="700" y="318" text-anchor="middle" font-size="10" font-weight="500" fill="var(--tier-offline)">SMS to Patient</text>
+            <text x="700" y="332" text-anchor="middle" font-size="9" fill="var(--text-muted)">AES-256-GCM</text>
+            <line x1="700" y1="276" x2="700" y2="300" stroke="var(--accent)" stroke-width="1" marker-end="url(#arrowAccent)"/>
+          </g>
+
+          <!-- Patient-scoped cross-facility sync (Tier 2) -->
+          <g id="crossFacility" class="element-hidden">
+            <line x1="440" y1="248" x2="560" y2="248" stroke="var(--tier-occasional)" stroke-width="1.5" class="flow-path"/>
+            <circle cx="500" cy="248" r="5" fill="var(--tier-occasional)" class="data-dot"/>
+            <circle cx="480" cy="248" r="4" fill="var(--tier-occasional)" class="data-dot-delayed"/>
+            <circle cx="520" cy="248" r="4" fill="var(--tier-occasional)" class="data-dot-delayed2"/>
+            <rect x="458" y="222" width="84" height="18" rx="3" fill="var(--tier-occasional-bg)" stroke="var(--tier-occasional)" stroke-width="0.5"/>
+            <text x="500" y="234" text-anchor="middle" font-size="8" font-weight="600" fill="var(--tier-occasional)">Patient Scope</text>
+          </g>
+
+          <!-- ═══ CLOUD (Tier 3) ═══ -->
+          <g id="cloudLayer" class="element-hidden">
+            <!-- Cloud box -->
+            <rect x="350" y="0" width="300" height="48" rx="8" fill="var(--tier-connected-bg)" stroke="var(--tier-connected)" stroke-width="1.5"/>
+            <text x="500" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="var(--tier-connected)" letter-spacing="0.04em">CLOUD SERVICES</text>
+            <text x="500" y="36" text-anchor="middle" font-size="9" fill="var(--text-muted)">Claude API &middot; DHIS2 &middot; FHIR &middot; Analytics</text>
+
+            <!-- Facility A → Cloud -->
+            <line x1="230" y1="60" x2="400" y2="48" stroke="var(--tier-connected)" stroke-width="1.2" class="flow-path"/>
+            <circle cx="310" cy="54" r="4" fill="var(--tier-connected)" class="data-dot"/>
+
+            <!-- Facility B → Cloud -->
+            <line x1="770" y1="60" x2="600" y2="48" stroke="var(--tier-connected)" stroke-width="1.2" class="flow-path"/>
+            <circle cx="690" cy="54" r="4" fill="var(--tier-connected)" class="data-dot-delayed"/>
+          </g>
+
+          <!-- Arrow markers -->
+          <defs>
+            <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--device-color)"/>
+            </marker>
+            <marker id="arrowAccent" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/>
+            </marker>
+          </defs>
+        </svg>
+
+        <!-- Mobile-friendly fallback (shown <480px) -->
+        <div class="diagram-mobile">
+          <div class="diagram-mobile-card">
+            <span class="dmc-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg></span>
+            <div>
+              <h4>Device (Clinician)</h4>
+              <p>On-device ASR + dictation capture + regex preview</p>
+            </div>
+          </div>
+          <div style="text-align:center;color:var(--border);font-size:18px;padding:2px 0;">↓</div>
+          <div class="diagram-mobile-card">
+            <span class="dmc-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <div>
+              <h4>SQLCipher DB</h4>
+              <p>Encrypted local storage</p>
+            </div>
+          </div>
+          <div style="text-align:center;color:var(--border);font-size:18px;padding:2px 0;">↓</div>
+          <div class="diagram-mobile-card">
+            <span class="dmc-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <div>
+              <h4>SMS to Patient</h4>
+              <p>AES-256-GCM encrypted health record</p>
+            </div>
+          </div>
+          <div id="mobileTier2" style="display:none;">
+            <div style="text-align:center;color:var(--accent-muted);font-size:14px;padding:12px 0;font-weight:500;letter-spacing:0.06em;">— P2P SYNC —</div>
+            <div class="diagram-mobile-card">
+              <span class="dmc-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+              <div>
+                <h4>Facility B</h4>
+                <p>BT / WiFi Direct peer sync</p>
+              </div>
+            </div>
+          </div>
+          <div id="mobileTier3" style="display:none;">
+            <div style="text-align:center;color:var(--accent-muted);font-size:14px;padding:12px 0;font-weight:500;letter-spacing:0.06em;">— CLOUD —</div>
+            <div class="diagram-mobile-card">
+              <span class="dmc-icon"><svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></span>
+              <div>
+                <h4>Cloud Services</h4>
+                <p>Claude API &middot; DHIS2 &middot; FHIR &middot; Analytics</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Capabilities Unlocked -->
+    <section class="capabilities">
+      <div class="capabilities-header">
+        <h2>Capabilities by connectivity</h2>
+        <p>Select a tier above to see what unlocks at each level.</p>
+      </div>
+
+      <div class="capability-grid">
+        <!-- Tier 1: Always available -->
+        <div class="capability-card unlocked" data-min-tier="offline">
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span>
+          <h4>Voice Capture</h4>
+          <p>Two modes: tap for ambient conversation recording or hold-to-dictate short clinical snippets. Both captured via on-device sherpa-onnx ASR with multi-language support.</p>
+          <span class="tier-badge">Always Available</span>
+        </div>
+        <div class="capability-card unlocked" data-min-tier="offline">
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></span>
+          <h4>On-Device Clinical AI</h4>
+          <p>Regex extraction provides instant preview per recording. At finalization, a single Qwen model pass processes the combined transcript with local RAG for ICD-10 and formulary matching.</p>
+          <span class="tier-badge">Always Available</span>
+        </div>
+        <div class="capability-card unlocked" data-min-tier="offline">
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <h4>Encrypted Storage</h4>
+          <p>All patient data stored in SQLCipher-encrypted database with device-derived passphrase. Bank-grade AES-256-GCM encryption at rest.</p>
+          <span class="tier-badge">Always Available</span>
+        </div>
+        <div class="capability-card unlocked" data-min-tier="offline">
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg></span>
+          <h4>SMS Health Records</h4>
+          <p>Send patients an encrypted SMS containing their complete health history. Works on any phone network, no internet needed. V4 format includes chronic conditions, abnormal vitals, growth metrics, immunization records, and clinical status flags.</p>
+          <span class="tier-badge">Always Available</span>
+        </div>
+        <div class="capability-card unlocked" data-min-tier="offline">
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+          <h4>CDSS Alerts</h4>
+          <p>Drug-allergy interactions, dosage checks, and vital sign alerts powered by local formulary data. No cloud dependency for patient safety checks.</p>
+          <span class="tier-badge">Always Available</span>
+        </div>
+        <div class="capability-card unlocked" data-min-tier="offline">
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+          <h4>Battery-Aware Processing</h4>
+          <p>Snippets use lightweight regex extraction for real-time preview — no model load. The LLM loads once at finalization to process the combined transcript in a single pass.</p>
+          <span class="tier-badge">Always Available</span>
+        </div>
+
+        <!-- Tier 2: Occasional connection -->
+        <div class="capability-card locked" data-min-tier="occasional">
+          <span class="lock-overlay"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+          <h4>Peer-to-Peer Sync</h4>
+          <p>Sync patient records between devices via Bluetooth or WiFi Direct using Android Nearby Connections. No internet required, just physical proximity.</p>
+          <span class="tier-badge">Occasional</span>
+        </div>
+        <div class="capability-card locked" data-min-tier="occasional">
+          <span class="lock-overlay"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+          <h4>Multi-Device Facility</h4>
+          <p>Multiple clinicians share patient data across devices within a facility. Registration, triage, consultation, and pharmacy stations work from a shared patient queue.</p>
+          <span class="tier-badge">Occasional</span>
+        </div>
+        <div class="capability-card locked" data-min-tier="occasional">
+          <span class="lock-overlay"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></span>
+          <h4>Cross-Facility Continuity</h4>
+          <p>When a patient moves between facilities, continuity is supported through both the patient-held encrypted SMS record and patient-scoped cross-facility P2P sync. Clinicians select a patient, connect via Bluetooth or WiFi Direct, confirm the cross-facility transfer, and merge only that patient's records.</p>
+          <p style="margin-top:8px;color:var(--text-muted);font-size:12px;line-height:1.5;font-style:italic;">Scope guard: when facility IDs differ, a user-confirmation prompt ensures intentional cross-facility sharing. Only the selected patient's data is transferred.</p>
+          <span class="tier-badge">Occasional</span>
+        </div>
+
+        <!-- Tier 3: Good connection -->
+        <div class="capability-card locked" data-min-tier="connected">
+          <span class="lock-overlay"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <h4>Full Conversation Mode</h4>
+          <p>Record the entire patient-doctor consultation. Claude API analyzes the full transcript in one pass with broader medical knowledge. Falls back to on-device dictation mode when connectivity drops.</p>
+          <span class="tier-badge">Connected</span>
+        </div>
+        <div class="capability-card locked" data-min-tier="connected">
+          <span class="lock-overlay"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <h4>DHIS2 &amp; FHIR Integration</h4>
+          <p>Push facility data to national health information systems. FHIR R4 bundles generated on-demand for OpenMRS, DHIS2, and insurance claim submission.</p>
+          <span class="tier-badge">Connected</span>
+        </div>
+        <div class="capability-card locked" data-min-tier="connected">
+          <span class="lock-overlay"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span class="cap-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+          <h4>Remote Analytics</h4>
+          <p>District-level dashboards, disease surveillance, and facility performance metrics. Aggregate data flows to regional health authorities in real time.</p>
+          <span class="tier-badge">Connected</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Pipeline Strategy -->
+    <section class="ai-section">
+      <div class="ai-header">
+        <h2>AI strategy by tier</h2>
+        <p>Offline uses dictation snippets with battery-efficient batch processing. Connected mode records full conversations analyzed by cloud AI.</p>
+      </div>
+
+      <div class="ai-tiers">
+        <!-- Tier 1 Pipeline -->
+        <div class="ai-tier-row active" id="aiTier1">
+          <div class="ai-tier-label">
+            <small>Tier 1 &middot; Offline</small>
+            No Connection
+          </div>
+          <div class="ai-pipeline">
+            <div class="ai-stage active">
+              <span class="stage-label">ASR</span>
+              Offline ASR
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage active">
+              <span class="stage-label">Extraction</span>
+              Qwen 3.5 0.8B
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage active">
+              <span class="stage-label">Failsafe</span>
+              Regex Pipeline
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage active">
+              <span class="stage-label">Retrieval</span>
+              Local RAG (TF-IDF)
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier 2 Pipeline -->
+        <div class="ai-tier-row" id="aiTier2">
+          <div class="ai-tier-label">
+            <small>Tier 2 &middot; Occasional</small>
+            BT / WiFi
+          </div>
+          <div class="ai-pipeline">
+            <div class="ai-stage" id="ai2-asr">
+              <span class="stage-label">ASR</span>
+              sherpa-onnx / Google STT
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage" id="ai2-extract">
+              <span class="stage-label">Extraction</span>
+              Qwen 3.5 0.8B
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage" id="ai2-sync">
+              <span class="stage-label">Data Sync</span>
+              P2P Nearby API
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage" id="ai2-update">
+              <span class="stage-label">Models</span>
+              OTA Updates
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier 3 Pipeline -->
+        <div class="ai-tier-row" id="aiTier3">
+          <div class="ai-tier-label">
+            <small>Tier 3 &middot; Connected</small>
+            Full Cloud
+          </div>
+          <div class="ai-pipeline">
+            <div class="ai-stage" id="ai3-asr">
+              <span class="stage-label">Full Recording</span>
+              Google STT
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage" id="ai3-extract">
+              <span class="stage-label">Extraction</span>
+              Claude API
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage" id="ai3-fhir">
+              <span class="stage-label">Interop</span>
+              FHIR R4 / DHIS2
+            </div>
+            <span class="ai-arrow">&rarr;</span>
+            <div class="ai-stage" id="ai3-analytics">
+              <span class="stage-label">Analytics</span>
+              Cloud Dashboard
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <p>&copy; 2026 ChartLite. Open-source under the Apache License 2.0.</p>
+      <div class="footer-links">
+        <a href="https://github.com/prismindanalytics/chartlite" target="_blank" rel="noopener noreferrer">Source Code</a>
+        <a href="mailto:hello@chartlite.health">Contact the Team</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const TIER_ORDER = ['offline', 'occasional', 'connected'];
+
+    function selectTier(tier) {
+      // Update buttons
+      document.querySelectorAll('.tier-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tier-btn[data-tier="${tier}"]`).classList.add('active');
+
+      // Update diagram border
+      const wrapper = document.getElementById('diagramWrapper');
+      wrapper.className = 'diagram-wrapper tier-' + tier;
+
+      // Show/hide diagram elements
+      const tierIndex = TIER_ORDER.indexOf(tier);
+
+      // Tier 2+ elements (use setAttribute for SVG elements)
+      const t2Elements = ['device2', 'p2pSync', 'facilityB', 'crossFacility'];
+      t2Elements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('class', tierIndex >= 1 ? 'element-visible' : 'element-hidden');
+      });
+
+      // Tier 3 elements
+      const t3Elements = ['cloudLayer'];
+      t3Elements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('class', tierIndex >= 2 ? 'element-visible' : 'element-hidden');
+      });
+
+      // Mobile diagram elements
+      const mobileTier2 = document.getElementById('mobileTier2');
+      const mobileTier3 = document.getElementById('mobileTier3');
+      if (mobileTier2) mobileTier2.style.display = tierIndex >= 1 ? 'block' : 'none';
+      if (mobileTier3) mobileTier3.style.display = tierIndex >= 2 ? 'block' : 'none';
+
+      // Update capability cards
+      document.querySelectorAll('.capability-card').forEach(card => {
+        const minTier = card.getAttribute('data-min-tier');
+        const minIndex = TIER_ORDER.indexOf(minTier);
+        const isUnlocked = tierIndex >= minIndex;
+        const wasLocked = card.classList.contains('locked');
+
+        card.classList.remove('locked', 'unlocked', 'newly-unlocked');
+        if (isUnlocked) {
+          card.classList.add('unlocked');
+          if (wasLocked) card.classList.add('newly-unlocked');
+        } else {
+          card.classList.add('locked');
+        }
+      });
+
+      // Update AI pipeline rows
+      document.querySelectorAll('.ai-tier-row').forEach(row => row.classList.remove('active'));
+      const activeRows = ['aiTier1'];
+      if (tierIndex >= 1) activeRows.push('aiTier2');
+      if (tierIndex >= 2) activeRows.push('aiTier3');
+      activeRows.forEach(id => document.getElementById(id).classList.add('active'));
+
+      // Update AI stages
+      document.querySelectorAll('.ai-stage').forEach(stage => {
+        const row = stage.closest('.ai-tier-row');
+        if (row && row.classList.contains('active')) {
+          stage.classList.add('active');
+          stage.classList.remove('inactive');
+        } else {
+          stage.classList.remove('active');
+          stage.classList.add('inactive');
+        }
+      });
+    }
+
+    // Hamburger menu
+    function toggleMenu() {
+      var btn = document.querySelector('.hamburger');
+      var menu = document.getElementById('mobileMenu');
+      btn.classList.toggle('open');
+      menu.classList.toggle('open');
+      var isOpen = menu.classList.contains('open');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+      btn.setAttribute('aria-expanded', isOpen);
+      if (isOpen) {
+        menu.querySelector('a').focus();
+      }
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var menu = document.getElementById('mobileMenu');
+        if (menu.classList.contains('open')) {
+          toggleMenu();
+          document.querySelector('.hamburger').focus();
+        }
+      }
+    });
+
+    // Initialize
+    selectTier('offline');
+  </script>
+
+</body>
+</html>

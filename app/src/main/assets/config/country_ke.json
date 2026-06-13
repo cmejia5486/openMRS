@@ -1,0 +1,17 @@
+{
+  "country": "KE",
+  "name": "Kenya",
+  "languages": ["en", "sw"],
+  "defaultLanguage": "en",
+  "formularyFile": "formulary/ke_formulary.json",
+  "icd10File": "icd10/phc_top300.json",
+  "cdssRules": "cdss/ke_rules.json",
+  "languageModelDir": "lm/ke/",
+  "smsEnabled": true,
+  "nationalIdFormat": "^\\d{7,8}$",
+  "nationalIdLabel": "National ID",
+  "phoneFormat": "^\\+254\\d{9}$",
+  "dateFormat": "dd/MM/yyyy",
+  "currencyCode": "KES",
+  "facilityIdPrefix": "KE"
+}

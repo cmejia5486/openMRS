@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ChartLite</string>
+
+    <!-- Common -->
+    <string name="save">Fi pamọ́</string>
+    <string name="cancel">Fagilé</string>
+    <string name="back">Padà</string>
+    <string name="close">Pa dé</string>
+    <string name="search">Wá</string>
+    <string name="loading">Ń ṣiṣẹ́…</string>
+    <string name="error">Àṣìṣe</string>
+    <string name="success">Àṣeyọrí</string>
+    <string name="confirm">Jẹ́rìísí</string>
+    <string name="delete">Pa rẹ́</string>
+    <string name="edit">Ṣàtúnṣe</string>
+    <string name="add">Fi kún</string>
+    <string name="done">Ti parí</string>
+    <string name="yes">Bẹ́ẹ̀ni</string>
+    <string name="no">Rárá</string>
+    <string name="ok">Ó dára</string>
+    <string name="none">Kò sí</string>
+    <string name="status">Ipò</string>
+
+    <!-- Home Screen -->
+    <string name="new_patient">Aláìsàn Tuntun</string>
+    <string name="find_patient">Wá Aláìsàn</string>
+    <string name="dashboard">Pánẹ́ẹ̀lì</string>
+    <string name="settings">Ètò</string>
+    <string name="sync">Ṣe àmúdọ́gba</string>
+    <string name="read_sms">Ka SMS</string>
+    <string name="quick_actions">ÌGBÉSẸ̀ KÍÁKÍÁ</string>
+    <string name="recent_encounters">ÌPÀDÉ ÀÌPẸ́ YÌÍ</string>
+    <string name="stock">Ohun ìpamọ́</string>
+    <string name="protocols">Ìlànà</string>
+    <string name="reminders">Ìránlọ́wọ́</string>
+    <string name="facilities">Ilé ìṣẹ́</string>
+    <string name="no_encounters_yet">Kò sí ìpàdé kankan</string>
+    <string name="no_encounters_subtitle">Tẹ \'Aláìsàn Tuntun\' láti kọ ìpàdé àkọ́kọ́ rẹ</string>
+    <string name="no_patients_waiting">Kò sí aláìsàn tó ń dúró</string>
+    <string name="patients_will_appear">Àwọn aláìsàn yóò hàn níbí nígbà tí wọ́n bá fi ránṣẹ́ sí %1$s</string>
+    <string name="waiting">Ń dúró</string>
+    <string name="in_queue">Nínú ìlà</string>
+    <string name="next_patient">Aláìsàn Tó Kàn</string>
+    <string name="patients">Àwọn Aláìsàn</string>
+    <string name="recent">Àìpẹ́</string>
+    <string name="extraction_queue_title">Ìlà Ìyọkúrò</string>
+    <string name="queued_format">%1$d nínú ìlà</string>
+    <string name="ready_format">%1$d ti ṣetán</string>
+    <string name="failed_format">%1$d ti kùnà</string>
+    <string name="process_batch">Ṣe Ìpele</string>
+    <string name="open_queue">Ṣí Ìlà</string>
+    <string name="cancel_batch">Fagilé</string>
+    <string name="batch_running">Ìyọkúrò Ìpele Ń Ṣiṣẹ́</string>
+    <string name="processing_queued">Ń ṣiṣẹ́ lórí àwọn àkọsílẹ̀ tó wà nínú ìlà\u2026</string>
+    <string name="queue_header_format">ÌLÀ %1$s</string>
+    <string name="admin_access_required_settings">Àǹfààní Alábòójútó ni a nílò fún Ètò</string>
+    <string name="admin_access_required_sync">Àǹfààní Alábòójútó ni a nílò fún Àmúdọ́gba</string>
+    <string name="voice_first_subtitle">Àkọsílẹ̀ ìṣègùn nípasẹ̀ ohùn</string>
+    <string name="offline_ready">Ṣetán Láìsí Íńtánẹ́ẹ̀tì</string>
+    <string name="offline_not_ready">Kò Ṣetán Láìsí Íńtánẹ́ẹ̀tì</string>
+    <string name="asr_error">Àṣìṣe ASR</string>
+    <string name="national_id">Ìdánimọ̀ Orílẹ̀-èdè</string>
+    <string name="date_of_birth_format">Ọjọ́ Ìbí (%1$s)</string>
+    <string name="date_format_hint">Ọ̀nà: %1$s</string>
+
+    <!-- Patient Registration -->
+    <string name="patient_registration">Ìforúkọsílẹ̀ Aláìsàn</string>
+    <string name="first_name">Orúkọ Àkọ́kọ́</string>
+    <string name="last_name">Orúkọ Ìdílé</string>
+    <string name="date_of_birth">Ọjọ́ Ìbí</string>
+    <string name="gender">Akọ tàbí Abo</string>
+    <string name="male">Ọkùnrin</string>
+    <string name="female">Obìnrin</string>
+    <string name="phone_number">Nọ́mbà Fóònù</string>
+    <string name="address">Àdírẹ́sì</string>
+    <string name="register_patient">Forúkọsílẹ̀ Aláìsàn</string>
+    <string name="patient_id">Nọ́mbà Aláìsàn</string>
+
+    <!-- Encounter -->
+    <string name="encounter_record">Àkọsílẹ̀ Ìpàdé</string>
+    <string name="start_recording">Bẹ̀rẹ̀ Gbígbà</string>
+    <string name="stop_recording">Dá Gbígbà Dúró</string>
+    <string name="save_encounter">Fi Ìpàdé Pamọ́</string>
+    <string name="encounter_review">Àtúnyẹ̀wò Ìpàdé</string>
+    <string name="transcript">Àkọsílẹ̀</string>
+    <string name="vitals">Àmì Pàtàkì</string>
+    <string name="diagnoses">Ìwádìí</string>
+    <string name="medications">Oògùn</string>
+    <string name="chief_complaint">Ẹ̀dùn Àkọ́kọ́</string>
+    <string name="follow_up">Àtẹ̀lé</string>
+    <string name="referral">Ìtọ́kasí</string>
+
+    <!-- Lab Orders -->
+    <string name="lab_orders">Àṣẹ Yàrá-ìdánwò</string>
+    <string name="order_lab_test">Pàṣẹ Ìdánwò</string>
+    <string name="test_name">Orúkọ Ìdánwò</string>
+    <string name="priority">Pataki</string>
+    <string name="routine">Ìgbàgbogbo</string>
+    <string name="urgent">Kíákíá</string>
+    <string name="stat">KÍÁKÍÁ PÚPỌ̀</string>
+    <string name="result">Èsì</string>
+    <string name="enter_result">Tẹ Èsì Sílẹ̀</string>
+    <string name="ordered">Ti Pàṣẹ</string>
+    <string name="collected">Ti Kójọ</string>
+    <string name="resulted">Ti Ní Èsì</string>
+    <string name="cancelled">Ti Fagilé</string>
+    <string name="pending">Ń Dúró</string>
+    <string name="abnormal">Kò Ṣe Déédéé</string>
+    <string name="normal">Déédéé</string>
+
+    <!-- Appointments -->
+    <string name="appointments">Àpéjọ</string>
+    <string name="schedule_appointment">Ṣètò Àpéjọ</string>
+    <string name="today">Lónìí</string>
+    <string name="scheduled">Ti Ṣètò</string>
+    <string name="checked_in">Ti Wọlé</string>
+    <string name="in_progress">Ń Lọ Lọ́wọ́</string>
+    <string name="completed">Ti Parí</string>
+    <string name="no_show">Kò Wá</string>
+    <string name="check_in">Wọlé</string>
+    <string name="start_visit">Bẹ̀rẹ̀ Ìbẹ̀wò</string>
+    <string name="complete">Parí</string>
+
+    <!-- Referrals -->
+    <string name="referrals">Àwọn Ìtọ́kasí</string>
+    <string name="create_referral">Ṣe Ìtọ́kasí</string>
+    <string name="to_facility">Sí Ilé-ìṣẹ́</string>
+    <string name="reason">Ìdí</string>
+    <string name="urgency">Bí ó ṣe ń kán</string>
+    <string name="emergency">Pàjáwìrì</string>
+    <string name="accepted">Ti Gbà</string>
+
+    <!-- Stock Management -->
+    <string name="stock_management">Ìṣàkóso Ohun Ìpamọ́</string>
+    <string name="add_stock_item">Fi Ohun Ìpamọ́ Kún</string>
+    <string name="receive_stock">Gbà Ohun Ìpamọ́</string>
+    <string name="dispense">Fún ní Oògùn</string>
+    <string name="quantity">Iye</string>
+    <string name="low_stock">Ohun Ìpamọ́ Kéré</string>
+    <string name="out_of_stock">Ohun Ìpamọ́ Ti Tán</string>
+    <string name="expiring_soon">Yóò Parí Láìpẹ́</string>
+    <string name="drug_name">Orúkọ Oògùn</string>
+    <string name="batch_number">Nọ́mbà Ìpele</string>
+
+    <!-- Immunizations -->
+    <string name="immunizations">Àjẹsára</string>
+    <string name="record_immunization">Kọ Àjẹsára Sílẹ̀</string>
+    <string name="vaccine">Àjẹsára</string>
+    <string name="dose">Ìwọ̀n</string>
+    <string name="next_dose_due">Ìwọ̀n Tó Kàn</string>
+    <string name="overdue">Ti Kọjá Àsìkò</string>
+    <string name="immunization_card">Káàdì Àjẹsára</string>
+
+    <!-- Family Planning -->
+    <string name="family_planning">Ètò Ìdílé</string>
+    <string name="current_method">Ọ̀nà Lọ́wọ́lọ́wọ́</string>
+    <string name="record_visit">Kọ Ìbẹ̀wò Sílẹ̀</string>
+    <string name="next_follow_up">Àtẹ̀lé Tó Kàn</string>
+
+    <!-- Growth Charts -->
+    <string name="growth_chart">Àwòrán Ìdàgbà</string>
+    <string name="weight">Ìwọ̀n</string>
+    <string name="height">Gíga</string>
+    <string name="head_circumference">Àyíká Orí</string>
+    <string name="muac">MUAC</string>
+    <string name="z_score">Ìṣirò-Z</string>
+    <string name="malnutrition_alert">Ìkìlọ̀ Àìjẹunrere</string>
+    <string name="severe_malnutrition">Àìjẹunrere Líle</string>
+    <string name="moderate_malnutrition">Àìjẹunrere Àárín</string>
+
+    <!-- DHIS2 -->
+    <string name="dhis2_export">Kó sí DHIS2</string>
+    <string name="dhis2_integration">Àsopọ̀ DHIS2</string>
+    <string name="push_to_dhis2">Fi ránṣẹ́ sí DHIS2</string>
+    <string name="preview_payload">Wo Dátà</string>
+    <string name="test_connection">Dán Àsopọ̀ Wò</string>
+    <string name="server_url">URL Ẹ̀rọ Olùpèsè</string>
+    <string name="connected">Ti Sopọ̀</string>
+
+    <!-- Settings -->
+    <string name="language_settings">Èdè</string>
+    <string name="country">Orílẹ̀-èdè</string>
+    <string name="user_management">Ìṣàkóso Olùlò</string>
+    <string name="auto_lock">Títì Àìfọwọ́yí</string>
+    <string name="biometric">Bàyómẹ́tíríkì</string>
+    <string name="about">Nípa</string>
+    <string name="settings_tab_essentials">Pàtàkì</string>
+    <string name="settings_tab_ai_speech">AI àti Ọ̀rọ̀</string>
+    <string name="settings_tab_operations">Ìṣiṣẹ́</string>
+    <string name="settings_tab_regions">Àwọn Ẹkùn</string>
+    <string name="settings_tab_admin">Alábòójútó</string>
+    <string name="settings_general">Gbogbogbò</string>
+    <string name="settings_asr_interface_lang">ASR àti èdè atọ́kùn</string>
+    <string name="settings_formulary_clinical">Ìwé oògùn àti dátà ìṣègùn</string>
+    <string name="settings_speech_recognition">Ìdámọ̀ Ọ̀rọ̀</string>
+    <string name="settings_offline_mode">Ìpò Láìsí Íńtánẹ́ẹ̀tì</string>
+    <string name="settings_offline_onnx">Ń lo ASR ẹ̀rọ (èdè 1600+)</string>
+    <string name="settings_offline_google">Ń lo Google lórí ayélujára (nílò íńtánẹ́ẹ̀tì)</string>
+    <string name="settings_clinical_extraction">Ìyọkúrò Ìṣègùn</string>
+    <string name="settings_note_processing">AI Ìṣiṣẹ́ Àkọsílẹ̀</string>
+    <string name="settings_consultation_workflow">Ìlànà Ìṣiṣẹ́</string>
+    <string name="settings_recording">Gbígbà Sílẹ̀</string>
+    <string name="settings_max_recording">Ìwọ̀n Tó Pọ̀ Jù Fún Gbígbà</string>
+    <string name="settings_minutes_format">Ìṣẹ́jú %1$d</string>
+    <string name="settings_audio_retention">Ìpamọ́ Ohùn</string>
+    <string name="settings_delete_immediately">Pa rẹ́ lẹ́sẹ̀kẹsẹ̀</string>
+    <string name="settings_days_format">Ọjọ́ %1$d</string>
+    <string name="settings_capture_mode">Ìpò Gbígbà Ìjúmbọ̀</string>
+    <string name="settings_ambient">Àkọsílẹ̀ Ìjíròrò Kíkún</string>
+    <string name="settings_ambient_desc">Ó dára jù fún ìjíròrò kíkún láàárín aláìsàn àti dókítà.</string>
+    <string name="settings_snippet">Gbígbà Kúkúrú</string>
+    <string name="settings_snippet_desc">Ó dára jù fún gbígbà kúkúrú tí a ṣètò.</string>
+    <string name="settings_security">Ààbò</string>
+    <string name="settings_biometric_unlock">Ṣí pẹ̀lú Bàyómẹ́tíríkì</string>
+    <string name="settings_biometric_subtitle">Lo ìka tàbí ojú láti ṣí</string>
+    <string name="settings_autolock_subtitle">Ìṣẹ́jú %1$d tí kò bá ń lò</string>
+    <string name="settings_sms_referrals">Ìtọ́kasí SMS</string>
+    <string name="settings_send_via_sim">Fi ránṣẹ́ nípasẹ̀ SIM fóònù</string>
+    <string name="settings_sim_active">Ń ṣiṣẹ́ — ń lo SIM fóònù rẹ.</string>
+    <string name="settings_sim_inactive">Kò ṣiṣẹ́ — Twilio ti ṣètò nísàlẹ̀</string>
+    <string name="settings_clinic_workflow">Ìlànà Ilé-ìwòsàn</string>
+    <string name="settings_multi_station">Ìpò Ibi Iṣẹ́ Púpọ̀</string>
+    <string name="settings_multi_station_on">Àwọn aláìsàn ń kọjá àwọn ibi iṣẹ́ tí a mú ṣiṣẹ́</string>
+    <string name="settings_multi_station_off">Ìpò ẹyọ — olùpèsè kan</string>
+    <string name="settings_active_stations">Àwọn Ibi Iṣẹ́ Tó Ń Ṣiṣẹ́:</string>
+    <string name="settings_stations_hint">Mú àwọn ibi iṣẹ́ tí ilé-ìṣẹ́ rẹ ń lò nìkan ṣiṣẹ́. Ẹnìkan lè yí padà láàárín àwọn ibi iṣẹ́ tí a mú ṣiṣẹ́.</string>
+    <string name="settings_switch_region">Yí Ẹkùn Padà</string>
+    <string name="settings_show_regions">Fi àwọn ẹkùn tó wà hàn</string>
+    <string name="settings_hide_regions">Fi àwọn àṣàyàn ẹkùn pamọ́</string>
+    <string name="settings_administration">Ìṣàkóso</string>
+    <string name="settings_user_mgmt_subtitle">Ṣẹ̀dá, ṣàtúnṣe, àti ṣàkóso àwọn àkáǹtì olùlò</string>
+    <string name="settings_facility_qr">Fi QR Ilé-ìṣẹ́ Hàn</string>
+    <string name="settings_facility_qr_subtitle">Nílò PIN Alábòójútó, lẹ́yìn náà fi QR hàn fún fífi fóònù tuntun kún</string>
+    <string name="settings_provider">Olùpèsè</string>
+    <string name="settings_facility">Ilé-ìṣẹ́</string>
+    <string name="settings_version">Ẹ̀dà 1.0.0</string>
+    <string name="settings_change_country">Yí Orílẹ̀-èdè Padà?</string>
+    <string name="settings_change">Yí Padà</string>
+
+    <!-- Auth -->
+    <string name="login">Wọlé</string>
+    <string name="logout">Jáde</string>
+    <string name="enter_pin">Tẹ PIN sílẹ̀</string>
+    <string name="pin_incorrect">PIN kò tọ́</string>
+    <string name="select_user">Yan Olùlò</string>
+
+    <!-- PDF / SOAP -->
+    <string name="export_pdf">Kó PDF Jáde</string>
+    <string name="soap_note">Àkọsílẹ̀ SOAP</string>
+    <string name="share">Pín</string>
+    <string name="generated_by_chartlite">ChartLite v1.0 ló ṣe</string>
+
+    <!-- Pharmacy -->
+    <string name="pharmacy">Ilé Oògùn</string>
+    <string name="dispense_medications">Fún ní Oògùn</string>
+
+    <!-- Dashboard -->
+    <string name="facility_dashboard">Pánẹ́ẹ̀lì Ilé-ìṣẹ́</string>
+    <string name="encounters_today">Ìpàdé Lónìí</string>
+    <string name="encounters_week">Ọ̀sẹ̀ Yìí</string>
+    <string name="encounters_month">Oṣù Yìí</string>
+    <string name="top_diagnoses">Àwọn Ìwádìí Tó Pọ̀ Jù</string>
+    <string name="medications_prescribed">Oògùn Tí A Kọ</string>
+    <string name="disease_burden">Ẹrù Àrùn</string>
+
+    <!-- Patient Registration (extended) -->
+    <string name="discard_changes">Sọ Àyípadà Nù?</string>
+    <string name="discard_changes_body">O ní dátà aláìsàn tí a kò tíì fi pamọ́. Ṣé o dá a lójú pé o fẹ́ padà?</string>
+    <string name="discard">Sọ Nù</string>
+    <string name="link_existing_patient">So Mọ́ Aláìsàn Tó Wà</string>
+    <string name="register_new">Forúkọsílẹ̀ Tuntun</string>
+    <string name="link_existing">So Mọ́ Tó Wà</string>
+    <string name="link_existing_instruction">Tẹ nọ́mbà ChartLite aláìsàn láti orí káàdì wọn, SMS, tàbí ilé-ìṣẹ́ mìíràn.</string>
+    <string name="patient_id_label">Nọ́mbà Aláìsàn (b.a. KFMT-4WRN)</string>
+    <string name="invalid_patient_id">Ọ̀nà nọ́mbà aláìsàn kò tọ́</string>
+    <string name="patient_not_in_local_db">Aláìsàn kò sí nínú ibi ìpamọ́ dátà lórí ẹ̀rọ. Kún àwọn àlàyé nísàlẹ̀ láti forúkọsílẹ̀ pẹ̀lú nọ́mbà yìí.</string>
+    <string name="look_up_link">Wá &amp; So Mọ́</string>
+    <string name="listening_say_details">Ń gbọ́… sọ àwọn àlàyé aláìsàn</string>
+    <string name="voice_extract_failed">Kò lè yọ àlàyé aláìsàn jáde. Jọ̀wọ́ gbìyànjú lẹ́ẹ̀kan sí tàbí tẹ̀ ẹ́ sílẹ̀ fúnra rẹ.</string>
+    <string name="no_speech_detected">Kò rí ohùn kankan. Jọ̀wọ́ gbìyànjú lẹ́ẹ̀kan sí.</string>
+    <string name="stop">Dúró</string>
+    <string name="preparing_voice_model">Ń múra Àwòṣe Ohùn…</string>
+    <string name="voice_registration">Ìforúkọsílẹ̀ Ohùn</string>
+    <string name="please_wait_before_speaking">Jọ̀wọ́ dúró fún ìṣẹ́jú díẹ̀ kí o tó bẹ̀rẹ̀ sí í sọ̀rọ̀.</string>
+    <string name="voice_example">Sọ pé: "Orúkọ ni John Smith, ọmọ ọdún 45, ọkùnrin, fóònù 072 123 4567, oògùn penicillin ń ṣe é"</string>
+    <string name="voice_input">Ìtẹ̀ ohùn</string>
+    <string name="preparing">Ń múra…</string>
+    <string name="speak_patient_details">Sọ Àlàyé Aláìsàn</string>
+    <string name="voice_filled_fields">Ohùn ti kún àyè %1$d — jọ̀wọ́ ṣàyẹ̀wò nísàlẹ̀</string>
+    <string name="personal_information">Àlàyé Ara Ẹni</string>
+    <string name="first_name_required">Orúkọ Àkọ́kọ́ *</string>
+    <string name="last_name_required">Orúkọ Ìdílé *</string>
+    <string name="dob_format_label">Ọjọ́ Ìbí (%1$s)</string>
+    <string name="or">tàbí</string>
+    <string name="age_years">Ọjọ́ orí (ọdún)</string>
+    <string name="age_range">0–150</string>
+    <string name="contact_details">Àlàyé Ìbáṣepọ̀</string>
+    <string name="national_id_optional">%1$s (Àṣàyàn)</string>
+    <string name="phone_optional">Nọ́mbà Fóònù (Àṣàyàn)</string>
+    <string name="phone_enables_sms">Yóò jẹ́ kí a lè fi àkọsílẹ̀ ìṣègùn SMS aṣírí ránṣẹ́ sí aláìsàn</string>
+    <string name="optional_pin">PIN Àṣàyàn (fóònù àjọpín)</string>
+    <string name="pin_shared_phone_hint">Fún àwọn aláìsàn tó ń pín fóònù pẹ̀lú ẹbí</string>
+    <string name="clinical">Ìṣègùn</string>
+    <string name="known_allergies">Oògùn Tó Ń Ṣe É</string>
+    <string name="allergies_hint">Pín pẹ̀lú kọ́mà (b.a., penicillin, sulfa)</string>
+    <string name="consent_checkbox">Aláìsàn gbà láti jẹ́ kí a kó àti fi dátà pamọ́</string>
+    <string name="done_patient_queued">Ti Parí — A Ti Fi Aláìsàn Sí Ìlà Fún Ṣíṣàyẹ̀wò</string>
+    <string name="start_encounter">Bẹ̀rẹ̀ Ìpàdé</string>
+    <string name="voice">ohùn</string>
+
+    <!-- Auth / Login (extended) -->
+    <string name="sign_in_to_continue">Wọlé láti tẹ̀síwájú</string>
+    <string name="select_your_account">Yan àkáǹtì rẹ</string>
+    <string name="no_users_found">Kò rí olùlò kankan fún ilé-ìṣẹ́ yìí.\nBéèrè lọ́wọ́ alábòójútó rẹ fún kóòdù ìdarapọ̀, tàbí kàn sí alábòójútó.</string>
+    <string name="join_facility">Darapọ̀ Mọ́ Ilé-ìṣẹ́</string>
+    <string name="enter_your_pin">Tẹ PIN rẹ sílẹ̀</string>
+    <string name="switch_user">Yí Olùlò Padà</string>
+    <string name="invalid_or_expired_code">Kóòdù kò tọ́ tàbí ti parí</string>
+    <string name="invalid_qr_code">Kóòdù QR kò tọ́</string>
+    <string name="your_details">Àlàyé Rẹ</string>
+    <string name="create_pin">Ṣẹ̀dá PIN</string>
+    <string name="scan_qr_instruction">Ṣe àmójútó kóòdù QR láti ọ̀dọ̀ alábòójútó rẹ, tàbí tẹ kóòdù oníhàná mẹ́fà fúnra rẹ.</string>
+    <string name="scan_qr_prompt">Ṣe àmójútó kóòdù QR ìdarapọ̀ láti ọ̀dọ̀ alábòójútó rẹ</string>
+    <string name="scan_qr_code">Ṣe Àmójútó QR</string>
+    <string name="or_enter_code">tàbí tẹ kóòdù</string>
+    <string name="join_code">Kóòdù Ìdarapọ̀</string>
+    <string name="join_code_placeholder">000000</string>
+    <string name="your_full_name">Orúkọ Rẹ Ní Kíkún</string>
+    <string name="username">Orúkọ Olùlò</string>
+    <string name="username_hint">Lẹ́tà, nọ́mbà, àti àmì ìdúró nìkan</string>
+    <string name="pin_label">PIN (hàná 4–6)</string>
+    <string name="confirm_pin">Jẹ́rìísí PIN</string>
+    <string name="pins_dont_match">Àwọn PIN kò bára mu</string>
+    <string name="next">Tó Kàn</string>
+    <string name="username_already_taken">Orúkọ olùlò ti wà tẹ́lẹ̀</string>
+    <string name="username_exists_format">Orúkọ olùlò \'%1$s\' ti wà tẹ́lẹ̀</string>
+    <string name="create_account">Ṣẹ̀dá Àkáǹtì</string>
+    <string name="keep_editing">Tẹ̀síwájú Ṣíṣàtúnṣe</string>
+
+    <!-- Setup Screen -->
+    <string name="setup_welcome">Ẹ kú àbọ̀ sí ChartLite</string>
+    <string name="setup_welcome_subtitle">Àkọsílẹ̀ ìṣègùn nípasẹ̀ ohùn fún àwọn olùpèsè ìtọ́jú ìpele àkọ́kọ́.</string>
+    <string name="setup_create_new_facility">Ṣẹ̀dá Ilé-ìṣẹ́ Tuntun</string>
+    <string name="setup_join_existing_facility">Darapọ̀ Mọ́ Ilé-ìṣẹ́ Tó Wà</string>
+    <string name="setup_select_country">Yan Orílẹ̀-èdè Rẹ</string>
+    <string name="setup_provider_details">Àlàyé Olùpèsè</string>
+    <string name="setup_full_name">Orúkọ Ní Kíkún</string>
+    <string name="setup_qualification">Ìyẹ̀wù (b.a., Dókítà, Oníṣègùn, Nọ́ọ̀sì)</string>
+    <string name="setup_facility_details">Àlàyé Ilé-ìṣẹ́</string>
+    <string name="setup_create_new">Ṣẹ̀dá ilé-ìṣẹ́ tuntun</string>
+    <string name="setup_join_existing">Darapọ̀ mọ́ ilé-ìṣẹ́ tó wà</string>
+    <string name="setup_facility_name">Orúkọ Ilé-ìṣẹ́</string>
+    <string name="setup_location_address">Ibi / Àdírẹ́sì</string>
+    <string name="setup_join_instruction">Ìdarapọ̀ yóò so fóònù yìí mọ́ ilé-ìṣẹ́ tó wà tẹ́lẹ̀. Ṣe àmójútó QR àpèjẹ́ alábòójútó láti gba ipò tí a yàn fún ọ.</string>
+    <string name="setup_existing_facility_id">Nọ́mbà Ilé-ìṣẹ́ Tó Wà</string>
+    <string name="setup_scan_invitation_qr">Ṣe Àmójútó QR Àpèjẹ́</string>
+    <string name="setup_facility_name_optional">Orúkọ Ilé-ìṣẹ́ (àṣàyàn)</string>
+    <string name="setup_set_your_pin">Ṣètò PIN Rẹ</string>
+    <string name="setup_pin_instruction">Ìwọ yóò lo PIN yìí láti wọlé lórí ẹ̀rọ yìí.</string>
+    <string name="setup_joining_as">Ń darapọ̀ gẹ́gẹ́ bí: %1$s</string>
+    <string name="setup_ai_setup">Ṣètò AI</string>
+    <string name="setup_speech_recognition">Ìdámọ̀ Ọ̀rọ̀</string>
+    <string name="setup_on_device">Lórí Ẹ̀rọ</string>
+    <string name="setup_on_device_desc">Ń ṣiṣẹ́ láìsí íńtánẹ́ẹ̀tì. Nílò ìgbàsílẹ̀ àwòṣe.</string>
+    <string name="setup_google_speech">Google Speech</string>
+    <string name="setup_google_speech_desc">Ń lo iṣẹ́ Google. Nílò íńtánẹ́ẹ̀tì.</string>
+    <string name="setup_cloud_asr">Cloud ASR</string>
+    <string name="setup_cloud_asr_desc">Ìpéye tó ga jù. Nílò íńtánẹ́ẹ̀tì.</string>
+    <string name="setup_download_speech_model">Gba Àwòṣe Ohùn Sílẹ̀</string>
+    <string name="setup_downloading_progress">Ń gba sílẹ̀: %1$s / %2$s MB</string>
+    <string name="setup_downloading">Ń gba sílẹ̀…</string>
+    <string name="setup_verifying_download">Ń ṣàyẹ̀wò ohun tí a gba sílẹ̀…</string>
+    <string name="setup_speech_model_ready">Àwòṣe ohùn ti ṣetán</string>
+    <string name="setup_resume_download">Tẹ̀síwájú Ìgbàsílẹ̀</string>
+    <string name="setup_retry">Gbìyànjú Lẹ́ẹ̀kan Sí</string>
+    <string name="setup_import_model_folder">Gbé Fódà Àwòṣe Wọlé</string>
+    <string name="setup_import_onnx">Gbé ONNX Wọlé</string>
+    <string name="setup_import_tokens">Gbé tokens.txt Wọlé</string>
+    <string name="setup_clinical_note_ai">AI Àkọsílẹ̀ Ìṣègùn</string>
+    <string name="setup_ai_instruction">Báwo ni a ṣe yẹ kí a yí àkọsílẹ̀ padà sí àwọn àkọsílẹ̀ ìṣègùn tí a ṣètò?</string>
+    <string name="setup_cloud_ai">Cloud AI</string>
+    <string name="setup_cloud_ai_desc">Ìpéye tó ga jù. Nílò íńtánẹ́ẹ̀tì.</string>
+    <string name="setup_on_device_ai_desc">Ń ṣiṣẹ́ ní kíkún láìsí íńtánẹ́ẹ̀tì.</string>
+    <string name="setup_auto">Àìfọwọ́yí</string>
+    <string name="setup_auto_desc">Cloud nígbà tó bá sí íńtánẹ́ẹ̀tì, lórí ẹ̀rọ bí àrídájú.</string>
+    <string name="setup_claude_api_key">Kọ́kọ́rọ́ API Claude</string>
+    <string name="setup_claude_api_placeholder">sk-ant-…</string>
+    <string name="setup_claude_api_hint">Gba kọ́kọ́rọ́ ní console.anthropic.com</string>
+    <string name="setup_on_device_model">Àwòṣe Lórí Ẹ̀rọ</string>
+    <string name="setup_download_model_format">Gba %1$s Sílẹ̀</string>
+    <string name="setup_downloading_size">Ń gba sílẹ̀: %1$s MB</string>
+    <string name="setup_model_ready_format">%1$s ti ṣetán</string>
+    <string name="setup_import_gguf">Gbé GGUF Wọlé</string>
+    <string name="setup_complete_setup">Parí Ṣíṣètò</string>
+    <string name="setup_offline_models_warning">A kò tíì gba àwọn àwòṣe láìsí íńtánẹ́ẹ̀tì sílẹ̀</string>
+    <string name="setup_offline_asr_needed">A nílò àwòṣe ASR fún ohùn láìsí íńtánẹ́ẹ̀tì. </string>
+    <string name="setup_offline_llm_needed">A nílò àwòṣe Qwen fún ìyọkúrò àkọsílẹ̀ lórí ẹ̀rọ. </string>
+    <string name="setup_offline_fallback">O ṣì lè parí ṣíṣètò — àpò náà yóò lo cloud/Google bí àrídájú títí a ó fi gba àwọn àwòṣe sílẹ̀.</string>
+    <string name="setup_recommended_format">%1$s (%2$d MB) — A Ṣènísọ̀rọ̀</string>
+    <string name="setup_note_processing">Ìṣiṣẹ́ Àkọsílẹ̀</string>
+    <string name="setup_immediate">Ṣiṣẹ́ lẹ́sẹ̀kẹsẹ̀</string>
+    <string name="setup_batch">Fi sínú ìlà fún ìpele</string>
+    <string name="setup_recording_mode">Ìpò Gbígbà Ìpìlẹ̀</string>
+
+    <string name="required">A nílò</string>
+    <string name="must_be_valid_url">Ó gbọdọ̀ jẹ́ URL tó tọ́</string>
+    <string name="new_order">Àṣẹ Tuntun</string>
+    <string name="no_lab_orders_yet">Kò sí àṣẹ yàrá-ìdánwò kankan</string>
+    <string name="tap_plus_to_create_order">Tẹ + láti ṣẹ̀dá àṣẹ tuntun</string>
+    <string name="priority_format">Pataki: %1$s</string>
+    <string name="ordered_format">Ti pàṣẹ: %1$s</string>
+    <string name="result_format">Èsì: %1$s</string>
+    <string name="result_with_unit_format">Èsì: %1$s %2$s</string>
+    <string name="reference_format">Ìtọ́kasí: %1$s</string>
+    <string name="abnormal_label">KÒ ṢE DÉÉDÉÉ</string>
+    <string name="mark_collected">Sàmì Bí Ti Kójọ</string>
+    <string name="search_tests">Wá àwọn ìdánwò</string>
+    <string name="selected_test_format">Ti yàn: %1$s (%2$s)</string>
+    <string name="order">Pàṣẹ</string>
+    <string name="enter_result_format">Tẹ Èsì Sílẹ̀: %1$s</string>
+    <string name="result_value">Iye Èsì</string>
+    <string name="unit_optional">Ẹ̀ka (àṣàyàn)</string>
+    <string name="reference_range_optional">Ìwọ̀n Ìtọ́kasí (àṣàyàn)</string>
+    <string name="abnormal_result">Èsì Tí Kò Ṣe Déédéé</string>
+    <string name="save_result">Fi Èsì Pamọ́</string>
+    <string name="out_of_stock_label">OHUN ÌPAMỌ́ TI TÁN</string>
+    <string name="all">Gbogbo</string>
+    <string name="expiring">Ń Parí</string>
+    <string name="no_stock_items">Kò sí ohun ìpamọ́</string>
+    <string name="tap_plus_to_add_inventory">Tẹ + láti fi ohun ìpamọ́ kún</string>
+    <string name="low_stock_reorder_format">Ohun ìpamọ́ kéré (tún pàṣẹ ní %1$d)</string>
+    <string name="batch_format">Ìpele: %1$s</string>
+    <string name="expires_format">Yóò parí: %1$s</string>
+    <string name="receive">Gbà</string>
+    <string name="drug_code">Kóòdù Oògùn</string>
+    <string name="initial_quantity">Iye Ìpìlẹ̀</string>
+    <string name="reorder_level">Ìpele Àtúnpàṣẹ</string>
+    <string name="unit">Ẹ̀ka</string>
+    <string name="batch_number_optional">Nọ́mbà Ìpele (àṣàyàn)</string>
+    <string name="receive_drug_format">Gbà: %1$s</string>
+    <string name="current_stock_format">Ohun ìpamọ́ lọ́wọ́: %1$d %2$s</string>
+    <string name="quantity_received">Iye Tí A Gbà</string>
+    <string name="notes_optional">Àkọsílẹ̀ (àṣàyàn)</string>
+    <string name="dhis2_subtitle">Àsopọ̀ ìròyìn ìlera orílẹ̀-èdè</string>
+    <string name="preview">Wo Ṣáájú</string>
+    <string name="server_url_placeholder">https://dhis2.example.org</string>
+    <string name="connection_failed_format">Àsopọ̀ kùnà: %1$s</string>
+    <string name="export_summary">Àkópọ̀ Ìkójáde</string>
+    <string name="period_format">Àsìkò: %1$s</string>
+    <string name="encounters">Àwọn Ìpàdé</string>
+    <string name="lab_orders_label">Àṣẹ Yàrá-ìdánwò</string>
+    <string name="server_configuration">Ètò Ẹ̀rọ Olùpèsè</string>
+    <string name="hide">Fi Pamọ́</string>
+    <string name="organisation_unit_id">Nọ́mbà Ẹgbẹ́ Àjọ</string>
+    <string name="org_unit_placeholder">b.a. O6uvpzGd5pu</string>
+    <string name="password">Ọ̀rọ̀ Aṣínà</string>
+    <string name="configuration_saved">A ti fi ètò pamọ́</string>
+    <string name="export_actions">Ìgbésẹ̀ Ìkójáde</string>
+    <string name="export_success_format">Àṣeyọrí! Ti gba wọlé: %1$d, Ti ṣàtúnṣe: %2$d, Ti fojú fo: %3$d</string>
+    <string name="export_failed_format">Ìkójáde kùnà: %1$s</string>
+    <string name="about_dhis2_integration">Nípa Àsopọ̀ DHIS2</string>
+    <string name="dhis2_description">Àwọn Ilé-iṣẹ́ Ìlera Ìjọba ló ń lo DHIS2 ní orílẹ̀-èdè tó ju 100 lọ fún ìròyìn ìlera orílẹ̀-èdè. Àsopọ̀ yìí ń fi àwọn àmì oṣù láti ilé-ìṣẹ́ rẹ ránṣẹ́ sí DHIS2 orílẹ̀-èdè.</string>
+    <string name="dhis2_supported">Tí a ṣe àtìlẹ́yìn fún: dataValueSets (àkójọpọ̀), àwọn ìṣẹ̀lẹ̀ tracker (àkọsílẹ̀ ẹnìkọ̀ọ̀kan)</string>
+    <string name="dhis2_payload_preview">Ìwo Ṣáájú Dátà DHIS2</string>
+    <string name="server_label_format">Ẹ̀rọ Olùpèsè: %1$s</string>
+    <string name="org_unit_label_format">Ẹgbẹ́ Àjọ: %1$s</string>
+    <string name="dashboard_subtitle">A ṣẹ̀dá rẹ̀ fúnra rẹ̀ láti àwọn ìpàdé ìṣègùn</string>
+    <string name="disease_burden_icd10">Ẹrù Àrùn Nípasẹ̀ Orí ICD-10</string>
+    <string name="total">Àpapọ̀</string>
+    <string name="registered">tí a forúkọsílẹ̀</string>
+    <string name="active">tí ń ṣiṣẹ́</string>
+    <string name="providers">Àwọn Olùpèsè</string>
+    <string name="no_encounters_recorded">Kò sí ìpàdé tí a kọ sílẹ̀</string>
+    <string name="no_medications_recorded">Kò sí oògùn tí a kọ sílẹ̀</string>
+    <string name="no_diagnoses_recorded">Kò sí ìwádìí tí a kọ sílẹ̀</string>
+    <string name="extraction_queue">Ìlà Ìyọkúrò</string>
+    <string name="batch_extraction_running">Ìyọkúrò Ìpele Ń Ṣiṣẹ́</string>
+    <string name="batch_extraction_subtitle">A ń ṣiṣẹ́ lórí àwọn àkọsílẹ̀ tó wà nínú ìlà. Àwòṣe àkọsílẹ̀ yóò wà ní mímúra tí ìpele náà yóò sì parí ní kíákíá.</string>
+    <string name="queue_status_format">%1$d nínú ìlà • %2$d ti ṣetán%3$s. Ìṣiṣẹ́ ìpele ń gba àwòṣe lẹ́ẹ̀kan ṣoṣo fún gbogbo aláìsàn.</string>
+    <string name="failed_suffix_format"> • %1$d ti kùnà</string>
+    <string name="process_queue">Ṣe Ìlà</string>
+    <string name="dhis2_export_description">Kó dátà ilé-ìṣẹ́ jáde sí DHIS2 fún ìròyìn ìlera orílẹ̀-èdè. Ìwo ṣáájú fi dátà dataValueSets gangan hàn.</string>
+    <string name="dhis2_period_format">Àsìkò: %1$s · %2$d ìpàdé · %3$d irú ìwádìí</string>
+    <string name="preview_dhis2_payload">Wo Ṣáájú Dátà DHIS2</string>
+    <string name="dhis2_data_value_sets">DHIS2 dataValueSets</string>
+    <string name="dhis2_post_description">Dátà yìí ni a óò fi ránṣẹ́ sí /api/dataValueSets lórí DHIS2 rẹ.</string>
+    <string name="dhis2_payload_copied">A ti dà dátà DHIS2 sí àtẹ</string>
+    <string name="copy">Dà Sí Àtẹ</string>
+    <string name="review_tab_summary">Àkópọ̀</string>
+    <string name="review_tab_claim_preview">Ìwo Ṣáájú Ẹ̀tọ́</string>
+    <string name="review_tab_soap_note">Àkọsílẹ̀ SOAP</string>
+    <string name="patient_id_format">Aláìsàn: %1$s</string>
+    <string name="unknown_date">Ọjọ́ tí a kò mọ̀</string>
+    <string name="sms_sent">A Ti Fi SMS Ránṣẹ́</string>
+    <string name="sms_pending">SMS Ń Dúró</string>
+    <string name="sms_failed">SMS Ti Kùnà</string>
+    <string name="sms_sent_description">A ti fi àkópọ̀ ìṣègùn aṣírí ránṣẹ́ sí aláìsàn</string>
+    <string name="sms_pending_description">A ń fi SMS aṣírí ránṣẹ́ sí aláìsàn…</string>
+    <string name="sms_failed_description">Fífi SMS ránṣẹ́ kùnà — a kò sọ fún aláìsàn</string>
+    <string name="suggested_diagnoses">Àwọn Ìwádìí Tí A Dábàá</string>
+    <string name="suggested_diagnoses_hint">Tẹ + láti fi kún àwọn ìwádìí tí a fìdí múlẹ̀ fún ìpàdé yìí.</string>
+    <string name="add_diagnosis">Fi ìwádìí kún</string>
+    <string name="exam_findings">Àwárí Ìdánwò</string>
+    <string name="investigations">Àwọn Ìwádìí Jinlẹ̀</string>
+    <string name="clinical_plan">Ètò Ìṣègùn</string>
+    <string name="return_in_days_format">Padà wá ní ọjọ́ %1$d</string>
+    <string name="refer_to_format">Tọ́kasí sí: %1$s</string>
+    <string name="refer_to_specialty_format">Tọ́kasí sí: %1$s (%2$s)</string>
+    <string name="urgency_format">Bí ó ṣe ń kán: %1$s</string>
+    <string name="social_history">Ìtàn Àwùjọ</string>
+    <string name="clinical_notes">Àwọn Àkọsílẹ̀ Ìṣègùn</string>
+    <string name="allergies">Oògùn Tó Ń Ṣe É</string>
+    <string name="insurance_claim_preview">Ìwo Ṣáájú Ẹ̀tọ́ Ìṣédúró</string>
+    <string name="claim_id_format">Nọ́mbà Ẹ̀tọ́: %1$s</string>
+    <string name="em_level_format">Ìpele E/M %1$d</string>
+    <string name="patient_label">Aláìsàn</string>
+    <string name="payer_type">Irú Olùsanwó</string>
+    <string name="icd10_diagnosis_codes">Àwọn Kóòdù Ìwádìí ICD-10</string>
+    <string name="no_diagnoses_claim_warning">Kò sí ìwádìí tí a kọ sílẹ̀ — ẹ̀tọ́ nílò kóòdù ICD-10 kan ní ó kéré jù.</string>
+    <string name="cpt_procedure_codes">Àwọn Kóòdù Ìlànà CPT</string>
+    <string name="cpt_header">CPT</string>
+    <string name="description_header">Àpèjúwe</string>
+    <string name="zar_header">ZAR</string>
+    <string name="total_label">ÀPAPỌ̀</string>
+    <string name="how_this_works">Bí Èyí Ṣe Ń Ṣiṣẹ́</string>
+    <string name="claim_mapping_explanation">ChartLite ń ṣe àfiwéra àwọn ìwádìí ICD-10 rẹ sí àwọn kóòdù ìlànà CPT tó wọ́pọ̀ jù, ó sì ń ṣe ìṣirò owó nípasẹ̀ iye owó ìtọ́kasí SAMA. Nínú iṣẹ́ gidi, èyí yóò sopọ̀ mọ́ ètò owó ilé-iṣẹ́ ìṣédúró rẹ fún iye owó ìsanpadà tó péye.</string>
+    <string name="preview_837p_submission">Wo Ṣáájú Fífi 837P Ránṣẹ́</string>
+    <string name="electronic_claim_837p">Ẹ̀tọ́ Ẹ̀rọ Ayélujára 837P</string>
+    <string name="edi_payload_description">Èyí ni dátà X12N v5010A1 tí a óò fi ránṣẹ́ sí ilé-iṣẹ́ ìṣédúró nípasẹ̀ EDI.</string>
+    <string name="claim_837p_copied">A ti dà ẹ̀tọ́ 837P sí àtẹ</string>
+    <string name="claim_copied">A ti dà ẹ̀tọ́ sí àtẹ</string>
+    <string name="copy_claim_as_text">Dà Ẹ̀tọ́ Bí Ọ̀rọ̀</string>
+    <string name="soap_note_generated">A Ti Ṣẹ̀dá Àkọsílẹ̀ SOAP</string>
+    <string name="soap_note_word_count_format">Ọ̀rọ̀ %1$d · A ṣẹ̀dá rẹ̀ láti ìpàdé ohùn</string>
+    <string name="subjective">Ọ̀rọ̀ Aláìsàn</string>
+    <string name="objective">Àyẹ̀wò Dókítà</string>
+    <string name="assessment">Ìgbéléwọ̀n</string>
+    <string name="plan">Ètò</string>
+    <string name="soap_note_copied">A ti dà àkọsílẹ̀ SOAP sí àtẹ</string>
+    <string name="copy_full_soap_note">Dà Àkọsílẹ̀ SOAP Kíkún</string>
+    <string name="export_as_pdf">Kó Jáde Bí PDF</string>
+    <string name="cloud_enhanced_notes">Àkọsílẹ̀ Tí Cloud Mú Dára Sí (Ìpele 3)</string>
+    <string name="cloud_enhanced_notes_desc">Nígbà tí ó bá sopọ̀ mọ́ íńtánẹ́ẹ̀tì, ChartLite lè mú àkọsílẹ̀ SOAP dára sí pẹ̀lú àwọn àwòṣe èdè ìṣègùn — ṣíṣẹ̀dá àwọn ìwádìí ìyàtọ̀, ìdí ìtọ́jú tí ó dá lórí ẹ̀rí, àti àwọn ìṣirò ìgbẹ́kẹ̀lé kóòdù ICD-10.</string>
+    <string name="pharmacy_order">Àṣẹ Ilé Oògùn</string>
+    <string name="prescription_copied">A ti dà oògùn sí àtẹ</string>
+    <string name="copy_rx">Dà Oògùn</string>
+    <string name="send_to_pharmacy">Fi Ránṣẹ́ Sí Ilé Oògùn</string>
+    <string name="fhir_medication_request">Ìbéèrè Oògùn FHIR</string>
+    <string name="fhir_payload_description">A óò fi àkójọpọ̀ FHIR R4 yìí ránṣẹ́ sí ibi ìbéèrè oògùn ilé oògùn.</string>
+    <string name="fhir_payload_copied">A ti dà dátà FHIR sí àtẹ</string>
+    <string name="send_claim">Fi ẹ̀tọ́ ránṣẹ́</string>
+    <string name="copy_soap_note">Dà àkọsílẹ̀ SOAP</string>
+    <string name="copy_claim">Dà ẹ̀tọ́</string>
+    <string name="copy_prescription">Dà oògùn</string>
+    <string name="send_to_pharmacy_icon">Fi ránṣẹ́ sí ilé oògùn</string>
+    <string name="suggested_label">Tí A Dábàá</string>
+    <string name="discard_recording_title">Sọ Gbígbà Nù?</string>
+    <string name="discard_snippets_format">O ní àkọsílẹ̀ kúkúrú %1$d. Ṣé o dá a lójú pé o fẹ́ sọ wọ́n nù?</string>
+    <string name="discard_active_recording">Gbígbà ń lọ lọ́wọ́. Ṣé o dá a lójú pé o fẹ́ padà? Gbígbà náà yóò nù.</string>
+    <string name="keep_recording">Pa Gbígbà Mọ́</string>
+    <string name="triage">Ṣíṣàyẹ̀wò Kíákíá</string>
+    <string name="consultation">Ìjíròrò</string>
+    <string name="record_encounter">Kọ Ìpàdé Sílẹ̀</string>
+    <string name="batch_mode">Ìpò ìpele</string>
+    <string name="process_immediately">Ṣiṣẹ́ lẹ́sẹ̀kẹsẹ̀</string>
+    <string name="microphone_access_required">A nílò àǹfààní sí máìkíròfóònù fún gbígbà ohùn.</string>
+    <string name="grant_microphone_access">Fún Ní Àǹfààní Máìkíròfóònù</string>
+    <string name="generating_clinical_note">Ń ṣẹ̀dá àkọsílẹ̀ ìṣègùn…</string>
+    <string name="ai_writing_draft">AI ń kọ àkọsílẹ̀ ìpilẹ̀ṣẹ̀ láti gbígbà rẹ</string>
+    <string name="processing_snippet">Ń ṣiṣẹ́ lórí àkọsílẹ̀ kúkúrú…</string>
+    <string name="extracting_structured_data">Ń yọ dátà tí a ṣètò jáde…</string>
+    <string name="coding_from_note">Ń ṣe kóòdù ìwádìí, oògùn, àti àmì pàtàkì láti àkọsílẹ̀ rẹ</string>
+    <string name="draft_clinical_note">Àkọsílẹ̀ Ìṣègùn Ìpilẹ̀ṣẹ̀</string>
+    <string name="review_before_extracting">Ṣàtúnyẹ̀wò kí o sì ṣàtúnṣe ṣáájú kí o tó yọ dátà tí a ṣètò jáde</string>
+    <string name="generated_by_format">%1$s ló ṣe</string>
+    <string name="approve_and_extract">Fọwọ́sí &amp; Yọ Jáde</string>
+    <string name="re_record">Tún Gbà</string>
+    <string name="original_transcript">Àkọsílẹ̀ Ìpilẹ̀ṣẹ̀</string>
+    <string name="captured_snippets_format">Ti gbà (%1$d àkọsílẹ̀ kúkúrú%2$s)</string>
+    <string name="preparing_voice_model_hint">Ń múra àwòṣe ohùn…</string>
+    <string name="listening_release_to_capture">Ń gbọ́… Tú sílẹ̀ láti gbà</string>
+    <string name="recording_consultation">Ń gbà ìjíròrò sílẹ̀…</string>
+    <string name="hold_to_add_more">Tẹ mú láti fi kún · Tẹ Ti Parí láti parí</string>
+    <string name="tap_to_scribe">Tẹ láti kọ sílẹ̀ · Tẹ mú láti sọ̀rọ̀</string>
+    <string name="done_recording">Gbígbà Ti Parí</string>
+    <string name="live_transcript_label">Àkọsílẹ̀ Àlàyé</string>
+    <string name="queue_snippets_format">Fi %1$d Àkọsílẹ̀ Kúkúrú%2$s Sínú Ìlà</string>
+    <string name="process_review_snippets_format">Ṣe &amp; Ṣàtúnyẹ̀wò (%1$d àkọsílẹ̀ kúkúrú%2$s)</string>
+    <string name="clear_all">Pa Gbogbo Rẹ́</string>
+    <string name="type_manually_instead">Tẹ̀ ẹ́ sílẹ̀ fúnra rẹ dípò</string>
+    <string name="clinical_encounter_label">Ìpàdé ìṣègùn</string>
+    <string name="clinical_encounter_placeholder">b.a., Aláìsàn wá pẹ̀lú ikọ́ àti ibà fún ọjọ́ 3. BP 130/85. Ìwádìí URTI líle. Amoxicillin 500mg lẹ́ẹ̀mẹta lójúmọ́ fún ọjọ́ 7.</string>
+    <string name="queue_for_batch_review">Fi Sínú Ìlà Fún Àtúnyẹ̀wò Ìpele</string>
+    <string name="process_notes">Ṣe Àwọn Àkọsílẹ̀</string>
+    <string name="back_to_voice_recording">Padà sí gbígbà ohùn</string>
+    <string name="review_and_edit">Ṣàtúnyẹ̀wò &amp; Ṣàtúnṣe</string>
+    <string name="tap_section_to_edit">Tẹ apá kankan láti ṣàtúnṣe ṣáájú fífi pamọ́</string>
+    <string name="low_confidence_warning">Ìgbẹ́kẹ̀lé kéré — jọ̀wọ́ ṣàtúnyẹ̀wò dáadáa.</string>
+    <string name="clinical_summary">Àkópọ̀ Ìṣègùn</string>
+    <string name="patient_instructions_sms">Ìtọ́sọ́nà Aláìsàn (SMS)</string>
+    <string name="confirmed_diagnoses">Àwọn Ìwádìí Tí A Fìdí Múlẹ̀</string>
+    <string name="dictation_snippets">Àwọn Àkọsílẹ̀ Kúkúrú</string>
+    <string name="save_send_consultation">Fi Pamọ́ &amp; Fi Ránṣẹ́ Sí Ìjíròrò</string>
+    <string name="save_send_pharmacy">Fi Pamọ́ &amp; Fi Ránṣẹ́ Sí Ilé Oògùn</string>
+    <string name="save_complete_visit">Fi Pamọ́ &amp; Parí Ìbẹ̀wò</string>
+    <string name="save_and_review">Fi Pamọ́ &amp; Ṣàtúnyẹ̀wò</string>
+    <string name="add_more_snippets">Fi Àkọsílẹ̀ Kúkúrú Kún</string>
+    <string name="try_again">Gbìyànjú Lẹ́ẹ̀kan Sí</string>
+    <string name="done_editing">Ṣíṣàtúnṣe ti parí</string>
+    <string name="edit_section_format">Ṣàtúnṣe %1$s</string>
+    <string name="add_section_format">Fi %1$s kún…</string>
+    <string name="queued_batch_toast">A ti fi sínú ìlà fún ìṣiṣẹ́ ìpele. Ṣàtúnyẹ̀wò rẹ̀ nígbà mìíràn láti Ìlà Ìyọkúrò.</string>
+    <string name="sms_sending_format">Ń fi SMS aṣírí ránṣẹ́ sí %1$s (ìwádìí %2$d, oògùn %3$d)</string>
+    <string name="settings_speech_mode">Ìpò Ọ̀rọ̀</string>
+    <string name="settings_asr_on_device_onnx">Lórí Ẹ̀rọ (ONNX)</string>
+    <string name="settings_asr_on_device_onnx_desc">Ń ṣiṣẹ́ ní kíkún láìsí íńtánẹ́ẹ̀tì. Nílò ìgbàsílẹ̀ àwòṣe.</string>
+    <string name="settings_asr_google_free">Google (ọ̀fẹ́)</string>
+    <string name="settings_asr_google_free_desc">Ń lo Android SpeechRecognizer. Nílò íńtánẹ́ẹ̀tì.</string>
+    <string name="settings_asr_cloud">Cloud ASR</string>
+    <string name="settings_asr_cloud_desc">Àwọn olùpèsè gíga (Google STT, OpenAI, Deepgram). Ìpéye èdè púpọ̀ tó dára jù.</string>
+    <string name="settings_api_key_mode">Ìpò Kọ́kọ́rọ́ API</string>
+    <string name="settings_chartlite_cloud">ChartLite Cloud</string>
+    <string name="settings_chartlite_cloud_desc">Kò nílò kọ́kọ́rọ́ API. Ń kọjá nípasẹ̀ àwọn ẹ̀rọ olùpèsè wa.</string>
+    <string name="settings_chartlite_enrollment_code">ChartLite Cloud enrollment code</string>
+    <string name="settings_chartlite_enrollment_code_desc">Required once on devices without Google Play Services. Leave blank on standard Android devices.</string>
+    <string name="settings_byok">Lo Kọ́kọ́rọ́ Tirẹ</string>
+    <string name="settings_byok_desc">Lo àwọn kọ́kọ́rọ́ API tirẹ fún àǹfààní tààrà sí olùpèsè.</string>
+    <string name="settings_cloud_provider">Olùpèsè Cloud</string>
+    <string name="settings_google_cloud_stt">Google Cloud STT</string>
+    <string name="settings_google_cloud_stt_desc">Ó dára jù fún àwọn èdè Áfíríkà (Yorùbá, Zulu, Xhosa, Amharic, Swahili)</string>
+    <string name="settings_deepgram_nova">Deepgram Nova-3</string>
+    <string name="settings_deepgram_nova_desc">Àmì àkókò ọ̀rọ̀, ìyàsọ́tọ̀ olùsọ̀rọ̀. Àwòṣe ìṣègùn (Gẹ̀ẹ́sì nìkan)</string>
+    <string name="settings_openai_transcribe">OpenAI Transcribe</string>
+    <string name="settings_openai_transcribe_desc">Owó tó dára fún èdè púpọ̀. Kò ṣe àtìlẹ́yìn fún Ogg/Opus.</string>
+    <string name="settings_google_cloud_api_key">Kọ́kọ́rọ́ API Google Cloud</string>
+    <string name="settings_deepgram_api_key">Kọ́kọ́rọ́ API Deepgram</string>
+    <string name="settings_openai_api_key">Kọ́kọ́rọ́ API OpenAI</string>
+    <string name="settings_api_key_label">Kọ́kọ́rọ́ API</string>
+    <string name="settings_claude_api_key_extraction">Kọ́kọ́rọ́ API Claude (fún ìyọkúrò)</string>
+    <string name="settings_enter_api_key_hint">Tẹ kọ́kọ́rọ́ API rẹ sílẹ̀ láti mú ìdámọ̀ ọ̀rọ̀ cloud ṣiṣẹ́.</string>
+    <string name="settings_recommended_for_device">A ṣènísọ̀rọ̀ fún ẹ̀rọ rẹ</string>
+    <string name="settings_other_models_expanded">Àwọn àwòṣe mìíràn ▾</string>
+    <string name="settings_other_models_collapsed">Àwọn àwòṣe mìíràn ▸</string>
+    <string name="settings_more_models_available">Àwòṣe %1$d mìíràn wà</string>
+    <string name="settings_sideload_usb_sd">Gba láti USB/SD</string>
+    <string name="settings_import_model_folder">Gbé Fódà Àwòṣe Wọlé</string>
+    <string name="settings_import_onnx">Gbé ONNX Wọlé</string>
+    <string name="settings_import_tokens">Gbé tokens.txt Wọlé</string>
+    <string name="settings_configure_model_url">Ṣètò URL Àwòṣe</string>
+    <string name="settings_model_url_label">URL Àwòṣe (.onnx)</string>
+    <string name="settings_vocab_url_label">URL Ọ̀rọ̀-ìpìlẹ̀ (.txt)</string>
+    <string name="settings_save_urls">Fi Àwọn URL Pamọ́</string>
+    <string name="settings_meta_mms_model">Àwòṣe Meta MMS</string>
+    <string name="settings_note_processing_ai">AI Ìṣiṣẹ́ Àkọsílẹ̀</string>
+    <string name="settings_note_processing_ai_desc">Ń ṣàkóso bí a ṣe ń yọ àwọn àkọsílẹ̀ ìṣègùn jáde láti àkọsílẹ̀.</string>
+    <string name="settings_cloud_ai">Cloud AI</string>
+    <string name="settings_cloud_ai_desc">Ìpéye tó dára jù. Nílò íńtánẹ́ẹ̀tì.</string>
+    <string name="settings_on_device_qwen">Qwen Lórí Ẹ̀rọ</string>
+    <string name="settings_on_device_qwen_desc">Ń ṣiṣẹ́ ní kíkún láìsí íńtánẹ́ẹ̀tì.</string>
+    <string name="settings_auto_mode">Àìfọwọ́yí</string>
+    <string name="settings_auto_mode_desc">Cloud ní àkọ́kọ́, lórí ẹ̀rọ bí àrídájú.</string>
+    <string name="settings_consultation_processing_workflow">Ìlànà Ìṣiṣẹ́ Ìjíròrò</string>
+    <string name="settings_batch_recommended">A ṣènísọ̀rọ̀ ìpele fún ẹ̀rọ yìí.</string>
+    <string name="settings_immediate">Lẹ́sẹ̀kẹsẹ̀</string>
+    <string name="settings_immediate_desc">Ṣe àwọn àkọsílẹ̀ lẹ́sẹ̀kẹsẹ̀.</string>
+    <string name="settings_batch_queue">Ìlà Ìpele</string>
+    <string name="settings_batch_queue_desc">Fi pamọ́ ní báyìí, ṣe nígbà mìíràn.</string>
+    <string name="settings_claude_extraction_mode">Ìpò Ìyọkúrò Claude</string>
+    <string name="settings_byok_claude_desc">Lo kọ́kọ́rọ́ API Claude tirẹ tààrà.</string>
+    <string name="settings_claude_api_key">Kọ́kọ́rọ́ API Claude</string>
+    <string name="settings_claude_api_placeholder">sk-ant-…</string>
+    <string name="settings_claude_api_hint">Gba kọ́kọ́rọ́ ní console.anthropic.com</string>
+    <string name="settings_on_device_qwen_model">Àwòṣe Qwen Lórí Ẹ̀rọ</string>
+    <string name="settings_device_ram_format">RAM Ẹ̀rọ: %1$s GB</string>
+    <string name="settings_no_checksum_format">Kò sí checksum tí a fìdí múlẹ̀ fún %1$s. A ti dènà ìgbàsílẹ̀.</string>
+    <string name="settings_on_device_ai_unavailable">AI lórí ẹ̀rọ kò sí (nílò 64-bit).</string>
+    <string name="settings_recommended_suffix"> — A Ṣènísọ̀rọ̀</string>
+    <string name="settings_download_tier_format">Gba %1$s Sílẹ̀</string>
+    <string name="settings_downloading_size_format">Ń gba sílẹ̀: %1$s / %2$s MB</string>
+    <string name="settings_downloading_mb_only_format">Ń gba sílẹ̀: %1$s MB</string>
+    <string name="settings_tier_ready_format">%1$s ti ṣetán (%2$s MB)</string>
+    <string name="settings_delete_model">Pa Àwòṣe Rẹ́</string>
+    <string name="settings_download_paused">Ìgbàsílẹ̀ ti dúró</string>
+    <string name="settings_resume">Tẹ̀síwájú</string>
+    <string name="settings_verifying_download">Ń ṣàyẹ̀wò ìgbàsílẹ̀…</string>
+    <string name="settings_import_gguf">Gbé GGUF Wọlé</string>
+    <string name="settings_default_consultation_capture">Gbígbà Ìjíròrò Ìpìlẹ̀</string>
+    <string name="settings_ambient_full_transcript">Àkọsílẹ̀ Ìjíròrò Kíkún</string>
+    <string name="settings_ambient_full_transcript_desc">Ó dára jù fún ìjíròrò kíkún láàárín aláìsàn àti dókítà.</string>
+    <string name="settings_dictation_snippets">Àwọn Àkọsílẹ̀ Kúkúrú</string>
+    <string name="settings_dictation_snippets_desc">Ó dára jù fún gbígbà kúkúrú tí a ṣètò.</string>
+    <string name="settings_sim_active_sms_permission">Ń ṣiṣẹ́ — ń lo SIM fóònù rẹ. A nílò ìgbàláàyè SMS.</string>
+    <string name="settings_twilio_advanced">Twilio (ìlọsíwájú — fún SMS ilé-ìwòsàn)</string>
+    <string name="settings_twilio_hint">A nílò rẹ̀ nìkan tí ilé-ìwòsàn rẹ bá ń fi SMS púpọ̀ ránṣẹ́ tàbí tí ó nílò nọ́mbà kan pàtó. Ọ̀pọ̀ jù lọ àwọn olùlò yẹ kí wọ́n lo SIM lókè.</string>
+    <string name="settings_account_sid">Account SID</string>
+    <string name="settings_auth_token">Auth Token</string>
+    <string name="settings_from_number">Nọ́mbà Ìfọ̀rọ̀ránṣẹ́</string>
+    <string name="settings_save_verify">Fi Pamọ́ &amp; Ṣàyẹ̀wò</string>
+    <string name="settings_clear">Pa Rẹ́</string>
+    <string name="settings_available_regions">Àwọn Ẹkùn Tó Wà</string>
+    <string name="settings_tap_to_switch">Tẹ láti yí padà — ìwé oògùn àti owó yóò yí padà lẹ́sẹ̀kẹsẹ̀</string>
+    <string name="settings_coming_soon">Ń Bọ̀ Láìpẹ́</string>
+    <string name="settings_africa">Áfíríkà</string>
+    <string name="settings_international">Àgbáyé</string>
+    <string name="settings_technical_details">Àwọn Àlàyé Ẹ̀rọ</string>
+    <string name="settings_nhs_standards">Àwọn Ìlànà NHS</string>
+    <string name="settings_abdm_details">Àwọn Àlàyé ABDM</string>
+    <string name="settings_switch_button">Yí Padà</string>
+    <string name="settings_country_change_body">Yíyí padà sí %1$s yóò tún ìwé oògùn àti dátà ìṣègùn gba. Dátà aláìsàn tó wà yóò wà, ṣùgbọ́n ìwé oògùn fún àwọn ìpàdé tuntun yóò yí padà.</string>
+    <string name="settings_confirm_admin_pin">Jẹ́rìísí PIN Alábòójútó</string>
+    <string name="settings_enter_pin_for_qr">Tẹ PIN rẹ sílẹ̀ láti fi kóòdù QR ilé-ìṣẹ́ hàn.</string>
+    <string name="settings_admin_pin">PIN Alábòójútó</string>
+    <string name="settings_verify">Ṣàyẹ̀wò</string>
+    <string name="settings_too_many_attempts">Ìgbìyànjú pọ̀ jù. Gbìyànjú lẹ́ẹ̀kan sí ní àáyá %1$d.</string>
+    <string name="settings_incorrect_pin">PIN kò tọ́.</string>
+    <string name="settings_facility_qr_title">QR Ilé-ìṣẹ́</string>
+    <string name="settings_facility_id_format">Nọ́mbà: %1$s</string>
+    <string name="settings_facility_qr_instructions">Lórí fóònù tuntun: Ṣíṣètò -> Darapọ̀ Mọ́ Ilé-ìṣẹ́ Tó Wà -> Ṣe Àmójútó QR Àpèjẹ́. QR yìí fún ní ipò ALÁBÒÓJÚTÓ ó sì parí ní ìṣẹ́jú 10.</string>
+    <string name="settings_time_left_format">Àsìkò tó kù: Ìṣẹ́jú %1$d</string>
+    <string name="settings_non_admin_staff_hint">Fún àwọn òṣìṣẹ́ tí kìí ṣe alábòójútó, lo Ìṣàkóso Olùlò -> Ṣẹ̀dá Kóòdù Ìdarapọ̀ QR.</string>
+    <string name="settings_download_model_size_format">Gba Àwòṣe Sílẹ̀ (~%1$d MB)</string>
+    <string name="settings_ready">Ti Ṣetán</string>
+    <string name="settings_remove">Yọ Kúrò</string>
+    <string name="settings_not_downloaded">Kò tíì gba sílẹ̀</string>
+    <string name="settings_downloading_ellipsis">Ń gba sílẹ̀…</string>
+    <string name="settings_verifying_ellipsis">Ń ṣàyẹ̀wò…</string>
+    <string name="settings_ready_size_format">Ti Ṣetán (%1$s)</string>
+    <string name="settings_download_failed">Ìgbàsílẹ̀ kùnà</string>
+    <string name="settings_paused">Ti Dúró</string>
+    <string name="settings_verifying_integrity">Ń ṣàyẹ̀wò ìpéye…</string>
+    <string name="settings_downloaded_progress">A ti gba %1$s sílẹ̀…</string>
+    <string name="settings_download_progress_format">%1$s / %2$s (%3$d%%)</string>
+    <string name="content_desc_back">Padà</string>
+    <string name="content_desc_browse_files">Ṣàwárí àwọn fáìlì</string>
+    <string name="content_desc_download">Gba sílẹ̀</string>
+    <string name="content_desc_active">Ń ṣiṣẹ́</string>
+    <string name="content_desc_users">Àwọn olùlò</string>
+    <string name="content_desc_open">Ṣí</string>
+    <string name="content_desc_facility_qr">QR Ilé-ìṣẹ́</string>
+    <string name="content_desc_app_info">Àlàyé àpò</string>
+    <string name="content_desc_provider">Olùpèsè</string>
+    <string name="content_desc_facility">Ilé-ìṣẹ́</string>
+    <string name="content_desc_not_downloaded">Kò tíì gba sílẹ̀</string>
+    <string name="content_desc_ready">Ti ṣetán</string>
+    <string name="content_desc_error">Àṣìṣe</string>
+    <string name="content_desc_paused">Ti dúró</string>
+    <string name="content_desc_collapse">Pa pọ̀</string>
+    <string name="content_desc_expand">Tú sílẹ̀</string>
+    <string name="sync_devices">Àwọn Ẹ̀rọ Àmúdọ́gba</string>
+    <string name="sync_verify_connection">Ṣàyẹ̀wò Àsopọ̀</string>
+    <string name="sync_device_wants_to_connect">Ẹ̀rọ "%1$s" fẹ́ sopọ̀.</string>
+    <string name="sync_verify_code_matches">Ṣàyẹ̀wò pé kóòdù yìí bára mu lórí ẹ̀rọ méjèèjì:</string>
+    <string name="sync_accept">Gbà</string>
+    <string name="sync_reject">Kọ̀</string>
+    <string name="sync_incoming_patient_data">Dátà Aláìsàn Tó Ń Bọ̀</string>
+    <string name="sync_from_format">Láti: %1$s</string>
+    <string name="sync_facility_id_format">Nọ́mbà Ilé-ìṣẹ́: %1$s</string>
+    <string name="sync_payload_summary">Aláìsàn %1$d, ìpàdé %2$d, ìbẹ̀wò %3$d</string>
+    <string name="sync_patient_format">• Aláìsàn: %1$s</string>
+    <string name="sync_merge_note">A óò da àwọn àkọsílẹ̀ papọ̀ sínú ibi ìpamọ́ dátà rẹ. Àwọn ìpàdé yóò pa àmì ilé-ìṣẹ́ ìpilẹ̀ṣẹ̀ wọn mọ́.</string>
+    <string name="sync_accept_merge">Gbà &amp; Da Papọ̀</string>
+    <string name="sync_peer_to_peer">Àmúdọ́gba Ẹ̀rọ-sí-Ẹ̀rọ</string>
+    <string name="sync_peer_to_peer_desc">Ṣe àmúdọ́gba dátà aláìsàn láàárín àwọn ẹ̀rọ ChartLite nípasẹ̀ Bluetooth tàbí WiFi Direct. Kò nílò íńtánẹ́ẹ̀tì.</string>
+    <string name="sync_same_facility">Ilé-ìṣẹ́ Kannáà</string>
+    <string name="sync_cross_facility">Láàárín Ilé-ìṣẹ́</string>
+    <string name="sync_continuous">Àmúdọ́gba Àìdúró</string>
+    <string name="sync_connected_devices">Ti sopọ̀ mọ́ ẹ̀rọ %1$d. Dátà ń ṣe àmúdọ́gba fúnra rẹ̀.</string>
+    <string name="sync_records_synced_format">A ti ṣe àmúdọ́gba àkọsílẹ̀ %1$d</string>
+    <string name="sync_records_merged_format"> • a ti da %1$d papọ̀</string>
+    <string name="sync_searching_clinic_devices">Ń wá àwọn ẹ̀rọ ilé-ìwòsàn… Ríi dájú pé àwọn ẹ̀rọ mìíràn ti mú ìpò ibi iṣẹ́ púpọ̀ ṣiṣẹ́.</string>
+    <string name="sync_stop">Dá Àmúdọ́gba Dúró</string>
+    <string name="sync_restart">Tún Àmúdọ́gba Bẹ̀rẹ̀</string>
+    <string name="sync_manual">ÀMÚDỌ́GBA AFỌWỌ́ṢE</string>
+    <string name="sync_send_patients_format">Fi Aláìsàn %1$d Ránṣẹ́</string>
+    <string name="sync_select_patients_hint">Yan àwọn aláìsàn lókè, lẹ́yìn náà sopọ̀ mọ́ ẹ̀rọ tó ń gbà.</string>
+    <string name="sync_find_nearby_devices">Wá Àwọn Ẹ̀rọ Tó Wà Nítòsí</string>
+    <string name="sync_both_devices_hint">Ríi dájú pé ẹ̀rọ méjèèjì ní ChartLite tí ó sì wà lórí ojú yìí.</string>
+    <string name="sync_searching">Ń wá àwọn ẹ̀rọ tó wà nítòsí…</string>
+    <string name="sync_other_device_searching">Ríi dájú pé ẹ̀rọ kejì náà ń wá pẹ̀lú.</string>
+    <string name="sync_tap_to_send">Tẹ láti fi dátà aláìsàn ránṣẹ́</string>
+    <string name="sync_tap_to_connect">Tẹ láti sopọ̀</string>
+    <string name="sync_connecting">Ń sopọ̀…</string>
+    <string name="sync_waiting_confirmation">Ń dúró fún ìjẹ́rìísí rẹ…</string>
+    <string name="sync_review_dialog">Ilé-ìṣẹ́ kan ń fi dátà aláìsàn ránṣẹ́. Ṣàtúnyẹ̀wò ìjíròrò lókè.</string>
+    <string name="sync_sending_patient_data">Ń fi dátà aláìsàn ránṣẹ́…</string>
+    <string name="sync_syncing_data">Ń ṣe àmúdọ́gba dátà…</string>
+    <string name="sync_keep_devices_close">Jọ̀wọ́ pa àwọn ẹ̀rọ mọ́ra.</string>
+    <string name="sync_complete">Àmúdọ́gba Ti Parí!</string>
+    <string name="sync_cross_facility_transfer">Ìgbékalẹ̀ Láàárín Ilé-ìṣẹ́</string>
+    <string name="sync_from_label">Láti</string>
+    <string name="sync_patients_label">Àwọn Aláìsàn</string>
+    <string name="sync_encounters_label">Àwọn Ìpàdé</string>
+    <string name="sync_visits_label">Àwọn Ìbẹ̀wò</string>
+    <string name="sync_duration_label">Àkókò</string>
+    <string name="sync_duration_format">%1$d mílísẹ́kọ́ǹdì</string>
+    <string name="sync_patients_sent">A ti fi àwọn aláìsàn ránṣẹ́</string>
+    <string name="sync_encounters_sent">A ti fi àwọn ìpàdé ránṣẹ́</string>
+    <string name="sync_visits_sent">A ti fi àwọn ìbẹ̀wò ránṣẹ́</string>
+    <string name="sync_patients_received">A ti gbà àwọn aláìsàn</string>
+    <string name="sync_encounters_received">A ti gbà àwọn ìpàdé</string>
+    <string name="sync_visits_received">A ti gbà àwọn ìbẹ̀wò</string>
+    <string name="sync_records_merged_label">Àwọn àkọsílẹ̀ tí a da papọ̀</string>
+    <string name="sync_error_title">Àṣìṣe Àmúdọ́gba</string>
+    <string name="sync_unknown_error">Àṣìṣe tí a kò mọ̀ ló ṣẹlẹ̀</string>
+    <string name="sync_retry">Gbìyànjú Lẹ́ẹ̀kan Sí</string>
+    <string name="sync_go_back">Padà</string>
+    <string name="sync_select_patients_to_share">Yan Àwọn Aláìsàn Láti Pín</string>
+    <string name="sync_enter_patient_id_hint">Tẹ nọ́mbà ChartLite aláìsàn kọ̀ọ̀kan tí o fẹ́ fi àkọsílẹ̀ wọn ránṣẹ́ sí ilé-ìṣẹ́ mìíràn.</string>
+    <string name="sync_patient_id_label">Nọ́mbà Aláìsàn (b.a. KFMT-4WRN)</string>
+    <string name="sync_look_up">Wá</string>
+    <string name="sync_add_patient">Fi Aláìsàn Kún</string>
+    <string name="sync_patients_selected_format">A ti yan aláìsàn %1$d:</string>
+    <string name="sync_remove">Yọ Kúrò</string>
+    <string name="sync_invalid_patient_id">Ọ̀nà nọ́mbà aláìsàn kò tọ́</string>
+    <string name="sync_patient_already_added">A ti fi aláìsàn kún tẹ́lẹ̀</string>
+    <string name="sync_patient_not_found_local">Kò rí aláìsàn nínú ibi ìpamọ́ dátà lórí ẹ̀rọ</string>
+    <string name="sync_patient_not_found">Kò rí aláìsàn</string>
+    <string name="user_mgmt_join_code">Kóòdù Ìdarapọ̀</string>
+    <string name="user_mgmt_add_user">Fi Olùlò Kún</string>
+    <string name="user_mgmt_no_users">Kò sí olùlò kankan</string>
+    <string name="user_mgmt_tap_to_create">Tẹ + láti ṣẹ̀dá olùlò àkọ́kọ́</string>
+    <string name="user_mgmt_active_join_codes">Àwọn Kóòdù Ìdarapọ̀ Tó Ń Ṣiṣẹ́</string>
+    <string name="user_mgmt_deactivated">Ti Pa</string>
+    <string name="user_mgmt_deactivate">Pa</string>
+    <string name="user_mgmt_activate">Mú Ṣiṣẹ́</string>
+    <string name="user_mgmt_create_user">Ṣẹ̀dá Olùlò</string>
+    <string name="user_mgmt_display_name">Orúkọ Ìfihàn</string>
+    <string name="user_mgmt_role">Ipò</string>
+    <string name="user_mgmt_pin_label">PIN (hàná 4-6)</string>
+    <string name="user_mgmt_confirm_pin">Jẹ́rìísí PIN</string>
+    <string name="user_mgmt_pins_dont_match">Àwọn PIN kò bára mu</string>
+    <string name="user_mgmt_create">Ṣẹ̀dá</string>
+    <string name="user_mgmt_revoke">Fa Padà</string>
+    <string name="user_mgmt_generate_join_code">Ṣẹ̀dá Kóòdù Ìdarapọ̀</string>
+    <string name="user_mgmt_join_code_ready">Kóòdù Ìdarapọ̀ Ti Ṣetán</string>
+    <string name="user_mgmt_generate_code_desc">Ṣẹ̀dá kóòdù ẹyọ kan fún àwọn òṣìṣẹ́ tuntun láti darapọ̀ mọ́ ilé-ìṣẹ́ yìí. Kóòdù náà yóò parí ní wákàtí 24.</string>
+    <string name="user_mgmt_role_for_new_user">Ipò fún olùlò tuntun</string>
+    <string name="user_mgmt_share_code_hint">Pín kóòdù yìí pẹ̀lú òṣìṣẹ́ tuntun:</string>
+    <string name="user_mgmt_joining_as_format">Ń darapọ̀ gẹ́gẹ́ bí: %1$s</string>
+    <string name="user_mgmt_qr_scan_hint">Olùlò tuntun lè ṣe àmójútó kóòdù QR yìí. Ó gbé kóòdù ìdarapọ̀, nọ́mbà ilé-ìṣẹ́, àti ipò tí a yàn. Ó parí ní wákàtí 24, lílò ẹyọ kan.</string>
+    <string name="user_mgmt_generate">Ṣẹ̀dá</string>
+    <string name="user_mgmt_edit_user">Ṣàtúnṣe Olùlò</string>
+    <string name="user_mgmt_reset_pin">Tún PIN Ṣe</string>
+    <string name="user_mgmt_new_pin_label">PIN Tuntun (hàná 4-6)</string>
+    <string name="user_mgmt_confirm_new_pin">Jẹ́rìísí PIN Tuntun</string>
+    <string name="user_mgmt_username_exists">Orúkọ olùlò \'%1$s\' ti wà tẹ́lẹ̀. Jọ̀wọ́ yan orúkọ olùlò mìíràn.</string>
+    <string name="user_mgmt_time_left_format">Wákàtí %1$s ìṣẹ́jú %2$s kù</string>
+    <string name="read_patient_sms">Ka SMS Aláìsàn</string>
+    <string name="decrypt_clinical_sms">Ṣí SMS ìṣègùn aṣírí</string>
+    <string name="sms_decrypt_instruction">Yan SMS tí a gbà kí o sì tẹ nọ́mbà fóònù aláìsàn láti wo àkọsílẹ̀ ìṣègùn wọn.</string>
+    <string name="received_clinical_sms_count">SMS Ìṣègùn Tí A Gbà (%1$d)</string>
+    <string name="from_sender">Láti: %1$s</string>
+    <string name="no_clinical_sms_received">Kò sí SMS ìṣègùn tí a gbà</string>
+    <string name="sms_auto_appear">Nígbà tí aláìsàn bá gbà SMS aṣírí, yóò hàn níbí fúnra rẹ̀.</string>
+    <string name="hide_manual_input">Fi ìtẹ̀ afọwọ́ṣe pamọ́</string>
+    <string name="paste_sms_manually">Lẹ SMS fúnra rẹ</string>
+    <string name="paste_encrypted_sms">Lẹ àkóónú SMS aṣírí</string>
+    <string name="patient_phone_number">Nọ́mbà Fóònù Aláìsàn</string>
+    <string name="hide_pin_field">Fi àyè PIN pamọ́</string>
+    <string name="patient_has_pin">Ṣé aláìsàn ní PIN?</string>
+    <string name="optional_pin_4digits">PIN Àṣàyàn (hàná 4)</string>
+    <string name="decrypt">Ṣí Aṣírí</string>
+    <string name="decryption_failed">Ṣíṣí aṣírí kùnà. Ṣàyẹ̀wò nọ́mbà fóònù àti àkóónú SMS.</string>
+    <string name="decrypted_record">Àkọsílẹ̀ Tí A Ṣí</string>
+    <string name="patient_health_history">Ìtàn Ìlera Aláìsàn</string>
+    <string name="total_visits_format">Ìbẹ̀wò %1$d lápapọ̀ nínú àkọsílẹ̀</string>
+    <string name="recurring_conditions">Àwọn Ipò Tó Ń Padà Bọ̀</string>
+    <string name="abnormal_vitals_history">Ìtàn Àmì Pàtàkì Tí Kò Ṣe Déédéé</string>
+    <string name="known_allergies_label">Oògùn Tó Ń Ṣe É Tí A Mọ̀</string>
+    <string name="import_patient_format">Gba Aláìsàn %1$s Wọlé</string>
+    <string name="register_patient_from_sms">Forúkọsílẹ̀ Aláìsàn Láti SMS</string>
+    <string name="immunization_record">Àkọsílẹ̀ Àjẹsára</string>
+    <string name="no_immunizations_recorded">Kò sí àjẹsára tí a kọ sílẹ̀</string>
+    <string name="tap_plus_record_vaccination">Tẹ + láti kọ àjẹsára sílẹ̀</string>
+    <string name="dose_format">Ìwọ̀n %1$d</string>
+    <string name="code_format">Kóòdù: %1$s</string>
+    <string name="given_format">Ti fún ní: %1$s</string>
+    <string name="site_format">Ibi: %1$s</string>
+    <string name="batch_label_format">Ìpele: %1$s</string>
+    <string name="next_dose_format">Ìwọ̀n tó kàn: %1$s</string>
+    <string name="next_dose_overdue_format">Ìwọ̀n tó kàn: %1$s (TI KỌJÁ ÀSÌKÒ)</string>
+    <string name="quick_select">Yàn Kíákíá:</string>
+    <string name="vaccine_code">Kóòdù Àjẹsára</string>
+    <string name="vaccine_name">Orúkọ Àjẹsára</string>
+    <string name="dose_number">Nọ́mbà Ìwọ̀n</string>
+    <string name="site_optional">Ibi (àṣàyàn)</string>
+    <string name="batch_optional">Nọ́mbà Ìpele (àṣàyàn)</string>
+    <string name="record">Kọ Sílẹ̀</string>
+    <string name="new_appointment">Àpéjọ Tuntun</string>
+    <string name="previous_day">Ọjọ́ Tó Kọjá</string>
+    <string name="next_day">Ọjọ́ Tó Kàn</string>
+    <string name="appointments_count_format">Àpéjọ %1$d</string>
+    <string name="no_appointments">Kò sí àpéjọ</string>
+    <string name="tap_plus_schedule">Tẹ + láti ṣètò àpéjọ</string>
+    <string name="walk_in">Àìní Àpéjọ</string>
+    <string name="patient_short_format">Aláìsàn: %1$s</string>
+    <string name="duration_min_format">Ìṣẹ́jú %1$d</string>
+    <string name="type_label">Irú</string>
+    <string name="time_optional">Àkókò (HH:mm, àṣàyàn)</string>
+    <string name="duration_minutes">Àkókò (ìṣẹ́jú)</string>
+    <string name="schedule">Ṣètò</string>
+    <string name="patient_id_not_found">Kò rí nọ́mbà aláìsàn. Jọ̀wọ́ ṣàyẹ̀wò kí o sì gbìyànjú lẹ́ẹ̀kan sí.</string>
+    <string name="patient_summary">Àkópọ̀ Aláìsàn</string>
+    <string name="already_checked_in">Ti Wọlé Tẹ́lẹ̀</string>
+    <string name="new_encounter">Ìpàdé Tuntun</string>
+    <string name="age_format">Ọjọ́ orí: ọdún %1$d</string>
+    <string name="phone_format">Fóònù: %1$s</string>
+    <string name="allergies_format">Oògùn tó ń ṣe é: %1$s</string>
+    <string name="patient_journey">Ìrìn-àjò Aláìsàn</string>
+    <string name="visits_label">Àwọn Ìbẹ̀wò</string>
+    <string name="conditions_label">Àwọn Ipò</string>
+    <string name="active_meds_label">Oògùn Lọ́wọ́</string>
+    <string name="span_label">Àsìkò</string>
+    <string name="conditions_tracked">Àwọn Ipò Tí A Ń Tọpinpin</string>
+    <string name="latest_vitals">Àmì Pàtàkì Tuntun</string>
+    <string name="referral_on_file">Ìtọ́kasí wà nínú àkọsílẹ̀</string>
+    <string name="sms_synced">A ti ṣe àmúdọ́gba SMS</string>
+    <string name="encounters_count_format">Àwọn Ìpàdé (%1$d)</string>
+    <string name="no_encounters_recorded_yet">Kò sí ìpàdé tí a kọ sílẹ̀.</string>
+    <string name="latest">Tuntun Jù</string>
+    <string name="referred">Ti Tọ́kasí</string>
+    <string name="new_visit">Ìbẹ̀wò Tuntun</string>
+    <string name="none_recorded">Kò sí tí a kọ sílẹ̀</string>
+    <string name="next_follow_up_format">Àtẹ̀lé tó kàn: %1$s</string>
+    <string name="next_follow_up_overdue_format">Àtẹ̀lé tó kàn: %1$s (TI KỌJÁ ÀSÌKÒ)</string>
+    <string name="no_fp_visits">Kò sí ìbẹ̀wò ètò ìdílé tí a kọ sílẹ̀</string>
+    <string name="notes_format">Àkọsílẹ̀: %1$s</string>
+    <string name="dispensed_visit_format">Ti fún ní: %1$s (x%2$s)</string>
+    <string name="side_effects_format">Ipa ẹ̀gbẹ́: %1$s</string>
+    <string name="record_fp_visit">Kọ Ìbẹ̀wò Ètò Ìdílé Sílẹ̀</string>
+    <string name="method">Ọ̀nà</string>
+    <string name="counseling_notes">Àkọsílẹ̀ Ìmọ̀ràn</string>
+    <string name="commodity_dispensed">Ohun Tí A Fún Ní</string>
+    <string name="sms_reminders">Ìránlétí SMS</string>
+    <string name="send_all_reminders">Fi Gbogbo Ìránlétí Ránṣẹ́?</string>
+    <string name="send_all_reminders_body">Èyí yóò fi ìránlétí SMS ránṣẹ́ sí aláìsàn %1$d. Ìfọ̀rọ̀ránṣẹ́ kọ̀ọ̀kan yóò lo owó SMS.</string>
+    <string name="send_all">Fi Gbogbo Ránṣẹ́</string>
+    <string name="send_all_count_format">Fi Gbogbo Ránṣẹ́ (%1$d)</string>
+    <string name="sms_permission_required">A nílò ìgbàláàyè SMS</string>
+    <string name="grant_sms_permission">Fún ní ìgbàláàyè láti fi ìránlétí SMS abínibí ránṣẹ́.</string>
+    <string name="grant">Fún Ní</string>
+    <string name="batch_send_complete">Fífi Ìpele Ránṣẹ́ Ti Parí</string>
+    <string name="batch_result_format">A fi %1$d ránṣẹ́, %2$d kùnà nínú %3$d lápapọ̀</string>
+    <string name="tomorrow">Ọ̀la</string>
+    <string name="missed">Ti Padànù</string>
+    <string name="no_reminders_tomorrow">Kò sí ìránlétí tó ń dúró fún ọ̀la</string>
+    <string name="no_same_day_reminders">Kò sí ìránlétí ọjọ́ kannáà</string>
+    <string name="no_missed_appointments">Kò sí àpéjọ tí a padànù</string>
+    <string name="date_colon_format">Ọjọ́: %1$s</string>
+    <string name="send_sms">Fi SMS Ránṣẹ́</string>
+    <string name="add_measurement">Fi Ìwọ̀n Kún</string>
+    <string name="no_growth_measurements">Kò sí ìwọ̀n ìdàgbà</string>
+    <string name="tap_plus_record_weight">Tẹ + láti kọ ìwọ̀n/gíga sílẹ̀</string>
+    <string name="latest_z_scores">Ìṣirò-Z Tuntun</string>
+    <string name="severe_malnutrition_referral">ÀÌJẸUNRERE LÍLE — A nílò ìtọ́kasí kíákíá</string>
+    <string name="moderate_malnutrition_support">ÀÌJẸUNRERE ÀÁRÍN — A nílò àtìlẹ́yìn oúnjẹ</string>
+    <string name="record_growth_measurement">Kọ Ìwọ̀n Ìdàgbà Sílẹ̀</string>
+    <string name="weight_kg">Ìwọ̀n (kg)</string>
+    <string name="height_cm">Gíga (cm)</string>
+    <string name="head_circumference_cm">Àyíká Orí (cm)</string>
+    <string name="muac_cm">MUAC (cm)</string>
+    <string name="age_months_zscore">Ọjọ́ orí (oṣù) — fún Ìṣirò-Z</string>
+    <string name="search_by_id_name_phone">Wá pẹ̀lú nọ́mbà, orúkọ, tàbí fóònù</string>
+    <string name="recent_patients">Àwọn Aláìsàn Àìpẹ́</string>
+    <string name="no_patients_registered">Kò sí aláìsàn tí a forúkọsílẹ̀.
+Forúkọsílẹ̀ aláìsàn àkọ́kọ́ rẹ láti bẹ̀rẹ̀.</string>
+    <string name="no_patients_found_format">Kò rí aláìsàn fún "%1$s"</string>
+    <string name="no_referrals">Kò sí ìtọ́kasí</string>
+    <string name="referrals_created_during_encounters">A ṣẹ̀dá àwọn ìtọ́kasí nígbà ìpàdé</string>
+    <string name="today_uppercase">LÓNÌÍ</string>
+    <string name="within_days_format">láàárín ọjọ́ %1$d</string>
+    <string name="sms_sent_to_patient">A ti fi SMS ránṣẹ́ sí aláìsàn</string>
+    <string name="accept">Gbà</string>
+    <string name="mark_completed">Sàmì Bí Ti Parí</string>
+    <string name="queued_note_review">Àtúnyẹ̀wò Àkọsílẹ̀ Ìlà</string>
+    <string name="queued_note_not_found">Kò rí àkọsílẹ̀ ìlà.</string>
+    <string name="unable_to_load_queued_note">Kò lè gba àkọsílẹ̀ ìlà.</string>
+    <string name="ready_for_review_label">Ti ṣetán fún àtúnyẹ̀wò</string>
+    <string name="on_device_ai">AI lórí ẹ̀rọ</string>
+    <string name="cloud_ai">Cloud AI</string>
+    <string name="pattern_matching_label">Ìbáradọ́gba àpẹẹrẹ</string>
+    <string name="fallbacks_attempted">Àwọn Àrídájú Tí A Gbìyànjú</string>
+    <string name="action_error_title">Àṣìṣe Ìgbésẹ̀</string>
+    <string name="queue_status_queued">Àkọsílẹ̀ yìí ń dúró nínú ìlà ìpele. O lè ṣe é ní báyìí tàbí fi sílẹ̀ fún ìpele tó kàn.</string>
+    <string name="queue_status_interrupted">Ìṣiṣẹ́ lórí ẹ̀rọ tó kọjá ti dá dúró. O lè tún gbìyànjú ní báyìí.</string>
+    <string name="queue_status_processing_now">A ń ṣiṣẹ́ lórí àkọsílẹ̀ yìí ní báyìí.</string>
+    <string name="last_processing_failed">Ìgbìyànjú ìṣiṣẹ́ tó kẹ́yìn kùnà.</string>
+    <string name="retry_processing">Tún Ìṣiṣẹ́ Gbìyànjú</string>
+    <string name="process_this_note">Ṣe Àkọsílẹ̀ Yìí</string>
+    <string name="review_edit_title">Ṣàtúnyẹ̀wò &amp; Ṣàtúnṣe</string>
+    <string name="edit_any_field">Ṣàtúnṣe àyè kankan ṣáájú fífi pamọ́</string>
+    <string name="medications_one_per_line">Oògùn (ọ̀kọ̀ọ̀kan lórí ìlà kan)</string>
+    <string name="plan_one_per_line">Ètò (ọ̀kọ̀ọ̀kan lórí ìlà kan)</string>
+    <string name="allergies_one_per_line">Oògùn tó ń ṣe é (ọ̀kọ̀ọ̀kan lórí ìlà kan)</string>
+    <string name="exam_findings_one_per_line">Àwárí ìdánwò (ọ̀kọ̀ọ̀kan lórí ìlà kan)</string>
+    <string name="remove_from_queue">Yọ Kúrò Nínú Ìlà</string>
+    <string name="no_queued_jobs">Kò sí iṣẹ́ ìṣiṣẹ́ àkọsílẹ̀ nínú ìlà.</string>
+    <string name="queue_batch_hint">Lo "Fi Sínú Ìlà Fún Àtúnyẹ̀wò Ìpele" láti ojú ìjíròrò láti kó àwọn àkọsílẹ̀ jọ kí o sì ṣe wọ́n nígbà mìíràn.</string>
+    <string name="pending_count_format">%1$d ń dúró</string>
+    <string name="ready_count_format">%1$d ti ṣetán</string>
+    <string name="failed_count_format">%1$d ti kùnà</string>
+    <string name="processing_queued_notes_title">Ń Ṣiṣẹ́ Lórí Àwọn Àkọsílẹ̀ Ìlà</string>
+    <string name="processing_queued_subtitle">A ń yọ àwọn àkọsílẹ̀ tí a fi pamọ́ jáde ní báyìí. O lè kúrò lórí ojú yìí kí o sì ṣàtúnyẹ̀wò àwọn èsì nígbà tí wọ́n bá ti ṣetán.</string>
+    <string name="cancel_batch_label">Fagilé Ìpele</string>
+    <string name="process_queued_notes">Ṣe Àwọn Àkọsílẹ̀ Ìlà</string>
+    <string name="ready_for_review_section">Ti Ṣetán Fún Àtúnyẹ̀wò</string>
+    <string name="review_and_save">Ṣàtúnyẹ̀wò &amp; Fi Pamọ́</string>
+    <string name="remove">Yọ Kúrò</string>
+    <string name="review_transcript">Ṣàtúnyẹ̀wò Àkọsílẹ̀</string>
+    <string name="pending_section">Ń Dúró</string>
+    <string name="retry_label">Gbìyànjú Lẹ́ẹ̀kan Sí</string>
+    <string name="failed_section">Ti Kùnà</string>
+    <string name="complete_dispensing_title">Parí Fífún Oògùn?</string>
+    <string name="pending_meds_format">Oògùn %1$d kò tíì ní ipò fífún. Ṣé o dá a lójú pé o fẹ́ parí?</string>
+    <string name="finalize_dispensing">Èyí yóò parí àkọsílẹ̀ fífún oògùn yóò sì parí ìbẹ̀wò náà.</string>
+    <string name="failed_to_load_visit">Kò lè gba ìbẹ̀wò. Jọ̀wọ́ gbìyànjú lẹ́ẹ̀kan sí.</string>
+    <string name="visit_not_found">Kò rí ìbẹ̀wò</string>
+    <string name="prescribed_medications_header">OÒGÙN TÍ A KỌ</string>
+    <string name="no_medications_prescribed">Kò sí oògùn tí a kọ</string>
+    <string name="no_prescriptions_consultation">Ìjíròrò yìí kò ní oògùn tí a kọ.</string>
+    <string name="complete_dispensing">Parí Fífún Oògùn</string>
+    <string name="failed_to_save">Fífi pamọ́ kùnà. Jọ̀wọ́ gbìyànjú lẹ́ẹ̀kan sí.</string>
+    <string name="dispensed_chip">Ti Fún Ní</string>
+    <string name="substituted">Ti Fi Mìíràn Rọ́pò</string>
+    <string name="clinical_protocols">Àwọn Ìlànà Ìṣègùn</string>
+    <string name="search_protocols_hint">Wá pẹ̀lú àrùn, ICD-10, tàbí ìgbésẹ̀ ìtọ́jú</string>
+    <string name="facility_directory">Àkójọ Ilé-ìṣẹ́</string>
+    <string name="toggle_filters">Yí Àṣẹ̀dá Padà</string>
+    <string name="search_facilities_hint">Wá àwọn ilé-ìṣẹ́…</string>
+    <string name="facility_type_filter">Irú Ilé-ìṣẹ́:</string>
+    <string name="province_filter">Ìpínlẹ̀:</string>
+    <string name="services_filter">Àwọn Iṣẹ́:</string>
+    <string name="facilities_found_format">A rí ilé-ìṣẹ́ %1$d</string>
+    <string name="beds_format">Ibùsùn %1$d</string>
+    <string name="available_services">Àwọn Iṣẹ́ Tó Wà</string>
+    <string name="location_label">Ibi</string>
+    <string name="coordinates_format">Kọ̀ọ̀dínétì: %1$s, %2$s</string>
+    <string name="gps_navigation_hint">A lè lo kọ̀ọ̀dínétì GPS fún àwọn àpò ìdarí ọ̀nà</string>
+    <string name="select_for_referral">Yan Fún Ìtọ́kasí</string>
+    <string name="triage_button">Ṣíṣàyẹ̀wò Kíákíá</string>
+    <string name="enter_manually_instead">Tẹ̀ ẹ́ sílẹ̀ fúnra rẹ dípò</string>
+    <string name="voice_transcript">Àkọsílẹ̀ ohùn</string>
+    <string name="chief_complaint_field">Ẹ̀dùn àkọ́kọ́</string>
+    <string name="priority_label">Pataki</string>
+    <string name="priority_normal">Déédéé</string>
+    <string name="priority_priority">Pataki</string>
+    <string name="priority_emergency">Pàjáwìrì</string>
+    <string name="save_validation_error">Tẹ àmì pàtàkì kan tàbí ẹ̀dùn àkọ́kọ́ sílẹ̀ ní ó kéré jù</string>
+    <string name="full_triage">Ṣíṣàyẹ̀wò Kíkún ▸</string>
+    <string name="microphone_permission_required">A nílò ìgbàláàyè máìkíròfóònù</string>
+    <string name="grant_permission">Fún Ní Ìgbàláàyè</string>
+    <string name="preparing_offline_asr">Ń múra ASR láìsí íńtánẹ́ẹ̀tì…</string>
+    <string name="tap_to_dictate">Tẹ láti sọ àmì pàtàkì àti ẹ̀dùn àkọ́kọ́</string>
+    <string name="first_load_slow">Ìgbà àkọ́kọ́ ń lọ̀ra díẹ̀ lórí àwọn fóònù tí RAM wọn kéré.</string>
+    <string name="dictation_example">b.a. "BP 130 lórí 85, temp 37.5, pulse 88, spo2 98, ìwọ̀n 72 kilo. Orí fífọ́ fún ọjọ́ 3."</string>
+    <string name="loading_voice_model">Ń gba àwòṣe ohùn…</string>
+    <string name="listening_tap_to_stop">Ń gbọ́… tẹ láti dúró</string>
+
+    <!-- Missing translations batch -->
+    <string name="active_conditions">Àwọn Ipò Tí Ń Ṣiṣẹ́</string>
+    <string name="age_label">Ọjọ́ Orí</string>
+    <string name="blood_pressure">Ìfúnpá Ẹ̀jẹ̀</string>
+    <string name="content_desc_confirm">Fìdí múlẹ̀</string>
+    <string name="content_desc_done">Ti parí</string>
+    <string name="content_desc_import_vocab">Gba vocabulary wọlé</string>
+    <string name="content_desc_join_facility">Darapọ̀ mọ́ ilé-ìṣẹ́</string>
+    <string name="content_desc_scan_qr_code">Ṣayẹ̀wò koodu QR</string>
+    <string name="content_desc_sim">SIM</string>
+    <string name="enter_pin_to_unlock">Tẹ PIN láti ṣí</string>
+    <string name="heart_rate">Ìlù Ọkàn</string>
+    <string name="incorrect_pin">PIN kò tọ́</string>
+    <string name="locked">Ti tì</string>
+    <string name="oxygen_saturation">Ìwọ̀n Afẹ́fẹ́ Oxygen</string>
+    <string name="patient_not_found">A kò rí aláìsàn</string>
+    <string name="recent_encounters_section">Àwọn Ìpàdé Àìpẹ́</string>
+    <string name="recent_medications">Àwọn Oògùn Àìpẹ́</string>
+    <string name="sex_label">Akọ tàbí Abo</string>
+    <string name="temperature">Ìwọ̀n Igbóná Ara</string>
+    <string name="timeline">Àkọsílẹ̀ Àkókò</string>
+    <string name="too_many_attempts_format">Ìgbìyànjú púpọ̀. Gbìyànjú lẹ́yìn %1$ds</string>
+    <string name="vital_signs_trend">Ìṣesí Àmì Pàtàkì</string>
+
+
+    <!-- TODO: translate — English fallback strings below -->
+    <!-- TODO: translate -->
+    <string name="ai_mode_cloud_desc">Notes generated using cloud-based clinical language models for enhanced accuracy.</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_cloud_title">Powered by Cloud AI</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_device_desc">Notes processed locally using on-device model — no internet required.</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_device_title">On-Device Processing</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_fallback_desc">No internet connection — notes processed using local fallback.</string>
+    <!-- TODO: translate -->
+    <string name="ai_mode_fallback_title">Cloud Unavailable</string>
+    <!-- TODO: translate -->
+    <string name="change_sms_pin">Change SMS PIN</string>
+    <!-- TODO: translate -->
+    <string name="copy_summary">Copy Summary</string>
+    <!-- TODO: translate -->
+    <string name="edit_patient">Edit Patient</string>
+    <!-- TODO: translate -->
+    <string name="extracted_fields">Extracted Fields</string>
+    <!-- TODO: translate -->
+    <string name="hide_original_transcript">Hide Original Transcript</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_cloud">Cloud</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_downloading">Downloading</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_error">Error</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_not_ready">Not set up</string>
+    <!-- TODO: translate -->
+    <string name="home_asr_ready">Ready</string>
+    <!-- TODO: translate -->
+    <string name="home_meds_to_dispense">Medications to dispense</string>
+    <!-- TODO: translate -->
+    <string name="home_no_complaint">No chief complaint recorded</string>
+    <!-- TODO: translate -->
+    <string name="home_sync_connected_format">%1$d synced</string>
+    <!-- TODO: translate -->
+    <string name="home_sync_no_peers">No peers</string>
+    <!-- TODO: translate -->
+    <string name="home_unknown_patient">Unknown</string>
+    <!-- TODO: translate -->
+    <string name="note_generated_via">Note generated via %1$s</string>
+    <!-- TODO: translate -->
+    <string name="open_in_maps">Open in Maps</string>
+    <!-- TODO: translate -->
+    <string name="phone_label">Phone Number</string>
+    <!-- TODO: translate -->
+    <string name="regenerate_note">Regenerate Note</string>
+    <!-- TODO: translate -->
+    <string name="remove_sms_pin">Remove PIN</string>
+    <!-- TODO: translate -->
+    <string name="review_note_before_saving">Review the AI-generated clinical note, then check the extracted fields below</string>
+    <!-- TODO: translate -->
+    <string name="set_sms_pin">Set SMS PIN</string>
+    <!-- TODO: translate -->
+    <string name="settings_clinical_notes_card">Clinical Notes AI</string>
+    <!-- TODO: translate -->
+    <string name="settings_how_you_record">How do you record?</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_batch">In batches</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_batch_desc">Queue notes and process together. Better for slower devices.</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_immediately">Real-time</string>
+    <!-- TODO: translate -->
+    <string name="settings_process_immediately_desc">Notes generated right away. Best with fast devices or cloud.</string>
+    <!-- TODO: translate -->
+    <string name="settings_processing_workflow">When to process notes?</string>
+    <!-- TODO: translate -->
+    <string name="settings_voice_recognition_card">Voice Recognition</string>
+    <!-- TODO: translate -->
+    <string name="setup_advanced_settings">Advanced settings</string>
+    <!-- TODO: translate -->
+    <string name="setup_all_models_ready">All models downloaded</string>
+    <!-- TODO: translate -->
+    <string name="setup_cancel_download">Cancel</string>
+    <!-- TODO: translate -->
+    <string name="setup_device_info_format">%1$s · %2$s GB RAM</string>
+    <!-- TODO: translate -->
+    <string name="setup_download_all">Download All Models</string>
+    <!-- TODO: translate -->
+    <string name="setup_download_failed_retry">Download failed. Tap to try again.</string>
+    <!-- TODO: translate -->
+    <string name="setup_downloading_notes_ai">Downloading notes AI…</string>
+    <!-- TODO: translate -->
+    <string name="setup_downloading_voice">Downloading voice model…</string>
+    <!-- TODO: translate -->
+    <string name="setup_downloads_required">Downloads Required</string>
+    <!-- TODO: translate -->
+    <string name="setup_enrollment_helper">Enter the code from your facility administrator</string>
+    <!-- TODO: translate -->
+    <string name="setup_no_downloads_needed">No downloads needed — you\'re ready to go!</string>
+    <!-- TODO: translate -->
+    <string name="setup_notes_internet_desc">Notes processed securely in the cloud. Better accuracy for complex cases.</string>
+    <!-- TODO: translate -->
+    <string name="setup_notes_model_label">Notes AI model</string>
+    <!-- TODO: translate -->
+    <string name="setup_notes_offline_desc">Notes processed entirely on this device. Your data stays private.</string>
+    <!-- TODO: translate -->
+    <string name="setup_offline_not_supported">This device doesn\'t support offline AI. Internet mode will be used.</string>
+    <!-- TODO: translate -->
+    <string name="setup_size_mb_format">%1$d MB</string>
+    <!-- TODO: translate -->
+    <string name="setup_total_size">Total</string>
+    <!-- TODO: translate -->
+    <string name="setup_uses_internet">Uses Internet</string>
+    <!-- TODO: translate -->
+    <string name="setup_voice_internet_desc">Voice processed in the cloud. More accurate, but needs a data connection.</string>
+    <!-- TODO: translate -->
+    <string name="setup_voice_model_label">Voice model</string>
+    <!-- TODO: translate -->
+    <string name="setup_voice_offline_desc">Models downloaded to your device. No internet needed during consultations.</string>
+    <!-- TODO: translate -->
+    <string name="setup_works_offline">Works Offline</string>
+    <!-- TODO: translate -->
+    <string name="show_original_transcript">Show Original Transcript</string>
+    <!-- TODO: translate -->
+    <string name="sms_history">SMS History</string>
+    <!-- TODO: translate -->
+    <string name="sms_pin_explanation">A 4-digit PIN adds privacy to encrypted SMS health records. Use this when the patient shares a phone with family members.</string>
+    <!-- TODO: translate -->
+    <string name="sms_pin_label">SMS PIN (4 digits)</string>
+    <!-- TODO: translate -->
+    <string name="summary_copied">Summary copied to clipboard</string>
+    <!-- TODO: translate -->
+    <string name="sync_or_select_individual">Or select individual patients:</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_format">Send All %1$d Patients</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_hint">All patient records will be shared with the receiving device.</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_patients">Send All Patients</string>
+    <!-- TODO: translate -->
+    <string name="sync_send_all_patients_desc">Share all %1$d patient records with the receiving facility</string>
+    <!-- TODO: translate -->
+    <string name="tap_new_encounter_hint">Tap + New Encounter to start recording</string>
+    <!-- TODO: translate -->
+    <string name="tap_to_edit">Tap to edit</string>
+    <!-- TODO: translate -->
+    <string name="twilio_cleared_native_sms">Cleared — using phone SIM</string>
+    <!-- TODO: translate -->
+    <string name="twilio_credentials_verified">Credentials verified</string>
+    <!-- TODO: translate -->
+    <string name="twilio_invalid_credentials">Invalid credentials</string>
+    <!-- TODO: translate -->
+    <string name="twilio_saved_native_sms">Saved — will use phone SIM</string>
+    <string name="scan_analyzing">Analyzing...</string>
+    <string name="scan_button_label">Scan Lab / RDT / Vitals</string>
+    <string name="content_desc_scan">Scan clinical document</string>
+    <string name="scan_result_prefix">Scanned: %1$s</string>
+</resources>

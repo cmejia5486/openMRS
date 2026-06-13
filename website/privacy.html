@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChartLite | Privacy &amp; Security</title>
+  <meta name="description" content="Six layers of encryption protect patient data at rest, in transit, and in storage. No cloud dependency for privacy.">
+  <meta name="theme-color" content="#F9F8F6">
+  <link rel="canonical" href="https://chartlite.health/privacy">
+  <meta property="og:url" content="https://chartlite.health/privacy">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ChartLite | Privacy & Security">
+  <meta property="og:description" content="Six layers of encryption protect patient data at rest, in transit, and in storage. No cloud dependency for privacy.">
+  <meta property="og:site_name" content="ChartLite">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #F9F8F6;
+      --text-color: #2b2b2b;
+      --text-muted: #666666;
+      --primary-dark: #1A2E35;
+      --accent: #A27B5C;
+      --surface: #FFFFFF;
+      --border: #E5E0D8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, .serif {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-dark);
+      font-weight: 400;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Navbar ── */
+    nav { padding: 32px 0; border-bottom: 1px solid var(--border); margin-bottom: 64px; }
+    .nav-inner { display: flex; justify-content: space-between; align-items: center; }
+    .logo {
+      font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600;
+      color: var(--primary-dark); text-decoration: none; letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a {
+      text-decoration: none; color: var(--text-color); font-size: 12px;
+      letter-spacing: 0.04em; text-transform: uppercase; font-weight: 500; transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a.active { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 4px; }
+    .nav-cta { border-bottom: 1px solid var(--primary-dark); padding-bottom: 4px; }
+
+    /* ── Hamburger Menu ── */
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      width: 32px; height: 24px; position: relative; z-index: 101;
+    }
+    .hamburger span {
+      display: block; width: 100%; height: 2px; background: var(--primary-dark);
+      position: absolute; left: 0; transition: all 0.3s ease;
+    }
+    .hamburger span:nth-child(1) { top: 2px; }
+    .hamburger span:nth-child(2) { top: 11px; }
+    .hamburger span:nth-child(3) { top: 20px; }
+    .hamburger.open span:nth-child(1) { top: 11px; transform: rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { top: 11px; transform: rotate(-45deg); }
+
+    .mobile-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(26, 46, 53, 0.95); z-index: 100; flex-direction: column;
+      justify-content: center; align-items: center; gap: 24px;
+    }
+    .mobile-overlay.open { display: flex; }
+    .mobile-overlay a {
+      text-decoration: none; color: #fff; font-size: 20px; font-weight: 400;
+      font-family: 'Playfair Display', serif; letter-spacing: 0.02em;
+      padding: 12px 0; transition: opacity 0.3s;
+    }
+    .mobile-overlay a:hover { opacity: 0.7; }
+    .mobile-overlay a.active { border-bottom: 1px solid var(--accent); color: var(--accent); }
+
+    /* ── Page Header ── */
+    .page-header { text-align: center; margin-bottom: 80px; }
+    .page-header h1 { font-size: 48px; margin-bottom: 20px; letter-spacing: -0.01em; }
+    .page-header p {
+      font-size: 18px; color: var(--text-muted); max-width: 640px;
+      margin: 0 auto; font-weight: 300; line-height: 1.7;
+    }
+
+    /* ── Section Headers ── */
+    .section-header { text-align: center; margin-bottom: 48px; }
+    .section-header h2 { font-size: 32px; margin-bottom: 12px; }
+    .section-header p {
+      color: var(--text-muted); font-size: 16px; font-weight: 300;
+      max-width: 600px; margin: 0 auto; line-height: 1.7;
+    }
+
+    /* ── Encryption Cards Grid ── */
+    .encryption-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+      margin-bottom: 96px;
+    }
+
+    .enc-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 28px; transition: box-shadow 0.3s ease;
+    }
+    .enc-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); }
+
+    .enc-card-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    .enc-card-icon {
+      width: 44px; height: 44px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+      background: #EDF4F8; color: var(--primary-dark);
+    }
+    .enc-card-header h3 {
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
+      color: var(--primary-dark); letter-spacing: 0.01em;
+    }
+    .enc-card-header .enc-card-algo {
+      display: block; font-family: 'Inter', sans-serif; font-size: 12px;
+      font-weight: 400; color: var(--text-muted); margin-top: 2px;
+    }
+
+    .spec-table { width: 100%; }
+    .spec-table tr { border-bottom: 1px solid var(--border); }
+    .spec-table tr:last-child { border-bottom: none; }
+    .spec-table td {
+      padding: 8px 0; font-size: 13px; vertical-align: top; line-height: 1.5;
+    }
+    .spec-table td:first-child {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      font-weight: 500; color: var(--text-muted); width: 130px;
+      padding-right: 16px; white-space: nowrap;
+    }
+    .spec-table td:last-child { color: var(--text-color); font-weight: 400; }
+    .spec-table code {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+      background: var(--bg-color); padding: 2px 6px; border-radius: 3px;
+      color: var(--primary-dark);
+    }
+
+    /* ── Summary Table ── */
+    .summary-section { margin-bottom: 96px; }
+
+    .summary-table-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .summary-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .summary-table thead th {
+      text-align: left; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.08em; font-weight: 600; color: var(--text-muted);
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      background: var(--bg-color);
+    }
+    .summary-table tbody td {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .summary-table tbody tr:last-child td { border-bottom: none; }
+    .summary-table tbody tr:hover { background: rgba(162, 123, 92, 0.03); }
+    .summary-table .layer-name {
+      font-weight: 500; color: var(--primary-dark);
+    }
+    .summary-table code {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+      background: var(--bg-color); padding: 2px 6px; border-radius: 3px;
+    }
+
+    /* ── RBAC Section ── */
+    .rbac-section { margin-bottom: 96px; }
+
+    .rbac-table-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; overflow-x: auto; margin-bottom: 32px;
+    }
+    .rbac-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+      min-width: 700px;
+    }
+    .rbac-table thead th {
+      text-align: center; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 600; color: var(--text-muted);
+      padding: 14px 10px; border-bottom: 1px solid var(--border);
+      background: var(--bg-color); white-space: nowrap;
+    }
+    .rbac-table thead th:first-child { text-align: left; padding-left: 20px; min-width: 160px; }
+    .rbac-table tbody td {
+      padding: 12px 10px; border-bottom: 1px solid var(--border);
+      text-align: center; vertical-align: middle;
+    }
+    .rbac-table tbody td:first-child {
+      text-align: left; padding-left: 20px; font-weight: 500;
+      color: var(--primary-dark); font-size: 12px; letter-spacing: 0.03em;
+    }
+    .rbac-table tbody tr:last-child td { border-bottom: none; }
+    .rbac-table tbody tr:hover { background: rgba(162, 123, 92, 0.03); }
+    .rbac-check { color: var(--accent); font-weight: 600; font-size: 16px; }
+    .rbac-dash { color: var(--border); font-size: 16px; }
+
+    .session-specs {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    }
+    .session-spec-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px; text-align: center;
+    }
+    .session-spec-card .spec-value {
+      font-family: 'Playfair Display', serif; font-size: 24px;
+      color: var(--primary-dark); margin-bottom: 4px;
+    }
+    .session-spec-card .spec-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); font-weight: 500;
+    }
+
+    /* ── Audit Section ── */
+    .audit-section { margin-bottom: 96px; }
+
+    .audit-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+      margin-bottom: 32px;
+    }
+    .audit-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 28px;
+    }
+    .audit-card h4 {
+      font-family: 'Inter', sans-serif; font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 600; color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .audit-events { list-style: none; }
+    .audit-events li {
+      font-size: 13px; color: var(--text-color); padding: 6px 0;
+      border-bottom: 1px solid var(--border); line-height: 1.5;
+    }
+    .audit-events li:last-child { border-bottom: none; }
+    .audit-events code {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+      background: var(--bg-color); padding: 2px 6px; border-radius: 3px;
+      color: var(--primary-dark); font-weight: 500;
+    }
+
+    .audit-record {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 28px;
+    }
+    .audit-record h4 {
+      font-family: 'Inter', sans-serif; font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 600; color: var(--primary-dark);
+      margin-bottom: 16px;
+    }
+    .audit-record p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.7;
+      font-weight: 300;
+    }
+    .audit-record code {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+      background: var(--bg-color); padding: 2px 6px; border-radius: 3px;
+      color: var(--primary-dark);
+    }
+    .audit-fields {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+    }
+    .audit-field-tag {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+      background: var(--bg-color); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 4px; color: var(--primary-dark);
+    }
+
+    /* ── Regulatory Section ── */
+    .regulatory-section {
+      padding: 80px 0; border-top: 1px solid var(--border); margin-bottom: 0;
+    }
+
+    .reg-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+    }
+    .reg-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px; text-align: center;
+      transition: box-shadow 0.3s ease;
+    }
+    .reg-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); }
+    .reg-flag { font-size: 32px; margin-bottom: 10px; display: block; }
+    .reg-country {
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+      color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .reg-framework {
+      font-size: 12px; color: var(--text-muted); margin-bottom: 10px;
+      font-weight: 300;
+    }
+    .reg-status {
+      display: inline-block; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 600; padding: 3px 10px;
+      border-radius: 3px;
+    }
+    .reg-status.active { background: #F3F2EE; color: #5C7A6E; }
+    .reg-status.ready { background: #F3F2EE; color: #5B778A; }
+    .reg-status.planned { background: #F3F2EE; color: #7A7A5C; }
+    .reg-status.built-in { background: #F3F2EE; color: var(--accent); }
+
+    /* ── Footer ── */
+    footer { padding: 64px 0; text-align: center; border-top: 1px solid var(--border); }
+    footer .logo { display: inline-block; margin-bottom: 24px; }
+    footer p { color: var(--text-muted); font-size: 13px; }
+    .footer-links { margin-top: 24px; display: flex; justify-content: center; gap: 24px; }
+    .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; }
+    .footer-links a:hover { color: var(--primary-dark); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 0; margin-bottom: 40px; }
+      .nav-links { gap: 16px; }
+      .nav-links a { font-size: 12px; }
+      .page-header h1 { font-size: 32px; }
+      .page-header { margin-bottom: 56px; }
+      .section-header h2 { font-size: 26px; }
+
+      .encryption-grid { grid-template-columns: 1fr; }
+      .session-specs { grid-template-columns: repeat(2, 1fr); }
+      .audit-grid { grid-template-columns: 1fr; }
+      .reg-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .hamburger { display: block; }
+      .page-header h1 { font-size: 26px; }
+      .page-header p { font-size: 16px; }
+      .section-header h2 { font-size: 22px; }
+
+      .session-specs { grid-template-columns: 1fr 1fr; }
+      .reg-grid { grid-template-columns: 1fr; }
+
+      .spec-table td:first-child { width: 100px; font-size: 10px; }
+
+      .rbac-table-wrap { margin-left: -24px; margin-right: -24px; border-radius: 0; border-left: none; border-right: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <div class="nav-links">
+        <a href="approach.html">Our Approach</a>
+        <a href="technology.html">Technology</a>
+        <a href="sms-demo.html">Portable Record</a>
+        <a href="connectivity.html">Connectivity</a>
+        <a href="privacy.html" class="active">Privacy</a>
+        <a href="ai-pipeline.html">AI Pipeline</a>
+        <a href="index.html#download" class="nav-cta">Get Started</a>
+      </div>
+      <button class="hamburger" onclick="toggleMenu()" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-overlay" id="mobileMenu" role="dialog" aria-label="Navigation menu">
+    <a href="approach.html">Our Approach</a>
+    <a href="technology.html">Technology</a>
+    <a href="sms-demo.html">Portable Record</a>
+    <a href="connectivity.html">Connectivity</a>
+    <a href="privacy.html" class="active">Privacy</a>
+    <a href="ai-pipeline.html">AI Pipeline</a>
+    <a href="index.html#download">Get Started</a>
+  </div>
+
+  <main class="container">
+
+    <!-- Page Header -->
+    <section class="page-header">
+      <h1>Defense in depth.</h1>
+      <p>Six layers of encryption protect patient data at rest, in transit, and in storage. No cloud dependency for privacy.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         1. Encryption Layers
+         ═══════════════════════════════════════════ -->
+    <section class="encryption-grid">
+
+      <!-- Card 1: Database at Rest -->
+      <div class="enc-card">
+        <div class="enc-card-header">
+          <div class="enc-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <div>
+            <h3>Database at Rest</h3>
+            <span class="enc-card-algo">SQLCipher</span>
+          </div>
+        </div>
+        <table class="spec-table">
+          <tr><td>Algorithm</td><td>AES-256 (SQLCipher native)</td></tr>
+          <tr><td>Key</td><td>Device-unique UUID, generated on first launch</td></tr>
+          <tr><td>Key Storage</td><td><code>EncryptedSharedPreferences</code> (hardware-backed MasterKey)</td></tr>
+          <tr><td>Backup</td><td><code>android:allowBackup="false"</code></td></tr>
+        </table>
+      </div>
+
+      <!-- Card 2: SMS in Transit -->
+      <div class="enc-card">
+        <div class="enc-card-header">
+          <div class="enc-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div>
+            <h3>SMS in Transit</h3>
+            <span class="enc-card-algo">AES-256-GCM</span>
+          </div>
+        </div>
+        <table class="spec-table">
+          <tr><td>Algorithm</td><td><code>AES/GCM/NoPadding</code></td></tr>
+          <tr><td>Key Size</td><td>256 bits</td></tr>
+          <tr><td>Key Derivation</td><td>PBKDF2-HMAC-SHA256 (100K iterations)</td></tr>
+          <tr><td>Nonce</td><td>12 bytes (<code>SecureRandom</code> per encryption)</td></tr>
+          <tr><td>Auth Tag</td><td>128 bits</td></tr>
+          <tr><td>Output</td><td>Base64(nonce + ciphertext + tag) &mdash; fits 1 SMS</td></tr>
+        </table>
+      </div>
+
+      <!-- Card 3: PIN Storage -->
+      <div class="enc-card">
+        <div class="enc-card-header">
+          <div class="enc-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <h3>PIN Storage</h3>
+            <span class="enc-card-algo">PBKDF2</span>
+          </div>
+        </div>
+        <table class="spec-table">
+          <tr><td>Algorithm</td><td>PBKDF2-HMAC-SHA256</td></tr>
+          <tr><td>Iterations</td><td>100,000</td></tr>
+          <tr><td>Salt</td><td>16 bytes (<code>SecureRandom</code>, unique per user)</td></tr>
+          <tr><td>Output</td><td>256-bit hash (Base64 stored)</td></tr>
+          <tr><td>Verification</td><td>Constant-time XOR comparison</td></tr>
+        </table>
+      </div>
+
+      <!-- Card 4: Config at Rest -->
+      <div class="enc-card">
+        <div class="enc-card-header">
+          <div class="enc-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div>
+            <h3>Config at Rest</h3>
+            <span class="enc-card-algo">EncryptedSharedPreferences</span>
+          </div>
+        </div>
+        <table class="spec-table">
+          <tr><td>Master Key</td><td>AES-256-GCM (Android Keystore backed)</td></tr>
+          <tr><td>Key Encryption</td><td>AES-256-SIV</td></tr>
+          <tr><td>Value Encryption</td><td>AES-256-GCM</td></tr>
+          <tr><td>Protected</td><td>DHIS2 creds, Twilio tokens, session data, DB passphrase</td></tr>
+        </table>
+      </div>
+
+      <!-- Card 5: Patient ID -->
+      <div class="enc-card">
+        <div class="enc-card-header">
+          <div class="enc-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <h3>Patient ID</h3>
+            <span class="enc-card-algo">Privacy-Preserving</span>
+          </div>
+        </div>
+        <table class="spec-table">
+          <tr><td>Format</td><td>8-char base28 (e.g., <code>KFMT-4WRN</code>)</td></tr>
+          <tr><td>Entropy</td><td>40 bits <code>SecureRandom</code></td></tr>
+          <tr><td>Alphabet</td><td><code>ABCDEFGHJKMNPQRTUVWXYZ234567</code> (no confusable chars)</td></tr>
+          <tr><td>Design</td><td>NOT derived from patient demographics</td></tr>
+        </table>
+      </div>
+
+      <!-- Card 6: P2P Sync -->
+      <div class="enc-card">
+        <div class="enc-card-header">
+          <div class="enc-card-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+          </div>
+          <div>
+            <h3>P2P Sync Authentication</h3>
+            <span class="enc-card-algo">Nearby Connections</span>
+          </div>
+        </div>
+        <table class="spec-table">
+          <tr><td>Auth</td><td>6-digit code displayed on both devices</td></tr>
+          <tr><td>Verification</td><td>User must visually verify before accepting</td></tr>
+          <tr><td>Transport</td><td>Bluetooth link-layer encryption</td></tr>
+          <tr><td>Strategy</td><td><code>P2P_CLUSTER</code> via Android Nearby Connections</td></tr>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         2. Cryptographic Summary Table
+         ═══════════════════════════════════════════ -->
+    <section class="summary-section">
+      <div class="section-header">
+        <h2>Cryptographic summary</h2>
+      </div>
+
+      <div class="summary-table-wrap">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Algorithm</th>
+              <th>Key Size</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="layer-name">Database at Rest</td>
+              <td><code>AES-256</code> (SQLCipher)</td>
+              <td>256-bit</td>
+              <td>Full-database encryption of all patient records</td>
+            </tr>
+            <tr>
+              <td class="layer-name">SMS in Transit</td>
+              <td><code>AES/GCM/NoPadding</code></td>
+              <td>256-bit</td>
+              <td>End-to-end encrypted portable health records</td>
+            </tr>
+            <tr>
+              <td class="layer-name">PIN Storage</td>
+              <td><code>PBKDF2-HMAC-SHA256</code></td>
+              <td>256-bit hash</td>
+              <td>Secure user authentication credential storage</td>
+            </tr>
+            <tr>
+              <td class="layer-name">Config at Rest</td>
+              <td><code>AES-256-SIV</code> + <code>AES-256-GCM</code></td>
+              <td>256-bit</td>
+              <td>Encrypted API tokens, credentials, session data</td>
+            </tr>
+            <tr>
+              <td class="layer-name">Patient ID</td>
+              <td><code>SecureRandom</code></td>
+              <td>40-bit entropy</td>
+              <td>Privacy-preserving patient identification</td>
+            </tr>
+            <tr>
+              <td class="layer-name">P2P Sync</td>
+              <td>BT link-layer + visual auth</td>
+              <td>N/A</td>
+              <td>Authenticated device-to-device data exchange</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         3. RBAC
+         ═══════════════════════════════════════════ -->
+    <section class="rbac-section">
+      <div class="section-header">
+        <h2>Role-based access control</h2>
+        <p>Six clinical roles with granular permissions. Shared devices stay secure.</p>
+      </div>
+
+      <div class="rbac-table-wrap">
+        <table class="rbac-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Register Patients</th>
+              <th>Triage</th>
+              <th>Consult</th>
+              <th>Dispense Meds</th>
+              <th>Manage Users</th>
+              <th>View Dashboard</th>
+              <th>Sync Devices</th>
+              <th>Edit Settings</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ADMIN</td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+            </tr>
+            <tr>
+              <td>DOCTOR</td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>NURSE</td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>PHARMACIST</td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>CHW</td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>REGISTRATION_CLERK</td>
+              <td><span class="rbac-check" aria-label="Yes">&check;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+              <td><span class="rbac-dash" aria-label="No">&mdash;</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="session-specs">
+        <div class="session-spec-card">
+          <div class="spec-value">4-6</div>
+          <div class="spec-label">PIN Length (digits)</div>
+        </div>
+        <div class="session-spec-card">
+          <div class="spec-value">5 min</div>
+          <div class="spec-label">Auto-Lock</div>
+        </div>
+        <div class="session-spec-card">
+          <div class="spec-value">5</div>
+          <div class="spec-label">Max Failed Attempts</div>
+        </div>
+        <div class="session-spec-card">
+          <div class="spec-value">2 min</div>
+          <div class="spec-label">Lockout Duration</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         4. Audit Trail
+         ═══════════════════════════════════════════ -->
+    <section class="audit-section">
+      <div class="section-header">
+        <h2>Complete audit trail</h2>
+        <p>Every clinical and security action is logged with millisecond precision.</p>
+      </div>
+
+      <div class="audit-grid">
+        <div class="audit-card">
+          <h4>Authentication</h4>
+          <ul class="audit-events">
+            <li><code>LOGIN</code> &mdash; successful session start with role</li>
+            <li><code>LOGOUT</code> &mdash; explicit session end</li>
+            <li><code>FAILED_AUTH</code> &mdash; incorrect PIN attempt</li>
+            <li><code>UNLOCK</code> &mdash; screen unlock after auto-lock</li>
+            <li><code>LOCKOUT</code> &mdash; 5 consecutive failures, 2-min lock</li>
+          </ul>
+        </div>
+        <div class="audit-card">
+          <h4>Clinical</h4>
+          <ul class="audit-events">
+            <li><code>CREATE_PATIENT</code> &mdash; new patient registration</li>
+            <li><code>CREATE_ENCOUNTER</code> &mdash; encounter finalized with data</li>
+            <li><code>DISPENSE</code> &mdash; medication dispensed to patient</li>
+          </ul>
+        </div>
+        <div class="audit-card">
+          <h4>Administrative</h4>
+          <ul class="audit-events">
+            <li><code>SETTINGS_CHANGE</code> &mdash; configuration modification</li>
+            <li>Old and new values stored in details JSON</li>
+          </ul>
+        </div>
+        <div class="audit-card">
+          <h4>Sync</h4>
+          <ul class="audit-events">
+            <li><code>SYNC</code> &mdash; device-to-device sync event</li>
+            <li>Conflict count and records exchanged logged</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="audit-record">
+        <h4>Each record contains</h4>
+        <p>Every audit entry captures a complete forensic context for compliance and incident response.</p>
+        <div class="audit-fields">
+          <span class="audit-field-tag">Who <code>userId</code></span>
+          <span class="audit-field-tag">What <code>action</code> + details JSON</span>
+          <span class="audit-field-tag">When <code>ms timestamp</code></span>
+          <span class="audit-field-tag">On what <code>targetType</code> + <code>targetId</code></span>
+          <span class="audit-field-tag">5 database indices</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       5. Regulatory Alignment
+       ═══════════════════════════════════════════ -->
+  <section class="regulatory-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Built for compliance</h2>
+      </div>
+
+      <div class="reg-grid">
+        <div class="reg-card">
+          <span class="reg-flag" role="img" aria-label="South Africa">&#x1F1FF;&#x1F1E6;</span>
+          <div class="reg-country">South Africa</div>
+          <div class="reg-framework">POPIA</div>
+          <span class="reg-status active">Active</span>
+        </div>
+        <div class="reg-card">
+          <span class="reg-flag" role="img" aria-label="Ethiopia">&#x1F1EA;&#x1F1F9;</span>
+          <div class="reg-country">Ethiopia</div>
+          <div class="reg-framework">DHIS2 v40</div>
+          <span class="reg-status ready">Ready</span>
+        </div>
+        <div class="reg-card">
+          <span class="reg-flag" role="img" aria-label="United States">&#x1F1FA;&#x1F1F8;</span>
+          <div class="reg-country">United States</div>
+          <div class="reg-framework">HIPAA 164.312</div>
+          <span class="reg-status planned">Planned</span>
+        </div>
+        <div class="reg-card">
+          <span class="reg-flag" role="img" aria-label="United Kingdom">&#x1F1EC;&#x1F1E7;</span>
+          <div class="reg-country">United Kingdom</div>
+          <div class="reg-framework">DCB0129, DTAC</div>
+          <span class="reg-status planned">Planned</span>
+        </div>
+        <div class="reg-card">
+          <span class="reg-flag" role="img" aria-label="Global">&#x1F30D;</span>
+          <div class="reg-country">Multi-country</div>
+          <div class="reg-framework">FHIR R4 Interop</div>
+          <span class="reg-status built-in">Built-in</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <a href="index.html" class="logo">ChartLite.</a>
+      <p>&copy; 2026 ChartLite. Open-source under the Apache License 2.0.</p>
+      <div class="footer-links">
+        <a href="https://github.com/prismindanalytics/chartlite" target="_blank" rel="noopener noreferrer">Source Code</a>
+        <a href="mailto:hello@chartlite.health">Contact the Team</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      var btn = document.querySelector('.hamburger');
+      var menu = document.getElementById('mobileMenu');
+      btn.classList.toggle('open');
+      menu.classList.toggle('open');
+      var isOpen = menu.classList.contains('open');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+      btn.setAttribute('aria-expanded', isOpen);
+      if (isOpen) {
+        menu.querySelector('a').focus();
+      }
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var menu = document.getElementById('mobileMenu');
+        if (menu.classList.contains('open')) {
+          toggleMenu();
+          document.querySelector('.hamburger').focus();
+        }
+      }
+    });
+  </script>
+
+</body>
+
+</html>

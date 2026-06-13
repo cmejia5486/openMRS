@@ -1,19 +1,51 @@
+# Build outputs
+/build/
+/app/build/
+**/build/
+**/.cxx/
+
+# IDE
+/.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
 local.properties
-**/google-services.json
-/.idea/AndroidProjectSystem.xml
-keystore/
+
+# Gradle
+/.gradle/
+.gradle/
+
+# ASR / LLM models (too large for git)
+app/src/main/assets/models/*.onnx
+!app/src/main/assets/models/silero_vad.onnx
+*.gguf
+
+# Signing keys
+*.keystore
 *.jks
+keystore.properties
+
+# Secrets and environment
+*.env
+.env.*
+secrets.properties
+
+# Test and coverage reports
+**/test-results/
+**/coverage/
+*.exec
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+.wrangler/
+ChartLite_Pitch_Deck.pptx
+
+# Internal/dev-only
+.claude/
+docs/
+ai/
+
+# Google service account keys
+worker/*.json
+!worker/package.json
+!worker/tsconfig.json

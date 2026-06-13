@@ -1,0 +1,310 @@
+{
+  "interactions": [
+    {
+      "drug1": "0100", "drug2": "0101",
+      "drugName1": "warfarin", "drugName2": "aspirin",
+      "severity": "high",
+      "message": "Warfarin + Aspirin: significantly increased bleeding risk. Monitor INR closely."
+    },
+    {
+      "drug1": "0100", "drug2": "0011",
+      "drugName1": "warfarin", "drugName2": "ibuprofen",
+      "severity": "high",
+      "message": "Warfarin + Ibuprofen: increased bleeding risk and GI bleed. Avoid combination."
+    },
+    {
+      "drug1": "0100", "drug2": "0012",
+      "drugName1": "warfarin", "drugName2": "diclofenac",
+      "severity": "high",
+      "message": "Warfarin + Diclofenac: increased bleeding risk. Avoid combination."
+    },
+    {
+      "drug1": "0100", "drug2": "0140",
+      "drugName1": "warfarin", "drugName2": "metronidazole",
+      "severity": "medium",
+      "message": "Warfarin + Metronidazole: increased anticoagulant effect. Monitor INR."
+    },
+    {
+      "drug1": "0100", "drug2": "0070",
+      "drugName1": "warfarin", "drugName2": "fluconazole",
+      "severity": "medium",
+      "message": "Warfarin + Fluconazole: increased anticoagulant effect. Reduce warfarin dose and monitor INR."
+    },
+    {
+      "drug1": "0002", "drug2": "0091",
+      "drugName1": "metformin", "drugName2": "insulin",
+      "severity": "medium",
+      "message": "Metformin + Insulin: increased hypoglycemia risk. Monitor blood glucose closely."
+    },
+    {
+      "drug1": "0021", "drug2": "0011",
+      "drugName1": "enalapril", "drugName2": "ibuprofen",
+      "severity": "medium",
+      "message": "ACE inhibitor + NSAID: reduced antihypertensive effect and increased renal risk. Monitor BP and creatinine."
+    },
+    {
+      "drug1": "0021", "drug2": "0012",
+      "drugName1": "enalapril", "drugName2": "diclofenac",
+      "severity": "medium",
+      "message": "ACE inhibitor + NSAID: reduced antihypertensive effect and increased renal risk. Monitor BP and creatinine."
+    },
+    {
+      "drug1": "0060", "drug2": "0140",
+      "drugName1": "ciprofloxacin", "drugName2": "metronidazole",
+      "severity": "medium",
+      "message": "Ciprofloxacin + Metronidazole: increased QT prolongation risk. Use with caution, monitor ECG if available."
+    },
+    {
+      "drug1": "0080", "drug2": "0011",
+      "drugName1": "prednisolone", "drugName2": "ibuprofen",
+      "severity": "medium",
+      "message": "Corticosteroid + NSAID: increased GI bleed risk. Add gastroprotection (omeprazole)."
+    },
+    {
+      "drug1": "0120", "drug2": "0121",
+      "drugName1": "tramadol", "drugName2": "morphine",
+      "severity": "high",
+      "message": "Tramadol + Morphine: additive CNS depression. Risk of respiratory depression."
+    },
+    {
+      "drug1": "0110", "drug2": "0061",
+      "drugName1": "simvastatin", "drugName2": "azithromycin",
+      "severity": "medium",
+      "message": "Simvastatin + Azithromycin: increased risk of rhabdomyolysis. Monitor for muscle pain."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "ethinylestradiol",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Rifampicin + Oral contraceptives: rifampicin significantly reduces contraceptive efficacy. Use alternative contraception (IUD, depot injection)."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "levonorgestrel",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Rifampicin + Levonorgestrel: rifampicin significantly reduces contraceptive efficacy. Use alternative contraception (IUD, depot injection)."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "warfarin",
+      "drug1": "", "drug2": "0100",
+      "severity": "high",
+      "message": "Rifampicin + Warfarin: rifampicin drastically reduces warfarin levels. Need 2-5x warfarin dose increase. Monitor INR closely."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "nevirapine",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Rifampicin + Nevirapine: AVOID combination. Rifampicin reduces nevirapine levels by 20-58%. Use efavirenz-based ART regimen instead."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "dolutegravir",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Rifampicin + Dolutegravir: rifampicin reduces dolutegravir levels. Double dolutegravir dose to 50mg BID during TB treatment."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "efavirenz",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Rifampicin + Efavirenz: moderate interaction. Efavirenz 600mg daily is standard — no dose adjustment usually needed. Monitor virological response."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "lopinavir",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Rifampicin + Lopinavir/ritonavir: CONTRAINDICATED. Rifampicin reduces lopinavir levels by >75%. Use rifabutin or switch ART."
+    },
+    {
+      "drugName1": "rifampicin", "drugName2": "atazanavir",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Rifampicin + Atazanavir: CONTRAINDICATED. Rifampicin drastically reduces atazanavir levels. Switch to efavirenz-based ART."
+    },
+    {
+      "drugName1": "isoniazid", "drugName2": "phenytoin",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Isoniazid + Phenytoin: isoniazid inhibits phenytoin metabolism, causing toxicity (ataxia, nystagmus). Monitor phenytoin levels."
+    },
+    {
+      "drugName1": "isoniazid", "drugName2": "carbamazepine",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Isoniazid + Carbamazepine: isoniazid inhibits carbamazepine metabolism. Risk of toxicity. Monitor levels."
+    },
+    {
+      "drugName1": "pyrazinamide", "drugName2": "allopurinol",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Pyrazinamide + Allopurinol: both affect uric acid levels. Pyrazinamide causes hyperuricemia. Monitor uric acid and adjust allopurinol."
+    },
+    {
+      "drugName1": "efavirenz", "drugName2": "diazepam",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Efavirenz + Diazepam: efavirenz inhibits diazepam metabolism, causing prolonged sedation. Use lorazepam or oxazepam instead."
+    },
+    {
+      "drugName1": "atazanavir", "drugName2": "omeprazole",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Atazanavir + Omeprazole/PPIs: PPIs reduce atazanavir absorption by >75%. AVOID combination. Use H2-blocker (ranitidine) if needed."
+    },
+    {
+      "drugName1": "zidovudine", "drugName2": "stavudine",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Zidovudine + Stavudine: pharmacologically ANTAGONISTIC. Never combine these two NRTIs."
+    },
+    {
+      "drugName1": "tenofovir", "drugName2": "ibuprofen",
+      "drug1": "", "drug2": "0011",
+      "severity": "medium",
+      "message": "Tenofovir + NSAIDs: additive nephrotoxicity risk. Avoid prolonged NSAID use. Monitor renal function."
+    },
+    {
+      "drugName1": "tenofovir", "drugName2": "diclofenac",
+      "drug1": "", "drug2": "0012",
+      "severity": "medium",
+      "message": "Tenofovir + NSAIDs: additive nephrotoxicity risk. Avoid prolonged NSAID use. Monitor renal function."
+    },
+    {
+      "drugName1": "artemether-lumefantrine", "drugName2": "erythromycin",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Artemether-Lumefantrine + Erythromycin: increased QT prolongation risk. Monitor for cardiac symptoms."
+    },
+    {
+      "drugName1": "quinine", "drugName2": "digoxin",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Quinine + Digoxin: quinine increases digoxin levels. Halve digoxin dose during quinine treatment. Monitor for digoxin toxicity."
+    },
+    {
+      "drugName1": "metronidazole", "drugName2": "alcohol",
+      "drug1": "0140", "drug2": "",
+      "severity": "high",
+      "message": "Metronidazole + Alcohol: disulfiram-like reaction (severe nausea, vomiting, flushing, tachycardia). Avoid alcohol during and 48hrs after treatment."
+    },
+    {
+      "drugName1": "enalapril", "drugName2": "spironolactone",
+      "drug1": "0021", "drug2": "",
+      "severity": "high",
+      "message": "ACE inhibitor + Spironolactone: risk of severe hyperkalemia. Monitor potassium within 1 week of starting. Avoid if K+ >5.0."
+    },
+    {
+      "drugName1": "lisinopril", "drugName2": "spironolactone",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "ACE inhibitor + Spironolactone: risk of severe hyperkalemia. Monitor potassium within 1 week of starting."
+    },
+    {
+      "drugName1": "gentamicin", "drugName2": "furosemide",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Aminoglycoside + Loop diuretic: additive ototoxicity and nephrotoxicity. Avoid combination if possible. Monitor renal function and hearing."
+    },
+    {
+      "drugName1": "ciprofloxacin", "drugName2": "ferrous",
+      "drug1": "0060", "drug2": "",
+      "severity": "medium",
+      "message": "Fluoroquinolone + Iron: iron reduces ciprofloxacin absorption by up to 90%. Take ciprofloxacin 2hrs before or 6hrs after iron."
+    },
+    {
+      "drugName1": "ciprofloxacin", "drugName2": "calcium",
+      "drug1": "0060", "drug2": "",
+      "severity": "medium",
+      "message": "Fluoroquinolone + Calcium/Antacids: reduced ciprofloxacin absorption. Take ciprofloxacin 2hrs before or 6hrs after."
+    },
+    {
+      "drugName1": "digoxin", "drugName2": "amiodarone",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Digoxin + Amiodarone: amiodarone increases digoxin levels by 70-100%. Halve digoxin dose when starting amiodarone."
+    },
+    {
+      "drugName1": "lithium", "drugName2": "ibuprofen",
+      "drug1": "", "drug2": "0011",
+      "severity": "high",
+      "message": "Lithium + NSAIDs: NSAIDs reduce lithium clearance, causing toxicity. Avoid combination or monitor lithium levels closely."
+    },
+    {
+      "drugName1": "fluoxetine", "drugName2": "tramadol",
+      "drug1": "", "drug2": "0120",
+      "severity": "high",
+      "message": "SSRI + Tramadol: risk of serotonin syndrome (agitation, tremor, hyperthermia). Avoid combination if possible."
+    },
+    {
+      "drugName1": "methotrexate", "drugName2": "cotrimoxazole",
+      "drug1": "", "drug2": "",
+      "severity": "high",
+      "message": "Methotrexate + TMP-SMX: bone marrow suppression and pancytopenia risk. AVOID combination. Monitor FBC if unavoidable."
+    },
+    {
+      "drugName1": "phenytoin", "drugName2": "ethinylestradiol",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Phenytoin + Oral contraceptives: phenytoin reduces contraceptive efficacy. Use higher-dose pill or alternative contraception."
+    },
+    {
+      "drugName1": "carbamazepine", "drugName2": "ethinylestradiol",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Carbamazepine + Oral contraceptives: carbamazepine reduces contraceptive efficacy. Use alternative contraception."
+    },
+    {
+      "drugName1": "theophylline", "drugName2": "ciprofloxacin",
+      "drug1": "", "drug2": "0060",
+      "severity": "medium",
+      "message": "Theophylline + Ciprofloxacin: ciprofloxacin inhibits theophylline metabolism. Risk of theophylline toxicity (seizures, arrhythmia)."
+    },
+    {
+      "drugName1": "methyldopa", "drugName2": "ferrous",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Methyldopa + Iron: iron reduces methyldopa absorption. Take 2 hours apart."
+    },
+    {
+      "drugName1": "cotrimoxazole", "drugName2": "warfarin",
+      "drug1": "", "drug2": "0100",
+      "severity": "medium",
+      "message": "TMP-SMX + Warfarin: TMP-SMX increases warfarin effect. Risk of bleeding. Monitor INR closely."
+    },
+    {
+      "drugName1": "fluconazole", "drugName2": "simvastatin",
+      "drug1": "0070", "drug2": "0110",
+      "severity": "high",
+      "message": "Fluconazole + Simvastatin: increased statin levels, risk of rhabdomyolysis. Suspend statin during fluconazole course."
+    },
+    {
+      "drugName1": "prednisolone", "drugName2": "diclofenac",
+      "drug1": "0080", "drug2": "0012",
+      "severity": "medium",
+      "message": "Corticosteroid + NSAID: increased GI bleed risk. Add gastroprotection (omeprazole)."
+    },
+    {
+      "drugName1": "amitriptyline", "drugName2": "tramadol",
+      "drug1": "", "drug2": "0120",
+      "severity": "high",
+      "message": "Amitriptyline + Tramadol: increased seizure risk and serotonin syndrome. Avoid combination."
+    },
+    {
+      "drugName1": "chlorpromazine", "drugName2": "haloperidol",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "Two antipsychotics: additive sedation, QT prolongation, and extrapyramidal effects. Use single agent when possible."
+    },
+    {
+      "drugName1": "glibenclamide", "drugName2": "fluconazole",
+      "drug1": "", "drug2": "0070",
+      "severity": "medium",
+      "message": "Glibenclamide + Fluconazole: fluconazole increases sulfonylurea levels. Risk of severe hypoglycemia. Monitor glucose closely."
+    },
+    {
+      "drugName1": "artemether-lumefantrine", "drugName2": "efavirenz",
+      "drug1": "", "drug2": "",
+      "severity": "medium",
+      "message": "AL + Efavirenz: efavirenz reduces artemether levels. Monitor for treatment failure. Consider extending AL course if response poor."
+    }
+  ]
+}

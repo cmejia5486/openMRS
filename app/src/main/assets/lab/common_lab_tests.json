@@ -1,0 +1,405 @@
+{
+  "version": "1.0",
+  "tests": [
+    {
+      "code": "CBC",
+      "name": "Complete Blood Count",
+      "category": "Hematology",
+      "defaultUnit": "cells/uL",
+      "referenceRange": "WBC: 4.5-11.0, RBC: 4.5-5.5, Hgb: 12-17",
+      "criticalRange": "WBC <2.0 or >30.0"
+    },
+    {
+      "code": "FBC",
+      "name": "Full Blood Count",
+      "category": "Hematology",
+      "defaultUnit": "cells/uL",
+      "referenceRange": "WBC: 4.5-11.0, RBC: 4.5-5.5, Hgb: 12-17",
+      "criticalRange": "WBC <2.0 or >30.0"
+    },
+    {
+      "code": "ESR",
+      "name": "Erythrocyte Sedimentation Rate",
+      "category": "Hematology",
+      "defaultUnit": "mm/hr",
+      "referenceRange": "M: 0-15, F: 0-20",
+      "criticalRange": ">100"
+    },
+    {
+      "code": "BLOOD_GROUP",
+      "name": "Blood Group & Rh Type",
+      "category": "Hematology",
+      "defaultUnit": null,
+      "referenceRange": "A/B/AB/O, Rh+/-",
+      "criticalRange": null
+    },
+    {
+      "code": "HGB",
+      "name": "Hemoglobin",
+      "category": "Hematology",
+      "defaultUnit": "g/dL",
+      "referenceRange": "M: 13.5-17.5, F: 12.0-16.0",
+      "criticalRange": "<7.0 or >20.0"
+    },
+    {
+      "code": "PLT",
+      "name": "Platelet Count",
+      "category": "Hematology",
+      "defaultUnit": "x10^3/uL",
+      "referenceRange": "150-400",
+      "criticalRange": "<50 or >1000"
+    },
+    {
+      "code": "BMP",
+      "name": "Basic Metabolic Panel",
+      "category": "Chemistry",
+      "defaultUnit": null,
+      "referenceRange": "Na: 136-145, K: 3.5-5.0, Cr: 0.7-1.3",
+      "criticalRange": "K <3.0 or >6.0, Na <120 or >160"
+    },
+    {
+      "code": "CMP",
+      "name": "Comprehensive Metabolic Panel",
+      "category": "Chemistry",
+      "defaultUnit": null,
+      "referenceRange": "Includes BMP + liver enzymes + protein",
+      "criticalRange": null
+    },
+    {
+      "code": "LFT",
+      "name": "Liver Function Tests",
+      "category": "Chemistry",
+      "defaultUnit": "U/L",
+      "referenceRange": "ALT: 7-56, AST: 10-40, ALP: 44-147",
+      "criticalRange": "ALT >1000"
+    },
+    {
+      "code": "RFT",
+      "name": "Renal Function Tests",
+      "category": "Chemistry",
+      "defaultUnit": null,
+      "referenceRange": "BUN: 7-20 mg/dL, Cr: 0.7-1.3 mg/dL",
+      "criticalRange": "Cr >10.0"
+    },
+    {
+      "code": "GLUCOSE_FASTING",
+      "name": "Fasting Blood Glucose",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "70-100",
+      "criticalRange": "<40 or >500"
+    },
+    {
+      "code": "GLUCOSE_RANDOM",
+      "name": "Random Blood Glucose",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "<140",
+      "criticalRange": "<40 or >500"
+    },
+    {
+      "code": "HBA1C",
+      "name": "Glycated Hemoglobin (HbA1c)",
+      "category": "Chemistry",
+      "defaultUnit": "%",
+      "referenceRange": "<5.7 (normal), 5.7-6.4 (prediabetes), >6.5 (diabetes)",
+      "criticalRange": ">14.0"
+    },
+    {
+      "code": "LIPID_PANEL",
+      "name": "Lipid Panel",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "TC <200, LDL <100, HDL >40, TG <150",
+      "criticalRange": "TG >500"
+    },
+    {
+      "code": "URIC_ACID",
+      "name": "Uric Acid",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "M: 3.4-7.0, F: 2.4-6.0",
+      "criticalRange": ">12.0"
+    },
+    {
+      "code": "ELECTROLYTES",
+      "name": "Serum Electrolytes",
+      "category": "Chemistry",
+      "defaultUnit": "mmol/L",
+      "referenceRange": "Na: 136-145, K: 3.5-5.0, Cl: 98-106",
+      "criticalRange": "K <2.5 or >6.5"
+    },
+    {
+      "code": "HIV_RAPID",
+      "name": "HIV Rapid Test",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Non-reactive",
+      "criticalRange": null
+    },
+    {
+      "code": "HIV_SCREEN",
+      "name": "HIV Screening (ELISA)",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Negative",
+      "criticalRange": null
+    },
+    {
+      "code": "RDT_MALARIA",
+      "name": "Malaria Rapid Diagnostic Test",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Negative",
+      "criticalRange": null
+    },
+    {
+      "code": "MALARIA_SMEAR",
+      "name": "Malaria Blood Smear",
+      "category": "Infectious Disease",
+      "defaultUnit": "parasites/uL",
+      "referenceRange": "No parasites seen",
+      "criticalRange": ">100,000 parasites/uL"
+    },
+    {
+      "code": "TB_GENEXPERT",
+      "name": "TB GeneXpert MTB/RIF",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "MTB not detected",
+      "criticalRange": null
+    },
+    {
+      "code": "TB_SMEAR",
+      "name": "TB Sputum Smear (AFB)",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "No AFB seen",
+      "criticalRange": null
+    },
+    {
+      "code": "SYPHILIS_RPR",
+      "name": "Syphilis RPR/VDRL",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Non-reactive",
+      "criticalRange": null
+    },
+    {
+      "code": "HEP_B",
+      "name": "Hepatitis B Surface Antigen",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Negative",
+      "criticalRange": null
+    },
+    {
+      "code": "HEP_C",
+      "name": "Hepatitis C Antibody",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Negative",
+      "criticalRange": null
+    },
+    {
+      "code": "COVID_RAPID",
+      "name": "COVID-19 Rapid Antigen",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Negative",
+      "criticalRange": null
+    },
+    {
+      "code": "STOOL_OCP",
+      "name": "Stool Ova, Cysts & Parasites",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "No parasites detected",
+      "criticalRange": null
+    },
+    {
+      "code": "URINE_DIPSTICK",
+      "name": "Urine Dipstick",
+      "category": "Urinalysis",
+      "defaultUnit": null,
+      "referenceRange": "Protein neg, Glucose neg, Blood neg, Nitrite neg",
+      "criticalRange": null
+    },
+    {
+      "code": "URINE_MCS",
+      "name": "Urine Microscopy, Culture & Sensitivity",
+      "category": "Urinalysis",
+      "defaultUnit": "CFU/mL",
+      "referenceRange": "<10,000 CFU/mL",
+      "criticalRange": null
+    },
+    {
+      "code": "PREGNANCY_TEST",
+      "name": "Urine Pregnancy Test (hCG)",
+      "category": "Urinalysis",
+      "defaultUnit": null,
+      "referenceRange": "Negative (if not pregnant)",
+      "criticalRange": null
+    },
+    {
+      "code": "CD4_COUNT",
+      "name": "CD4 Count",
+      "category": "Immunology",
+      "defaultUnit": "cells/mm3",
+      "referenceRange": "500-1500",
+      "criticalRange": "<200"
+    },
+    {
+      "code": "VIRAL_LOAD",
+      "name": "HIV Viral Load",
+      "category": "Immunology",
+      "defaultUnit": "copies/mL",
+      "referenceRange": "Undetectable (<50)",
+      "criticalRange": ">100,000"
+    },
+    {
+      "code": "CRP",
+      "name": "C-Reactive Protein",
+      "category": "Immunology",
+      "defaultUnit": "mg/L",
+      "referenceRange": "<10",
+      "criticalRange": ">200"
+    },
+    {
+      "code": "WIDAL",
+      "name": "Widal Test (Typhoid)",
+      "category": "Infectious Disease",
+      "defaultUnit": null,
+      "referenceRange": "Titre <1:80",
+      "criticalRange": null
+    },
+    {
+      "code": "BLOOD_CULTURE",
+      "name": "Blood Culture & Sensitivity",
+      "category": "Microbiology",
+      "defaultUnit": null,
+      "referenceRange": "No growth",
+      "criticalRange": "Positive"
+    },
+    {
+      "code": "WOUND_SWAB",
+      "name": "Wound Swab Culture & Sensitivity",
+      "category": "Microbiology",
+      "defaultUnit": null,
+      "referenceRange": "No pathogenic organisms",
+      "criticalRange": null
+    },
+    {
+      "code": "THYROID_TSH",
+      "name": "Thyroid Stimulating Hormone",
+      "category": "Endocrine",
+      "defaultUnit": "mIU/L",
+      "referenceRange": "0.4-4.0",
+      "criticalRange": "<0.01 or >50"
+    },
+    {
+      "code": "PSA",
+      "name": "Prostate Specific Antigen",
+      "category": "Tumor Markers",
+      "defaultUnit": "ng/mL",
+      "referenceRange": "<4.0",
+      "criticalRange": null
+    },
+    {
+      "code": "PAP_SMEAR",
+      "name": "Pap Smear (Cervical Cytology)",
+      "category": "Cytology",
+      "defaultUnit": null,
+      "referenceRange": "NILM (Negative for Intraepithelial Lesion)",
+      "criticalRange": null
+    },
+    {
+      "code": "COAGULATION",
+      "name": "Coagulation Screen (PT/INR/aPTT)",
+      "category": "Hematology",
+      "defaultUnit": null,
+      "referenceRange": "PT: 11-13.5s, INR: 0.8-1.1, aPTT: 25-35s",
+      "criticalRange": "INR >5.0"
+    },
+    {
+      "code": "CALCIUM",
+      "name": "Serum Calcium",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "8.5-10.5",
+      "criticalRange": "<6.0 or >13.0"
+    },
+    {
+      "code": "PHOSPHATE",
+      "name": "Serum Phosphate",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "2.5-4.5",
+      "criticalRange": "<1.0"
+    },
+    {
+      "code": "AMYLASE",
+      "name": "Serum Amylase",
+      "category": "Chemistry",
+      "defaultUnit": "U/L",
+      "referenceRange": "28-100",
+      "criticalRange": ">500"
+    },
+    {
+      "code": "SICKLE_CELL",
+      "name": "Sickle Cell Screen",
+      "category": "Hematology",
+      "defaultUnit": null,
+      "referenceRange": "Negative (HbAA)",
+      "criticalRange": null
+    },
+    {
+      "code": "G6PD",
+      "name": "G6PD Screen",
+      "category": "Hematology",
+      "defaultUnit": "U/g Hb",
+      "referenceRange": "4.6-13.5",
+      "criticalRange": "<2.0"
+    },
+    {
+      "code": "RHEUMATOID_FACTOR",
+      "name": "Rheumatoid Factor",
+      "category": "Immunology",
+      "defaultUnit": "IU/mL",
+      "referenceRange": "<14",
+      "criticalRange": null
+    },
+    {
+      "code": "ALBUMIN",
+      "name": "Serum Albumin",
+      "category": "Chemistry",
+      "defaultUnit": "g/dL",
+      "referenceRange": "3.5-5.5",
+      "criticalRange": "<1.5"
+    },
+    {
+      "code": "IRON_STUDIES",
+      "name": "Iron Studies (Fe, TIBC, Ferritin)",
+      "category": "Chemistry",
+      "defaultUnit": null,
+      "referenceRange": "Fe: 60-170 ug/dL, Ferritin: 12-150 ng/mL",
+      "criticalRange": null
+    },
+    {
+      "code": "MAGNESIUM",
+      "name": "Serum Magnesium",
+      "category": "Chemistry",
+      "defaultUnit": "mg/dL",
+      "referenceRange": "1.7-2.2",
+      "criticalRange": "<1.0 or >4.0"
+    },
+    {
+      "code": "VIT_D",
+      "name": "Vitamin D (25-OH)",
+      "category": "Chemistry",
+      "defaultUnit": "ng/mL",
+      "referenceRange": "30-100",
+      "criticalRange": "<10"
+    }
+  ]
+}

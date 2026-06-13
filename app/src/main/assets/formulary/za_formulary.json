@@ -1,0 +1,8032 @@
+{
+  "version": "2026.1",
+  "country": "ZA",
+  "source": "Based on South African Standard Treatment Guidelines and Essential Medicines List (STG/EML), National Department of Health",
+  "drugs": [
+    {
+      "code": "0001",
+      "name": "Amoxicillin",
+      "aliases": [
+        "amoxil",
+        "amoxicillin",
+        "amoxycillin",
+        "amox",
+        "moxypen"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "125mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0002",
+      "name": "Amoxicillin-Clavulanate",
+      "aliases": [
+        "augmentin",
+        "co-amoxiclav",
+        "amoxiclav",
+        "amoxyclav"
+      ],
+      "strengths": [
+        "375mg",
+        "625mg",
+        "1g",
+        "228mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0003",
+      "name": "Ampicillin",
+      "aliases": [
+        "ampicillin",
+        "penbritin"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0004",
+      "name": "Ampicillin Injectable",
+      "aliases": [
+        "ampicillin iv",
+        "ampicillin injection"
+      ],
+      "strengths": [
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0005",
+      "name": "Flucloxacillin",
+      "aliases": [
+        "flucloxacillin",
+        "floxapen",
+        "fluclox"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0006",
+      "name": "Phenoxymethylpenicillin",
+      "aliases": [
+        "penicillin v",
+        "pen v",
+        "pen vk"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0007",
+      "name": "Benzylpenicillin",
+      "aliases": [
+        "penicillin g",
+        "pen g",
+        "crystapen"
+      ],
+      "strengths": [
+        "1MU",
+        "5MU"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0008",
+      "name": "Benzathine Penicillin",
+      "aliases": [
+        "bicillin",
+        "penilente"
+      ],
+      "strengths": [
+        "1.2MU",
+        "2.4MU"
+      ],
+      "defaultRoute": "IM",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0009",
+      "name": "Cloxacillin",
+      "aliases": [
+        "cloxacillin",
+        "orbenin"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0010",
+      "name": "Piperacillin-Tazobactam",
+      "aliases": [
+        "tazocin",
+        "piptaz",
+        "pip-taz"
+      ],
+      "strengths": [
+        "4.5g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0011",
+      "name": "Cephalexin",
+      "aliases": [
+        "cephalexin",
+        "cefalexin",
+        "keflex",
+        "cefasyn"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0012",
+      "name": "Cefuroxime",
+      "aliases": [
+        "cefuroxime",
+        "zinacef",
+        "zinnat"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "750mg",
+        "1.5g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0013",
+      "name": "Ceftriaxone",
+      "aliases": [
+        "ceftriaxone",
+        "rocephin",
+        "rocefin"
+      ],
+      "strengths": [
+        "250mg",
+        "1g",
+        "2g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0014",
+      "name": "Cefixime",
+      "aliases": [
+        "cefixime",
+        "suprax"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0015",
+      "name": "Cefazolin",
+      "aliases": [
+        "cefazolin",
+        "kefzol"
+      ],
+      "strengths": [
+        "1g",
+        "2g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0016",
+      "name": "Cefotaxime",
+      "aliases": [
+        "cefotaxime",
+        "claforan"
+      ],
+      "strengths": [
+        "1g",
+        "2g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0017",
+      "name": "Ceftazidime",
+      "aliases": [
+        "ceftazidime",
+        "fortum"
+      ],
+      "strengths": [
+        "1g",
+        "2g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0018",
+      "name": "Cefepime",
+      "aliases": [
+        "cefepime",
+        "maxipime"
+      ],
+      "strengths": [
+        "1g",
+        "2g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0019",
+      "name": "Cefpodoxime",
+      "aliases": [
+        "cefpodoxime",
+        "orelox"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0020",
+      "name": "Ciprofloxacin",
+      "aliases": [
+        "ciprofloxacin",
+        "cipro",
+        "ciproxin"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "750mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0021",
+      "name": "Ciprofloxacin Injectable",
+      "aliases": [
+        "cipro iv",
+        "ciprofloxacin iv"
+      ],
+      "strengths": [
+        "200mg/100ml",
+        "400mg/200ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0022",
+      "name": "Levofloxacin",
+      "aliases": [
+        "levofloxacin",
+        "tavanic",
+        "levaquin"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "750mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0023",
+      "name": "Moxifloxacin",
+      "aliases": [
+        "moxifloxacin",
+        "avelox",
+        "moxiclav"
+      ],
+      "strengths": [
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0024",
+      "name": "Norfloxacin",
+      "aliases": [
+        "norfloxacin",
+        "noroxin"
+      ],
+      "strengths": [
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0025",
+      "name": "Ofloxacin",
+      "aliases": [
+        "ofloxacin",
+        "tarivid"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0026",
+      "name": "Azithromycin",
+      "aliases": [
+        "azithromycin",
+        "zithromax",
+        "azithro",
+        "zmax"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "200mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0027",
+      "name": "Erythromycin",
+      "aliases": [
+        "erythromycin",
+        "eryc",
+        "erythrocin",
+        "erycinum"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "125mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0028",
+      "name": "Clarithromycin",
+      "aliases": [
+        "clarithromycin",
+        "klacid",
+        "biaxin"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0029",
+      "name": "Doxycycline",
+      "aliases": [
+        "doxycycline",
+        "vibramycin",
+        "doxymycin",
+        "doxy"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0030",
+      "name": "Tetracycline",
+      "aliases": [
+        "tetracycline",
+        "achromycin"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0031",
+      "name": "Minocycline",
+      "aliases": [
+        "minocycline",
+        "minocin"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0032",
+      "name": "Gentamicin",
+      "aliases": [
+        "gentamicin",
+        "garamycin",
+        "genticin"
+      ],
+      "strengths": [
+        "80mg/2ml",
+        "40mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0033",
+      "name": "Amikacin",
+      "aliases": [
+        "amikacin",
+        "amikin"
+      ],
+      "strengths": [
+        "250mg/ml",
+        "500mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0034",
+      "name": "Tobramycin",
+      "aliases": [
+        "tobramycin",
+        "nebcin"
+      ],
+      "strengths": [
+        "80mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0035",
+      "name": "Metronidazole",
+      "aliases": [
+        "metronidazole",
+        "flagyl",
+        "metrogel",
+        "metro"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg",
+        "500mg/100ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0036",
+      "name": "Metronidazole Injectable",
+      "aliases": [
+        "flagyl iv",
+        "metronidazole iv"
+      ],
+      "strengths": [
+        "500mg/100ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0037",
+      "name": "Cotrimoxazole",
+      "aliases": [
+        "cotrimoxazole",
+        "bactrim",
+        "septran",
+        "tmp-smx",
+        "co-trimoxazole"
+      ],
+      "strengths": [
+        "480mg",
+        "960mg",
+        "240mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0038",
+      "name": "Clindamycin",
+      "aliases": [
+        "clindamycin",
+        "dalacin",
+        "cleocin"
+      ],
+      "strengths": [
+        "150mg",
+        "300mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0039",
+      "name": "Vancomycin",
+      "aliases": [
+        "vancomycin",
+        "vancocin"
+      ],
+      "strengths": [
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0040",
+      "name": "Linezolid",
+      "aliases": [
+        "linezolid",
+        "zyvox",
+        "zyvoxid"
+      ],
+      "strengths": [
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0041",
+      "name": "Chloramphenicol",
+      "aliases": [
+        "chloramphenicol",
+        "chloromycetin"
+      ],
+      "strengths": [
+        "250mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0042",
+      "name": "Nitrofurantoin",
+      "aliases": [
+        "nitrofurantoin",
+        "macrodantin",
+        "macrobid"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0043",
+      "name": "Fosfomycin",
+      "aliases": [
+        "fosfomycin",
+        "monurol"
+      ],
+      "strengths": [
+        "3g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0044",
+      "name": "Colistin",
+      "aliases": [
+        "colistin",
+        "colistimethate",
+        "colomycin"
+      ],
+      "strengths": [
+        "1MU",
+        "2MU"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0045",
+      "name": "Meropenem",
+      "aliases": [
+        "meropenem",
+        "meronem"
+      ],
+      "strengths": [
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0046",
+      "name": "Imipenem-Cilastatin",
+      "aliases": [
+        "imipenem",
+        "tienam"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0047",
+      "name": "Ertapenem",
+      "aliases": [
+        "ertapenem",
+        "invanz"
+      ],
+      "strengths": [
+        "1g"
+      ],
+      "defaultRoute": "IV",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0048",
+      "name": "Trimethoprim",
+      "aliases": [
+        "trimethoprim",
+        "monotrim"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0049",
+      "name": "Nalidixic Acid",
+      "aliases": [
+        "nalidixic acid",
+        "negram"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0050",
+      "name": "Fusidic Acid Oral",
+      "aliases": [
+        "fusidic acid",
+        "fucidin"
+      ],
+      "strengths": [
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0051",
+      "name": "Artemether-Lumefantrine",
+      "aliases": [
+        "coartem",
+        "artemether-lumefantrine",
+        "al",
+        "riamet"
+      ],
+      "strengths": [
+        "20mg/120mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0052",
+      "name": "Quinine",
+      "aliases": [
+        "quinine",
+        "qualaquin"
+      ],
+      "strengths": [
+        "300mg",
+        "600mg/2ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0053",
+      "name": "Quinine Injectable",
+      "aliases": [
+        "quinine iv",
+        "quinine injection"
+      ],
+      "strengths": [
+        "600mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0054",
+      "name": "Chloroquine",
+      "aliases": [
+        "chloroquine",
+        "plaquenil",
+        "nivaquine"
+      ],
+      "strengths": [
+        "150mg",
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0055",
+      "name": "Mefloquine",
+      "aliases": [
+        "mefloquine",
+        "lariam"
+      ],
+      "strengths": [
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0056",
+      "name": "Atovaquone-Proguanil",
+      "aliases": [
+        "malarone",
+        "atovaquone-proguanil"
+      ],
+      "strengths": [
+        "250mg/100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0057",
+      "name": "Primaquine",
+      "aliases": [
+        "primaquine"
+      ],
+      "strengths": [
+        "15mg",
+        "7.5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0058",
+      "name": "Artesunate",
+      "aliases": [
+        "artesunate"
+      ],
+      "strengths": [
+        "60mg",
+        "120mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0059",
+      "name": "Sulfadoxine-Pyrimethamine",
+      "aliases": [
+        "fansidar",
+        "sp"
+      ],
+      "strengths": [
+        "500mg/25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0060",
+      "name": "Proguanil",
+      "aliases": [
+        "proguanil",
+        "paludrine"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimalarial",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0061",
+      "name": "Tenofovir Disoproxil",
+      "aliases": [
+        "tenofovir",
+        "tdf",
+        "viread"
+      ],
+      "strengths": [
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0062",
+      "name": "Lamivudine",
+      "aliases": [
+        "lamivudine",
+        "3tc",
+        "epivir"
+      ],
+      "strengths": [
+        "150mg",
+        "300mg",
+        "10mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0063",
+      "name": "Emtricitabine",
+      "aliases": [
+        "emtricitabine",
+        "ftc",
+        "emtriva"
+      ],
+      "strengths": [
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0064",
+      "name": "Dolutegravir",
+      "aliases": [
+        "dolutegravir",
+        "dtg",
+        "tivicay"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0065",
+      "name": "Efavirenz",
+      "aliases": [
+        "efavirenz",
+        "efv",
+        "stocrin",
+        "sustiva"
+      ],
+      "strengths": [
+        "600mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0066",
+      "name": "TDF/3TC/DTG",
+      "aliases": [
+        "tld",
+        "tenofovir-lamivudine-dolutegravir"
+      ],
+      "strengths": [
+        "300mg/300mg/50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0067",
+      "name": "TDF/FTC/EFV",
+      "aliases": [
+        "atripla",
+        "tef",
+        "tenofovir-emtricitabine-efavirenz"
+      ],
+      "strengths": [
+        "300mg/200mg/600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0068",
+      "name": "TDF/3TC",
+      "aliases": [
+        "tenofovir-lamivudine",
+        "tl"
+      ],
+      "strengths": [
+        "300mg/300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0069",
+      "name": "TDF/FTC",
+      "aliases": [
+        "truvada",
+        "tenofovir-emtricitabine"
+      ],
+      "strengths": [
+        "300mg/200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0070",
+      "name": "Abacavir",
+      "aliases": [
+        "abacavir",
+        "abc",
+        "ziagen"
+      ],
+      "strengths": [
+        "300mg",
+        "600mg",
+        "20mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0071",
+      "name": "ABC/3TC",
+      "aliases": [
+        "kivexa",
+        "abacavir-lamivudine"
+      ],
+      "strengths": [
+        "600mg/300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0072",
+      "name": "Zidovudine",
+      "aliases": [
+        "zidovudine",
+        "azt",
+        "retrovir"
+      ],
+      "strengths": [
+        "100mg",
+        "300mg",
+        "10mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0073",
+      "name": "AZT/3TC",
+      "aliases": [
+        "combivir",
+        "zidovudine-lamivudine"
+      ],
+      "strengths": [
+        "300mg/150mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0074",
+      "name": "Nevirapine",
+      "aliases": [
+        "nevirapine",
+        "nvp",
+        "viramune"
+      ],
+      "strengths": [
+        "200mg",
+        "10mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0075",
+      "name": "Lopinavir-Ritonavir",
+      "aliases": [
+        "lopinavir-ritonavir",
+        "lpv/r",
+        "aluvia",
+        "kaletra"
+      ],
+      "strengths": [
+        "200mg/50mg",
+        "80mg/20mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0076",
+      "name": "Atazanavir",
+      "aliases": [
+        "atazanavir",
+        "atv",
+        "reyataz"
+      ],
+      "strengths": [
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0077",
+      "name": "Atazanavir-Ritonavir",
+      "aliases": [
+        "atazanavir/ritonavir",
+        "atv/r"
+      ],
+      "strengths": [
+        "300mg/100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0078",
+      "name": "Ritonavir",
+      "aliases": [
+        "ritonavir",
+        "rtv",
+        "norvir"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0079",
+      "name": "Darunavir",
+      "aliases": [
+        "darunavir",
+        "drv",
+        "prezista"
+      ],
+      "strengths": [
+        "400mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0080",
+      "name": "Raltegravir",
+      "aliases": [
+        "raltegravir",
+        "ral",
+        "isentress"
+      ],
+      "strengths": [
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0081",
+      "name": "Etravirine",
+      "aliases": [
+        "etravirine",
+        "etv",
+        "intelence"
+      ],
+      "strengths": [
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0082",
+      "name": "Tenofovir Alafenamide",
+      "aliases": [
+        "tenofovir alafenamide",
+        "taf"
+      ],
+      "strengths": [
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiretroviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0083",
+      "name": "Rifampicin",
+      "aliases": [
+        "rifampicin",
+        "rifampin",
+        "rimactane",
+        "rifadin"
+      ],
+      "strengths": [
+        "150mg",
+        "300mg",
+        "450mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0084",
+      "name": "Isoniazid",
+      "aliases": [
+        "isoniazid",
+        "inh",
+        "rimifon"
+      ],
+      "strengths": [
+        "100mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0085",
+      "name": "Pyrazinamide",
+      "aliases": [
+        "pyrazinamide",
+        "pza",
+        "tebrazid"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0086",
+      "name": "Ethambutol",
+      "aliases": [
+        "ethambutol",
+        "emb",
+        "myambutol"
+      ],
+      "strengths": [
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0087",
+      "name": "RHZE Fixed-Dose",
+      "aliases": [
+        "rhze",
+        "rifafour",
+        "4fdc"
+      ],
+      "strengths": [
+        "150mg/75mg/400mg/275mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0088",
+      "name": "RH Fixed-Dose",
+      "aliases": [
+        "rh",
+        "rifinah",
+        "2fdc"
+      ],
+      "strengths": [
+        "150mg/75mg",
+        "300mg/150mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0089",
+      "name": "Streptomycin",
+      "aliases": [
+        "streptomycin"
+      ],
+      "strengths": [
+        "1g"
+      ],
+      "defaultRoute": "IM",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0090",
+      "name": "Bedaquiline",
+      "aliases": [
+        "bedaquiline",
+        "sirturo"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0091",
+      "name": "Delamanid",
+      "aliases": [
+        "delamanid",
+        "deltyba"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0092",
+      "name": "Pretomanid",
+      "aliases": [
+        "pretomanid"
+      ],
+      "strengths": [
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0093",
+      "name": "Ethionamide",
+      "aliases": [
+        "ethionamide",
+        "trecator"
+      ],
+      "strengths": [
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0094",
+      "name": "Cycloserine",
+      "aliases": [
+        "cycloserine",
+        "seromycin"
+      ],
+      "strengths": [
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0095",
+      "name": "Para-aminosalicylic Acid",
+      "aliases": [
+        "pas",
+        "paser",
+        "granupas"
+      ],
+      "strengths": [
+        "4g"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0096",
+      "name": "Rifabutin",
+      "aliases": [
+        "rifabutin",
+        "mycobutin"
+      ],
+      "strengths": [
+        "150mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-TB",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0097",
+      "name": "Paracetamol",
+      "aliases": [
+        "paracetamol",
+        "panado",
+        "acetaminophen",
+        "tylenol",
+        "para"
+      ],
+      "strengths": [
+        "500mg",
+        "1g",
+        "120mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "analgesic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0098",
+      "name": "Paracetamol Suppository",
+      "aliases": [
+        "panado suppository",
+        "paracetamol rectal"
+      ],
+      "strengths": [
+        "125mg",
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PR",
+      "category": "analgesic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0099",
+      "name": "Ibuprofen",
+      "aliases": [
+        "ibuprofen",
+        "brufen",
+        "nurofen",
+        "ibupain"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0100",
+      "name": "Diclofenac",
+      "aliases": [
+        "diclofenac",
+        "voltaren",
+        "cataflam",
+        "voltarol"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "75mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0101",
+      "name": "Diclofenac Injectable",
+      "aliases": [
+        "voltaren injection",
+        "diclofenac im"
+      ],
+      "strengths": [
+        "75mg/3ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0102",
+      "name": "Diclofenac Topical",
+      "aliases": [
+        "voltaren gel",
+        "voltaren emulgel",
+        "diclofenac gel"
+      ],
+      "strengths": [
+        "1%",
+        "2%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "NSAID",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0103",
+      "name": "Naproxen",
+      "aliases": [
+        "naproxen",
+        "naprosyn",
+        "aleve",
+        "synflex"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0104",
+      "name": "Indomethacin",
+      "aliases": [
+        "indomethacin",
+        "indocid",
+        "indometacin"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0105",
+      "name": "Celecoxib",
+      "aliases": [
+        "celecoxib",
+        "celebrex"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0106",
+      "name": "Meloxicam",
+      "aliases": [
+        "meloxicam",
+        "mobic"
+      ],
+      "strengths": [
+        "7.5mg",
+        "15mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0107",
+      "name": "Aspirin",
+      "aliases": [
+        "aspirin",
+        "disprin",
+        "ecotrin",
+        "acetylsalicylic acid",
+        "asa"
+      ],
+      "strengths": [
+        "75mg",
+        "100mg",
+        "300mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "analgesic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0108",
+      "name": "Piroxicam",
+      "aliases": [
+        "piroxicam",
+        "feldene"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0109",
+      "name": "Mefenamic Acid",
+      "aliases": [
+        "mefenamic acid",
+        "ponstan",
+        "ponstyl"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "NSAID",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0110",
+      "name": "Tramadol",
+      "aliases": [
+        "tramadol",
+        "tramal",
+        "ultram"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0111",
+      "name": "Tramadol Injectable",
+      "aliases": [
+        "tramadol injection",
+        "tramal injection"
+      ],
+      "strengths": [
+        "100mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "opioid analgesic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0112",
+      "name": "Morphine Oral",
+      "aliases": [
+        "morphine",
+        "mst",
+        "oramorph"
+      ],
+      "strengths": [
+        "10mg",
+        "15mg",
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S7"
+    },
+    {
+      "code": "0113",
+      "name": "Morphine Injectable",
+      "aliases": [
+        "morphine injection",
+        "morphine sulfate"
+      ],
+      "strengths": [
+        "10mg/ml",
+        "15mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "opioid analgesic",
+      "scheduleClass": "S7"
+    },
+    {
+      "code": "0114",
+      "name": "Codeine",
+      "aliases": [
+        "codeine",
+        "codeine phosphate"
+      ],
+      "strengths": [
+        "15mg",
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0115",
+      "name": "Paracetamol-Codeine",
+      "aliases": [
+        "paracod",
+        "co-codamol",
+        "panado-codeine",
+        "stopayne"
+      ],
+      "strengths": [
+        "500mg/8mg",
+        "500mg/30mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0116",
+      "name": "Pethidine",
+      "aliases": [
+        "pethidine",
+        "meperidine",
+        "demerol"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg/2ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "opioid analgesic",
+      "scheduleClass": "S7"
+    },
+    {
+      "code": "0117",
+      "name": "Fentanyl Patch",
+      "aliases": [
+        "fentanyl",
+        "durogesic",
+        "fentanyl patch"
+      ],
+      "strengths": [
+        "12mcg/hr",
+        "25mcg/hr",
+        "50mcg/hr",
+        "75mcg/hr",
+        "100mcg/hr"
+      ],
+      "defaultRoute": "TD",
+      "category": "opioid analgesic",
+      "scheduleClass": "S7"
+    },
+    {
+      "code": "0118",
+      "name": "Fentanyl Injectable",
+      "aliases": [
+        "fentanyl injection",
+        "sublimaze"
+      ],
+      "strengths": [
+        "50mcg/ml",
+        "100mcg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "opioid analgesic",
+      "scheduleClass": "S7"
+    },
+    {
+      "code": "0119",
+      "name": "Oxycodone",
+      "aliases": [
+        "oxycodone",
+        "oxycontin",
+        "oxynorm"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S7"
+    },
+    {
+      "code": "0120",
+      "name": "Dihydrocodeine",
+      "aliases": [
+        "dihydrocodeine",
+        "dhc continus"
+      ],
+      "strengths": [
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0121",
+      "name": "Tilidine",
+      "aliases": [
+        "tilidine",
+        "valoron"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "opioid analgesic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0122",
+      "name": "Naloxone",
+      "aliases": [
+        "naloxone",
+        "narcan"
+      ],
+      "strengths": [
+        "0.4mg/ml",
+        "1mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "opioid antagonist",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0123",
+      "name": "Amlodipine",
+      "aliases": [
+        "amlodipine",
+        "norvasc",
+        "amloc",
+        "asomex"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0124",
+      "name": "Nifedipine",
+      "aliases": [
+        "nifedipine",
+        "adalat",
+        "procardia"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg",
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0125",
+      "name": "Felodipine",
+      "aliases": [
+        "felodipine",
+        "plendil"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0126",
+      "name": "Enalapril",
+      "aliases": [
+        "enalapril",
+        "renitec",
+        "enap",
+        "vasotec"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0127",
+      "name": "Perindopril",
+      "aliases": [
+        "perindopril",
+        "coversyl",
+        "prexum"
+      ],
+      "strengths": [
+        "4mg",
+        "8mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0128",
+      "name": "Ramipril",
+      "aliases": [
+        "ramipril",
+        "tritace",
+        "altace"
+      ],
+      "strengths": [
+        "2.5mg",
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0129",
+      "name": "Lisinopril",
+      "aliases": [
+        "lisinopril",
+        "zestril",
+        "prinivil"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0130",
+      "name": "Captopril",
+      "aliases": [
+        "captopril",
+        "capoten"
+      ],
+      "strengths": [
+        "12.5mg",
+        "25mg",
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0131",
+      "name": "Losartan",
+      "aliases": [
+        "losartan",
+        "cozaar",
+        "lozar"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0132",
+      "name": "Valsartan",
+      "aliases": [
+        "valsartan",
+        "diovan",
+        "tareg"
+      ],
+      "strengths": [
+        "80mg",
+        "160mg",
+        "320mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0133",
+      "name": "Irbesartan",
+      "aliases": [
+        "irbesartan",
+        "aprovel",
+        "avapro"
+      ],
+      "strengths": [
+        "150mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0134",
+      "name": "Telmisartan",
+      "aliases": [
+        "telmisartan",
+        "micardis",
+        "pritor"
+      ],
+      "strengths": [
+        "40mg",
+        "80mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0135",
+      "name": "Candesartan",
+      "aliases": [
+        "candesartan",
+        "atacand",
+        "blopress"
+      ],
+      "strengths": [
+        "8mg",
+        "16mg",
+        "32mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0136",
+      "name": "Hydrochlorothiazide",
+      "aliases": [
+        "hydrochlorothiazide",
+        "hctz",
+        "ridaq",
+        "esidrix"
+      ],
+      "strengths": [
+        "12.5mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0137",
+      "name": "Indapamide",
+      "aliases": [
+        "indapamide",
+        "natrilix",
+        "lozide"
+      ],
+      "strengths": [
+        "1.5mg",
+        "2.5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0138",
+      "name": "Furosemide",
+      "aliases": [
+        "furosemide",
+        "lasix",
+        "frusemide",
+        "lasikal"
+      ],
+      "strengths": [
+        "40mg",
+        "80mg",
+        "20mg/2ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0139",
+      "name": "Furosemide Injectable",
+      "aliases": [
+        "lasix iv",
+        "furosemide injection"
+      ],
+      "strengths": [
+        "20mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0140",
+      "name": "Spironolactone",
+      "aliases": [
+        "spironolactone",
+        "aldactone"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0141",
+      "name": "Chlorthalidone",
+      "aliases": [
+        "chlorthalidone",
+        "hygroton"
+      ],
+      "strengths": [
+        "12.5mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0142",
+      "name": "Amiloride",
+      "aliases": [
+        "amiloride",
+        "midamor"
+      ],
+      "strengths": [
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0143",
+      "name": "Mannitol",
+      "aliases": [
+        "mannitol"
+      ],
+      "strengths": [
+        "20%"
+      ],
+      "defaultRoute": "IV",
+      "category": "diuretic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0144",
+      "name": "Atenolol",
+      "aliases": [
+        "atenolol",
+        "tenormin",
+        "atenol"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "beta-blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0145",
+      "name": "Bisoprolol",
+      "aliases": [
+        "bisoprolol",
+        "concor",
+        "cardicor"
+      ],
+      "strengths": [
+        "2.5mg",
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "beta-blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0146",
+      "name": "Carvedilol",
+      "aliases": [
+        "carvedilol",
+        "coreg",
+        "dilatrend"
+      ],
+      "strengths": [
+        "6.25mg",
+        "12.5mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "beta-blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0147",
+      "name": "Metoprolol",
+      "aliases": [
+        "metoprolol",
+        "lopressor",
+        "betaloc"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "beta-blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0148",
+      "name": "Propranolol",
+      "aliases": [
+        "propranolol",
+        "inderal"
+      ],
+      "strengths": [
+        "10mg",
+        "40mg",
+        "80mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "beta-blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0149",
+      "name": "Prazosin",
+      "aliases": [
+        "prazosin",
+        "minipress"
+      ],
+      "strengths": [
+        "1mg",
+        "2mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0150",
+      "name": "Doxazosin",
+      "aliases": [
+        "doxazosin",
+        "cardura"
+      ],
+      "strengths": [
+        "1mg",
+        "2mg",
+        "4mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0151",
+      "name": "Methyldopa",
+      "aliases": [
+        "methyldopa",
+        "aldomet"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0152",
+      "name": "Hydralazine",
+      "aliases": [
+        "hydralazine",
+        "apresoline"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "20mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0153",
+      "name": "Hydralazine Injectable",
+      "aliases": [
+        "hydralazine injection",
+        "apresoline iv"
+      ],
+      "strengths": [
+        "20mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antihypertensive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0154",
+      "name": "Clonidine",
+      "aliases": [
+        "clonidine",
+        "catapres",
+        "dixarit"
+      ],
+      "strengths": [
+        "0.1mg",
+        "0.15mg",
+        "0.2mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0155",
+      "name": "Metformin",
+      "aliases": [
+        "metformin",
+        "glucophage",
+        "metfin",
+        "glycomet"
+      ],
+      "strengths": [
+        "500mg",
+        "850mg",
+        "1000mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0156",
+      "name": "Glibenclamide",
+      "aliases": [
+        "glibenclamide",
+        "daonil",
+        "glyburide",
+        "euglucon"
+      ],
+      "strengths": [
+        "2.5mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0157",
+      "name": "Gliclazide",
+      "aliases": [
+        "gliclazide",
+        "diamicron",
+        "diamicron mr"
+      ],
+      "strengths": [
+        "40mg",
+        "80mg",
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0158",
+      "name": "Glimepiride",
+      "aliases": [
+        "glimepiride",
+        "amaryl"
+      ],
+      "strengths": [
+        "1mg",
+        "2mg",
+        "3mg",
+        "4mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0159",
+      "name": "Pioglitazone",
+      "aliases": [
+        "pioglitazone",
+        "actos"
+      ],
+      "strengths": [
+        "15mg",
+        "30mg",
+        "45mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0160",
+      "name": "Sitagliptin",
+      "aliases": [
+        "sitagliptin",
+        "januvia"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0161",
+      "name": "Vildagliptin",
+      "aliases": [
+        "vildagliptin",
+        "galvus"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0162",
+      "name": "Empagliflozin",
+      "aliases": [
+        "empagliflozin",
+        "jardiance"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0163",
+      "name": "Dapagliflozin",
+      "aliases": [
+        "dapagliflozin",
+        "forxiga"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0164",
+      "name": "Metformin-Sitagliptin",
+      "aliases": [
+        "janumet",
+        "sitagliptin-metformin"
+      ],
+      "strengths": [
+        "50mg/500mg",
+        "50mg/1000mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0165",
+      "name": "Insulin Regular",
+      "aliases": [
+        "actrapid",
+        "humulin r",
+        "regular insulin",
+        "soluble insulin"
+      ],
+      "strengths": [
+        "100IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0166",
+      "name": "Insulin NPH",
+      "aliases": [
+        "protaphane",
+        "humulin n",
+        "isophane insulin",
+        "nph insulin"
+      ],
+      "strengths": [
+        "100IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0167",
+      "name": "Insulin Glargine",
+      "aliases": [
+        "lantus",
+        "basaglar",
+        "toujeo",
+        "insulin glargine"
+      ],
+      "strengths": [
+        "100IU/ml",
+        "300IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0168",
+      "name": "Insulin Aspart",
+      "aliases": [
+        "novorapid",
+        "fiasp",
+        "insulin aspart"
+      ],
+      "strengths": [
+        "100IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0169",
+      "name": "Insulin Lispro",
+      "aliases": [
+        "humalog",
+        "insulin lispro"
+      ],
+      "strengths": [
+        "100IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0170",
+      "name": "Insulin Premixed 30/70",
+      "aliases": [
+        "novomix 30",
+        "humulin 30/70",
+        "mixtard"
+      ],
+      "strengths": [
+        "100IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0171",
+      "name": "Insulin Degludec",
+      "aliases": [
+        "tresiba",
+        "insulin degludec"
+      ],
+      "strengths": [
+        "100IU/ml",
+        "200IU/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0172",
+      "name": "Liraglutide",
+      "aliases": [
+        "victoza",
+        "saxenda",
+        "liraglutide"
+      ],
+      "strengths": [
+        "6mg/ml"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0173",
+      "name": "Semaglutide Injectable",
+      "aliases": [
+        "ozempic",
+        "semaglutide"
+      ],
+      "strengths": [
+        "0.25mg",
+        "0.5mg",
+        "1mg"
+      ],
+      "defaultRoute": "SC",
+      "category": "antidiabetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0174",
+      "name": "Glucose",
+      "aliases": [
+        "glucose",
+        "dextrose",
+        "glucose 50%"
+      ],
+      "strengths": [
+        "50%"
+      ],
+      "defaultRoute": "IV",
+      "category": "antidiabetic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0175",
+      "name": "Simvastatin",
+      "aliases": [
+        "simvastatin",
+        "zocor",
+        "simvacor"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "statin",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0176",
+      "name": "Atorvastatin",
+      "aliases": [
+        "atorvastatin",
+        "lipitor",
+        "aspavor"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg",
+        "40mg",
+        "80mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "statin",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0177",
+      "name": "Rosuvastatin",
+      "aliases": [
+        "rosuvastatin",
+        "crestor"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "statin",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0178",
+      "name": "Pravastatin",
+      "aliases": [
+        "pravastatin",
+        "pravachol"
+      ],
+      "strengths": [
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "statin",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0179",
+      "name": "Ezetimibe",
+      "aliases": [
+        "ezetimibe",
+        "ezetrol",
+        "zetia"
+      ],
+      "strengths": [
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "lipid-lowering",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0180",
+      "name": "Fenofibrate",
+      "aliases": [
+        "fenofibrate",
+        "lipanthyl",
+        "tricor"
+      ],
+      "strengths": [
+        "145mg",
+        "160mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "lipid-lowering",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0181",
+      "name": "Gemfibrozil",
+      "aliases": [
+        "gemfibrozil",
+        "lopid"
+      ],
+      "strengths": [
+        "300mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "lipid-lowering",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0182",
+      "name": "Warfarin",
+      "aliases": [
+        "warfarin",
+        "coumadin",
+        "marevan"
+      ],
+      "strengths": [
+        "1mg",
+        "2mg",
+        "3mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticoagulant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0183",
+      "name": "Enoxaparin",
+      "aliases": [
+        "enoxaparin",
+        "clexane",
+        "lovenox"
+      ],
+      "strengths": [
+        "20mg",
+        "40mg",
+        "60mg",
+        "80mg",
+        "100mg"
+      ],
+      "defaultRoute": "SC",
+      "category": "anticoagulant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0184",
+      "name": "Heparin",
+      "aliases": [
+        "heparin",
+        "hep-lock",
+        "heparin sodium"
+      ],
+      "strengths": [
+        "5000IU/ml",
+        "25000IU/5ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anticoagulant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0185",
+      "name": "Rivaroxaban",
+      "aliases": [
+        "rivaroxaban",
+        "xarelto"
+      ],
+      "strengths": [
+        "10mg",
+        "15mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticoagulant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0186",
+      "name": "Apixaban",
+      "aliases": [
+        "apixaban",
+        "eliquis"
+      ],
+      "strengths": [
+        "2.5mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticoagulant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0187",
+      "name": "Clopidogrel",
+      "aliases": [
+        "clopidogrel",
+        "plavix",
+        "clopilet"
+      ],
+      "strengths": [
+        "75mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiplatelet",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0188",
+      "name": "Dipyridamole",
+      "aliases": [
+        "dipyridamole",
+        "persantin"
+      ],
+      "strengths": [
+        "75mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiplatelet",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0189",
+      "name": "Ticagrelor",
+      "aliases": [
+        "ticagrelor",
+        "brilinta"
+      ],
+      "strengths": [
+        "60mg",
+        "90mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiplatelet",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0190",
+      "name": "Digoxin",
+      "aliases": [
+        "digoxin",
+        "lanoxin"
+      ],
+      "strengths": [
+        "0.0625mg",
+        "0.125mg",
+        "0.25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "cardiac glycoside",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0191",
+      "name": "Amiodarone",
+      "aliases": [
+        "amiodarone",
+        "cordarone",
+        "pacerone"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg",
+        "150mg/3ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiarrhythmic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0192",
+      "name": "Amiodarone Injectable",
+      "aliases": [
+        "amiodarone iv",
+        "cordarone iv"
+      ],
+      "strengths": [
+        "150mg/3ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antiarrhythmic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0193",
+      "name": "Diltiazem",
+      "aliases": [
+        "diltiazem",
+        "cardizem",
+        "tildiem"
+      ],
+      "strengths": [
+        "60mg",
+        "90mg",
+        "120mg",
+        "180mg",
+        "240mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "calcium channel blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0194",
+      "name": "Verapamil",
+      "aliases": [
+        "verapamil",
+        "isoptin",
+        "calan"
+      ],
+      "strengths": [
+        "40mg",
+        "80mg",
+        "120mg",
+        "240mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "calcium channel blocker",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0195",
+      "name": "Isosorbide Dinitrate",
+      "aliases": [
+        "isosorbide dinitrate",
+        "isordil",
+        "isdn"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "nitrate",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0196",
+      "name": "Isosorbide Mononitrate",
+      "aliases": [
+        "isosorbide mononitrate",
+        "imdur",
+        "ismn"
+      ],
+      "strengths": [
+        "20mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "nitrate",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0197",
+      "name": "Glyceryl Trinitrate",
+      "aliases": [
+        "gtn",
+        "nitroglycerin",
+        "nitrolingual",
+        "nitrostat"
+      ],
+      "strengths": [
+        "0.5mg",
+        "5mg/ml"
+      ],
+      "defaultRoute": "SL",
+      "category": "nitrate",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0198",
+      "name": "GTN Patch",
+      "aliases": [
+        "nitro-dur",
+        "gtn patch",
+        "nitroglycerin patch"
+      ],
+      "strengths": [
+        "5mg/24hr",
+        "10mg/24hr"
+      ],
+      "defaultRoute": "TD",
+      "category": "nitrate",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0199",
+      "name": "Streptokinase",
+      "aliases": [
+        "streptokinase",
+        "streptase"
+      ],
+      "strengths": [
+        "1.5MU"
+      ],
+      "defaultRoute": "IV",
+      "category": "thrombolytic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0200",
+      "name": "Dobutamine",
+      "aliases": [
+        "dobutamine",
+        "dobutrex"
+      ],
+      "strengths": [
+        "250mg/20ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "inotrope",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0201",
+      "name": "Dopamine",
+      "aliases": [
+        "dopamine",
+        "intropin"
+      ],
+      "strengths": [
+        "200mg/5ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "inotrope",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0202",
+      "name": "Salbutamol Inhaler",
+      "aliases": [
+        "salbutamol",
+        "ventolin",
+        "asthavent",
+        "albuterol"
+      ],
+      "strengths": [
+        "100mcg/puff"
+      ],
+      "defaultRoute": "INH",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0203",
+      "name": "Salbutamol Nebuliser",
+      "aliases": [
+        "salbutamol neb",
+        "ventolin neb"
+      ],
+      "strengths": [
+        "5mg/ml",
+        "2.5mg/2.5ml"
+      ],
+      "defaultRoute": "INH",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0204",
+      "name": "Salbutamol Oral",
+      "aliases": [
+        "salbutamol oral",
+        "ventolin syrup"
+      ],
+      "strengths": [
+        "2mg",
+        "4mg",
+        "2mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0205",
+      "name": "Ipratropium Bromide",
+      "aliases": [
+        "ipratropium",
+        "atrovent"
+      ],
+      "strengths": [
+        "20mcg/puff",
+        "250mcg/ml"
+      ],
+      "defaultRoute": "INH",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0206",
+      "name": "Salbutamol-Ipratropium",
+      "aliases": [
+        "combivent",
+        "duolin",
+        "duovent"
+      ],
+      "strengths": [
+        "100mcg/20mcg",
+        "2.5mg/0.5mg"
+      ],
+      "defaultRoute": "INH",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0207",
+      "name": "Beclomethasone",
+      "aliases": [
+        "beclomethasone",
+        "becotide",
+        "becloforte",
+        "qvar"
+      ],
+      "strengths": [
+        "50mcg",
+        "100mcg",
+        "200mcg",
+        "250mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0208",
+      "name": "Budesonide Inhaler",
+      "aliases": [
+        "budesonide",
+        "pulmicort"
+      ],
+      "strengths": [
+        "100mcg",
+        "200mcg",
+        "400mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0209",
+      "name": "Budesonide Nebuliser",
+      "aliases": [
+        "pulmicort neb",
+        "budesonide neb"
+      ],
+      "strengths": [
+        "0.5mg/2ml",
+        "1mg/2ml"
+      ],
+      "defaultRoute": "INH",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0210",
+      "name": "Fluticasone",
+      "aliases": [
+        "fluticasone",
+        "flixotide",
+        "flovent"
+      ],
+      "strengths": [
+        "50mcg",
+        "125mcg",
+        "250mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0211",
+      "name": "Salmeterol",
+      "aliases": [
+        "salmeterol",
+        "serevent"
+      ],
+      "strengths": [
+        "25mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "LABA",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0212",
+      "name": "Formoterol",
+      "aliases": [
+        "formoterol",
+        "foradil",
+        "oxis"
+      ],
+      "strengths": [
+        "12mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "LABA",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0213",
+      "name": "Budesonide-Formoterol",
+      "aliases": [
+        "symbicort",
+        "budesonide-formoterol"
+      ],
+      "strengths": [
+        "80/4.5mcg",
+        "160/4.5mcg",
+        "320/9mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "ICS-LABA",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0214",
+      "name": "Fluticasone-Salmeterol",
+      "aliases": [
+        "seretide",
+        "advair",
+        "fluticasone-salmeterol"
+      ],
+      "strengths": [
+        "100/50mcg",
+        "250/50mcg",
+        "500/50mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "ICS-LABA",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0215",
+      "name": "Montelukast",
+      "aliases": [
+        "montelukast",
+        "singulair"
+      ],
+      "strengths": [
+        "4mg",
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "leukotriene antagonist",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0216",
+      "name": "Theophylline",
+      "aliases": [
+        "theophylline",
+        "nuelin",
+        "theo-dur",
+        "theolair"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0217",
+      "name": "Aminophylline",
+      "aliases": [
+        "aminophylline",
+        "phyllocontin"
+      ],
+      "strengths": [
+        "100mg",
+        "225mg",
+        "250mg/10ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "bronchodilator",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0218",
+      "name": "Aminophylline Injectable",
+      "aliases": [
+        "aminophylline iv"
+      ],
+      "strengths": [
+        "250mg/10ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "bronchodilator",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0219",
+      "name": "Tiotropium",
+      "aliases": [
+        "tiotropium",
+        "spiriva"
+      ],
+      "strengths": [
+        "18mcg",
+        "2.5mcg"
+      ],
+      "defaultRoute": "INH",
+      "category": "LAMA",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0220",
+      "name": "Omeprazole",
+      "aliases": [
+        "omeprazole",
+        "losec",
+        "altosec",
+        "prilosec"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "PPI",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0221",
+      "name": "Lansoprazole",
+      "aliases": [
+        "lansoprazole",
+        "lanzor",
+        "zoton",
+        "prevacid"
+      ],
+      "strengths": [
+        "15mg",
+        "30mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "PPI",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0222",
+      "name": "Pantoprazole",
+      "aliases": [
+        "pantoprazole",
+        "controloc",
+        "protonix"
+      ],
+      "strengths": [
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "PPI",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0223",
+      "name": "Esomeprazole",
+      "aliases": [
+        "esomeprazole",
+        "nexium",
+        "nexiam"
+      ],
+      "strengths": [
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "PPI",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0224",
+      "name": "Ranitidine",
+      "aliases": [
+        "ranitidine",
+        "zantac"
+      ],
+      "strengths": [
+        "150mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "H2 blocker",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0225",
+      "name": "Cimetidine",
+      "aliases": [
+        "cimetidine",
+        "tagamet"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg",
+        "800mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "H2 blocker",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0226",
+      "name": "Metoclopramide",
+      "aliases": [
+        "metoclopramide",
+        "maxolon",
+        "reglan"
+      ],
+      "strengths": [
+        "10mg",
+        "10mg/2ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiemetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0227",
+      "name": "Domperidone",
+      "aliases": [
+        "domperidone",
+        "motilium"
+      ],
+      "strengths": [
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiemetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0228",
+      "name": "Ondansetron",
+      "aliases": [
+        "ondansetron",
+        "zofran"
+      ],
+      "strengths": [
+        "4mg",
+        "8mg",
+        "4mg/2ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiemetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0229",
+      "name": "Ondansetron Injectable",
+      "aliases": [
+        "ondansetron iv",
+        "zofran iv"
+      ],
+      "strengths": [
+        "4mg/2ml",
+        "8mg/4ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antiemetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0230",
+      "name": "Promethazine",
+      "aliases": [
+        "promethazine",
+        "phenergan",
+        "promethegan"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiemetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0231",
+      "name": "Loperamide",
+      "aliases": [
+        "loperamide",
+        "imodium"
+      ],
+      "strengths": [
+        "2mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiarrheal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0232",
+      "name": "Hyoscine Butylbromide",
+      "aliases": [
+        "hyoscine",
+        "buscopan",
+        "scopolamine"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antispasmodic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0233",
+      "name": "ORS",
+      "aliases": [
+        "ors",
+        "oral rehydration salts",
+        "rehydration salts",
+        "ors sachet"
+      ],
+      "strengths": [
+        "sachet"
+      ],
+      "defaultRoute": "PO",
+      "category": "rehydration",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0234",
+      "name": "Activated Charcoal",
+      "aliases": [
+        "activated charcoal",
+        "carbomix",
+        "charcodote"
+      ],
+      "strengths": [
+        "50g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidote",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0235",
+      "name": "Lactulose",
+      "aliases": [
+        "lactulose",
+        "duphalac",
+        "laevolac"
+      ],
+      "strengths": [
+        "10g/15ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "laxative",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0236",
+      "name": "Bisacodyl",
+      "aliases": [
+        "bisacodyl",
+        "dulcolax"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "laxative",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0237",
+      "name": "Senna",
+      "aliases": [
+        "senna",
+        "senokot"
+      ],
+      "strengths": [
+        "7.5mg",
+        "15mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "laxative",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0238",
+      "name": "Docusate",
+      "aliases": [
+        "docusate",
+        "colace",
+        "coloxyl"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "laxative",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0239",
+      "name": "Mesalazine",
+      "aliases": [
+        "mesalazine",
+        "asacol",
+        "pentasa",
+        "salofalk"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-inflammatory GI",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0240",
+      "name": "Sulfasalazine",
+      "aliases": [
+        "sulfasalazine",
+        "salazopyrin"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-inflammatory GI",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0241",
+      "name": "Sucralfate",
+      "aliases": [
+        "sucralfate",
+        "ulcyte",
+        "carafate"
+      ],
+      "strengths": [
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "GI protectant",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0242",
+      "name": "Aluminium Hydroxide",
+      "aliases": [
+        "antacid",
+        "maalox",
+        "mylanta",
+        "aluminium hydroxide"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antacid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0243",
+      "name": "Magnesium Trisilicate",
+      "aliases": [
+        "magnesium trisilicate",
+        "gastropax"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antacid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0244",
+      "name": "Fluconazole",
+      "aliases": [
+        "fluconazole",
+        "diflucan",
+        "flucazole"
+      ],
+      "strengths": [
+        "50mg",
+        "150mg",
+        "200mg",
+        "2mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antifungal",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0245",
+      "name": "Itraconazole",
+      "aliases": [
+        "itraconazole",
+        "sporanox"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antifungal",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0246",
+      "name": "Ketoconazole",
+      "aliases": [
+        "ketoconazole",
+        "nizoral"
+      ],
+      "strengths": [
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antifungal",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0247",
+      "name": "Nystatin",
+      "aliases": [
+        "nystatin",
+        "mycostatin",
+        "nilstat"
+      ],
+      "strengths": [
+        "100000IU/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antifungal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0248",
+      "name": "Clotrimazole",
+      "aliases": [
+        "clotrimazole",
+        "canesten",
+        "lotriderm"
+      ],
+      "strengths": [
+        "1%",
+        "500mg"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antifungal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0249",
+      "name": "Clotrimazole Vaginal",
+      "aliases": [
+        "clotrimazole pessary",
+        "canesten vaginal"
+      ],
+      "strengths": [
+        "100mg",
+        "500mg"
+      ],
+      "defaultRoute": "VAG",
+      "category": "antifungal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0250",
+      "name": "Miconazole",
+      "aliases": [
+        "miconazole",
+        "daktarin"
+      ],
+      "strengths": [
+        "2%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antifungal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0251",
+      "name": "Terbinafine",
+      "aliases": [
+        "terbinafine",
+        "lamisil"
+      ],
+      "strengths": [
+        "250mg",
+        "1%"
+      ],
+      "defaultRoute": "PO",
+      "category": "antifungal",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0252",
+      "name": "Amphotericin B",
+      "aliases": [
+        "amphotericin b",
+        "fungizone",
+        "amphocil"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antifungal",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0253",
+      "name": "Griseofulvin",
+      "aliases": [
+        "griseofulvin",
+        "grisovin",
+        "fulcin"
+      ],
+      "strengths": [
+        "125mg",
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antifungal",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0254",
+      "name": "Acyclovir",
+      "aliases": [
+        "acyclovir",
+        "aciclovir",
+        "zovirax"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg",
+        "800mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0255",
+      "name": "Acyclovir Injectable",
+      "aliases": [
+        "acyclovir iv",
+        "zovirax iv"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antiviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0256",
+      "name": "Valacyclovir",
+      "aliases": [
+        "valacyclovir",
+        "valaciclovir",
+        "valtrex"
+      ],
+      "strengths": [
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0257",
+      "name": "Oseltamivir",
+      "aliases": [
+        "oseltamivir",
+        "tamiflu"
+      ],
+      "strengths": [
+        "75mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0258",
+      "name": "Ganciclovir",
+      "aliases": [
+        "ganciclovir",
+        "cymevene",
+        "cytovene"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antiviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0259",
+      "name": "Valganciclovir",
+      "aliases": [
+        "valganciclovir",
+        "valcyte"
+      ],
+      "strengths": [
+        "450mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiviral",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0260",
+      "name": "Mebendazole",
+      "aliases": [
+        "mebendazole",
+        "vermox"
+      ],
+      "strengths": [
+        "100mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anthelmintic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0261",
+      "name": "Albendazole",
+      "aliases": [
+        "albendazole",
+        "zentel",
+        "eskazole"
+      ],
+      "strengths": [
+        "200mg",
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anthelmintic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0262",
+      "name": "Praziquantel",
+      "aliases": [
+        "praziquantel",
+        "biltricide",
+        "distocide"
+      ],
+      "strengths": [
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anthelmintic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0263",
+      "name": "Ivermectin",
+      "aliases": [
+        "ivermectin",
+        "stromectol",
+        "mectizan"
+      ],
+      "strengths": [
+        "3mg",
+        "6mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiparasitic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0264",
+      "name": "Pyrantel",
+      "aliases": [
+        "pyrantel",
+        "combantrin"
+      ],
+      "strengths": [
+        "125mg",
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anthelmintic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0265",
+      "name": "Niclosamide",
+      "aliases": [
+        "niclosamide",
+        "yomesan"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anthelmintic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0266",
+      "name": "Metrifonate",
+      "aliases": [
+        "metrifonate",
+        "bilarcil"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anthelmintic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0267",
+      "name": "Permethrin",
+      "aliases": [
+        "permethrin",
+        "nix",
+        "lyclear"
+      ],
+      "strengths": [
+        "5%",
+        "1%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antiparasitic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0268",
+      "name": "Benzyl Benzoate",
+      "aliases": [
+        "benzyl benzoate",
+        "ascabiol"
+      ],
+      "strengths": [
+        "25%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antiparasitic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0269",
+      "name": "Amitriptyline",
+      "aliases": [
+        "amitriptyline",
+        "elavil",
+        "trepiline"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg",
+        "50mg",
+        "75mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0270",
+      "name": "Fluoxetine",
+      "aliases": [
+        "fluoxetine",
+        "prozac",
+        "lilly",
+        "nuzak"
+      ],
+      "strengths": [
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0271",
+      "name": "Sertraline",
+      "aliases": [
+        "sertraline",
+        "zoloft",
+        "serdep"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0272",
+      "name": "Citalopram",
+      "aliases": [
+        "citalopram",
+        "cipramil",
+        "celexa"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg",
+        "40mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0273",
+      "name": "Escitalopram",
+      "aliases": [
+        "escitalopram",
+        "cipralex",
+        "lexapro"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0274",
+      "name": "Venlafaxine",
+      "aliases": [
+        "venlafaxine",
+        "efexor",
+        "effexor"
+      ],
+      "strengths": [
+        "37.5mg",
+        "75mg",
+        "150mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0275",
+      "name": "Mirtazapine",
+      "aliases": [
+        "mirtazapine",
+        "remeron"
+      ],
+      "strengths": [
+        "15mg",
+        "30mg",
+        "45mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0276",
+      "name": "Imipramine",
+      "aliases": [
+        "imipramine",
+        "tofranil"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0277",
+      "name": "Haloperidol",
+      "aliases": [
+        "haloperidol",
+        "haldol",
+        "serenace"
+      ],
+      "strengths": [
+        "0.5mg",
+        "1.5mg",
+        "5mg",
+        "5mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0278",
+      "name": "Haloperidol Injectable",
+      "aliases": [
+        "haldol injection",
+        "haloperidol im"
+      ],
+      "strengths": [
+        "5mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0279",
+      "name": "Chlorpromazine",
+      "aliases": [
+        "chlorpromazine",
+        "largactil",
+        "thorazine"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0280",
+      "name": "Risperidone",
+      "aliases": [
+        "risperidone",
+        "risperdal"
+      ],
+      "strengths": [
+        "0.5mg",
+        "1mg",
+        "2mg",
+        "3mg",
+        "4mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0281",
+      "name": "Olanzapine",
+      "aliases": [
+        "olanzapine",
+        "zyprexa"
+      ],
+      "strengths": [
+        "2.5mg",
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0282",
+      "name": "Quetiapine",
+      "aliases": [
+        "quetiapine",
+        "seroquel"
+      ],
+      "strengths": [
+        "25mg",
+        "100mg",
+        "200mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0283",
+      "name": "Lithium Carbonate",
+      "aliases": [
+        "lithium",
+        "camcolit",
+        "priadel"
+      ],
+      "strengths": [
+        "250mg",
+        "400mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "mood stabilizer",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0284",
+      "name": "Sodium Valproate",
+      "aliases": [
+        "sodium valproate",
+        "epilim",
+        "valproic acid",
+        "depakote"
+      ],
+      "strengths": [
+        "200mg",
+        "500mg",
+        "200mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0285",
+      "name": "Carbamazepine",
+      "aliases": [
+        "carbamazepine",
+        "tegretol",
+        "epitol"
+      ],
+      "strengths": [
+        "100mg",
+        "200mg",
+        "400mg",
+        "100mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0286",
+      "name": "Phenytoin",
+      "aliases": [
+        "phenytoin",
+        "dilantin",
+        "epanutin"
+      ],
+      "strengths": [
+        "100mg",
+        "50mg/5ml",
+        "250mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0287",
+      "name": "Phenytoin Injectable",
+      "aliases": [
+        "phenytoin iv",
+        "dilantin iv"
+      ],
+      "strengths": [
+        "250mg/5ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0288",
+      "name": "Lamotrigine",
+      "aliases": [
+        "lamotrigine",
+        "lamictal"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0289",
+      "name": "Levetiracetam",
+      "aliases": [
+        "levetiracetam",
+        "keppra"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg",
+        "750mg",
+        "1000mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0290",
+      "name": "Topiramate",
+      "aliases": [
+        "topiramate",
+        "topamax"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0291",
+      "name": "Phenobarbital",
+      "aliases": [
+        "phenobarbital",
+        "phenobarbitone",
+        "luminal"
+      ],
+      "strengths": [
+        "30mg",
+        "60mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0292",
+      "name": "Phenobarbital Injectable",
+      "aliases": [
+        "phenobarbital injection"
+      ],
+      "strengths": [
+        "200mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "anticonvulsant",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0293",
+      "name": "Diazepam",
+      "aliases": [
+        "diazepam",
+        "valium"
+      ],
+      "strengths": [
+        "2mg",
+        "5mg",
+        "10mg",
+        "5mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0294",
+      "name": "Diazepam Injectable",
+      "aliases": [
+        "diazepam iv",
+        "valium injection"
+      ],
+      "strengths": [
+        "10mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0295",
+      "name": "Diazepam Rectal",
+      "aliases": [
+        "diazepam rectal",
+        "stesolid"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PR",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0296",
+      "name": "Lorazepam",
+      "aliases": [
+        "lorazepam",
+        "ativan"
+      ],
+      "strengths": [
+        "0.5mg",
+        "1mg",
+        "2mg",
+        "4mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0297",
+      "name": "Midazolam",
+      "aliases": [
+        "midazolam",
+        "dormicum",
+        "versed"
+      ],
+      "strengths": [
+        "7.5mg",
+        "15mg",
+        "5mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0298",
+      "name": "Midazolam Injectable",
+      "aliases": [
+        "midazolam iv",
+        "dormicum injection"
+      ],
+      "strengths": [
+        "5mg/ml",
+        "15mg/3ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0299",
+      "name": "Clonazepam",
+      "aliases": [
+        "clonazepam",
+        "rivotril"
+      ],
+      "strengths": [
+        "0.5mg",
+        "2mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "benzodiazepine",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0300",
+      "name": "Zolpidem",
+      "aliases": [
+        "zolpidem",
+        "stilnox",
+        "ambien"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "sedative",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0301",
+      "name": "Hydroxyzine",
+      "aliases": [
+        "hydroxyzine",
+        "atarax",
+        "vistaril"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anxiolytic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0302",
+      "name": "Levothyroxine",
+      "aliases": [
+        "levothyroxine",
+        "eltroxin",
+        "euthyrox",
+        "synthroid"
+      ],
+      "strengths": [
+        "25mcg",
+        "50mcg",
+        "100mcg",
+        "150mcg",
+        "200mcg"
+      ],
+      "defaultRoute": "PO",
+      "category": "thyroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0303",
+      "name": "Carbimazole",
+      "aliases": [
+        "carbimazole",
+        "neo-mercazole"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-thyroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0304",
+      "name": "Propylthiouracil",
+      "aliases": [
+        "propylthiouracil",
+        "ptu"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-thyroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0305",
+      "name": "Prednisolone",
+      "aliases": [
+        "prednisolone",
+        "pediapred",
+        "prelone"
+      ],
+      "strengths": [
+        "5mg",
+        "20mg",
+        "40mg",
+        "15mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0306",
+      "name": "Prednisone",
+      "aliases": [
+        "prednisone",
+        "deltasone",
+        "meticorten"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg",
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0307",
+      "name": "Dexamethasone",
+      "aliases": [
+        "dexamethasone",
+        "decadron"
+      ],
+      "strengths": [
+        "0.5mg",
+        "4mg",
+        "4mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0308",
+      "name": "Dexamethasone Injectable",
+      "aliases": [
+        "dexamethasone iv",
+        "decadron injection"
+      ],
+      "strengths": [
+        "4mg/ml",
+        "8mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0309",
+      "name": "Hydrocortisone Oral",
+      "aliases": [
+        "hydrocortisone",
+        "cortef"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0310",
+      "name": "Hydrocortisone Injectable",
+      "aliases": [
+        "solu-cortef",
+        "hydrocortisone iv"
+      ],
+      "strengths": [
+        "100mg",
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0311",
+      "name": "Methylprednisolone",
+      "aliases": [
+        "methylprednisolone",
+        "solu-medrol",
+        "medrol"
+      ],
+      "strengths": [
+        "4mg",
+        "16mg",
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0312",
+      "name": "Fludrocortisone",
+      "aliases": [
+        "fludrocortisone",
+        "florinef"
+      ],
+      "strengths": [
+        "0.1mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0313",
+      "name": "Betamethasone Injectable",
+      "aliases": [
+        "betamethasone",
+        "celestone"
+      ],
+      "strengths": [
+        "4mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0314",
+      "name": "Triamcinolone Injectable",
+      "aliases": [
+        "triamcinolone",
+        "kenalog"
+      ],
+      "strengths": [
+        "40mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "corticosteroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0315",
+      "name": "Combined Oral Contraceptive",
+      "aliases": [
+        "combined pill",
+        "ocp",
+        "nordette",
+        "triphasil",
+        "yasmin"
+      ],
+      "strengths": [
+        "EE/LNG",
+        "EE/DSG"
+      ],
+      "defaultRoute": "PO",
+      "category": "contraceptive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0316",
+      "name": "Progesterone-Only Pill",
+      "aliases": [
+        "mini pill",
+        "pop",
+        "noriday",
+        "microval",
+        "nur-isterate"
+      ],
+      "strengths": [
+        "norethisterone 0.35mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "contraceptive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0317",
+      "name": "Medroxyprogesterone Depot",
+      "aliases": [
+        "depo-provera",
+        "depo",
+        "petogen",
+        "medroxyprogesterone"
+      ],
+      "strengths": [
+        "150mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "contraceptive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0318",
+      "name": "Etonogestrel Implant",
+      "aliases": [
+        "implanon",
+        "nexplanon",
+        "implanon nxt"
+      ],
+      "strengths": [
+        "68mg"
+      ],
+      "defaultRoute": "SC",
+      "category": "contraceptive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0319",
+      "name": "Levonorgestrel Emergency",
+      "aliases": [
+        "plan b",
+        "norlevo",
+        "escapelle",
+        "emergency contraceptive"
+      ],
+      "strengths": [
+        "1.5mg",
+        "0.75mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "contraceptive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0320",
+      "name": "Copper IUD",
+      "aliases": [
+        "copper iud",
+        "copper t",
+        "paragard",
+        "nova-t"
+      ],
+      "strengths": [
+        "device"
+      ],
+      "defaultRoute": "IU",
+      "category": "contraceptive",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0321",
+      "name": "Norethisterone",
+      "aliases": [
+        "norethisterone",
+        "primolut n",
+        "noristerat"
+      ],
+      "strengths": [
+        "5mg",
+        "200mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "hormone",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0322",
+      "name": "Conjugated Estrogens",
+      "aliases": [
+        "premarin",
+        "conjugated estrogens"
+      ],
+      "strengths": [
+        "0.3mg",
+        "0.625mg",
+        "1.25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "hormone",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0323",
+      "name": "Estradiol Valerate",
+      "aliases": [
+        "estradiol",
+        "progynova"
+      ],
+      "strengths": [
+        "1mg",
+        "2mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "hormone",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0324",
+      "name": "Testosterone",
+      "aliases": [
+        "testosterone",
+        "sustanon",
+        "depo-testosterone",
+        "nebido"
+      ],
+      "strengths": [
+        "250mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "hormone",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0325",
+      "name": "Tamoxifen",
+      "aliases": [
+        "tamoxifen",
+        "nolvadex"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0326",
+      "name": "Letrozole",
+      "aliases": [
+        "letrozole",
+        "femara"
+      ],
+      "strengths": [
+        "2.5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0327",
+      "name": "Ferrous Sulfate",
+      "aliases": [
+        "ferrous sulfate",
+        "iron",
+        "feso4",
+        "ferrous sulphate",
+        "fefol"
+      ],
+      "strengths": [
+        "200mg",
+        "325mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0328",
+      "name": "Folic Acid",
+      "aliases": [
+        "folic acid",
+        "folate",
+        "fa"
+      ],
+      "strengths": [
+        "5mg",
+        "1mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0329",
+      "name": "Ferrous Sulfate-Folic Acid",
+      "aliases": [
+        "fefol",
+        "ferro-folic",
+        "iron-folic acid"
+      ],
+      "strengths": [
+        "200mg/0.5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0330",
+      "name": "Vitamin B Complex",
+      "aliases": [
+        "vitamin b complex",
+        "b complex",
+        "neurobion"
+      ],
+      "strengths": [
+        "tablet"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0331",
+      "name": "Vitamin B12",
+      "aliases": [
+        "vitamin b12",
+        "cyanocobalamin",
+        "hydroxocobalamin"
+      ],
+      "strengths": [
+        "1mg",
+        "1mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0332",
+      "name": "Vitamin B12 Injectable",
+      "aliases": [
+        "b12 injection",
+        "cyanocobalamin injection",
+        "hydroxocobalamin injection"
+      ],
+      "strengths": [
+        "1mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "supplement",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0333",
+      "name": "Vitamin D3",
+      "aliases": [
+        "vitamin d",
+        "cholecalciferol",
+        "calciferol"
+      ],
+      "strengths": [
+        "400IU",
+        "1000IU",
+        "50000IU"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0334",
+      "name": "Calcium Carbonate",
+      "aliases": [
+        "calcium",
+        "caltrate",
+        "oscal",
+        "calcium carbonate"
+      ],
+      "strengths": [
+        "500mg",
+        "1250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0335",
+      "name": "Calcium Gluconate Injectable",
+      "aliases": [
+        "calcium gluconate",
+        "calcium iv"
+      ],
+      "strengths": [
+        "10%",
+        "10ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "supplement",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0336",
+      "name": "Magnesium Sulfate Injectable",
+      "aliases": [
+        "magnesium sulfate",
+        "mgso4",
+        "epsom salt"
+      ],
+      "strengths": [
+        "50%",
+        "2g/4ml",
+        "5g/10ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "supplement",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0337",
+      "name": "Potassium Chloride",
+      "aliases": [
+        "potassium chloride",
+        "slow-k",
+        "kcl"
+      ],
+      "strengths": [
+        "600mg",
+        "8mmol"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0338",
+      "name": "Zinc",
+      "aliases": [
+        "zinc",
+        "zinc sulfate"
+      ],
+      "strengths": [
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0339",
+      "name": "Multivitamin",
+      "aliases": [
+        "multivitamin",
+        "centrum",
+        "mvt"
+      ],
+      "strengths": [
+        "tablet"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0340",
+      "name": "Pyridoxine",
+      "aliases": [
+        "pyridoxine",
+        "vitamin b6"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0341",
+      "name": "Thiamine",
+      "aliases": [
+        "thiamine",
+        "vitamin b1"
+      ],
+      "strengths": [
+        "100mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0342",
+      "name": "Thiamine Injectable",
+      "aliases": [
+        "thiamine injection",
+        "vitamin b1 injection"
+      ],
+      "strengths": [
+        "100mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "supplement",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0343",
+      "name": "Ascorbic Acid",
+      "aliases": [
+        "vitamin c",
+        "ascorbic acid"
+      ],
+      "strengths": [
+        "100mg",
+        "250mg",
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0344",
+      "name": "Retinol",
+      "aliases": [
+        "vitamin a",
+        "retinol"
+      ],
+      "strengths": [
+        "50000IU",
+        "200000IU"
+      ],
+      "defaultRoute": "PO",
+      "category": "supplement",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0345",
+      "name": "Chloramphenicol Eye Drops",
+      "aliases": [
+        "chloramphenicol eye drops",
+        "chloromycetin eye"
+      ],
+      "strengths": [
+        "0.5%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0346",
+      "name": "Chloramphenicol Eye Ointment",
+      "aliases": [
+        "chloramphenicol eye ointment"
+      ],
+      "strengths": [
+        "1%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0347",
+      "name": "Ciprofloxacin Eye Drops",
+      "aliases": [
+        "ciprofloxacin eye drops",
+        "ciloxan"
+      ],
+      "strengths": [
+        "0.3%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0348",
+      "name": "Tobramycin Eye Drops",
+      "aliases": [
+        "tobramycin eye drops",
+        "tobrex"
+      ],
+      "strengths": [
+        "0.3%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0349",
+      "name": "Gentamicin Eye Drops",
+      "aliases": [
+        "gentamicin eye drops",
+        "garamycin eye"
+      ],
+      "strengths": [
+        "0.3%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0350",
+      "name": "Tetracycline Eye Ointment",
+      "aliases": [
+        "tetracycline eye ointment",
+        "achromycin eye"
+      ],
+      "strengths": [
+        "1%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0351",
+      "name": "Timolol Eye Drops",
+      "aliases": [
+        "timolol eye drops",
+        "timoptol",
+        "timolol"
+      ],
+      "strengths": [
+        "0.25%",
+        "0.5%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "antiglaucoma",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0352",
+      "name": "Pilocarpine Eye Drops",
+      "aliases": [
+        "pilocarpine",
+        "isopto carpine"
+      ],
+      "strengths": [
+        "2%",
+        "4%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "antiglaucoma",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0353",
+      "name": "Latanoprost Eye Drops",
+      "aliases": [
+        "latanoprost",
+        "xalatan"
+      ],
+      "strengths": [
+        "0.005%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "antiglaucoma",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0354",
+      "name": "Atropine Eye Drops",
+      "aliases": [
+        "atropine eye drops",
+        "isopto atropine"
+      ],
+      "strengths": [
+        "0.5%",
+        "1%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "mydriatic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0355",
+      "name": "Prednisolone Eye Drops",
+      "aliases": [
+        "prednisolone eye drops",
+        "pred forte",
+        "predsol eye"
+      ],
+      "strengths": [
+        "0.5%",
+        "1%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic steroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0356",
+      "name": "Dexamethasone Eye Drops",
+      "aliases": [
+        "dexamethasone eye drops",
+        "maxidex"
+      ],
+      "strengths": [
+        "0.1%"
+      ],
+      "defaultRoute": "OPH",
+      "category": "ophthalmic steroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0357",
+      "name": "Fluorescein Eye Strips",
+      "aliases": [
+        "fluorescein",
+        "fluor-i-strip"
+      ],
+      "strengths": [
+        "strips"
+      ],
+      "defaultRoute": "OPH",
+      "category": "diagnostic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0358",
+      "name": "Artificial Tears",
+      "aliases": [
+        "artificial tears",
+        "tears naturale",
+        "systane",
+        "refresh tears"
+      ],
+      "strengths": [
+        "drops"
+      ],
+      "defaultRoute": "OPH",
+      "category": "lubricant",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0359",
+      "name": "Hydrocortisone Cream",
+      "aliases": [
+        "hydrocortisone cream",
+        "cortisone cream"
+      ],
+      "strengths": [
+        "0.5%",
+        "1%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical steroid",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0360",
+      "name": "Betamethasone Cream",
+      "aliases": [
+        "betamethasone cream",
+        "betnovate",
+        "celestoderm"
+      ],
+      "strengths": [
+        "0.05%",
+        "0.1%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical steroid",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0361",
+      "name": "Betamethasone-Neomycin Cream",
+      "aliases": [
+        "betnovate-n",
+        "betamethasone-neomycin"
+      ],
+      "strengths": [
+        "0.1%/0.5%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical steroid",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0362",
+      "name": "Clobetasol Cream",
+      "aliases": [
+        "clobetasol",
+        "dermovate",
+        "clobex"
+      ],
+      "strengths": [
+        "0.05%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical steroid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0363",
+      "name": "Mometasone Cream",
+      "aliases": [
+        "mometasone",
+        "elocon"
+      ],
+      "strengths": [
+        "0.1%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical steroid",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0364",
+      "name": "Emulsifying Ointment",
+      "aliases": [
+        "emulsifying ointment",
+        "e45",
+        "aqueous cream base"
+      ],
+      "strengths": [
+        "jar"
+      ],
+      "defaultRoute": "TOP",
+      "category": "emollient",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0365",
+      "name": "Aqueous Cream",
+      "aliases": [
+        "aqueous cream",
+        "aq cream"
+      ],
+      "strengths": [
+        "jar"
+      ],
+      "defaultRoute": "TOP",
+      "category": "emollient",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0366",
+      "name": "Calamine Lotion",
+      "aliases": [
+        "calamine",
+        "calamine lotion"
+      ],
+      "strengths": [
+        "lotion"
+      ],
+      "defaultRoute": "TOP",
+      "category": "soothing agent",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0367",
+      "name": "Silver Sulfadiazine",
+      "aliases": [
+        "silver sulfadiazine",
+        "flamazine",
+        "silvadene"
+      ],
+      "strengths": [
+        "1%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0368",
+      "name": "Mupirocin Cream",
+      "aliases": [
+        "mupirocin",
+        "bactroban"
+      ],
+      "strengths": [
+        "2%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0369",
+      "name": "Fusidic Acid Cream",
+      "aliases": [
+        "fusidic acid cream",
+        "fucidin cream"
+      ],
+      "strengths": [
+        "2%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0370",
+      "name": "Aciclovir Cream",
+      "aliases": [
+        "aciclovir cream",
+        "zovirax cream",
+        "acyclovir cream"
+      ],
+      "strengths": [
+        "5%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "topical antiviral",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0371",
+      "name": "Benzoyl Peroxide",
+      "aliases": [
+        "benzoyl peroxide",
+        "brevoxyl",
+        "benzac"
+      ],
+      "strengths": [
+        "2.5%",
+        "5%",
+        "10%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "acne treatment",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0372",
+      "name": "Tretinoin Cream",
+      "aliases": [
+        "tretinoin",
+        "retin-a",
+        "retinol cream"
+      ],
+      "strengths": [
+        "0.025%",
+        "0.05%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "acne treatment",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0373",
+      "name": "Salicylic Acid",
+      "aliases": [
+        "salicylic acid",
+        "duofilm"
+      ],
+      "strengths": [
+        "2%",
+        "5%",
+        "10%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "keratolytic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0374",
+      "name": "Coal Tar Preparation",
+      "aliases": [
+        "coal tar",
+        "polytar",
+        "alphosyl"
+      ],
+      "strengths": [
+        "5%",
+        "10%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "anti-psoriatic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0375",
+      "name": "Dithranol",
+      "aliases": [
+        "dithranol",
+        "anthralin",
+        "dithrocream"
+      ],
+      "strengths": [
+        "0.1%",
+        "0.5%",
+        "1%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "anti-psoriatic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0376",
+      "name": "Ketoconazole Shampoo",
+      "aliases": [
+        "ketoconazole shampoo",
+        "nizoral shampoo"
+      ],
+      "strengths": [
+        "2%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antifungal shampoo",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0377",
+      "name": "Selenium Sulfide Shampoo",
+      "aliases": [
+        "selenium sulfide",
+        "selsun"
+      ],
+      "strengths": [
+        "2.5%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antifungal shampoo",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0378",
+      "name": "Zinc Oxide Cream",
+      "aliases": [
+        "zinc oxide",
+        "desitin",
+        "sudocrem"
+      ],
+      "strengths": [
+        "20%",
+        "40%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "barrier cream",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0379",
+      "name": "Paraffin Gauze",
+      "aliases": [
+        "jelonet",
+        "paraffin gauze",
+        "tulle gras"
+      ],
+      "strengths": [
+        "dressing"
+      ],
+      "defaultRoute": "TOP",
+      "category": "wound dressing",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0380",
+      "name": "Povidone Iodine",
+      "aliases": [
+        "povidone iodine",
+        "betadine"
+      ],
+      "strengths": [
+        "5%",
+        "10%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antiseptic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0381",
+      "name": "Chlorhexidine",
+      "aliases": [
+        "chlorhexidine",
+        "savlon",
+        "hibiscrub",
+        "hibitane"
+      ],
+      "strengths": [
+        "0.5%",
+        "1%",
+        "4%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "antiseptic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0382",
+      "name": "Chloramphenicol Ear Drops",
+      "aliases": [
+        "chloramphenicol ear drops"
+      ],
+      "strengths": [
+        "5%"
+      ],
+      "defaultRoute": "OT",
+      "category": "otic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0383",
+      "name": "Ciprofloxacin Ear Drops",
+      "aliases": [
+        "ciprofloxacin ear drops",
+        "ciprodex"
+      ],
+      "strengths": [
+        "0.3%"
+      ],
+      "defaultRoute": "OT",
+      "category": "otic antibiotic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0384",
+      "name": "Hydrogen Peroxide Ear Drops",
+      "aliases": [
+        "hydrogen peroxide ear drops",
+        "waxsol"
+      ],
+      "strengths": [
+        "3%"
+      ],
+      "defaultRoute": "OT",
+      "category": "cerumenolytic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0385",
+      "name": "Oxymetazoline Nasal Spray",
+      "aliases": [
+        "oxymetazoline",
+        "iliadin",
+        "afrin"
+      ],
+      "strengths": [
+        "0.025%",
+        "0.05%"
+      ],
+      "defaultRoute": "NAS",
+      "category": "nasal decongestant",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0386",
+      "name": "Xylometazoline Nasal",
+      "aliases": [
+        "xylometazoline",
+        "otrivin",
+        "dristan nasal"
+      ],
+      "strengths": [
+        "0.05%",
+        "0.1%"
+      ],
+      "defaultRoute": "NAS",
+      "category": "nasal decongestant",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0387",
+      "name": "Budesonide Nasal Spray",
+      "aliases": [
+        "budesonide nasal",
+        "rhinocort"
+      ],
+      "strengths": [
+        "32mcg",
+        "64mcg"
+      ],
+      "defaultRoute": "NAS",
+      "category": "nasal steroid",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0388",
+      "name": "Fluticasone Nasal Spray",
+      "aliases": [
+        "fluticasone nasal",
+        "flixonase",
+        "flonase"
+      ],
+      "strengths": [
+        "50mcg"
+      ],
+      "defaultRoute": "NAS",
+      "category": "nasal steroid",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0389",
+      "name": "Mometasone Nasal Spray",
+      "aliases": [
+        "mometasone nasal",
+        "nasonex"
+      ],
+      "strengths": [
+        "50mcg"
+      ],
+      "defaultRoute": "NAS",
+      "category": "nasal steroid",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0390",
+      "name": "Saline Nasal Spray",
+      "aliases": [
+        "saline nasal spray",
+        "nasal saline",
+        "sterimar"
+      ],
+      "strengths": [
+        "0.9%"
+      ],
+      "defaultRoute": "NAS",
+      "category": "nasal rinse",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0391",
+      "name": "Lidocaine",
+      "aliases": [
+        "lidocaine",
+        "lignocaine",
+        "xylocaine"
+      ],
+      "strengths": [
+        "1%",
+        "2%"
+      ],
+      "defaultRoute": "SC",
+      "category": "local anaesthetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0392",
+      "name": "Lidocaine with Adrenaline",
+      "aliases": [
+        "lidocaine-adrenaline",
+        "xylocaine-adrenaline",
+        "lignocaine-epinephrine"
+      ],
+      "strengths": [
+        "1%+1:100000",
+        "2%+1:80000"
+      ],
+      "defaultRoute": "SC",
+      "category": "local anaesthetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0393",
+      "name": "Bupivacaine",
+      "aliases": [
+        "bupivacaine",
+        "marcaine"
+      ],
+      "strengths": [
+        "0.25%",
+        "0.5%"
+      ],
+      "defaultRoute": "SC",
+      "category": "local anaesthetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0394",
+      "name": "Lidocaine Topical",
+      "aliases": [
+        "emla",
+        "lidocaine cream",
+        "lignocaine gel"
+      ],
+      "strengths": [
+        "2%",
+        "5%"
+      ],
+      "defaultRoute": "TOP",
+      "category": "local anaesthetic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0395",
+      "name": "Ketamine",
+      "aliases": [
+        "ketamine",
+        "ketalar"
+      ],
+      "strengths": [
+        "10mg/ml",
+        "50mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anaesthetic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0396",
+      "name": "Propofol",
+      "aliases": [
+        "propofol",
+        "diprivan"
+      ],
+      "strengths": [
+        "10mg/ml",
+        "20mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anaesthetic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0397",
+      "name": "Thiopental",
+      "aliases": [
+        "thiopental",
+        "pentothal",
+        "thiopentone"
+      ],
+      "strengths": [
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "IV",
+      "category": "anaesthetic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0398",
+      "name": "Suxamethonium",
+      "aliases": [
+        "suxamethonium",
+        "succinylcholine",
+        "anectine",
+        "scoline"
+      ],
+      "strengths": [
+        "50mg/ml",
+        "100mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "muscle relaxant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0399",
+      "name": "Atracurium",
+      "aliases": [
+        "atracurium",
+        "tracrium"
+      ],
+      "strengths": [
+        "10mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "muscle relaxant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0400",
+      "name": "Neostigmine",
+      "aliases": [
+        "neostigmine",
+        "prostigmin"
+      ],
+      "strengths": [
+        "0.5mg/ml",
+        "2.5mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anticholinesterase",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0401",
+      "name": "Atropine Pre-med",
+      "aliases": [
+        "atropine",
+        "atropine sulfate"
+      ],
+      "strengths": [
+        "0.5mg/ml",
+        "1mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anticholinergic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0402",
+      "name": "Rocuronium",
+      "aliases": [
+        "rocuronium",
+        "esmeron"
+      ],
+      "strengths": [
+        "10mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "muscle relaxant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0403",
+      "name": "Adrenaline",
+      "aliases": [
+        "adrenaline",
+        "epinephrine",
+        "epipen",
+        "jext"
+      ],
+      "strengths": [
+        "1mg/ml",
+        "0.5mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "emergency",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0404",
+      "name": "Adrenaline IV",
+      "aliases": [
+        "adrenaline iv",
+        "epinephrine iv"
+      ],
+      "strengths": [
+        "1mg/10ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "emergency",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0405",
+      "name": "Atropine Emergency",
+      "aliases": [
+        "atropine emergency",
+        "atropine cardiac"
+      ],
+      "strengths": [
+        "0.5mg/ml",
+        "1mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "emergency",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0406",
+      "name": "Naloxone",
+      "aliases": [
+        "naloxone",
+        "narcan"
+      ],
+      "strengths": [
+        "0.4mg/ml",
+        "1mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "opioid antagonist",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0407",
+      "name": "Flumazenil",
+      "aliases": [
+        "flumazenil",
+        "anexate",
+        "romazicon"
+      ],
+      "strengths": [
+        "0.5mg/5ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "benzodiazepine antagonist",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0408",
+      "name": "Sodium Bicarbonate",
+      "aliases": [
+        "sodium bicarbonate",
+        "bicarb",
+        "nahco3"
+      ],
+      "strengths": [
+        "8.4%",
+        "50ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "alkalinizer",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0409",
+      "name": "Glucose 50%",
+      "aliases": [
+        "glucose 50%",
+        "dextrose 50%",
+        "d50w"
+      ],
+      "strengths": [
+        "50ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "emergency",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0410",
+      "name": "Glucose 10%",
+      "aliases": [
+        "glucose 10%",
+        "dextrose 10%",
+        "d10w"
+      ],
+      "strengths": [
+        "500ml",
+        "1L"
+      ],
+      "defaultRoute": "IV",
+      "category": "fluid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0411",
+      "name": "Oxytocin",
+      "aliases": [
+        "oxytocin",
+        "syntocinon",
+        "pitocin"
+      ],
+      "strengths": [
+        "10IU/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "obstetric",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0412",
+      "name": "Misoprostol",
+      "aliases": [
+        "misoprostol",
+        "cytotec"
+      ],
+      "strengths": [
+        "200mcg"
+      ],
+      "defaultRoute": "PO",
+      "category": "obstetric",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0413",
+      "name": "Ergometrine",
+      "aliases": [
+        "ergometrine",
+        "ergonovine",
+        "methergine"
+      ],
+      "strengths": [
+        "0.2mg/ml",
+        "0.5mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "obstetric",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0414",
+      "name": "Magnesium Sulfate Eclampsia",
+      "aliases": [
+        "mgso4 eclampsia",
+        "magnesium sulfate 50%"
+      ],
+      "strengths": [
+        "50%",
+        "10ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "eclampsia",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0415",
+      "name": "Phenytoin IV Emergency",
+      "aliases": [
+        "phenytoin iv",
+        "dilantin iv"
+      ],
+      "strengths": [
+        "250mg/5ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0416",
+      "name": "Normal Saline",
+      "aliases": [
+        "normal saline",
+        "0.9% sodium chloride",
+        "ns",
+        "n/s"
+      ],
+      "strengths": [
+        "100ml",
+        "200ml",
+        "500ml",
+        "1L"
+      ],
+      "defaultRoute": "IV",
+      "category": "IV fluid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0417",
+      "name": "Ringer's Lactate",
+      "aliases": [
+        "ringers lactate",
+        "hartmanns",
+        "rl",
+        "lactated ringers"
+      ],
+      "strengths": [
+        "500ml",
+        "1L"
+      ],
+      "defaultRoute": "IV",
+      "category": "IV fluid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0418",
+      "name": "Dextrose 5%",
+      "aliases": [
+        "dextrose 5%",
+        "d5w",
+        "5% dextrose"
+      ],
+      "strengths": [
+        "500ml",
+        "1L"
+      ],
+      "defaultRoute": "IV",
+      "category": "IV fluid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0419",
+      "name": "Dextrose-Saline",
+      "aliases": [
+        "dextrose saline",
+        "d5ns",
+        "maintenance fluid"
+      ],
+      "strengths": [
+        "500ml",
+        "1L"
+      ],
+      "defaultRoute": "IV",
+      "category": "IV fluid",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0420",
+      "name": "Gelatin Colloid",
+      "aliases": [
+        "gelofusine",
+        "haemaccel",
+        "gelatin colloid"
+      ],
+      "strengths": [
+        "500ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "IV fluid",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0421",
+      "name": "Tranexamic Acid",
+      "aliases": [
+        "tranexamic acid",
+        "cyklokapron",
+        "lysteda"
+      ],
+      "strengths": [
+        "500mg",
+        "100mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antifibrinolytic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0422",
+      "name": "Vitamin K",
+      "aliases": [
+        "vitamin k",
+        "phytomenadione",
+        "konakion"
+      ],
+      "strengths": [
+        "1mg/ml",
+        "10mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "antidote",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0423",
+      "name": "Protamine Sulfate",
+      "aliases": [
+        "protamine",
+        "protamine sulfate"
+      ],
+      "strengths": [
+        "10mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "heparin antidote",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0424",
+      "name": "Dantrolene",
+      "aliases": [
+        "dantrolene",
+        "dantrium"
+      ],
+      "strengths": [
+        "20mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "muscle relaxant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0425",
+      "name": "Chlorpheniramine",
+      "aliases": [
+        "chlorpheniramine",
+        "piriton",
+        "chlorphenamine",
+        "allergex"
+      ],
+      "strengths": [
+        "4mg",
+        "2mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0426",
+      "name": "Cetirizine",
+      "aliases": [
+        "cetirizine",
+        "zyrtec",
+        "allertec"
+      ],
+      "strengths": [
+        "10mg",
+        "5mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0427",
+      "name": "Loratadine",
+      "aliases": [
+        "loratadine",
+        "clarityne",
+        "claritin",
+        "alavert"
+      ],
+      "strengths": [
+        "10mg",
+        "5mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0428",
+      "name": "Fexofenadine",
+      "aliases": [
+        "fexofenadine",
+        "telfast",
+        "allegra"
+      ],
+      "strengths": [
+        "120mg",
+        "180mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0429",
+      "name": "Promethazine",
+      "aliases": [
+        "promethazine",
+        "phenergan",
+        "avomine"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg",
+        "25mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0430",
+      "name": "Diphenhydramine",
+      "aliases": [
+        "diphenhydramine",
+        "benadryl"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0431",
+      "name": "Allopurinol",
+      "aliases": [
+        "allopurinol",
+        "zyloric",
+        "zyloprim"
+      ],
+      "strengths": [
+        "100mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "urate-lowering",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0432",
+      "name": "Colchicine",
+      "aliases": [
+        "colchicine",
+        "colcine"
+      ],
+      "strengths": [
+        "0.5mg",
+        "1mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "gout",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0433",
+      "name": "Methotrexate",
+      "aliases": [
+        "methotrexate",
+        "mtx",
+        "trexall"
+      ],
+      "strengths": [
+        "2.5mg",
+        "10mg",
+        "25mg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunosuppressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0434",
+      "name": "Orphenadrine",
+      "aliases": [
+        "orphenadrine",
+        "disipal",
+        "norflex"
+      ],
+      "strengths": [
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "muscle relaxant",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0435",
+      "name": "Baclofen",
+      "aliases": [
+        "baclofen",
+        "lioresal"
+      ],
+      "strengths": [
+        "10mg",
+        "25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "muscle relaxant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0436",
+      "name": "Tizanidine",
+      "aliases": [
+        "tizanidine",
+        "zanaflex",
+        "sirdalud"
+      ],
+      "strengths": [
+        "2mg",
+        "4mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "muscle relaxant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0437",
+      "name": "Chlorzoxazone",
+      "aliases": [
+        "chlorzoxazone",
+        "parafon forte"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "muscle relaxant",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0438",
+      "name": "Tamsulosin",
+      "aliases": [
+        "tamsulosin",
+        "flomax",
+        "omnic"
+      ],
+      "strengths": [
+        "0.4mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "alpha-blocker urological",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0439",
+      "name": "Finasteride",
+      "aliases": [
+        "finasteride",
+        "proscar",
+        "propecia"
+      ],
+      "strengths": [
+        "1mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "5-alpha reductase inhibitor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0440",
+      "name": "Solifenacin",
+      "aliases": [
+        "solifenacin",
+        "vesicare"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticholinergic urological",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0441",
+      "name": "Oxybutynin",
+      "aliases": [
+        "oxybutynin",
+        "ditropan"
+      ],
+      "strengths": [
+        "2.5mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticholinergic urological",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0442",
+      "name": "Sildenafil",
+      "aliases": [
+        "sildenafil",
+        "viagra",
+        "revatio"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "PDE5 inhibitor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0443",
+      "name": "Tadalafil",
+      "aliases": [
+        "tadalafil",
+        "cialis"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "PDE5 inhibitor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0444",
+      "name": "Azathioprine",
+      "aliases": [
+        "azathioprine",
+        "imuran"
+      ],
+      "strengths": [
+        "50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunosuppressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0445",
+      "name": "Cyclosporine",
+      "aliases": [
+        "cyclosporine",
+        "ciclosporin",
+        "neoral",
+        "sandimmun"
+      ],
+      "strengths": [
+        "25mg",
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunosuppressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0446",
+      "name": "Mycophenolate",
+      "aliases": [
+        "mycophenolate",
+        "cellcept",
+        "mmf"
+      ],
+      "strengths": [
+        "250mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunosuppressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0447",
+      "name": "Tacrolimus",
+      "aliases": [
+        "tacrolimus",
+        "prograf"
+      ],
+      "strengths": [
+        "0.5mg",
+        "1mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunosuppressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0448",
+      "name": "Hydroxychloroquine",
+      "aliases": [
+        "hydroxychloroquine",
+        "plaquenil"
+      ],
+      "strengths": [
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunomodulator",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0449",
+      "name": "Leflunomide",
+      "aliases": [
+        "leflunomide",
+        "arava"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "immunosuppressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0450",
+      "name": "BCG Vaccine",
+      "aliases": [
+        "bcg",
+        "bcg vaccine",
+        "tuberculosis vaccine"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "SC",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0451",
+      "name": "Hepatitis B Vaccine",
+      "aliases": [
+        "hep b vaccine",
+        "engerix-b",
+        "hepatitis b"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0452",
+      "name": "Measles Vaccine",
+      "aliases": [
+        "measles vaccine",
+        "mmr",
+        "priorix"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "SC",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0453",
+      "name": "Tetanus Toxoid",
+      "aliases": [
+        "tetanus toxoid",
+        "tt",
+        "adt",
+        "tetanus vaccine"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0454",
+      "name": "Pneumococcal Vaccine",
+      "aliases": [
+        "pneumococcal vaccine",
+        "prevnar",
+        "pneumovax",
+        "pcv"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0455",
+      "name": "Influenza Vaccine",
+      "aliases": [
+        "flu vaccine",
+        "influenza vaccine",
+        "fluvax"
+      ],
+      "strengths": [
+        "0.5ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0456",
+      "name": "Rotavirus Vaccine",
+      "aliases": [
+        "rotavirus vaccine",
+        "rotarix",
+        "rotateq"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "PO",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0457",
+      "name": "HPV Vaccine",
+      "aliases": [
+        "hpv vaccine",
+        "gardasil",
+        "cervarix"
+      ],
+      "strengths": [
+        "0.5ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0458",
+      "name": "Polio Vaccine OPV",
+      "aliases": [
+        "opv",
+        "oral polio vaccine",
+        "polio drops"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "PO",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0459",
+      "name": "Pentavalent Vaccine",
+      "aliases": [
+        "pentavalent",
+        "dtap-ipv-hib",
+        "pentaxim"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0460",
+      "name": "COVID-19 Vaccine",
+      "aliases": [
+        "covid vaccine",
+        "pfizer covid",
+        "comirnaty"
+      ],
+      "strengths": [
+        "vial"
+      ],
+      "defaultRoute": "IM",
+      "category": "vaccine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0461",
+      "name": "Methotrexate Injectable",
+      "aliases": [
+        "methotrexate injection",
+        "mtx injection"
+      ],
+      "strengths": [
+        "25mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0462",
+      "name": "Cyclophosphamide",
+      "aliases": [
+        "cyclophosphamide",
+        "endoxan",
+        "cytoxan"
+      ],
+      "strengths": [
+        "50mg",
+        "500mg",
+        "1g"
+      ],
+      "defaultRoute": "PO",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0463",
+      "name": "Cisplatin",
+      "aliases": [
+        "cisplatin",
+        "platinol"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0464",
+      "name": "5-Fluorouracil",
+      "aliases": [
+        "5-fu",
+        "fluorouracil",
+        "efudex"
+      ],
+      "strengths": [
+        "500mg",
+        "250mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0465",
+      "name": "Vincristine",
+      "aliases": [
+        "vincristine",
+        "oncovin"
+      ],
+      "strengths": [
+        "1mg",
+        "2mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0466",
+      "name": "Doxorubicin",
+      "aliases": [
+        "doxorubicin",
+        "adriamycin"
+      ],
+      "strengths": [
+        "10mg",
+        "50mg"
+      ],
+      "defaultRoute": "IV",
+      "category": "antineoplastic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0467",
+      "name": "Ranitidine Injectable",
+      "aliases": [
+        "ranitidine iv",
+        "zantac iv"
+      ],
+      "strengths": [
+        "50mg/2ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "H2 blocker",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0468",
+      "name": "Probenecid",
+      "aliases": [
+        "probenecid",
+        "benemid"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "uricosuric",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0469",
+      "name": "Acetazolamide",
+      "aliases": [
+        "acetazolamide",
+        "diamox"
+      ],
+      "strengths": [
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "carbonic anhydrase inhibitor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0470",
+      "name": "Ephedrine",
+      "aliases": [
+        "ephedrine"
+      ],
+      "strengths": [
+        "30mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "vasopressor",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0471",
+      "name": "Phenylephrine",
+      "aliases": [
+        "phenylephrine",
+        "neo-synephrine"
+      ],
+      "strengths": [
+        "10mg/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "vasopressor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0472",
+      "name": "Noradrenaline",
+      "aliases": [
+        "noradrenaline",
+        "norepinephrine",
+        "levophed"
+      ],
+      "strengths": [
+        "1mg/ml",
+        "4mg/4ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "vasopressor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0473",
+      "name": "Vasopressin",
+      "aliases": [
+        "vasopressin",
+        "pitressin"
+      ],
+      "strengths": [
+        "20IU/ml"
+      ],
+      "defaultRoute": "IV",
+      "category": "vasopressor",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0474",
+      "name": "Desmopressin",
+      "aliases": [
+        "desmopressin",
+        "ddavp",
+        "minirin"
+      ],
+      "strengths": [
+        "0.1mg",
+        "0.2mg",
+        "4mcg/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiuretic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0475",
+      "name": "Chlorhexidine Mouthwash",
+      "aliases": [
+        "chlorhexidine mouthwash",
+        "corsodyl",
+        "savacol"
+      ],
+      "strengths": [
+        "0.2%"
+      ],
+      "defaultRoute": "PO",
+      "category": "oral antiseptic",
+      "scheduleClass": "S0"
+    },
+    {
+      "code": "0476",
+      "name": "Nystatin Oral Suspension",
+      "aliases": [
+        "nystatin oral",
+        "mycostatin oral"
+      ],
+      "strengths": [
+        "100000IU/ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "oral antifungal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0477",
+      "name": "Miconazole Oral Gel",
+      "aliases": [
+        "miconazole oral gel",
+        "daktarin oral gel"
+      ],
+      "strengths": [
+        "2%"
+      ],
+      "defaultRoute": "PO",
+      "category": "oral antifungal",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0478",
+      "name": "Gabapentin",
+      "aliases": [
+        "gabapentin",
+        "neurontin"
+      ],
+      "strengths": [
+        "100mg",
+        "300mg",
+        "400mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "neuropathic pain",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0479",
+      "name": "Pregabalin",
+      "aliases": [
+        "pregabalin",
+        "lyrica"
+      ],
+      "strengths": [
+        "75mg",
+        "150mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "neuropathic pain",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0480",
+      "name": "Duloxetine",
+      "aliases": [
+        "duloxetine",
+        "cymbalta"
+      ],
+      "strengths": [
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0481",
+      "name": "Bupropion",
+      "aliases": [
+        "bupropion",
+        "wellbutrin",
+        "zyban"
+      ],
+      "strengths": [
+        "150mg",
+        "300mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0482",
+      "name": "Trazodone",
+      "aliases": [
+        "trazodone",
+        "desyrel",
+        "molipaxin"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg",
+        "150mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidepressant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0483",
+      "name": "Aripiprazole",
+      "aliases": [
+        "aripiprazole",
+        "abilify"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg",
+        "15mg",
+        "30mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0484",
+      "name": "Clozapine",
+      "aliases": [
+        "clozapine",
+        "clozaril",
+        "leponex"
+      ],
+      "strengths": [
+        "25mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0485",
+      "name": "Flupentixol",
+      "aliases": [
+        "flupentixol",
+        "fluanxol"
+      ],
+      "strengths": [
+        "0.5mg",
+        "1mg",
+        "3mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0486",
+      "name": "Fluphenazine Decanoate",
+      "aliases": [
+        "fluphenazine",
+        "modecate"
+      ],
+      "strengths": [
+        "25mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0487",
+      "name": "Zuclopenthixol Decanoate",
+      "aliases": [
+        "zuclopenthixol",
+        "clopixol depot"
+      ],
+      "strengths": [
+        "200mg/ml"
+      ],
+      "defaultRoute": "IM",
+      "category": "antipsychotic",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0488",
+      "name": "Sumatriptan",
+      "aliases": [
+        "sumatriptan",
+        "imigran",
+        "imitrex"
+      ],
+      "strengths": [
+        "50mg",
+        "100mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimigraine",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0489",
+      "name": "Ergotamine",
+      "aliases": [
+        "ergotamine",
+        "cafergot"
+      ],
+      "strengths": [
+        "1mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antimigraine",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0490",
+      "name": "Donepezil",
+      "aliases": [
+        "donepezil",
+        "aricept"
+      ],
+      "strengths": [
+        "5mg",
+        "10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anti-dementia",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0491",
+      "name": "Trihexyphenidyl",
+      "aliases": [
+        "trihexyphenidyl",
+        "artane",
+        "benzhexol"
+      ],
+      "strengths": [
+        "2mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticholinergic",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0492",
+      "name": "Levodopa-Carbidopa",
+      "aliases": [
+        "levodopa",
+        "sinemet",
+        "madopar",
+        "carbidopa-levodopa"
+      ],
+      "strengths": [
+        "100/25mg",
+        "250/25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antiparkinsonian",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0493",
+      "name": "Nifedipine Retard",
+      "aliases": [
+        "nifedipine retard",
+        "adalat retard",
+        "adalat xl"
+      ],
+      "strengths": [
+        "30mg",
+        "60mg",
+        "90mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0494",
+      "name": "Enalapril-HCTZ",
+      "aliases": [
+        "co-enalapril",
+        "enalapril-hctz"
+      ],
+      "strengths": [
+        "20mg/12.5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0495",
+      "name": "Losartan-HCTZ",
+      "aliases": [
+        "co-losartan",
+        "losartan-hctz",
+        "hyzaar"
+      ],
+      "strengths": [
+        "50mg/12.5mg",
+        "100mg/25mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0496",
+      "name": "Amlodipine-Valsartan",
+      "aliases": [
+        "exforge",
+        "amlodipine-valsartan"
+      ],
+      "strengths": [
+        "5/160mg",
+        "10/160mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihypertensive",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0497",
+      "name": "Atorvastatin-Ezetimibe",
+      "aliases": [
+        "atozet",
+        "atorvastatin-ezetimibe"
+      ],
+      "strengths": [
+        "10/10mg",
+        "20/10mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "lipid-lowering",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0498",
+      "name": "Metformin-Glimepiride",
+      "aliases": [
+        "amaryl m",
+        "metformin-glimepiride"
+      ],
+      "strengths": [
+        "500/1mg",
+        "500/2mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antidiabetic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0499",
+      "name": "Furosemide-Spironolactone",
+      "aliases": [
+        "lasilactone",
+        "furosemide-spironolactone"
+      ],
+      "strengths": [
+        "20/50mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "diuretic",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0500",
+      "name": "Sodium Valproate CR",
+      "aliases": [
+        "epilim chrono",
+        "sodium valproate cr"
+      ],
+      "strengths": [
+        "200mg",
+        "300mg",
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0501",
+      "name": "Clobazam",
+      "aliases": [
+        "clobazam",
+        "frisium",
+        "urbanyl"
+      ],
+      "strengths": [
+        "10mg",
+        "20mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0502",
+      "name": "Vigabatrin",
+      "aliases": [
+        "vigabatrin",
+        "sabril"
+      ],
+      "strengths": [
+        "500mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0503",
+      "name": "Ethosuximide",
+      "aliases": [
+        "ethosuximide",
+        "zarontin"
+      ],
+      "strengths": [
+        "250mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticonvulsant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0504",
+      "name": "Warfarin 3mg",
+      "aliases": [
+        "warfarin 3mg",
+        "coumadin 3mg"
+      ],
+      "strengths": [
+        "3mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "anticoagulant",
+      "scheduleClass": "S4"
+    },
+    {
+      "code": "0505",
+      "name": "Ipratropium Nebuliser",
+      "aliases": [
+        "ipratropium neb",
+        "atrovent neb"
+      ],
+      "strengths": [
+        "250mcg/ml"
+      ],
+      "defaultRoute": "INH",
+      "category": "bronchodilator",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0506",
+      "name": "Dextromethorphan",
+      "aliases": [
+        "dextromethorphan",
+        "robitussin dm",
+        "benylin dm"
+      ],
+      "strengths": [
+        "10mg/5ml",
+        "15mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "cough suppressant",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0507",
+      "name": "Codeine Linctus",
+      "aliases": [
+        "codeine linctus",
+        "pholtex",
+        "benylin with codeine"
+      ],
+      "strengths": [
+        "15mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "cough suppressant",
+      "scheduleClass": "S5"
+    },
+    {
+      "code": "0508",
+      "name": "Guaifenesin",
+      "aliases": [
+        "guaifenesin",
+        "mucinex",
+        "robitussin"
+      ],
+      "strengths": [
+        "100mg/5ml",
+        "200mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "expectorant",
+      "scheduleClass": "S1"
+    },
+    {
+      "code": "0509",
+      "name": "Bromhexine",
+      "aliases": [
+        "bromhexine",
+        "bisolvon"
+      ],
+      "strengths": [
+        "8mg",
+        "4mg/5ml"
+      ],
+      "defaultRoute": "PO",
+      "category": "mucolytic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0510",
+      "name": "Acetylcysteine",
+      "aliases": [
+        "acetylcysteine",
+        "fluimucil",
+        "acc",
+        "nac"
+      ],
+      "strengths": [
+        "200mg",
+        "600mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "mucolytic",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0511",
+      "name": "Levocetirizine",
+      "aliases": [
+        "levocetirizine",
+        "xyzal"
+      ],
+      "strengths": [
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0512",
+      "name": "Desloratadine",
+      "aliases": [
+        "desloratadine",
+        "aerius",
+        "clarinex"
+      ],
+      "strengths": [
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "antihistamine",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0513",
+      "name": "Montelukast Paediatric",
+      "aliases": [
+        "montelukast chewable",
+        "singulair paediatric"
+      ],
+      "strengths": [
+        "4mg",
+        "5mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "leukotriene antagonist",
+      "scheduleClass": "S3"
+    },
+    {
+      "code": "0514",
+      "name": "Sodium Cromoglycate",
+      "aliases": [
+        "sodium cromoglycate",
+        "intal",
+        "cromolyn"
+      ],
+      "strengths": [
+        "5mg/puff"
+      ],
+      "defaultRoute": "INH",
+      "category": "mast cell stabilizer",
+      "scheduleClass": "S2"
+    },
+    {
+      "code": "0515",
+      "name": "Pseudoephedrine",
+      "aliases": [
+        "pseudoephedrine",
+        "sudafed",
+        "actifed"
+      ],
+      "strengths": [
+        "30mg",
+        "60mg"
+      ],
+      "defaultRoute": "PO",
+      "category": "decongestant",
+      "scheduleClass": "S2"
+    }
+  ]
+}
