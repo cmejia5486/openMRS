@@ -218,13 +218,13 @@ jobs:
             {"id":"SESSION","title":"Session Management","description":"Gestión de sesiones, logout y lifecycle de credenciales.","flags":["has_iaa_supports_out_of_band_authentication","has_iaa_enforces_account_lifecycle_controls","has_session_ids_reused","has_logout_invalidates_server_session","has_clears_local_session_data_on_logout","has_clears_auth_data_on_logout","has_session_id_assigned_from_server_cookie","has_supports_manual_logout"]},
             {"id":"INPUT_OUTPUT","title":"Input/Output Validation","description":"Validación y sanitización de datos de entrada/salida.","flags":["has_clears_cookies_on_logout","has_backend_input_validation"]},
             {"id":"LOGGING","title":"Logging & Monitoring","description":"Registro de eventos, auditoría y monitorización.","flags":["has_data_format_strictly_controlled","has_log_input_sanitization_present","has_log_injection_vulnerabilities","has_logs_privileged_actions_with_timestamp","has_error_messages_disclose_internal_details","has_error_messages_are_generic","has_error_messages_sent_to_unauthorized_destinations","has_server_side_audit_trail","has_secure_backend_log_storage","has_audit_event_correlation","has_audit_failure_alerting"]},
-            {"id":"BINARY","title":"Binary Hardening & Malware","description":"Endurecimiento del binario, certificados y malware.","flags":["has_logs_offloaded_to_secure_siem","has_malware_detections","has_protection_against_tampered_executables","has_controls_protecting_temporary_compiled_data","has_temporary_compiled_data_securely_deleted","has_android_debuggable_enabled","has_manifest_debuggable_true","has_manifest_backup_enabled","has_manifest_allow_clear_text_traffic_true","has_manifest_exports_components_insecurely","has_manifest_services_explicit_accessibility_attributes","has_manifest_custom_permission_defined","has_prevention_against_reverse_engineering"]},
-            {"id":"DEPENDENCIES","title":"Dependencies & Backend Resilience","description":"Dependencias de terceros y resiliencia del backend.","flags":["has_android_dynamic_code_loading","has_libraries_stored_in_secure_app_dir","has_backend_policy_dependencies","has_buffer_overflow_vulnerabilities","has_race_condition_vulnerabilities"]},
+            {"id":"BINARY","title":"Binary Hardening & Malware","description":"Endurecimiento del binario, certificados y malware.","flags":["has_logs_offloaded_to_secure_siem","has_malware_detections","has_min_sdk_below_security_baseline","has_target_sdk_below_security_baseline","has_modern_android_security_baseline","has_protection_against_tampered_executables","has_controls_protecting_temporary_compiled_data","has_temporary_compiled_data_securely_deleted","has_android_debuggable_enabled","has_manifest_debuggable_true","has_manifest_backup_enabled","has_manifest_allow_clear_text_traffic_true","has_manifest_exports_components_insecurely","has_manifest_services_explicit_accessibility_attributes","has_manifest_custom_permission_defined","has_prevention_against_reverse_engineering"]},
+            {"id":"DEPENDENCIES","title":"Dependencies & Backend Resilience","description":"Dependencias de terceros y resiliencia del backend.","flags":["has_android_dynamic_code_loading","has_libraries_stored_in_secure_app_dir","has_backend_policy_dependencies","has_sast_security_findings","has_codeql_security_findings","has_semgrep_security_findings","has_sast_high_confidence_security_findings","has_sast_quality_only_findings","has_buffer_overflow_vulnerabilities","has_race_condition_vulnerabilities"]},
             {"id":"SCA","title":"Software Composition Analysis","description":"Vulnerabilidades conocidas, inventario de dependencias, disponibilidad de correcciones y exposición de licencias detectadas mediante Trivy.","flags":["has_sca_dependency_inventory","has_sca_known_vulnerable_dependencies","has_sca_critical_vulnerabilities","has_sca_high_vulnerabilities","has_sca_medium_vulnerabilities","has_sca_low_vulnerabilities","has_sca_fixable_vulnerabilities","has_sca_unfixed_vulnerabilities","has_sca_security_sensitive_outdated_libraries","has_sca_license_inventory","has_sca_restrictive_licenses","has_sca_unknown_licenses"]},
             {"id":"ROBUSTNESS","title":"Robustness & Memory Safety","description":"Robustez, condiciones de carrera y seguridad de memoria.","flags":["has_out_of_bounds_vulnerabilities","has_memory_corruption_vulnerabilities","has_integer_arithmetic_vulnerabilities","has_null_pointer_protection_implemented","has_initializes_params_on_startup","has_fails_safe_on_init_failure","has_runtime_global_kill_switch_for_security_incidents","has_safe_mode_degraded_functionality_design","has_workmanager_for_resilient_network_tasks","has_transaction_recovery_logs","has_ipc_bindservice_secure","has_requests_only_minimum_permissions","has_supports_runtime_permission_management"]},
             {"id":"IPC_PERMS","title":"Android IPC & Permissions","description":"IPC, permisos y exposición de componentes.","flags":["has_permissions_protected_with_signature_level","has_content_provider_actively_exposed","has_exported_broadcast_receivers_without_permission","has_android_read_write_external_storage","has_webview_components","has_webview_javascript","has_webview_addjavascriptinterface_present","has_webview_javascript_interface_limited_to_trusted_content","has_webview_javascript_interface_exposes_sensitive_functionality","has_webview_javascript_interface_leaks_sensitive_data","has_webview_remote_content","has_webview_file_scheme","has_insecure_http_based_webview_communication","has_displays_sensitive_data_unmasked","has_ui_data_masking","has_blocks_screenshots_flag_secure","has_clears_ui_on_background"]},
-            {"id":"WEBVIEW","title":"WebView & Remote Content","description":"Uso de WebViews, notificaciones y canales de exposición.","flags":["has_secure_notifications","has_notification_leaks_sensitive_data","has_notification_uses_public_channels"]},
-            {"id":"UI_PRIVACY","title":"UI / Storage / Privacy UX","description":"Tratamiento de datos sensibles en UI y almacenamiento local.","flags":["has_stores_sensitive_data_on_device","has_uses_encrypted_local_database","has_uses_encrypted_shared_preferences","has_uses_encrypted_filesystem_storage","has_stores_pii_in_plaintext","has_stores_auth_tokens_in_plaintext","has_stores_keys_in_plaintext","has_clears_local_data_on_uninstall","has_clears_local_data_on_logout_or_switch_user","has_local_caching_of_ephi","has_encrypted_local_caching_of_ephi","has_stores_ephi_on_external_storage","has_sends_ephi_to_third_party_services","has_uses_push_notifications_for_ephi","has_uses_secure_push_channel_for_ephi","has_supports_patient_consent_workflows","has_supports_patient_data_export","has_supports_patient_data_deletion","has_enforces_data_minimization_on_client","has_secure_sync_for_offline_ephi","has_collects_telemetry_for_security_events","has_android_extra_risky_permissions_present","has_password_hashing_uses_salts","has_password_hashing_uses_kdf"]},
+            {"id":"WEBVIEW","title":"WebView & Remote Content","description":"Uso de WebViews, notificaciones y canales de exposición.","flags":["has_secure_notifications","has_notification_leaks_sensitive_data","has_notification_uses_public_channels","has_third_party_trackers","has_crash_reporting_tracker","has_analytics_tracker","has_privacy_relevant_tracker"]},
+            {"id":"UI_PRIVACY","title":"UI / Storage / Privacy UX","description":"Tratamiento de datos sensibles en UI y almacenamiento local.","flags":["has_stores_sensitive_data_on_device","has_uses_encrypted_local_database","has_uses_encrypted_shared_preferences","has_uses_encrypted_filesystem_storage","has_stores_pii_in_plaintext","has_stores_auth_tokens_in_plaintext","has_stores_keys_in_plaintext","has_clears_local_data_on_uninstall","has_clears_local_data_on_logout_or_switch_user","has_local_caching_of_ephi","has_encrypted_local_caching_of_ephi","has_stores_ephi_on_external_storage","has_sends_ephi_to_third_party_services","has_uses_push_notifications_for_ephi","has_uses_secure_push_channel_for_ephi","has_supports_patient_consent_workflows","has_supports_patient_data_export","has_supports_patient_data_deletion","has_enforces_data_minimization_on_client","has_secure_sync_for_offline_ephi","has_collects_telemetry_for_security_events","has_dynamic_runtime_evidence","has_dynamic_tls_evidence","has_dynamic_storage_evidence","has_dynamic_session_evidence","has_dynamic_http_traffic_detected","has_android_extra_risky_permissions_present","has_password_hashing_uses_salts","has_password_hashing_uses_kdf"]},
             {"id":"SOAP_SAML","title":"SOAP / SAML / Enterprise Security","description":"Integraciones SOAP/SAML y controles de seguridad empresarial.","flags":["has_soap_api_usage","has_saml_based_sso","has_uses_xml_signatures","has_uses_xml_encryption","has_proper_ws_security_headers","has_soap_message_level_encryption","has_soap_message_level_signatures","has_soap_prevents_replay_attacks","has_soap_validates_saml_token_audience","has_soap_validates_saml_token_expiry","has_soap_uses_strict_schema_validation","has_soap_masks_sensitive_data_in_logs"]},
             {"id":"HEALTH_EHR","title":"Health Domain & EHR","description":"Aspectos específicos de EHR y datos clínicos.","flags":["has_handles_patient_identifier_correctly","has_maps_patient_ids_consistently"]},
             {"id":"PATCHING","title":"Patching, Updates & Lifecycle","description":"Gestión de parches, eventos clínicos y ciclo de vida.","flags":["has_logs_clinically_relevant_events","has_tracks_clinician_user_actions"]},
@@ -507,19 +507,42 @@ jobs:
           set -euo pipefail
 
           publish_dir="/mnt/data/artifact_publish/vision360-bundle"
-          mkdir -p "$publish_dir"
+          evidence_dir="$publish_dir/evidence-inputs"
+          mkdir -p "$publish_dir" "$evidence_dir"
 
           test -f /mnt/data/vision360_fingerprint.json
           test -f /mnt/data/vision360_output.json
+          test -f /mnt/data/vision360_trace.json
+          test -f /mnt/data/vision360_effective_config.json
 
           cp /mnt/data/vision360_fingerprint.json "$publish_dir/vision360_fingerprint.json"
           cp /mnt/data/vision360_output.json "$publish_dir/vision_360_output.json"
+          cp /mnt/data/vision360_trace.json "$publish_dir/vision360_trace.json"
+          cp /mnt/data/vision360_effective_config.json "$publish_dir/vision360_effective_config.json"
+
+          # Keep the normalized scanner inputs with the bundle for audit traceability.
+          # This prevents later reviews from depending only on the flattened fingerprint.
+          for artifact in \
+            mobsf-report.zip \
+            mobsf-dynamic-report.zip \
+            sast-findings.zip \
+            trivy-payload.zip \
+            openMRS.zip
+          do
+            if [ -f "/mnt/data/$artifact" ]; then
+              cp "/mnt/data/$artifact" "$evidence_dir/$artifact"
+            else
+              echo "[WARN] normalized input not found for publish bundle: $artifact"
+            fi
+          done
 
           test -f "$publish_dir/vision360_fingerprint.json"
           test -f "$publish_dir/vision_360_output.json"
+          test -f "$publish_dir/vision360_trace.json"
+          test -f "$publish_dir/vision360_effective_config.json"
 
-          echo "[ARTIFACT] vision360-bundle will publish only:"
-          ls -lah "$publish_dir"
+          echo "[ARTIFACT] vision360-bundle will publish:"
+          find "$publish_dir" -maxdepth 3 -type f -print -exec ls -lh {} \;
 
       - name: Upload VISION360 outputs
         uses: actions/upload-artifact@v6
@@ -529,3 +552,6 @@ jobs:
           path: |
             /mnt/data/artifact_publish/vision360-bundle/vision360_fingerprint.json
             /mnt/data/artifact_publish/vision360-bundle/vision_360_output.json
+            /mnt/data/artifact_publish/vision360-bundle/vision360_trace.json
+            /mnt/data/artifact_publish/vision360-bundle/vision360_effective_config.json
+            /mnt/data/artifact_publish/vision360-bundle/evidence-inputs/*.zip

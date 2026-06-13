@@ -14,9 +14,6 @@
 
 package com.openmrs.android_sdk.library.models
 
-import com.google.gson.annotations.Expose
-import com.google.gson.annotations.SerializedName
-
 
 /**
  * Concept class
@@ -24,9 +21,4 @@ import com.google.gson.annotations.SerializedName
  * <p> More on concept class https://rest.openmrs.org/#concept-class </p>
  * @constructor Create empty Concept class
  */
-class ConceptClass : Resource(){
-
-    @SerializedName("name")
-    @Expose
-    var name: String? = null
-}
+class ConceptClass : Resource()

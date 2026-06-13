@@ -54,8 +54,6 @@
         </FrameLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <include
-        android:id="@+id/actionsFab"
-        layout="@layout/custom_expandable_fab" />
+    <include layout="@layout/custom_expandable_fab" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

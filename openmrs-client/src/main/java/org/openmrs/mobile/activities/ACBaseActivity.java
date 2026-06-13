@@ -14,19 +14,6 @@
 
 package org.openmrs.mobile.activities;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import dagger.hilt.android.AndroidEntryPoint;
-import rx.Observable;
-import rx.Observer;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -51,15 +38,16 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.dao.LocationDAO;
+import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.community.contact.AboutActivity;
@@ -75,7 +63,18 @@ import org.openmrs.mobile.utilities.ForceClose;
 import org.openmrs.mobile.utilities.LanguageUtils;
 import org.openmrs.mobile.utilities.ThemeUtils;
 
-@AndroidEntryPoint
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import rx.Observable;
+import rx.Observer;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public abstract class ACBaseActivity extends AppCompatActivity {
     protected final OpenMRS mOpenMRS = OpenMRS.getInstance();
     protected final OpenMRSLogger mOpenMRSLogger = OpenmrsAndroid.getOpenMRSLogger();
@@ -93,13 +92,11 @@ public abstract class ACBaseActivity extends AppCompatActivity {
             showCredentialChangedDialog();
         }
     };
-    @Inject
-    ForceClose forceClose;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Thread.setDefaultUncaughtExceptionHandler(forceClose);
+        Thread.setDefaultUncaughtExceptionHandler(new ForceClose(this));
 
         setupTheme();
         setupLanguage();
@@ -265,6 +262,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         OpenmrsAndroid.clearUserPreferencesData();
         mAuthorizationManager.moveToLoginActivity();
         ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.logout_success);
+        AppDatabase.getDatabase(getApplicationContext()).close();
     }
 
     private void showCredentialChangedDialog() {
@@ -362,6 +360,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     }
 
     public void moveUnauthorizedUserToLoginScreen() {
+        AppDatabase.getDatabase(getApplicationContext()).close();
         OpenmrsAndroid.clearUserPreferencesData();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -425,11 +424,9 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     public void setupTheme() {
         if (ThemeUtils.isDarkModeActivated()) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-            getDelegate().applyDayNight();
+            getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-            getDelegate().applyDayNight();
+            getDelegate().setLocalNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
 

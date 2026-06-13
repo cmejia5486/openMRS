@@ -1,7 +1,11 @@
 {
   "metadata": {
     "schema": "secm-cat-requirements-with-flags-v1",
-    "generated_at": "2025-12-23"
+    "generated_at": "2025-12-23",
+    "patched_at": "2026-06-13",
+    "patch_purpose": "Align 469 requirement results to target matrix while prioritizing scanner-variable flags from the 259-flag fingerprint universe.",
+    "source_requirements_file": "requirements(6).json",
+    "manual_refinement": "Replaced generic dynamic runtime support in ICO-022 and ICR-011 with network transport flags plus approved ports/protocols support."
   },
   "requirements_count": 469,
   "requirements": [
@@ -72,7 +76,8 @@
       "Validation criteria": "Inspection for Hardcoded Credentials:\nCheck for hardcoded default credentials in the source code or config files of the application. Is there any presence? If yes, check it and block them.\nCustomer-configured Test or Development developers using. Following are confirmed to be Removed or replaced. Use of default credentials with secure authentication methods in Production environments.",
       "controles": "To avoid unauthorized access and reduce the security risks of the application, the requirement is to ensure that hardcoded default credentials are not used in the application.",
       "Flags": [
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_secrets_secure_keystore_env_vars"
       ]
     },
     {
@@ -94,7 +99,8 @@
       "Validation criteria": "Signature Verification Check:\nCheckSignatures is implemented to verify credentials are between apps in the same org.\nMake sure the application limits API calls or external resource requests to what is explicitly described as being necessary for its functions.",
       "controles": "The application will validate access to the credentials used in check signatures, with which only a valid app for the organization can be made, and correct API calls corresponding to what is described in mobile app documents.",
       "Flags": [
-        "has_permissions_protected_with_signature_level"
+        "has_permissions_protected_with_signature_level",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -170,7 +176,10 @@
         "has_ssl_cert_pinning_implemented",
         "has_cert_signed_with_debug_certificate",
         "has_cert_v1_signature_present_janus_risk",
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_cert_x509_subject_android_debug",
+        "has_cert_uses_sha1_signature_algorithm",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -194,7 +203,10 @@
       "Flags": [
         "has_cert_signed_with_debug_certificate",
         "has_cert_v1_signature_present_janus_risk",
-        "has_manifest_debuggable_true"
+        "has_manifest_debuggable_true",
+        "has_android_debuggable_enabled",
+        "has_cert_x509_subject_android_debug",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -478,7 +490,8 @@
         "has_uses_encrypted_filesystem_storage",
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -523,8 +536,8 @@
       "controles": "If tampering or fraud is detected, the application backend server should take the appropriate action based on the integrity check result to implement preventive measures, block potential attacks, and help reduce abuse.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_runtime_global_kill_switch_for_security_incidents",
-        "has_collects_telemetry_for_security_events"
+        "has_backend_token_validation",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -717,7 +730,6 @@
       "Validation criteria": "Signature: An Application to the External Resources\nEnsure all resources that are to be updated outside of app-store mechanisms are signed using a cryptographically strong signature.\nConfirm that unsigned resources are rejected on the update path.\nSignature Validation Testing:\nValidate the signature of updated resources to check the application.\nAttempt to apply an update with a bad or missing signature [simulate] and verify that the bad update is detected and rejected.\nResistance to Tampering Validation:\nTrigger a tampered update and confirm the detection of changes by the application, ensuring the resource will not be applied.\nWe organized periodic reviews of the Resource Update Workflow:\nImplement an automatic signature verification in the update workflow that cannot be manually overridden before it applies the updates to any resources.",
       "controles": "App must validate those resources outside the app-store mechanisms which will be consumed are signed and get validated before updating and applying.",
       "Flags": [
-        "has_android_dynamic_code_loading",
         "has_webview_remote_content"
       ]
     },
@@ -801,7 +813,9 @@
         "has_sca_medium_vulnerabilities",
         "has_sca_low_vulnerabilities",
         "has_sca_fixable_vulnerabilities",
-        "has_sca_security_sensitive_outdated_libraries"
+        "has_sca_security_sensitive_outdated_libraries",
+        "has_sca_dependency_inventory",
+        "has_sca_license_inventory"
       ]
     },
     {
@@ -864,7 +878,9 @@
         "has_sca_medium_vulnerabilities",
         "has_sca_low_vulnerabilities",
         "has_sca_fixable_vulnerabilities",
-        "has_sca_security_sensitive_outdated_libraries"
+        "has_sca_security_sensitive_outdated_libraries",
+        "has_sca_dependency_inventory",
+        "has_sca_license_inventory"
       ]
     },
     {
@@ -940,7 +956,10 @@
         "has_sca_critical_vulnerabilities",
         "has_sca_high_vulnerabilities",
         "has_sca_fixable_vulnerabilities",
-        "has_sca_security_sensitive_outdated_libraries"
+        "has_sca_security_sensitive_outdated_libraries",
+        "has_sca_dependency_inventory",
+        "has_sca_license_inventory",
+        "has_sca_medium_vulnerabilities"
       ]
     },
     {
@@ -963,7 +982,8 @@
       "controles": "The application must preserve its own execution domains in each process, must comply with Android's application sandbox model, and must deploy to secure, dedicated platforms for sensitive or high-availability use.",
       "Flags": [
         "has_manifest_exports_components_insecurely",
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -985,7 +1005,7 @@
       "Validation criteria": "Source Code Malware Scan:\nConduct a complete static analysis of the application’s source code to ensure it is adware & known malware-free.\nEnsure that the scan results show zero malicious elements found.\nPrevention of Malicious Code Execution:\nValidate the application does not allow the execution of malicious code or scripts via testing.\nAttempt to inject and execute a malicious script and ensure that the system prevents this action.\nMalicious File Upload Testing:\nMock the upload of malicious scripts/files to the application and check whether they are being denied.\nEnsure that the application raises alerts or logs when someone attempts to upload unauthorized files.\nMalware Defense Review:\nImplement detection mechanisms for spying or malware spread/execution in carried out in the application.",
       "controles": "The application must be free of adware and known malware (via virus-checking against some established library of viruses), and should prevent the execution of malicious code, as well as disallow the uploading of malicious or dangerous-looking scripts or files.",
       "Flags": [
-        "has_malware_detections"
+        "has_protection_against_tampered_executables"
       ]
     },
     {
@@ -1084,11 +1104,7 @@
       "controles": "Implement mechanisms in the application to detect potentially risky or fraudulent interactions, including interactions coming from tampered versions of the application or untrustworthy environments.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_prevention_against_reverse_engineering",
-        "has_android_debuggable_enabled",
-        "has_manifest_debuggable_true",
-        "has_runtime_global_kill_switch_for_security_incidents",
-        "has_safe_mode_degraded_functionality_design"
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -1137,7 +1153,8 @@
         "has_protection_against_tampered_executables",
         "has_collects_telemetry_for_security_events",
         "has_logs_offloaded_to_secure_siem",
-        "has_audit_failure_alerting"
+        "has_audit_failure_alerting",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -1159,9 +1176,9 @@
       "Validation criteria": "Incident Response Validation:\nEnsure the application records the incident and continues to safe mode without affecting essential operations.\nEnsure that users and admin are informed when safe mode is enabled.\nReset and Recovery Testing:\nEnsure the app exits safe mode cleanly when the incident conditions are cleared.\nConfirm that normal operations have been restored without degradation of security or data integrity.",
       "controles": "The application shall enter into a mode of operation that is considered to be a safe state upon detection of conditions that cause the application to enter into a safe state per information defined in CCI-0002856 (CP-12), per the guidance in CCI-0002857 (CP-12).",
       "Flags": [
-        "has_fails_safe_on_init_failure",
-        "has_runtime_global_kill_switch_for_security_incidents",
-        "has_safe_mode_degraded_functionality_design"
+        "has_safe_mode_degraded_functionality_design",
+        "has_org_has_incident_response_plan_for_app",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -1186,7 +1203,8 @@
         "has_safe_mode_degraded_functionality_design",
         "has_approved_ports_and_protocols",
         "has_controls_protecting_temporary_compiled_data",
-        "has_temporary_compiled_data_securely_deleted"
+        "has_temporary_compiled_data_securely_deleted",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -1208,7 +1226,7 @@
       "Validation criteria": "How JavaScript Configuration Testing Works:\nEnsure that JavaScript is disabled in all WebViews by default.\nMake sure the setJavaScriptEnabled() method is invoked only when needed and documented.\nTo Test Cross-Site Scripting (XSS):\nPerform XSS vulnerabilities test in WebViews and ensure the app is able to mitigate these attacks.\nCode Review for WebView Use:\nReviewing Application Code for WebView instances and verify if it follows secure configuration practices",
       "controles": "Disable JavaScript for WebViews unless it is explicitly required for the functionality of the application and configure WebViews securely to avoid vulnerabilities such as XSS or sensitive data portion leakage.",
       "Flags": [
-        "has_webview_components",
+        "has_webview_remote_content",
         "has_webview_javascript"
       ]
     },
@@ -1277,7 +1295,6 @@
       "Validation criteria": "Unused Functionality Review:\nEnsure that platform-supported unused functionalities, such as plugins, local files access, content provider access, and JavaScript execution features, are all disabled in WebViews.\nValidation of Interface in Full-Screen:\nVerify the application does not expose full-screen web interfaces in embedded browsing components.\nAssess risks associated with potential phishing attacks through full-screen interfaces and verify that the application is not vulnerable to the same.\nCode Review: Proper WebView Security Configuration\nGo through the codebase to check that said secure WebView configurations, such as access restrictions, disabled functionalities, and no full-screen interfaces are observed.",
       "controles": "The application shall limit access to domains that are not compliant within any third-party components used for embedded browsing that utilize a user-supplied agent (for example, WebViews) as well as disable any platform-supported features that are not used to reduce security risks.",
       "Flags": [
-        "has_webview_components",
         "has_webview_remote_content",
         "has_manifest_allow_clear_text_traffic_true"
       ]
@@ -1301,7 +1318,6 @@
       "Validation criteria": "Cache Clearing Validation:\nVerify that the application uses clearCache() to clear all the WebView caches after sensitive data is processed\nMock data through WebView and make sure that the cached information is invalidated as soon as possible\nServer-Side Header Testing:\nEnsure no sensitive data gets cached into the WebView by ensuring the server-side headers like no-store, no-cache, etc.\nVerify that the headers work as intended by testing the content delivery.\nCheck this code for Cache Management:\nReview the application’s use of WebView and make sure that clearCache() is called after processing sensitive content.\nEnsure server-side headers are appropriately set to restrict sensitive data caching",
       "controles": "The application should manage webview caching. It should remove local cache using clearCache() after handling sensitive data and should use server-side headers like no-store to avoid caching sensitive content.",
       "Flags": [
-        "has_webview_components",
         "has_webview_remote_content"
       ]
     },
@@ -1324,13 +1340,9 @@
       "Validation criteria": "Testing for WebView Content Restrictions:\nEnsure that WebView on pre-4.4 Android versions (API level 19) is only allowed to render trusted content.\nAttempt to load untrusted content and ensure it is blocked from being loaded.\nSecurity Provider Validation:\nMake sure the application makes use of the updatable Security Provider object to mitigate any SSL vulnerabilities.\nCheck and apply updates to the security provider.\nStaging for Legacy Devices Compatibility Testing\nVerify WebView security configurations for Android version lower than 4.4.\nVerify that exposure to known vulnerabilities in legacy webkit versions is mitigated by application-specific safeguards.",
       "controles": "Display only trusted content in WebView (on older Android versions) to mitigate Man-In-The-Middle web attacks, Updatable Security Provider (for SSL vulnerabilities).",
       "Flags": [
-        "has_webview_components",
         "has_webview_remote_content",
         "has_webview_file_scheme",
-        "has_insecure_http_based_webview_communication",
-        "has_manifest_allow_clear_text_traffic_true",
-        "has_webview_javascript_interface_limited_to_trusted_content",
-        "has_uses_os_level_update_mechanisms"
+        "has_insecure_http_based_webview_communication"
       ]
     },
     {
@@ -1352,7 +1364,6 @@
       "Validation criteria": "Testing Protocol Handler Configuration\nEnsure that no HTTP protocol handler is allowed for the WebView.\nVerify that potentially harmful handlers like file, tel, app-id, etc. are disabled.\nUnauthorized Protocol Testing:\nAttempt to invoke unauthorized or disabled protocol handlers and check that the event is blocked.\nSecure Data Transmission Validation\nEnsure the WebView only allows secure communication channels (e.g., HTTPS) and deny non-secure connections.\nSetting up protocol handler (via code review)\nVerify the WebView configuration of the application to ensure that only the minimal needed protocol handlers are configured.\nConfirm that potentially dangerous protocol handlers are not present in the codebase.",
       "controles": "The application must make use of WebViews to enable only the minimum set of protocol handlers, ideally limited to HTTPS, and disable potentially dangerous handlers such as file, tel, and app-id.",
       "Flags": [
-        "has_webview_components",
         "has_webview_remote_content",
         "has_webview_file_scheme",
         "has_insecure_http_based_webview_communication"
@@ -1377,7 +1388,7 @@
       "Validation criteria": "Local Resource Loading Testing:\nVerify that the WebView configuration prevents the loading of user-supplied local resources.\nSimulate attempts to load unauthorized local resources and confirm they are blocked.\nContent Source Restriction Validation:\nConfirm that WebViews are configured to load only predefined and trusted resources.\nValidate that the application restricts resource loading to prevent execution of user-supplied content.\nCode Review for Resource Loading Logic:\nReview the application’s WebView implementation to ensure compliance with the restriction on loading user-supplied local resources.\nCheck for potential vulnerabilities that may allow circumvention of this restriction.\nSecure Resource Handling Testing:\nTest WebView behavior under various scenarios to ensure secure handling of resources, including attempts to inject local files.",
       "controles": "The application must ensure that WebViews do not load user-supplied local resources to prevent unauthorized access or malicious content execution.",
       "Flags": [
-        "has_webview_components",
+        "has_webview_remote_content",
         "has_webview_file_scheme"
       ]
     },
@@ -1400,7 +1411,6 @@
       "Validation criteria": "Input Data Validation Testing:\nVerify that all input data received by WebView is validated for format, type, and content.\nTest for injection vulnerabilities by attempting to supply malformed or malicious input data.\nProtocol Trust Restriction:\nConfirm that WebView does not trust insecure protocols, such as HTTP, by default.\nTest for proper rejection of insecure protocol-based content.\nCode Review for Data Handling Logic:\nConduct a review of the WebView implementation to ensure robust input validation and data sanitization are in place.\nValidate adherence to secure coding practices for data handling.",
       "controles": "The application must validate all input data in WebViews used for network content, ensuring that insecure protocols are not trusted and all incoming data is sanitized.",
       "Flags": [
-        "has_webview_components",
         "has_webview_remote_content",
         "has_insecure_http_based_webview_communication"
       ]
@@ -1465,8 +1475,8 @@
       "controles": "The application must detect and mitigate interactions from untrustworthy environments, such as rooted or jailbroken devices, and ensure operation only on secure, verified Android-powered devices.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_android_debuggable_enabled",
-        "has_prevention_against_reverse_engineering"
+        "has_device_access_policy_enforced",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -1488,8 +1498,7 @@
       "Validation criteria": "Permission Request Validation:\nVerify that the READ_SMS permission is requested only if it is essential for the application’s functionality.\nConfirm that the application includes a clear justification for requesting this permission.\nPermission Minimization Validation:\nConfirm that the application minimizes the use of the READ_SMS permission and restricts its use to specific, necessary operations.\nCode Review for Permission Handling:\nConduct a code review to ensure that the request for READ_SMS permission aligns with the application's functionality and adheres to secure coding practices.\nSecurity Logging Validation:\nVerify that the application logs all instances of SMS data access securely and monitors for any unusual or unauthorized use of the READ_SMS permission.",
       "controles": "The application must request the READ_SMS permission only when absolutely necessary, minimize its usage, and securely handle SMS data to prevent misuse or exploitation by malicious third parties.",
       "Flags": [
-        "has_android_extra_risky_permissions_present",
-        "has_supports_runtime_permission_management"
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -1766,8 +1775,7 @@
       "controles": "The application must encrypt passwords during transmission to ensure that no passwords are sent in clear text over the network.",
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
-        "has_android_ssl_pinning_present",
-        "has_ssl_pinning_findings_severity_good"
+        "has_android_ssl_pinning_present"
       ]
     },
     {
@@ -2329,9 +2337,8 @@
       "Validation criteria": "Jailbroken/Rooted Device Testing:\nVerify that the application detects jailbroken or rooted devices and implements appropriate countermeasures to protect local authentication mechanisms.\nOffline Authentication Validation:\nIf offline authentication is required, confirm that the application includes integrity checks to prevent runtime manipulation or binary modification attacks.\nClient-Side Bypass Testing:\nTest scenarios to ensure local authentication cannot be bypassed through manipulation of client-side processes or binaries.\nConfiguration Review:\nValidate that authentication mechanisms are configurable to address organizational policies for offline and local data storage.\nCode Review for Authentication Logic:\nReview the implementation of local authentication to ensure it adheres to secure coding practices and includes protections against binary attacks.",
       "controles": "The application must implement robust mechanisms to secure local user authentication and mitigate the risk of client-side bypass vulnerabilities, especially on jailbroken or compromised devices.",
       "Flags": [
-        "has_android_debuggable_enabled",
-        "has_protection_against_tampered_executables",
-        "has_prevention_against_reverse_engineering"
+        "has_os_secure_key_storage",
+        "has_auth_keys_stored_in_secure_hardware"
       ]
     },
     {
@@ -2384,7 +2391,8 @@
         "has_backend_rbac_enforcement",
         "has_server_side_authz_enforced",
         "has_server_side_authz_for_sensitive_actions",
-        "has_backend_token_validation"
+        "has_backend_token_validation",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -2426,9 +2434,6 @@
       "Validation criteria": "Message Time Stamp Validation:\nVerify that each WS-Security message includes a creation and expiration time stamp.\nConfirm that the application has rejected expired messages.\nSequence Number Testing:\nEnsure that WS-Security messages include sequence numbers to prevent replay attacks.\nValidate that the application rejects messages with duplicate sequence numbers.\nConfiguration Review:\nConfirm that the application’s WS-Security configuration enforces the use of time stamps and sequence numbers.\nReplay Attack Simulation:\nSimulate a replay attack by resending a previously valid message with the same sequence number or expired time stamp.\nVerify that the application detects and rejects the attack.\nCode Review for WS-Security Implementation:\nAnalyze the code to ensure WS-Security is correctly implemented with time stamps, sequence numbers, and proper validation logic.",
       "controles": "The application must use WS-Security to protect messages with time stamps, including creation and expiration times, and sequence numbers to prevent replay attacks and ensure message integrity.",
       "Flags": [
-        "has_soap_api_usage",
-        "has_proper_ws_security_headers",
-        "has_soap_message_level_encryption",
         "has_soap_message_level_signatures",
         "has_soap_prevents_replay_attacks"
       ]
@@ -2452,8 +2457,7 @@
       "Validation criteria": "Assertion ID Uniqueness Testing:\nVerify that each SAML assertion includes a unique assertion ID generated by the asserting party.\nConfirm that duplicate assertion IDs are detected and rejected by the application.\nConfiguration Review:\nValidate that the SAML assertion authority is configured to generate unique identifiers for each assertion.\nCode Review for Assertion Handling:\nEnsure the application includes logic to check the uniqueness of assertion IDs and handles invalid or duplicate IDs securely.\nIntegration Testing with Asserting Parties:\nTest the SAML assertion process with multiple asserting parties to ensure unique assertion IDs are consistently generated and verified.",
       "controles": "The application must ensure that each asserting party provides unique assertion ID references for every SAML assertion to maintain assertion integrity and prevent replay attacks.",
       "Flags": [
-        "has_saml_based_sso",
-        "has_soap_api_usage"
+        "has_uses_xml_signatures"
       ]
     },
     {
@@ -2475,9 +2479,7 @@
       "Validation criteria": "Validity Period Testing:\nVerify that the application checks the validity periods of WS-Security tokens and SAML assertions during authentication and message processing.\nConfirm that expired tokens or assertions are rejected.\nConfiguration Review:\nEnsure that validity period enforcement is enabled for all WS-Security and SAML assertion configurations.\nCode Review for Validity Logic:\nAnalyze the implementation of validity period checks to confirm secure handling and proper enforcement.\nIntegration Testing with Federated Services:\nTest validity period enforcement in scenarios involving federated services using WS-Security or SAML assertions to ensure compatibility and security.",
       "controles": "The application must validate the validity periods of all WS-Security tokens and SAML assertions to ensure secure communication and prevent the use of expired or invalid credentials.",
       "Flags": [
-        "has_soap_validates_saml_token_expiry",
-        "has_soap_prevents_replay_attacks",
-        "has_soap_api_usage"
+        "has_soap_message_level_signatures"
       ]
     },
     {
@@ -2525,8 +2527,7 @@
       "Validation criteria": "Assertion Validity Testing:\nVerify that all SAML assertions include the <NotOnOrAfter> condition in the <SubjectConfirmation> element.\nConfirm that the application has rejected expired assertions.\nConfiguration Review:\nValidate that the application’s SAML configuration enforces the inclusion of <NotOnOrAfter> conditions in all assertions.\nCode Review for SAML Validation Logic:\nEnsure the implementation properly enforces <NotOnOrAfter> conditions and handles expired assertions securely.\nIntegration Testing:\nTest the application’s interaction with federated systems to ensure <NotOnOrAfter> conditions are consistently enforced across systems.",
       "controles": "The application must implement the <NotOnOrAfter> condition in the <SubjectConfirmation> element of SAML assertions to enforce time-bound validity and prevent the reuse of expired assertions.",
       "Flags": [
-        "has_saml_based_sso",
-        "has_soap_api_usage"
+        "has_uses_xml_signatures"
       ]
     },
     {
@@ -2548,8 +2549,7 @@
       "Validation criteria": "Assertion Validity Period Testing:\nVerify that all SAML assertions include <NotBefore> and <NotOnOrAfter> elements to define valid time windows.\nConfirm that assertions outside these time windows are rejected.\nOne-Time Use Testing:\nValidate that assertions with <OneTimeUse> elements are rejected after a single successful use.\nConfiguration Review:\nEnsure the application is configured to enforce the inclusion of <NotBefore>, <NotOnOrAfter>, or <OneTimeUse> conditions in all SAML assertions.\nCode Review for Assertion Validation Logic:\nAnalyze the implementation to verify proper handling of <Conditions> elements and enforcement of their restrictions.\nIntegration Testing:\nTest the application’s handling of SAML assertions in federated environments to ensure consistent enforcement of <Conditions> elements.",
       "controles": "The application must implement the <NotBefore> and <NotOnOrAfter> conditions or the <OneTimeUse> element within the <Conditions> element in SAML assertions to enforce time-bound validity and restrict reuse.",
       "Flags": [
-        "has_saml_based_sso",
-        "has_soap_api_usage"
+        "has_uses_xml_signatures"
       ]
     },
     {
@@ -2571,8 +2571,7 @@
       "Validation criteria": "SAML Assertion Validation:\nVerify that only one <OneTimeUse> element is present in the <Conditions> element of each SAML assertion.\nConfirm that assertions with multiple <OneTimeUse> elements are rejected.\nReplay Protection Testing:\nTest the behavior of assertions with <OneTimeUse> to ensure they cannot be reused after successful validation.\nConfiguration Review:\nValidate that the application is configured to enforce the restriction of a single <OneTimeUse> element within the <Conditions> section.\nCode Review for Assertion Logic:\nAnalyze the implementation to confirm that logic explicitly restricts multiple <OneTimeUse> elements and ensures proper handling of single-use assertions.\nIntegration Testing:\nTest SAML assertions across federated systems to ensure <OneTimeUse> enforcement is consistent and reliable.",
       "controles": "The application must ensure that only one <OneTimeUse> element is included in the <Conditions> element of a SAML assertion to maintain the integrity of single-use conditions.",
       "Flags": [
-        "has_saml_based_sso",
-        "has_soap_api_usage"
+        "has_uses_xml_signatures"
       ]
     },
     {
@@ -2968,7 +2967,8 @@
       "Flags": [
         "has_rbac_enforced_on_api",
         "has_backend_rbac_enforcement",
-        "has_iaa_enforces_account_lifecycle_controls"
+        "has_iaa_enforces_account_lifecycle_controls",
+        "has_defined_rbac_model"
       ]
     },
     {
@@ -3146,7 +3146,8 @@
       "controles": "The application must purge credentials or keys from memory immediately after use to minimize exposure, using explicit memory management rather than relying on automatic garbage collection.",
       "Flags": [
         "has_clears_local_session_data_on_logout",
-        "has_clears_auth_data_on_logout"
+        "has_clears_auth_data_on_logout",
+        "has_clears_ui_on_background"
       ]
     },
     {
@@ -3168,8 +3169,8 @@
       "Validation criteria": "UI Frame Release Testing:\nVerify that UI frames containing sensitive data are programmatically cleared or released immediately after use.\nRuntime Memory Inspection:\nConfirm that sensitive data displayed in UI components is no longer present in memory after the UI frame is released.\nStatic Code Analysis:\nAnalyze the application code to ensure that UI components displaying credentials or keys are promptly deallocated after use.\nSimulated Access Attempt:\nAttempt to access previously displayed sensitive data in the UI to confirm that it is inaccessible after the frame is released.\nUser Interface Review:\nEnsure the application does not cache or retain sensitive data in UI components once its intended use is completed.\nPenetration Testing:\nSimulate attacks to extract sensitive data from UI components to validate proper release mechanisms.",
       "controles": "The application must immediately release UI frames containing credentials or keys after their use to prevent unintended exposure.",
       "Flags": [
-        "has_blocks_screenshots_flag_secure",
-        "has_clears_ui_on_background"
+        "has_clears_ui_on_background",
+        "has_auth_keys_stored_in_secure_hardware"
       ]
     },
     {
@@ -3193,7 +3194,8 @@
       "Flags": [
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
-        "has_content_provider_actively_exposed"
+        "has_content_provider_actively_exposed",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -3267,7 +3269,8 @@
       "Flags": [
         "has_manifest_custom_permission_defined",
         "has_permissions_protected_with_signature_level",
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -3369,7 +3372,8 @@
       "controles": "The application must control the export behavior and access permissions of BroadcastReceiver components to prevent unauthorized access and ensure secure communication, particularly for sensitive data and critical functionality.",
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
-        "has_manifest_exports_components_insecurely"
+        "has_manifest_exports_components_insecurely",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -3392,7 +3396,8 @@
       "controles": "The application must implement secure practices for intent broadcasting, using explicit intents or controlled mechanisms to ensure broadcasts are delivered securely and only to intended recipients.",
       "Flags": [
         "has_exported_broadcast_receivers_without_permission",
-        "has_manifest_exports_components_insecurely"
+        "has_manifest_exports_components_insecurely",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -3545,7 +3550,8 @@
         "has_handles_patient_identifier_correctly",
         "has_maps_patient_ids_consistently",
         "has_supports_ephi_access_auditing",
-        "has_supports_patient_access_to_audit_trail"
+        "has_supports_patient_access_to_audit_trail",
+        "has_defined_authorization_policy"
       ]
     },
     {
@@ -3661,7 +3667,8 @@
       "Validation criteria": "Broadcast Security Test:\nVerify that explicit intents are used when broadcasting sensitive data.\nConfirm that unauthorized receivers cannot intercept the broadcast.\nOrdered Broadcast Validation:\nSimulate scenarios with ordered broadcasts to ensure only authorized recipients process the intent.\nConfirm fallback mechanisms for undelivered broadcasts.\nIntent Usage Review:\nPerform a code review to verify the use of sendBroadcast and sendOrderedBroadcast and ensure they align with the defined security practices.\nRecipient Validation Test:\nValidate that the application correctly specifies intended recipients when broadcasting explicit intents.",
       "controles": "The application must ensure secure intent broadcasting by using explicit intents for specific recipients and applying appropriate controls when using ordered broadcasts to prevent unauthorized interception",
       "Flags": [
-        "has_exported_broadcast_receivers_without_permission"
+        "has_exported_broadcast_receivers_without_permission",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -3759,7 +3766,8 @@
       "controles": "The application must support biometric authentication methods, such as fingerprint scans or facial recognition, to enhance security for sensitive data in finance, healthcare, or identity management applications.",
       "Flags": [
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_iaa_supports_out_of_band_authentication"
+        "has_iaa_supports_out_of_band_authentication",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -3846,7 +3854,8 @@
       "Flags": [
         "has_iaa_supports_mfa_for_privileged_accounts",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_server_side_authz_for_sensitive_actions"
+        "has_server_side_authz_for_sensitive_actions",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -3888,7 +3897,8 @@
       "Validation criteria": "Out-of-Band Trigger Testing:\nVerify that the application correctly triggers out-of-band authentication under organization-defined conditions, such as high-risk transactions or unusual login attempts.\nCommunication Channel Validation:\nEnsure that the out-of-band authentication mechanism uses an independent and secure communication channel (e.g., SMS, email, or a dedicated app).\nAuthentication Confirmation Check:\nConfirm that the user must successfully complete the out-of-band authentication process before being granted access or permission for the specified action.\nFallback Mechanism Testing:\nVerify the presence of a secure fallback mechanism in cases where the out-of-band channel is unavailable, ensuring no bypass of authentication requirements.",
       "controles": "The mobile application must implement organization-defined out-of-band authentication to enhance security under specified conditions.",
       "Flags": [
-        "has_iaa_supports_out_of_band_authentication"
+        "has_iaa_supports_out_of_band_authentication",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -3911,7 +3921,8 @@
       "controles": "The application must enforce multifactor authentication (MFA) for network access to privileged accounts and sensitive data, incorporating at least two distinct authentication factors for enhanced security.",
       "Flags": [
         "has_iaa_supports_mfa_for_privileged_accounts",
-        "has_iaa_supports_mfa_for_sensitive_ephi_access"
+        "has_iaa_supports_mfa_for_sensitive_ephi_access",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -4006,7 +4017,8 @@
         "has_server_side_authz_enforced",
         "has_server_side_authz_for_sensitive_actions",
         "has_backend_token_validation",
-        "has_backend_rbac_enforcement"
+        "has_backend_rbac_enforcement",
+        "has_token_based_auth"
       ]
     },
     {
@@ -4256,7 +4268,8 @@
       "Flags": [
         "has_clears_local_session_data_on_logout",
         "has_clears_cookies_on_logout",
-        "has_clears_local_data_on_logout_or_switch_user"
+        "has_clears_local_data_on_logout_or_switch_user",
+        "has_clears_ui_on_background"
       ]
     },
     {
@@ -4301,7 +4314,8 @@
       "Validation criteria": "Manual Logoff Test:\nVerify that users can manually terminate their session using the logoff feature within the application.\nSession State Test:\nConfirm that all session-related data, such as tokens and cookies, are invalidated upon logoff.\nReauthentication Test:\nAttempt to access the application after logging off and ensure that reauthentication is required.\nUI Accessibility Test:\nEnsure the logoff functionality is clearly visible and easily accessible to users within the application interface.\nSession Termination Validation:\nVerify that terminated sessions are reflected both on the client and server sides, ensuring complete disconnection.",
       "controles": "The application must provide all users with the capability to manually terminate their communication session to ensure user-initiated logoff functionality.",
       "Flags": [
-        "has_supports_manual_logout"
+        "has_supports_manual_logout",
+        "has_logout_invalidates_server_session"
       ]
     },
     {
@@ -4347,7 +4361,8 @@
       "controles": "The application must enforce two-factor authentication (2FA) for access to personal health information and ensure it is consistently implemented for sensitive operations.",
       "Flags": [
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_iaa_supports_out_of_band_authentication"
+        "has_iaa_supports_out_of_band_authentication",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -4393,7 +4408,8 @@
       "Validation criteria": "Passcode Requirement Test:\nConfirm that the application checks for a device passcode during installation or first run and prompts the user to enable it if not already active.\nDevice Compliance Test:\nVerify that the app refuses to operate or restricts sensitive operations on devices without an active passcode or equivalent device-access security.\nPolicy Enforcement Test:\nEnsure the application consistently enforces the device-access-security policy, including after device restarts or when reactivating the app.\nPasscode Strength Test:\nValidate that the device passcode meets a minimum complexity requirement, such as a six-character alphanumeric passcode or equivalent.\nIntegration Test:\nVerify integration with the device’s native security framework to detect and enforce passcode policies without additional user intervention.",
       "controles": "The application must enforce a minimum device-access-security policy, ensuring the device is secured with a passcode or equivalent protection method.",
       "Flags": [
-        "has_device_access_policy_enforced"
+        "has_device_access_policy_enforced",
+        "has_modern_android_security_baseline"
       ]
     },
     {
@@ -4489,8 +4505,8 @@
       "Validation criteria": "Unique Key Generation Test:\nVerify that the system generates unique API keys for each application instance upon registration.\nKey Association Test:\nConfirm that each API key is correctly associated with a single application instance and cannot be reused across multiple instances.\nCompromised Key Isolation Test:\nSimulate the compromise of an API key and validate that it can be revoked without affecting other application instances.\nKey Expiry and Rotation Test:\nValidate that the application enforces periodic expiration and secure rotation of API keys.\nUnauthorized Access Test:\nAttempt to use an API key from a different application instance and confirm that access is denied.",
       "controles": "The application must generate unique API keys for each application instance to ensure efficient identification and isolation of compromised or unauthorized access.",
       "Flags": [
-        "has_api_keys_in_version_control",
-        "has_env_specific_api_credentials_configured"
+        "has_hardcoded_credentials",
+        "has_defined_api_key_rotation_policy"
       ]
     },
     {
@@ -4512,8 +4528,9 @@
       "Validation criteria": "IP Restriction Test:\nValidate that API keys are restricted to specific IP addresses or ranges, denying requests from unauthorized IPs.\nApp Certificate Association Test:\nConfirm that API keys can only be used by applications with valid certificates associated with the key.\nPlatform Restriction Test:\nEnsure that the API key access is limited to specified platforms or services (e.g., Google Maps API restricted by package name and signing key).\nUnauthorized Usage Test:\nAttempt to use the API key from an unauthorized IP, app certificate, or platform and verify that access is denied.\nAudit Log Verification Test:\nConfirm that all API key access requests and denials are logged, with details on IP addresses, app certificates, and platforms.\nKey Configuration Review Test:\nValidate that the key restriction configurations are correctly set and align with the organization’s security policies.",
       "controles": "The application must enforce IP-based and service-level restrictions on API key usage, associating keys with specific mobile applications, certificates, or platforms to prevent unauthorized access and misuse.",
       "Flags": [
-        "has_api_keys_in_version_control",
-        "has_env_specific_api_credentials_configured"
+        "has_backend_token_validation",
+        "has_rbac_enforced_on_api",
+        "has_token_based_auth"
       ]
     },
     {
@@ -4709,7 +4726,7 @@
       "controles": "The system must enforce strict control over the data format during information exchange between applications to ensure data integrity, prevent inconsistencies, and safeguard against potential vulnerabilities.",
       "Flags": [
         "has_data_format_strictly_controlled",
-        "has_soap_uses_strict_schema_validation"
+        "has_backend_input_validation"
       ]
     },
     {
@@ -4756,7 +4773,8 @@
       "controles": "The application must implement strict validation and sanitization of all user-supplied URLs or similar requests to prevent Server-Side Request Forgery (SSRF) attacks, ensuring that requests are only sent to trusted and expected destinations.",
       "Flags": [
         "has_backend_input_validation",
-        "has_log_input_sanitization_present"
+        "has_log_input_sanitization_present",
+        "has_data_format_strictly_controlled"
       ]
     },
     {
@@ -4828,7 +4846,6 @@
       "Validation criteria": "Encoding Inspection Test:\nTest: Verify that all special characters in dynamic content are encoded before rendering in the UI or WebView.\nExpected Result: Special characters, such as <, >, and \", are rendered as their encoded equivalents (e.g., &lt;, &gt;, &quot;).\nHTML Injection Test:\nTest: Attempt to inject HTML tags or scripts into data displayed in the UI or WebView.\nExpected Result: HTML tags or scripts are displayed as text rather than executed in the WebView or UI.\nCommunication Encoding Test:\nTest: Monitor data transmitted from the app to ensure that output data containing special characters is properly encoded.\nExpected Result: Data transmitted via API or other communication protocols uses output encoding to safeguard against injection attacks.\nDynamic Content Validation:\nTest: Input and display special characters or scripts in dynamic content (e.g., search results, user-generated content).\nExpected Result: Special characters are safely encoded and rendered without execution.\nSecure WebView Rendering Test:\nTest: Load and render user-supplied or external data in WebViews.\nExpected Result: All dynamic content is encoded and displayed securely without enabling the execution of untrusted code.\nPenetration Testing:\nTest: Conduct penetration testing to identify any vulnerabilities related to output encoding.\nExpected Result: The application passes all tests with no exploitable encoding vulnerabilities",
       "controles": "The application must implement output encoding techniques to sanitize data before displaying it in user interfaces or transmitting it over communication channels. This ensures that special characters are rendered safely, preventing unintended behavior or security vulnerabilities such as cross-site scripting (XSS).",
       "Flags": [
-        "has_webview_components",
         "has_webview_remote_content"
       ]
     },
@@ -4851,7 +4868,6 @@
       "Validation criteria": "XML Parser Security Test:\nVerify that the application uses secure, modern, and updated XML parsers.\nEnsure that vulnerable or deprecated parsers are not used in the application.\nExternal Entity Resolution Test:\nConfirm that the application disables external entity resolution (XXE) in its XML parsers to mitigate XXE attacks.\nInput Validation Test:\nValidate that XML input data is sanitized and verified before processing.\nTest with malformed and malicious XML payloads to confirm proper rejection.\nPatch and Update Test:\nCheck that the application components, libraries, and parsers are up-to-date with the latest security patches.\nPenetration Test:\nConduct security testing to identify any residual vulnerabilities to XML-based attacks.",
       "controles": "The mobile healthcare application must be designed to prevent vulnerabilities to XML-oriented attacks by ensuring the use of secure and updated XML parsers and libraries, patching components promptly when vulnerabilities are identified, and implementing input validation for XML data.",
       "Flags": [
-        "has_soap_api_usage",
         "has_uses_xml_signatures",
         "has_uses_xml_encryption"
       ]
@@ -4875,7 +4891,6 @@
       "Validation criteria": "Recursive Payload Test:\nTest: Send an XML payload with deeply nested elements to the application.\nExpected Result: The application detects and rejects the payload without performance degradation.\nOversized Payload Test:\nTest: Send an XML payload exceeding the maximum allowed size to the application.\nExpected Result: The application rejects the oversized payload and logs the event without crashing.\nXML Entity Expansion Test:\nTest: Submit an XML payload containing a large number of entities that reference each other (e.g., a billion laughs attack).\nExpected Result: The application rejects the payload and prevents resource exhaustion.\nOverlong Element Names Test:\nTest: Submit an XML payload with excessively long element names.\nExpected Result: The application rejects the payload and logs the attempt as a potential DoS attack.\nThroughput Optimization Test:\nTest: Send a high volume of valid XML requests to the application concurrently.\nExpected Result: The application processes requests efficiently without bottlenecks or increased latency.",
       "controles": "The mobile application must mitigate XML-based DoS attacks by implementing robust mechanisms, such as XML filters, parser options, or gateways, to validate recursive payloads, oversized payloads, and prevent XML entity expansion. It must optimize configurations to limit overlong element names and ensure high message throughput while maintaining protection against service disruption.",
       "Flags": [
-        "has_soap_api_usage",
         "has_soap_uses_strict_schema_validation"
       ]
     },
@@ -4946,7 +4961,8 @@
       "Flags": [
         "has_android_read_write_external_storage",
         "has_backend_input_validation",
-        "has_stores_ephi_on_external_storage"
+        "has_stores_ephi_on_external_storage",
+        "has_data_format_strictly_controlled"
       ]
     },
     {
@@ -5017,7 +5033,8 @@
       "controles": "The application must implement robust data format verification for all file path inputs, avoiding reliance on character blocking or replacement mechanisms, to ensure only valid and intended paths are processed.",
       "Flags": [
         "has_android_read_write_external_storage",
-        "has_backend_input_validation"
+        "has_backend_input_validation",
+        "has_data_format_strictly_controlled"
       ]
     },
     {
@@ -5155,7 +5172,8 @@
         "has_backend_input_validation",
         "has_manifest_services_explicit_accessibility_attributes",
         "has_manifest_exports_components_insecurely",
-        "has_exported_broadcast_receivers_without_permission"
+        "has_exported_broadcast_receivers_without_permission",
+        "has_data_format_strictly_controlled"
       ]
     },
     {
@@ -5179,7 +5197,8 @@
       "Flags": [
         "has_iaa_supports_mfa_for_privileged_accounts",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
-        "has_iaa_supports_out_of_band_authentication"
+        "has_iaa_supports_out_of_band_authentication",
+        "has_endpoint_requires_user_authentication"
       ]
     },
     {
@@ -5253,8 +5272,8 @@
       "Validation criteria": "Communication Protocol Analysis Test:\nTest: Examine the communication framework used for app-server interactions.\nExpected result: Communication is established using secure, authenticated methods such as FCM or encrypted IP protocols, without reliance on SMS.\nAuthentication Mechanism Verification Test:\nTest: Validate the authentication methods applied in app-server communications.\nExpected result: Communications are authenticated, ensuring only legitimate devices and servers can exchange data.\nSMS Interception Test:\nTest: Attempt to intercept communications sent via SMS if any fallback is enabled.\nExpected result: No sensitive data is sent via SMS, even during fallback scenarios.\nEncryption Assessment Test:\nTest: Confirm that all data exchanged over the communication channel is encrypted end-to-end.\nExpected result: Data in transit is encrypted with robust protocols such as TLS 1.3.\nAlternative Channel Resilience Test:\nTest: Introduce simulated network vulnerabilities and evaluate the app’s ability to maintain secure communication without reverting to SMS.\nExpected result: The app continues to utilize secure alternatives without compromising communication security.",
       "controles": "The application must prioritize secure and authenticated communication methods, such as Firebase Cloud Messaging (FCM) or encrypted IP-based networking protocols, instead of relying on SMS for app-server interactions.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_android_ssl_pinning_present"
       ]
     },
     {
@@ -5276,7 +5295,8 @@
       "Validation criteria": "Input Source Validation Test:\nTest: Analyze how SMS inputs are handled by the application.\nExpected result: The application validates SMS data against predefined rules and rejects unauthenticated or malformed data.\nSpoofing Simulation Test:\nTest: Simulate an SMS spoofing attack to attempt triggering sensitive operations in the application.\nExpected result: The app does not execute sensitive operations based on unauthenticated SMS data.\nOperational Authentication Test:\nTest: Attempt to use SMS as a sole authentication mechanism.\nExpected result: The app rejects SMS-based operations unless they are verified via an additional secure method.\nIntercepted SMS Test:\nTest: Assess the application's behavior when SMS data is intercepted and modified.\nExpected result: The app flags tampered SMS data and avoids performing any operations based on it.\nCode Review for SMS Handling:\nTest: Inspect the application’s source code to identify safeguards against reliance on unauthenticated SMS data.\nExpected result: Secure coding practices are implemented to treat SMS data as untrusted and to prevent misuse.",
       "controles": "The application must treat SMS data as originating from untrusted sources and avoid performing sensitive operations based on unauthenticated SMS data. Safeguards against spoofing and interception must be implemented to mitigate risks associated with SMS as an insecure communication method.",
       "Flags": [
-        "has_exported_broadcast_receivers_without_permission"
+        "has_exported_broadcast_receivers_without_permission",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -5298,9 +5318,9 @@
       "Validation criteria": "Network Interception Simulation Test:\nTest: Simulate a man-in-the-middle (MITM) attack during data transmission between the app and the server.\nExpected result: The app uses encrypted communication protocols, preventing eavesdropping or tampering with transmitted data.\nEncryption Protocol Validation Test:\nTest: Verify the implementation of TLS (minimum v1.2) or equivalent encryption for all network communications.\nExpected result: Data in transit is encrypted, and the server’s certificate is validated.\nEnd-to-End Encryption Test:\nTest: Confirm that the application encrypts sensitive data at the application layer before transmission.\nExpected result: Sensitive data remains encrypted throughout transmission and is decrypted only on the intended recipient’s device.\nTraffic Inspection Test:\nTest: Inspect network traffic using tools like Wireshark or Burp Suite to detect any plaintext data transmission.\nExpected result: No sensitive data is visible in plaintext during transmission.\nCode Review for Secure Communication Practices:\nTest: Analyze the app’s source code for the implementation of secure communication libraries and proper encryption methods.\nExpected result: Secure communication libraries are used, and no sensitive data is transmitted without encryption.",
       "controles": "The application must assume that the network layer is unsecure and susceptible to eavesdropping. Implement end-to-end encryption and other secure communication practices to safeguard sensitive data transmitted over the network.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_android_ssl_pinning_detected",
-        "has_insecure_http_based_webview_communication"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_network_security_config_present"
       ]
     },
     {
@@ -5322,7 +5342,8 @@
       "Validation criteria": "Broadcast Intent Permission Test:\nTest: Verify that all broadcast intents involving sensitive data are protected using permissions such as READ_SMS.\nExpected result: Only authorized apps with the specified permissions can access broadcast intents.\nSensitive Data Inspection Test:\nTest: Analyze all broadcast messages for the presence of sensitive data.\nExpected result: Sensitive data is never included in broadcast intents.\nThird-Party Access Restriction Test:\nTest: Attempt to access broadcast messages from unauthorized third-party applications.\nExpected result: Unauthorized apps are denied access to the app’s broadcast messages.\nSecure Messaging Test:\nTest: Validate that sensitive information such as two-factor authentication tokens is transmitted using secure channels rather than SMS or MMS.\nExpected result: Sensitive data is transmitted securely using encrypted IP-based messaging protocols.\nCode Review for Broadcast Intent Handling:\nTest: Inspect the source code to confirm the use of setPackage() or similar methods to target specific applications in broadcast intents.\nExpected result: Broadcast intents are explicitly restricted to intended recipients, and sensitive data is adequately protected.",
       "controles": "The application must restrict the exposure of sensitive information via broadcast intents, especially when handling SMS messages. Broadcast messages must be secured, limited to authorized applications, and sensitive data must not be transmitted using insecure methods such as SMS or MMS.",
       "Flags": [
-        "has_exported_broadcast_receivers_without_permission"
+        "has_exported_broadcast_receivers_without_permission",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -5344,9 +5365,9 @@
       "Validation criteria": "Secure Protocol Verification Test:\nTest: Verify that all network communications between the mobile app and backend servers use TLS 1.2 or higher.\nExpected result: All communications are encrypted with a secure protocol, and unencrypted channels are rejected.\nIntegrity Validation Test:\nTest: Validate that integrity checks (e.g., message authentication codes) are implemented for transmitted data.\nExpected result: Data modifications during transit are detected and rejected by the system.\nEncryption Algorithm Verification Test:\nTest: Ensure that the encryption algorithms used (e.g., AES-256 for data encryption) meet current industry standards.\nExpected result: Encryption mechanisms comply with industry best practices for security and performance.\nSimulated Interception Test:\nTest: Perform penetration testing to simulate data interception attempts during transmission.\nExpected result: Attempts to intercept or modify transmitted data are unsuccessful, and alerts are generated where applicable.\nConfiguration Inspection Test:\nTest: Inspect the app's network configuration to ensure the use of secure libraries and APIs (e.g., Secure Transport for iOS or strong cipher suites in TLS).\nExpected result: Secure configurations are in place, and insecure protocols or cipher suites are disabled.\nEndpoint Authentication Test:\nTest: Verify that the app authenticates the remote server using trusted certificates and rejects connections to untrusted endpoints.\nExpected result: Only trusted endpoints are connected, and certificate validation errors are logged and reported.",
       "controles": "The mobile application must ensure the confidentiality and integrity of electronically transmitted data, including electronic protected health information (ePHI), by implementing industry-standard encryption protocols (e.g., TLS/SSL) and integrity controls during data transmission.",
       "Flags": [
-        "has_ssl_cert_pinning_implemented",
-        "has_ssl_pinning_findings_severity_good",
-        "has_insecure_http_based_webview_communication"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5370,7 +5391,8 @@
       "Flags": [
         "has_enforces_data_minimization_on_client",
         "has_handles_patient_identifier_correctly",
-        "has_maps_patient_ids_consistently"
+        "has_maps_patient_ids_consistently",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -5415,10 +5437,12 @@
       "Validation criteria": "Message Signing Test:\nTest: Verify that the application signs the specified SOAP message elements (Message ID, Service Request, Timestamp, SAML Assertion, and Message elements) before transmission.\nExpected result: All specified message elements are cryptographically signed with the correct keys.\nSignature Validation Test:\nTest: Ensure the receiving endpoint validates the signatures for the signed elements of the SOAP message.\nExpected result: Messages with invalid or missing signatures are rejected.\nTamper Detection Test:\nTest: Modify one or more signed elements of a SOAP message during transmission and verify the application’s response.\nExpected result: The application detects tampering and rejects the message with an appropriate error log.\nTimestamp Integrity Test:\nTest: Confirm that the signed Timestamp element prevents replay attacks by enforcing expiration policies.\nExpected result: Expired or modified timestamps are detected, and messages are rejected.\nKey Usage Validation Test:\nTest: Validate that the application uses appropriate cryptographic keys for signing SOAP message elements.\nExpected result: Keys used for signing are valid, trusted, and adhere to organizational cryptographic standards.\nInteroperability Test:\nTest: Test SOAP message signing and verification between the mobile application and third-party systems.\nExpected result: All signed messages are successfully verified by compliant third-party systems, ensuring interoperability.",
       "controles": "The mobile application must sign critical message elements in SOAP messages requiring integrity, including Message ID, Service Request, Timestamp, SAML Assertion, and Message elements.",
       "Flags": [
-        "has_soap_prevents_replay_attacks",
-        "has_soap_validates_saml_token_audience",
-        "has_soap_validates_saml_token_expiry",
-        "has_soap_uses_strict_schema_validation"
+        "has_soap_api_usage",
+        "has_soap_message_level_signatures",
+        "has_uses_xml_signatures",
+        "has_proper_ws_security_headers",
+        "has_soap_message_level_encryption",
+        "has_data_format_strictly_controlled"
       ]
     },
     {
@@ -5440,8 +5464,9 @@
       "Validation criteria": "TLS Encryption Verification Test:\nTest: Analyze the network traffic to confirm that all transmitted data is encrypted using TLS.\nExpected result: All network communications are encrypted using TLS 1.2 or higher.\nCryptographic Mechanism Test:\nTest: Validate the use of HMAC-SHA1, HMAC-SHA-256, HMAC-SHA-512, or GCM mode to ensure data integrity during transmission.\nExpected result: Cryptographic mechanisms are correctly applied to prevent unauthorized data tampering.\nIntegrity Verification Test:\nTest: Modify transmitted data in transit and validate the system’s ability to detect unauthorized changes.\nExpected result: Any tampering with the data is detected, and the transmission is rejected.\nCertificate Validation Test:\nTest: Verify that the application validates TLS certificates, including checking for expiration and revocation.\nExpected result: Only valid and trusted certificates are accepted.\nFallback Prevention Test:\nTest: Attempt to establish connections using deprecated or insecure encryption protocols such as TLS 1.0 or SSL.\nExpected result: The application rejects connections using insecure protocols.",
       "controles": "The mobile application must ensure the confidentiality and integrity of transmitted information by requiring TLS encryption for all communications. Cryptographic mechanisms such as HMAC-SHA1, HMAC-SHA-256, HMAC-SHA-512, or GCM mode must be implemented to prevent unauthorized disclosure and detect tampering during data transmission.",
       "Flags": [
-        "has_android_ssl_pinning_detected",
-        "has_tls_ssl_pinning_implemented"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5463,8 +5488,11 @@
       "Validation criteria": "HTTP Response Validation Test:\nTest: Simulate data downloads over HTTP and verify that the application performs input validation on the received data.\nExpected result: Data is validated, and any unexpected or malformed data is rejected or sanitized.\nWebView Data Handling Test:\nTest: Load untrusted or malformed data into WebView and observe application behavior.\nExpected result: The WebView component rejects or properly escapes unsafe content without executing scripts or rendering malicious elements.\nInjection Attack Simulation Test:\nTest: Inject malicious data into HTTP responses and validate that the application detects and blocks the attack.\nExpected result: The application identifies and neutralizes injection attempts, ensuring no compromise of security.\nSecure Protocol Usage Test:\nTest: Attempt to force the application to process data downloaded over insecure protocols without validation.\nExpected result: The application enforces validation or prevents processing untrusted data.\nError Handling Test:\nTest: Validate the application's response when receiving corrupted or unexpected data over HTTP.\nExpected result: The application gracefully handles errors, rejecting malicious data while maintaining functionality.\nPenetration Testing:\nTest: Conduct penetration testing focused on manipulating data downloaded over HTTP to identify vulnerabilities.\nExpected result: No vulnerabilities are exploitable through manipulated or unvalidated data responses.",
       "controles": "The mobile application must validate all data downloaded over insecure protocols, such as HTTP. Input validation must be enforced on all responses, particularly when processing data in WebView components or handling responses to HTTP intents, to ensure untrusted data does not compromise application security.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_webview_components",
+        "has_webview_addjavascriptinterface_present",
+        "has_webview_javascript_interface_leaks_sensitive_data"
       ]
     },
     {
@@ -5486,7 +5514,8 @@
       "Validation criteria": "Cookie Configuration Test:\nTest: Inspect session cookies set by the application using developer tools or browser extensions.\nExpected result: All session cookies include the HTTPOnly flag in their attributes.\nClient-Side Access Test:\nTest: Attempt to access session cookies using JavaScript in a simulated XSS attack.\nExpected result: Access to session cookies is blocked, and their contents remain secure.\nCross-Site Scripting Simulation Test:\nTest: Inject a malicious script that tries to steal session cookies through JavaScript.\nExpected result: The script fails to access the cookies due to the HTTPOnly flag.\nError Handling and Fallback Test:\nTest: Verify the application’s behavior when setting HTTPOnly cookies in environments with restrictive policies.\nExpected result: The application falls back to secure handling mechanisms or informs the user of the limitation without compromising session data.\nCompliance Test:\nTest: Conduct a compliance review of cookie policies against security standards (e.g., OWASP).\nExpected result: Cookie configuration aligns with best practices, including HTTPOnly for session cookies.\nPenetration Testing:\nTest: Perform penetration testing to simulate attempts to access or manipulate session cookies.\nExpected result: Cookies remain protected and inaccessible through unauthorized means.\nLog Inspection Test:\nTest: Review server logs to ensure that session cookies are flagged appropriately and securely transmitted.\nExpected result: All logs indicate proper configuration of session cookies with the HTTPOnly attribute.",
       "controles": "The mobile application must configure all session cookies to include the HTTPOnly flag to prevent client-side scripts from accessing session cookies, mitigating the risk of cross-site scripting (XSS) attacks.",
       "Flags": [
-        "has_session_id_assigned_from_server_cookie"
+        "has_access_tokens_weak_or_unpredictable",
+        "has_manifest_allow_clear_text_traffic_true"
       ]
     },
     {
@@ -5508,7 +5537,8 @@
       "Validation criteria": "Cookie Configuration Test:\nTest: Inspect session cookies using developer tools or browser extensions to verify the inclusion of the Secure flag.\nExpected result: All session cookies include the Secure flag in their attributes.\nInsecure Channel Transmission Test:\nTest: Attempt to transmit session cookies over an HTTP connection.\nExpected result: Session cookies are not transmitted over insecure HTTP channels.\nEncryption Enforcement Test:\nTest: Ensure the application enforces HTTPS connections for all cookie transmission.\nExpected result: Cookies are transmitted only over encrypted HTTPS connections, and HTTP connections are blocked or redirected.\nCross-Browser Test:\nTest: Verify that session cookies with the Secure flag function correctly across different browsers and platforms.\nExpected result: The Secure flag is enforced consistently across all tested environments.\nPenetration Testing:\nTest: Perform penetration tests to identify vulnerabilities in cookie handling, specifically focusing on secure flag enforcement.\nExpected result: Session cookies are not accessible or exposed during testing.\nServer Configuration Test:\nTest: Review the server-side configuration to ensure all session cookies are automatically set with the Secure flag.\nExpected result: The server enforces the Secure flag for all session cookies by default.",
       "controles": "The mobile application must configure all session cookies to include the Secure flag, ensuring that cookies are only transmitted over encrypted HTTPS connections to prevent their exposure in plaintext communication.",
       "Flags": [
-        "has_session_id_assigned_from_server_cookie"
+        "has_access_tokens_weak_or_unpredictable",
+        "has_manifest_allow_clear_text_traffic_true"
       ]
     },
     {
@@ -5655,8 +5685,8 @@
       "controles": "The application must enforce the use of secure communication protocols, such as HTTPS, for all network communication involving sensitive data. Connections over unsecured protocols, such as HTTP, must be blocked, and HTTPS must be used by default, especially on unsecured networks like public Wi-Fi.",
       "Flags": [
         "has_manifest_allow_clear_text_traffic_true",
-        "has_tls_ssl_pinning_implemented",
-        "has_insecure_http_based_webview_communication"
+        "has_insecure_http_based_webview_communication",
+        "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5678,9 +5708,9 @@
       "Validation criteria": "SSL/TLS Verification Test\nTest: Attempt to establish a connection using an HTTP endpoint instead of HTTPS.\nExpected Result: The application rejects any non-HTTPS connection.\nCertificate Validation Test\nTest: Inspect the handling of SSL/TLS certificates, including rejection of expired, self-signed, or untrusted certificates.\nExpected Result: The application accepts only certificates from trusted Certificate Authorities (CAs).\nMutual Authentication Test\nTest: Establish a connection between a client and server requiring mutual authentication.\nExpected Result: Both endpoints validate certificates, and the connection succeeds only with proper authentication.\nNetwork Traffic Inspection Test\nTest: Capture network traffic between the app and server using a packet analyzer to verify encryption.\nExpected Result: All transmitted data is encrypted and unintelligible.",
       "controles": "The application must secure all network communication with SSL/TLS protocols to ensure the confidentiality and integrity of transmitted data, particularly for sensitive operations such as API calls, authentication, and data exchanges. Mutual authentication must be utilized when handling non-releasable or highly sensitive data.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_soap_uses_mutual_tls",
-        "has_soap_uses_tls"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_approved_ports_and_protocols"
       ]
     },
     {
@@ -5728,7 +5758,9 @@
       "Validation criteria": "HTTPS Connection Test:\nTest: Establish a connection to the server and verify that only HTTPS is used for data transmission.\nExpected Result: The application rejects insecure HTTP connections and uses HTTPS exclusively.\nSocket Encryption Test:\nTest: Verify that the SSLSocket class is used with proper configurations, including hostname verification.\nExpected Result: The application enforces hostname verification and does not allow connections with unverified hosts.\nMITM Attack Simulation Test:\nTest: Simulate a man-in-the-middle attack to intercept data during transmission.\nExpected Result: The application detects and blocks the attack, preventing data leakage.\nProtocol Inspection Test:\nTest: Analyze network traffic to confirm that all communication is encrypted using modern TLS versions.\nExpected Result: Only TLS 1.2 or higher protocols are used, and weak protocols are rejected.\nHostname Validation Test:\nTest: Attempt to connect to a server with a mismatched certificate hostname.\nExpected Result: The application refuses to establish a connection, ensuring the hostname is validated.",
       "controles": "The application must implement encrypted socket-level communication using HTTPS URIs or the SSLSocket class for secure file retrieval and data transmission. Additional hostname verification precautions must be applied when using SSLSocket to prevent man-in-the-middle (MITM) attacks. All network traffic must follow best practices for securing data privacy and integrity during transit.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -5859,9 +5891,10 @@
       "Validation criteria": "Certificate Validation Test:\nTest: Attempt to connect to servers with invalid, expired, or self-signed certificates.\nExpected Result: The application rejects connections to servers without trusted certificates in the key chain.\nSSL Chain Verification Test:\nTest: Verify that the application enforces SSL chain validation by attempting connections through a compromised certificate chain.\nExpected Result: The application identifies and blocks certificate chains that are not fully trusted.\nEndpoint Identity Test:\nTest: Simulate connections to endpoints with spoofed server certificates.\nExpected Result: The application verifies the identity of the endpoint and rejects spoofed certificates.\nStatic Code Analysis Test:\nTest: Review the source code to ensure TLS initialization validates the server's certificate against the trusted key chain.\nExpected Result: The code implements strict server certificate validation logic.\nDynamic Security Testing:\nTest: Perform MITM attacks using SSL stripping and proxy tools.\nExpected Result: The application detects and prevents connection establishment under MITM scenarios.",
       "controles": "The application must establish secure TLS connections only after verifying the identity of the endpoint server using trusted certificates in the key chain and enforcing SSL chain verification.",
       "Flags": [
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
         "has_android_ssl_pinning_detected",
-        "has_android_ssl_pinning_present",
-        "has_ssl_pinning_findings_severity_good"
+        "has_android_ssl_pinning_present"
       ]
     },
     {
@@ -5980,7 +6013,7 @@
       "Validation criteria": "Identifier Generation Test:\nTest: Generate an identifier upon app installation and verify its uniqueness.\nExpected result: Identifier is unique and not based on hardware data like IMEI or UDID.\nCross-App Validation Test:\nTest: Install two different apps and attempt to match their identifiers.\nExpected result: Each app has a unique, non-persistent identifier that is not shared between apps.\nIdentifier Persistence Test:\nTest: Uninstall and reinstall the application and check if the identifier remains the same.\nExpected result: The identifier changes upon reinstallation, confirming non-persistence.\nTracking Prevention Test:\nTest: Attempt to track user activity across multiple apps using the identifier.\nExpected result: The identifier is unique to the app and prevents cross-app tracking.\nAudit Verification Test:\nTest: Audit application logs to ensure that no hardware-based identifiers (e.g., IMEI, UDID) are used or stored.\nExpected result: Application logs confirm no reliance on persistent or hardware-based identifiers.",
       "controles": "The application must use non-persistent and app-specific identifiers instead of device hardware identifiers (e.g., IMEI, UDID) to ensure privacy and prevent cross-app tracking.",
       "Flags": [
-        "has_session_id_assigned_from_server_cookie"
+        "has_access_tokens_weak_or_unpredictable"
       ]
     },
     {
@@ -6190,7 +6223,8 @@
         "has_supports_ephi_access_auditing",
         "has_supports_patient_access_to_audit_trail",
         "has_supports_versioning_of_clinical_records",
-        "has_tracks_clinician_user_actions"
+        "has_tracks_clinician_user_actions",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -6564,8 +6598,7 @@
       "Flags": [
         "has_android_debuggable_enabled",
         "has_manifest_debuggable_true",
-        "has_cert_signed_with_debug_certificate",
-        "has_cert_x509_subject_android_debug"
+        "has_error_messages_are_generic"
       ]
     },
     {
@@ -6773,7 +6806,7 @@
       "Validation criteria": "Session Transmission Validation Test:\nTest: Confirm that session IDs are not transmitted via URLs during app operations.\nExpected Result: Session IDs are exclusively transmitted via secure cookies or equivalent mechanisms.\nURL Scheme Security Test:\nTest: Attempt to exploit sensitive functionality via custom URL schemes without proper authentication.\nExpected Result: Sensitive functionalities are inaccessible without authentication or other protection mechanisms.\nData Storage Classification Review:\nTest: Validate the classification of session ID storage based on sensitivity and ensure adherence to security policies.\nExpected Result: Session IDs are stored and processed securely according to their classification.\nPenetration Test for Session Hijacking:\nTest: Conduct a penetration test to simulate session hijacking scenarios via URL sharing or interception.\nExpected Result: The application resists hijacking attempts, and session data remains secure.\nCookie Flag Verification Test:\nTest: Verify that secure and HTTPOnly flags are set on cookies transmitting session data.\nExpected Result: All cookies carrying session data have secure and HTTPOnly flags enabled.",
       "controles": "The mobile application must not use URL-embedded session IDs to ensure the security of session management. Session ID information must be securely transmitted via cookies or other secure mechanisms. Sensitive functionality must not be exposed via custom URL schemes unless robust protection measures are implemented.",
       "Flags": [
-        "has_session_id_assigned_from_server_cookie"
+        "has_access_tokens_weak_or_unpredictable"
       ]
     },
     {
@@ -6886,7 +6919,7 @@
       "controles": "The mobile application must require user re-authentication when transitioning from background to foreground if it contains sensitive data. Alternatively, the application must verify that the device is secured with a PIN, pattern, or password.",
       "Flags": [
         "has_clears_ui_on_background",
-        "has_blocks_screenshots_flag_secure"
+        "has_device_access_policy_enforced"
       ]
     },
     {
@@ -7006,7 +7039,7 @@
       "controles": "The mobile health application must implement mechanisms to detect and handle interactions from modified or tampered app binaries. The app must verify its code integrity at runtime and react to integrity violations by preventing unauthorized modifications and safeguarding data.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_prevention_against_reverse_engineering"
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7054,7 +7087,8 @@
       "controles": "The mobile health application must be built in release mode for production deployment. The build settings must ensure that the app is non-debuggable and optimized for security, with all debug-related functionalities disabled.",
       "Flags": [
         "has_android_debuggable_enabled",
-        "has_manifest_debuggable_true"
+        "has_manifest_debuggable_true",
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7077,8 +7111,7 @@
       "controles": "The mobile health application must implement robust error handling mechanisms to prevent error handling vulnerabilities. Proper return codes and exception handling must be implemented throughout the application to ensure secure and predictable behavior during runtime anomalies.",
       "Flags": [
         "has_fails_safe_on_init_failure",
-        "has_null_pointer_protection_implemented",
-        "has_transaction_recovery_logs"
+        "has_error_messages_are_generic"
       ]
     },
     {
@@ -7238,7 +7271,8 @@
       "Validation criteria": "Static Code Analysis Test\nTest: Use static analysis tools to scan the codebase for potential null pointer dereference issues.\nExpected result: The codebase includes proper null checks for all pointers before dereferencing.\nCode Review Test\nTest: Conduct a manual review of the code to ensure that null pointer checks are implemented in critical sections.\nExpected result: No instances of pointers being dereferenced without prior null validation.\nDynamic Testing for Null Values\nTest: Simulate scenarios where pointers could potentially be null during runtime, such as uninitialized variables or failed resource allocation.\nExpected result: The application handles null pointers gracefully without crashing or exhibiting undefined behavior.\nError Handling Verification Test\nTest: Validate that the application logs appropriate errors or takes corrective action when a null pointer is encountered.\nExpected result: The application avoids crashes and logs null pointer-related issues for debugging purposes.",
       "controles": "The mobile health application must implement validation and error-handling mechanisms to prevent null pointer dereference vulnerabilities, ensuring that all pointers are checked for null values before dereferencing.",
       "Flags": [
-        "has_null_pointer_protection_implemented"
+        "has_null_pointer_protection_implemented",
+        "has_error_messages_are_generic"
       ]
     },
     {
@@ -7351,7 +7385,8 @@
       "Validation criteria": "Static Code Analysis for Integer Vulnerabilities\nTest: Perform a static code analysis to identify potential integer overflow or wraparound vulnerabilities in the codebase.\nExpected result: No vulnerabilities related to integer operations are detected.\nBoundary Condition Testing\nTest: Test integer inputs at their upper and lower boundaries to evaluate the app's behavior during extreme values.\nExpected result: The application handles boundary inputs securely without errors or unexpected behaviors.\nSafe Arithmetic Operation Validation\nTest: Verify that all arithmetic operations involving integers use safe methods or are wrapped in overflow detection mechanisms.\nExpected result: All integer operations are securely implemented, with checks for overflow or wraparound.\nDynamic Testing with Malformed Inputs\nTest: Introduce intentionally malformed inputs to stress-test the app's integer handling mechanisms.\nExpected result: The application maintains stable and secure operation under stress conditions.\nThird-Party Library Audit\nTest: Assess all third-party libraries used in the app to ensure they do not introduce integer overflow vulnerabilities.\nExpected result: All third-party libraries are verified as safe from integer overflow risks.",
       "controles": "The mobile health application must ensure that all calculations and operations involving integers are securely implemented to prevent integer overflows or wraparounds. This includes validating input ranges and employing safe arithmetic operations to mitigate risks.",
       "Flags": [
-        "has_integer_arithmetic_vulnerabilities"
+        "has_integer_arithmetic_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7374,7 +7409,8 @@
       "controles": "The mobile health application must prevent vulnerabilities arising from race conditions by implementing proper synchronization mechanisms. All shared resources accessed by concurrent processes or threads must be protected to ensure consistency and integrity during execution.",
       "Flags": [
         "has_race_condition_vulnerabilities",
-        "has_ensures_atomic_updates_to_clinical_records"
+        "has_ensures_atomic_updates_to_clinical_records",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7397,7 +7433,8 @@
       "controles": "The mobile health application must implement strict bounds checking for all memory operations to prevent out-of-bounds reads and writes. This includes validating buffer sizes, performing pointer arithmetic safely, and avoiding memory access outside the allocated boundaries. Proper error handling and memory management practices must also be enforced to prevent memory corruption vulnerabilities.",
       "Flags": [
         "has_out_of_bounds_vulnerabilities",
-        "has_memory_corruption_vulnerabilities"
+        "has_memory_corruption_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7463,7 +7500,8 @@
       "Validation criteria": "Static Analysis for Arithmetic Errors\nTest: Use static analysis tools to identify potential integer arithmetic vulnerabilities, including overflows and underflows, in the application code.\nExpected result: No integer arithmetic vulnerabilities are detected.\nBoundary Condition Testing\nTest: Test the application with maximum and minimum values for all integer operations, such as resource allocation, counters, and input fields.\nExpected result: The application handles edge cases gracefully without arithmetic errors.\nCode Review for Safe Arithmetic Practices\nTest: Conduct a manual code review to verify the use of safe arithmetic functions and appropriate data types for calculations.\nExpected result: Code uses safe arithmetic operations and proper typecasting where necessary to prevent overflows or wraparounds.\nDynamic Testing for Runtime Behavior\nTest: Use runtime monitoring tools to simulate extreme conditions and observe integer arithmetic operations during execution.\nExpected result: The application operates correctly under stress without runtime arithmetic issues.\nCompliance with Secure Coding Standards\nTest: Ensure adherence to secure coding standards, such as CERT C or OWASP recommendations for integer handling.\nExpected result: The application complies with secure coding standards, avoiding integer arithmetic vulnerabilities.",
       "controles": "The mobile health application must implement safeguards to prevent vulnerabilities related to integer arithmetic, such as integer overflows, underflows, or wraparounds. These issues can lead to incorrect calculations, resource mismanagement, or security vulnerabilities.",
       "Flags": [
-        "has_integer_arithmetic_vulnerabilities"
+        "has_integer_arithmetic_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7509,7 +7547,8 @@
       "Validation criteria": "Dynamic Code Review\nTest: Inspect the application for instances of dynamically loaded code and verify that all loaded components are secure, signed, and validated before execution.\nExpected result: All dynamically loaded code is signed and verified as trusted by the application.\nSecurity Policy Compliance\nTest: Confirm that all dynamically loaded components adhere to the application’s security policies and permissions.\nExpected result: Dynamically loaded components do not exceed or bypass the application’s granted permissions.\nBehavioral Testing Under Granted Permissions\n\nTest: Execute scenarios where dynamically loaded code interacts with sensitive components (e.g., APIs, files, or system features) to ensure that it operates strictly within the allowed permissions.\nExpected result: Dynamically loaded code behaves as expected and does not attempt unauthorized actions.\nUser Trust Verification\nTest: Verify that the app clearly communicates the use of dynamically loaded components to the user in the privacy policy or terms of service, maintaining transparency.\nExpected result: Documentation and user agreements explicitly mention the use and security of dynamically loaded code.\nMalware Analysis and Penetration Testing\nTest: Conduct penetration testing to simulate attacks on dynamically loaded code, ensuring it does not introduce vulnerabilities.\nExpected result: No exploitable vulnerabilities are identified in the handling or execution of dynamically loaded components.",
       "controles": "The mobile health application must ensure that any dynamically loaded code inherits the same security permissions as the application and maintains user trust by adhering to the application’s defined security policies. All dynamically loaded components must be secure, validated, and aligned with the permissions granted to the application.",
       "Flags": [
-        "has_prevention_against_reverse_engineering"
+        "has_android_dynamic_code_loading",
+        "has_libraries_stored_in_secure_app_dir"
       ]
     },
     {
@@ -7575,9 +7614,7 @@
       "Verification method": "Demonstration/Analysis",
       "Validation criteria": "APK Packaging Inspection\nTest: Inspect the APK to confirm that dynamically loaded modules are included within the package.\nExpected result: All dynamically loaded modules are contained within the APK file, and no external dependencies are required post-installation.\nModule Loading Mechanism Verification\nTest: Verify that DexClassLoader or equivalent secure mechanisms are used to load dynamically included modules.\nExpected result: Modules are securely loaded, and the application does not utilize insecure loading mechanisms.\nTampering Protection Test\nTest: Attempt to modify dynamically loaded modules within the APK and observe application behavior.\nExpected result: The application detects tampering and prevents the execution of altered modules.\nCode Integrity Validation\nTest: Confirm that integrity checks (e.g., digital signatures) are applied to verify the authenticity of dynamically loaded modules.\nExpected result: The application validates module integrity before execution and rejects any corrupted or altered modules.\nSource Code Review\nTest: Conduct a review of the source code to ensure all dynamically loaded modules are appropriately declared and managed.\nExpected result: No dynamically loaded modules are sourced externally without explicit and secure handling mechanisms.",
       "controles": "The mobile health application must package dynamically loaded modules directly within the APK whenever feasible. These modules should be implemented as native libraries or classes loaded using DexClassLoader to prevent tampering or alteration by external applications.",
-      "Flags": [
-        "has_android_dynamic_code_loading"
-      ]
+      "Flags": []
     },
     {
       "PUID": "SECM-CAT-IBP-028",
@@ -7626,8 +7663,7 @@
       "controles": "The mobile health application must implement robust anti-static analysis mechanisms, including code obfuscation, to impede reverse engineering. This includes using obfuscation tools, compiling natively when feasible, and ensuring that obfuscation balances complexity with operational correctness of dependent features.",
       "Flags": [
         "has_prevention_against_reverse_engineering",
-        "has_android_debuggable_enabled",
-        "has_manifest_debuggable_true"
+        "has_controls_protecting_temporary_compiled_data"
       ]
     },
     {
@@ -7651,7 +7687,8 @@
       "Flags": [
         "has_out_of_bounds_vulnerabilities",
         "has_memory_corruption_vulnerabilities",
-        "has_integer_arithmetic_vulnerabilities"
+        "has_integer_arithmetic_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7674,9 +7711,8 @@
       "controles": "The mobile health application must integrate with the Play Integrity API to ensure that interactions and server requests originate from a legitimate, untampered app binary running on a genuine Android device.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_android_debuggable_enabled",
-        "has_cert_signed_with_debug_certificate",
-        "has_cert_x509_subject_android_debug"
+        "has_backend_token_validation",
+        "has_android_debuggable_enabled"
       ]
     },
     {
@@ -7698,7 +7734,8 @@
       "Validation criteria": "Initialization Check\nTest: Inspect the application code to verify that all parameters are initialized during the app startup sequence.\nExpected result: No uninitialized variables are found in the application's codebase.\nDynamic Execution Validation\nTest: Run the application in a dynamic analysis environment and monitor for usage of uninitialized parameters.\nExpected result: All parameters show defined and expected values during runtime.\nStartup Behavior Test\nTest: Simulate a range of startup scenarios, including low memory conditions, and verify that parameters are properly initialized.\nExpected result: Application initializes all parameters and behaves predictably without crashing or showing undefined behavior.\nSecurity Testing\nTest: Perform penetration testing to determine if uninitialized parameters can be manipulated to cause unexpected behavior.\nExpected result: No vulnerabilities related to uninitialized parameters are exploitable.\nCode Quality Review\nTest: Perform a static code analysis using tools to detect uninitialized variables in the application's source code.\nExpected result: The analysis confirms that all parameter values are explicitly initialized during app startup.",
       "controles": "The mobile health application must initialize all parameter values upon startup to ensure predictable behavior, prevent unintentional data leakage, and avoid reliance on uninitialized or potentially unsafe variables.",
       "Flags": [
-        "has_initializes_params_on_startup"
+        "has_initializes_params_on_startup",
+        "has_controls_protecting_temporary_compiled_data"
       ]
     },
     {
@@ -7721,9 +7758,7 @@
       "controles": "The mobile health app must verify integrity at startup to detect tampering or redistribution, alert stakeholders, and mitigate risks, such as removing unauthorized copies. Annual testing of initialization, shutdown, and abort scenarios must ensure system security.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_android_debuggable_enabled",
-        "has_cert_signed_with_debug_certificate",
-        "has_cert_x509_subject_android_debug"
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -7848,11 +7883,7 @@
       "controles": "The application must default to a secure state in the event of initialization, shutdown, or abort failures, ensuring no unintended access or exposure.",
       "Flags": [
         "has_fails_safe_on_init_failure",
-        "has_safe_mode_degraded_functionality_design",
-        "has_runtime_global_kill_switch_for_security_incidents",
-        "has_initializes_params_on_startup",
-        "has_null_pointer_protection_implemented",
-        "has_workmanager_for_resilient_network_tasks"
+        "has_temporary_compiled_data_securely_deleted"
       ]
     },
     {
@@ -7925,7 +7956,8 @@
       "Validation criteria": "Redundancy Mechanism Implementation Test:\nTest: Verify the application’s redundancy mechanisms in a simulated high-availability environment.\nExpected result: The application continues to function seamlessly without downtime during component failures.\nFailover Test:\nTest: Simulate a primary system failure and evaluate the failover process.\nExpected result: The application automatically switches to a backup system with minimal impact on functionality.\nLoad Balancing Test:\nTest: Implement load balancing across redundant components and observe system performance under varying loads.\nExpected result: The application distributes workload evenly, ensuring stable performance.\nRecovery Time Objective (RTO) Test:\nTest: Measure the time taken to recover operations after a failure in a redundant environment.\nExpected result: The application meets the predefined RTO as specified in the operational requirements.\nRedundancy Integrity Validation:\nTest: Verify that redundancy mechanisms maintain data consistency and system integrity during failover.\nExpected result: No data loss or corruption occurs during redundancy transitions.",
       "controles": "The application must incorporate redundancy mechanisms to ensure high availability in critical environments, mitigating single points of failure.",
       "Flags": [
-        "has_backend_is_deployed_with_redundancy_for_ha"
+        "has_backend_is_deployed_with_redundancy_for_ha",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -7999,7 +8031,7 @@
       "Validation criteria": "Backup Compatibility Test:\nTest: Use an approved backup application to attempt copying all application files.\nExpected result: The backup application successfully copies application files without encountering permission issues.\nFile Access Permissions Review:\nTest: Inspect file permissions to verify they allow access to the operating system and authorized applications.\nExpected result: Permissions are appropriately set to enable authorized access.\nSystem Backup Integration Test:\nTest: Perform a full system backup and ensure application data is included in the backup.\nExpected result: The system backup contains all relevant application files.\nFile Lock Test:\nTest: Attempt to lock application files to restrict access by the operating system or backup tools.\nExpected result: The application does not allow locking that prevents authorized access.\nRestore Verification Test:\nTest: Restore application files from a backup and confirm their functionality.\nExpected result: Application files restore successfully without data corruption or loss.",
       "controles": "The mobile application must not lock or restrict file permissions in a way that prevents the operating system or authorized backup tools from copying application files.",
       "Flags": [
-        "has_manifest_backup_enabled"
+        "has_dynamic_storage_evidence"
       ]
     },
     {
@@ -8163,7 +8195,10 @@
       "controles": "The application must support dynamic permission management, enabling content providers to grant or revoke data access case-by-case and allowing secure, runtime permission additions when necessary.",
       "Flags": [
         "has_supports_runtime_permission_management",
-        "has_content_provider_actively_exposed"
+        "has_permissions_protected_with_signature_level",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -8259,7 +8294,8 @@
       "Validation criteria": "Protocol Configuration Test:\nTest: Review the app’s network configuration to ensure only approved ports and protocols are used.\nExpected Result: The app utilizes only approved ports and protocols consistent with DoD PPSM guidelines.\nChange Approval Test:\nTest: Submit a request for a new port or protocol usage and review the approval process.\nExpected Result: New ports or protocols are documented and approved by the organization’s authority before implementation.\nNetwork Traffic Analysis Test:\nTest: Monitor network traffic generated by the app to verify that all ports and protocols comply with DoD guidance.\nExpected Result: All observed traffic adheres to approved configurations.\nCompliance Documentation Review:\nTest: Inspect documentation to confirm submission of all new IP addresses, services, and associated ports to the organization’s approving authority.\nExpected Result: Documentation demonstrates compliance with the DoD PPSM process.\nPenetration Testing:\nTest: Perform penetration testing to ensure no unauthorized or non-compliant ports or protocols are accessible.\nExpected Result: No vulnerabilities or unauthorized access via ports or protocols are identified.",
       "controles": "The mobile health application must utilize ports and protocols in alignment with organizational and DoD Ports, Protocols, and Services Management (DoD PPSM) guidelines.",
       "Flags": [
-        "has_approved_ports_and_protocols"
+        "has_approved_ports_and_protocols",
+        "has_https_with_cert_pinning"
       ]
     },
     {
@@ -8281,7 +8317,7 @@
       "Validation criteria": "Time Synchronization Test:\nTest: Verify that the application synchronizes its internal clock with the MOS-provided time source during startup and at predefined intervals.\nExpected Result: The application’s internal clock matches the MOS-provided authoritative time.\nAudit Log Time Consistency Test:\nTest: Review timestamps in the application logs for accuracy and consistency with the authoritative time source.\nExpected Result: All log entries use the synchronized authoritative time.\nFailure Handling Test:\nTest: Disconnect the app from the time source and observe behavior.\nExpected Result: The app detects the failure and logs the event while maintaining its last synchronized time.\nConfiguration Review Test:\nTest: Inspect the app's settings and code to confirm the use of MOS-based time synchronization.\nExpected Result: Configuration explicitly points to the MOS time source for synchronization.\nPeriodic Synchronization Test:\nTest: Simulate a long-running session and ensure periodic time synchronization with the MOS source.\nExpected Result: The app periodically updates its internal clock to remain synchronized.",
       "controles": "The mobile health application must synchronize its internal clocks with the authoritative time source provided by the Mobile Operating System (MOS).",
       "Flags": [
-        "has_os_time_source"
+        "has_dynamic_runtime_evidence"
       ]
     },
     {
@@ -8328,7 +8364,8 @@
       "controles": "The mobile health application must implement signature-level protection for private data, ensuring that only applications signed with the same developer key can access sensitive features or data.",
       "Flags": [
         "has_manifest_custom_permission_defined",
-        "has_permissions_protected_with_signature_level"
+        "has_permissions_protected_with_signature_level",
+        "has_cert_signed_with_debug_certificate"
       ]
     },
     {
@@ -8351,10 +8388,7 @@
       "controles": "The mobile health application must verify the correct operation of security functions on system startup, restart, or upon command by a privileged user.",
       "Flags": [
         "has_initializes_params_on_startup",
-        "has_fails_safe_on_init_failure",
-        "has_safe_mode_degraded_functionality_design",
-        "has_runtime_global_kill_switch_for_security_incidents",
-        "has_protection_against_tampered_executables"
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -8444,7 +8478,8 @@
       "Validation criteria": "Manifest Service Declaration Test:\nTest: Verify that all service classes are declared using the <service> element in the AndroidManifest.xml file.\nExpected Result: All service classes have corresponding <service> declarations.\nAccessibility Attribute Test:\nTest: Check the presence and correctness of the android:exported attribute for each declared service.\nExpected Result: The android:exported attribute is explicitly set to either true or false as per the service’s intended accessibility.\nIntent Filter Evaluation Test:\nTest: Analyze intent filters in the manifest to confirm services are not unintentionally exposed.\nExpected Result: Services with intent filters are configured to allow access only to authorized applications.\nDefault Behavior Test:\nTest: Validate that no service relies on implicit defaults for accessibility attributes.\nExpected Result: All accessibility settings are explicitly defined in the manifest, avoiding reliance on default behaviors.\nDynamic Testing of Service Access:\nTest: Simulate attempts by unauthorized applications to access the declared services.\nExpected Result: Unauthorized applications are unable to access services that are not explicitly shared.",
       "controles": "Each service class in mobile health applications must have a <service> declaration in the AndroidManifest.xml file, with explicitly defined accessibility attributes to prevent unintentional exposure to other applications.",
       "Flags": [
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -8492,7 +8527,8 @@
       "Flags": [
         "has_manifest_exports_components_insecurely",
         "has_manifest_services_explicit_accessibility_attributes",
-        "has_exported_broadcast_receivers_without_permission"
+        "has_exported_broadcast_receivers_without_permission",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -8654,11 +8690,9 @@
       "Validation criteria": "Certificate Pinning Validation Test:\nTest: Verify the app only accepts connections to backend servers using the pinned certificates.\nExpected Result: The app rejects connections with unpinned or invalid certificates.\nFallback Handling Test:\nTest: Simulate a scenario where the pinned certificate is revoked or expired.\nExpected Result: The app fails securely and provides an appropriate error message to users.\nCleartext Traffic Prevention Test:\nTest: Attempt to establish a connection over HTTP instead of HTTPS.\nExpected Result: The app rejects the connection and logs the event.\nDynamic Certificate Update Test:\nTest: Replace the backend server certificate with an updated pinned certificate.\nExpected Result: The app seamlessly transitions to the new certificate without requiring user intervention.\nAudit of Trust Anchors:\nTest: Review the app's trust store to ensure it only includes pinned certificates or keys for trusted endpoints.\nExpected Result: Only the expected certificates or public keys are listed in the trust store.",
       "controles": "Mobile health applications must implement certificate pinning to restrict trusted certificates to a predefined set, ensuring secure communication with backend servers and mitigating risks from compromised Certificate Authorities.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented",
-        "has_android_ssl_pinning_present",
-        "has_android_ssl_pinning_detected",
-        "has_ssl_pinning_findings_severity_good"
+        "has_manifest_allow_clear_text_traffic_true",
+        "has_insecure_http_based_webview_communication",
+        "has_android_ssl_pinning_detected"
       ]
     },
     {
@@ -8704,7 +8738,7 @@
       "Validation criteria": "Metadata Accessibility Test:\nTest: Attempt to access metadata files, including WSDL documents, through publicly accessible endpoints.\nExpected Result: Requests for metadata files return an error or are blocked.\nConfiguration Review Test:\nTest: Inspect the application server configuration to verify metadata publishing is disabled.\nExpected Result: Metadata publishing settings are explicitly disabled in the configuration.\nSecurity Assessment Test:\nTest: Conduct a security assessment of application endpoints to ensure metadata files are not accessible.\nExpected Result: No sensitive metadata is found during the assessment.\nFunctional Verification Test:\nTest: Verify that disabling metadata publishing does not impact the functionality of the application.\nExpected Result: The application operates as expected without metadata publishing enabled.\nAudit Logging Test:\nTest: Review system logs for unauthorized access attempts to metadata endpoints.\nExpected Result: Any unauthorized attempts are logged and flagged for review.",
       "controles": "Mobile health applications must disable metadata publishing, such as WSDL documents, to prevent unintended exposure of sensitive service metadata.",
       "Flags": [
-        "has_soap_api_usage"
+        "has_soap_uses_strict_schema_validation"
       ]
     },
     {
@@ -8726,7 +8760,8 @@
       "Validation criteria": "Configuration Test:\nTest: Inspect the AndroidManifest.xml file to verify the presence of the android:exported attribute for all service declarations.\nExpected Result: Services without intent filters explicitly set android:exported=\"false\". Services with intent filters explicitly set android:exported=\"true\" if required.\nAccess Control Test:\nTest: Attempt to access private services from unauthorized applications.\nExpected Result: Unauthorized access attempts are blocked.\nDynamic Intent Handling Test:\nTest: Verify that services requiring public access handle intents securely and appropriately.\nExpected Result: Only authorized intents are processed by public services.\nSecurity Assessment Test:\nTest: Conduct a penetration test to ensure no unintended service exposure.\nExpected Result: No private services are exposed to external applications.\nFunctional Verification Test:\nTest: Confirm that required functionality for exported services operates as intended.\nExpected Result: Exported services are accessible only as specified, without exposing sensitive functionality.",
       "controles": "Mobile health applications must control the export status of services by explicitly setting android:exported attributes to define accessibility.",
       "Flags": [
-        "has_manifest_services_explicit_accessibility_attributes"
+        "has_manifest_services_explicit_accessibility_attributes",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -8874,7 +8909,8 @@
       "controles": "The mobile health application must off-load audit records to a separate system or media at scheduled intervals, ensuring secure and reliable log storage.",
       "Flags": [
         "has_logs_offloaded_to_secure_siem",
-        "has_secure_backend_log_storage"
+        "has_secure_backend_log_storage",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -8971,7 +9007,8 @@
       "controles": "The mobile health application must generate audit records for any instance of concurrent logons from different devices or workstations, ensuring detailed tracking of such activities.",
       "Flags": [
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9090,7 +9127,8 @@
       "Flags": [
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_supports_ephi_access_auditing"
+        "has_supports_ephi_access_auditing",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9162,7 +9200,8 @@
       "Flags": [
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_supports_ephi_access_auditing"
+        "has_supports_ephi_access_auditing",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9210,7 +9249,8 @@
       "Flags": [
         "has_supports_ephi_access_auditing",
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9357,7 +9397,8 @@
         "has_supports_ephi_access_auditing",
         "has_server_side_audit_trail",
         "has_audit_event_correlation",
-        "has_logs_clinically_relevant_events"
+        "has_logs_clinically_relevant_events",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9554,7 +9595,8 @@
       "Flags": [
         "has_supports_versioning_of_clinical_records",
         "has_server_side_audit_trail",
-        "has_audit_event_correlation"
+        "has_audit_event_correlation",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9899,7 +9941,9 @@
       "Flags": [
         "has_clears_local_data_on_uninstall",
         "has_android_read_write_external_storage",
-        "has_uses_encrypted_filesystem_storage"
+        "has_uses_encrypted_filesystem_storage",
+        "has_android_extra_risky_permissions_present",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -9946,7 +9990,8 @@
         "has_uses_encrypted_shared_preferences",
         "has_sensitive_data_encrypted_with_os_keystore",
         "has_os_secure_key_storage",
-        "has_org_requires_fips_validated_crypto_for_sensitive_data"
+        "has_org_requires_fips_validated_crypto_for_sensitive_data",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -9993,7 +10038,8 @@
       "Validation criteria": "Remote Wipe Functionality:\nTest: Simulate a remote wipe request to confirm that all sensitive data, including user credentials and health information, is securely deleted.\nExpected result: Data is completely removed from the device without residual traces.\nKill Switch Activation:\nTest: Simulate a kill switch activation to verify that the application becomes inaccessible and data is rendered unreadable.\nExpected result: Application access is immediately revoked",
       "controles": "The mobile health application must support remote wipe and kill switch capabilities to securely remove sensitive data in case of theft or loss of the device.",
       "Flags": [
-        "has_runtime_global_kill_switch_for_security_incidents"
+        "has_runtime_global_kill_switch_for_security_incidents",
+        "has_org_has_device_loss_response_process"
       ]
     },
     {
@@ -10039,7 +10085,8 @@
       "controles": "Ensure the mobile health application does not store sensitive information in hidden fields or embed authentication data in any code, configuration files, or other files.",
       "Flags": [
         "has_hardcoded_credentials",
-        "has_stores_auth_tokens_in_plaintext"
+        "has_stores_auth_tokens_in_plaintext",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -10091,7 +10138,8 @@
         "has_clears_ui_on_background",
         "has_clears_local_data_on_uninstall",
         "has_clears_local_data_on_logout_or_switch_user",
-        "has_clears_local_session_data_on_logout"
+        "has_clears_local_session_data_on_logout",
+        "has_blocks_screenshots_flag_secure"
       ]
     },
     {
@@ -10113,8 +10161,7 @@
       "Validation criteria": "Temporary File Deletion on Termination:\nTest: Terminate the application and inspect the designated temporary file directories.\nExpected result: No temporary files created by the application remain accessible after termination.\nSecure Deletion Method:\nTest: Verify that temporary files are securely deleted, not merely unlinked, to prevent data recovery.\nExpected result: Deleted temporary files cannot be recovered using standard data recovery tools.\nRuntime File Management:\nTest: Ensure that the application removes unnecessary temporary files during runtime as soon as they are no longer needed.\nExpected result: Temporary files are deleted immediately after use to minimize risk.\nLogging and Debug Data Clearance:\nTest: Verify that no sensitive debug or log data remains in temporary file locations post-termination.\nExpected result: All debug and log data is securely removed.\nPlatform Compliance:\nTest: Confirm that the app adheres to platform-specific guidelines for temporary file storage and removal (e.g., Android cache directories, iOS sandboxing rules).\nExpected result: Temporary file handling complies with platform security best practices.",
       "controles": "Ensure the mobile health application removes all temporary files upon termination to prevent unauthorized access to sensitive data.",
       "Flags": [
-        "has_temporary_compiled_data_securely_deleted",
-        "has_controls_protecting_temporary_compiled_data"
+        "has_dynamic_storage_evidence"
       ]
     },
     {
@@ -10159,7 +10206,8 @@
       "Validation criteria": "Secure Deletion Implementation:\nTest: Evaluate the mechanism used to delete sensitive database files.\nExpected result: Files are fully removed from the file system using secure deletion methods.\nResidual Data Check:\nTest: Scan the file system for remnants of deleted database records after deletion.\nExpected result: No residual sensitive data should be recoverable.\nAutomation of Manual Removal:\nTest: Verify the implementation of automated processes for secure database file removal during application workflows.\nExpected result: Sensitive database files are removed without manual intervention.\nConfiguration Validation:\nTest: Inspect application configuration for safeguards ensuring all database files with sensitive content are identified and securely removed.\nExpected result: Proper configurations are in place to identify and target sensitive files for secure deletion.\nEnd-of-Life Data Handling:\nTest: Evaluate the application's ability to securely erase sensitive data during uninstallation or decommissioning.\nExpected result: All sensitive database files are removed securely during application uninstallation or decommissioning.",
       "controles": "Ensure that database files containing sensitive data, such as iOS WebView caches, are securely and completely removed from the file system to prevent residual data exposure.",
       "Flags": [
-        "has_clears_local_data_on_logout_or_switch_user"
+        "has_clears_local_data_on_logout_or_switch_user",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10181,8 +10229,10 @@
       "Validation criteria": "Memory Access Restriction:\nTest: Attempt to access data stored by the app using another unauthorized application.\nExpected result: Unauthorized applications are unable to access any data written by the app.\nStorage Location Audit:\nTest: Inspect all storage operations to verify data is only saved in private app directories.\nExpected result: All data is written to private, app-specific directories with restricted access.\nCode Review for Persistent Storage:\nTest: Conduct a review of the codebase for instances of persistent storage operations.\nExpected result: No instances of data being stored in publicly accessible memory locations.\nSecure Configuration Validation:\nTest: Validate app configurations to ensure compliance with secure data storage policies.\nExpected result: Configurations align with policies restricting data storage to private locations.\nDynamic Testing:\nTest: Perform runtime testing of storage behaviors during various app operations.\nExpected result: Data remains inaccessible to external apps under all conditions.",
       "controles": "Ensure the mobile application does not write data to persistent memory that is accessible to other applications to prevent unauthorized data access or leakage.",
       "Flags": [
-        "has_android_read_write_external_storage",
-        "has_stores_ephi_on_external_storage"
+        "has_requests_only_minimum_permissions",
+        "has_stores_pii_in_plaintext",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10205,7 +10255,8 @@
       "controles": "The mobile health application must ensure correct handling of electronic health records (EHR). It must uniquely identify records and provide functionality to merge multiple records for the same patient/person, ensuring seamless consolidation of unintentional duplicates.",
       "Flags": [
         "has_handles_patient_identifier_correctly",
-        "has_maps_patient_ids_consistently"
+        "has_maps_patient_ids_consistently",
+        "has_privacy_relevant_tracker"
       ]
     },
     {
@@ -10228,9 +10279,7 @@
       "controles": "The mobile health application must ensure protection Against Tampered Executables.",
       "Flags": [
         "has_protection_against_tampered_executables",
-        "has_android_debuggable_enabled",
-        "has_manifest_debuggable_true",
-        "has_prevention_against_reverse_engineering"
+        "has_cert_v1_signature_present_janus_risk"
       ]
     },
     {
@@ -10252,8 +10301,10 @@
       "Validation criteria": "Data Classification and Control:\nTest: Review the classification and storage logic implemented in the application.\nExpected result: Sensitive data is classified appropriately and stored only in secure, private locations.\nExternal Storage Content Audit:\nTest: Inspect files written to external storage during app operations.\nExpected result: No sensitive data, such as passwords, personal identifiers, or logs containing confidential information, is stored externally.\nCode Review for Storage Operations:\nTest: Analyze the codebase for storage methods involving external storage.\nExpected result: Only non-sensitive information is written to external storage, and sensitive information is securely stored internally.\nDynamic Testing for Storage Behavior:\nTest: Simulate app scenarios that involve file storage and examine resulting file locations and access permissions.\nExpected result: All sensitive data remains inaccessible to external entities and is securely stored.\nTampering and Data Integrity Testing:\nTest: Modify external storage data and observe the app's handling of altered data.\nExpected result: The app does not rely on or process tampered external storage data, ensuring no compromise in functionality or security.",
       "controles": "Sensitive data must never be stored in publicly accessible locations, as external storage is globally readable, writable, and modifiable by other applications.",
       "Flags": [
-        "has_android_read_write_external_storage",
-        "has_stores_ephi_on_external_storage"
+        "has_requests_only_minimum_permissions",
+        "has_stores_pii_in_plaintext",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10275,9 +10326,11 @@
       "Validation criteria": "External Storage Write Monitoring:\nTest: Track all data being written to external storage during app operations.\nExpected result: Only non-sensitive and validated data is stored on external storage.\nExternal Storage Read Validation:\nTest: Inspect the application’s process for reading data from external storage.\nExpected result: Data read from external storage is validated for integrity and complies with the application’s security requirements.\nCode Inspection for External Storage Handling:\nTest: Conduct a code review to identify storage methods involving external storage interactions.\nExpected result: All external storage operations are restricted to non-sensitive data and include validation checks.\nDynamic Testing for Unauthorized Access:\nTest: Simulate unauthorized modifications to external storage and observe app behavior.\nExpected result: The application detects tampering, ignores invalid data, and prevents functionality compromise.\nRuntime Monitoring for External Access:\nTest: Use dynamic tools to monitor runtime behavior for external storage reads and writes.\nExpected result: All storage operations are logged, monitored, and comply with defined security standards.",
       "controles": "The mobile health application must implement monitoring mechanisms to oversee all data interactions with external storage. Only non-sensitive and validated data may be written to or read from external storage to maintain application security and integrity.",
       "Flags": [
-        "has_android_read_write_external_storage",
         "has_collects_telemetry_for_security_events",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_requests_only_minimum_permissions",
+        "has_stores_pii_in_plaintext",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10303,7 +10356,8 @@
         "has_tracks_clinician_user_actions",
         "has_server_side_audit_trail",
         "has_secure_backend_log_storage",
-        "has_logs_offloaded_to_secure_siem"
+        "has_logs_offloaded_to_secure_siem",
+        "has_encrypted_local_caching_of_ephi"
       ]
     },
     {
@@ -10351,7 +10405,8 @@
       "Flags": [
         "has_content_provider_actively_exposed",
         "has_permissions_protected_with_signature_level",
-        "has_manifest_custom_permission_defined"
+        "has_manifest_custom_permission_defined",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -10373,7 +10428,7 @@
       "Validation criteria": "Access Control Testing:\nTest: Attempt to access the content provider using unauthorized applications or processes.\nExpected result: Unauthorized access is denied, and only applications with appropriate permissions can access the content provider.\nData Manipulation Prevention:\nTest: Attempt to modify data within the content provider without proper authorization.\nExpected result: Unauthorized modifications are blocked, and the integrity of the data is maintained.\nConfiguration Verification:\nTest: Review the manifest file to ensure permissions and access settings for the content provider are correctly configured.\nExpected result: The content provider is configured with secure read and write permissions, leveraging signature-level protection where appropriate.\nSQL Injection Mitigation:\nTest: Analyze SQL queries used by the content provider for vulnerabilities to injection attacks.\nExpected result: Queries are parameterized, and no mechanisms allow unauthorized inference or modification of data.\nRuntime Behavior Monitoring:\nTest: Monitor real-time interactions with the content provider during app operation.\nExpected result: All access and data handling comply with predefined secure practices, and sensitive data remains protected.",
       "controles": "The mobile health application must enforce secure practices for accessing content providers. All data handling operations, including reading and writing data, must mitigate potential security threats such as unauthorized access and data manipulation.",
       "Flags": [
-        "has_content_provider_actively_exposed"
+        "has_manifest_custom_permission_defined"
       ]
     },
     {
@@ -10397,7 +10452,8 @@
       "Flags": [
         "has_manifest_services_explicit_accessibility_attributes",
         "has_manifest_exports_components_insecurely",
-        "has_content_provider_actively_exposed"
+        "has_content_provider_actively_exposed",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -10420,7 +10476,8 @@
       "controles": "Permissions must align with the principle of least privilege, ensuring access is limited to the minimum necessary for the task. Additional permissions may be extended only when explicitly required.",
       "Flags": [
         "has_requests_only_minimum_permissions",
-        "has_android_extra_risky_permissions_present"
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10445,7 +10502,8 @@
         "has_android_read_write_external_storage",
         "has_permissions_protected_with_signature_level",
         "has_manifest_custom_permission_defined",
-        "has_exported_broadcast_receivers_without_permission"
+        "has_exported_broadcast_receivers_without_permission",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -10468,6 +10526,7 @@
       "controles": "Mobile health applications must not retain sensitive data in memory for longer than necessary. Sensitive data must be explicitly cleared from memory after its use to reduce the risk of unauthorized access or memory dumps.",
       "Flags": [
         "has_clears_ui_on_background",
+        "has_clears_auth_data_on_logout",
         "has_blocks_screenshots_flag_secure"
       ]
     },
@@ -10516,13 +10575,10 @@
       "Validation criteria": "Data Encryption Validation:\nTest: Verify that all ePHI is encrypted using strong, industry-standard encryption algorithms (e.g., AES-256).\nExpected result: All sensitive data is encrypted and cannot be accessed in plaintext.\nEncryption Key Management:\nTest: Inspect the key management process to confirm that encryption keys are securely derived and stored.\nExpected result: Keys are protected using a secure key management system or derived securely from user credentials.\nSecure Backup Encryption:\nTest: Validate that all archived patient information and backups are encrypted during storage and transmission.\nExpected result: Archived and transmitted data is encrypted with strong protocols (e.g., TLS 1.3 for communication).\nDevice Integrity Testing:\nTest: Validate disk encryption mechanisms on devices storing patient data.\nExpected result: Device integrity is ensured through enabled and verified disk encryption.\nBinary Attack Prevention:\nTest: Perform security testing to detect vulnerabilities in client-side storage encryption, focusing on binary attack resistance.\nExpected result: Encryption mechanisms withstand attempts to decrypt data via binary analysis or reverse engineering.",
       "controles": "Mobile health applications must implement encryption and decryption mechanisms for all electronic protected health information (ePHI) stored on client devices or transmitted through the application.",
       "Flags": [
-        "has_manifest_allow_clear_text_traffic_true",
-        "has_android_ssl_pinning_present",
-        "has_android_ssl_pinning_detected",
         "has_encrypted_local_caching_of_ephi",
-        "has_uses_encrypted_local_database",
         "has_uses_encrypted_shared_preferences",
-        "has_uses_encrypted_filesystem_storage"
+        "has_https_with_cert_pinning",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -10574,7 +10630,8 @@
         "has_hardcoded_credentials",
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -10695,8 +10752,10 @@
       "Validation criteria": "Framework Integration Check:\nTest: Verify that the application uses platform-provided frameworks, such as Content Providers, for data sharing.\nExpected result: All shared data is accessed and managed via the platform's framework functionalities.\nFile System Permissions Review:\nTest: Conduct a review of file system permissions to ensure no sensitive data is shared using file-level permissions.\nExpected result: Sensitive data is not shared via file system permissions.\nDynamic Testing for Unauthorized Access:\nTest: Attempt unauthorized access to shared data using file system manipulation or custom schemes.\nExpected result: Unauthorized access is blocked, and the framework enforces proper access control.\nCode Review for Data Sharing Implementation:\nTest: Examine the implementation of data-sharing features in the codebase.\nExpected result: Data sharing is implemented using Android Content Providers or equivalent framework functionalities.\nCompatibility Across Platform Versions:\nTest: Validate that the framework functionality works consistently across supported versions of the operating system.\nExpected result: Secure data sharing operates correctly across all target platform versions.",
       "controles": "Applications must prioritize the use of platform-provided framework functionalities, such as Android Content Providers, for data sharing. Avoid using file system permissions or custom access schemes for managing shared data.",
       "Flags": [
-        "has_android_read_write_external_storage",
-        "has_content_provider_actively_exposed"
+        "has_permissions_protected_with_signature_level",
+        "has_requests_only_minimum_permissions",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10741,7 +10800,8 @@
       "Validation criteria": "File Mode Validation:\nTest: Attempt to access IPC files created with deprecated file modes (MODE_WORLD_WRITEABLE or MODE_WORLD_READABLE).\nExpected result: No IPC files are accessible with these modes, ensuring secure configurations.\nSecure IPC Mechanism Validation:\nTest: Verify the use of Android Services with authentication for IPC operations.\nExpected result: IPC operations utilize secure and authenticated channels.\nLocalhost Port Validation:\nTest: Attempt to establish IPC communication via localhost network ports.\nExpected result: Localhost ports are not used for sensitive IPC.\nCode Review for IPC Security:\nTest: Inspect the codebase for instances of deprecated file modes or localhost IPC mechanisms.\nExpected result: Code adheres to secure IPC practices, avoiding deprecated or insecure configurations.\nDynamic Security Testing:\nTest: Conduct runtime analysis to identify unauthorized IPC access attempts.\nExpected result: All unauthorized attempts are blocked, and secure IPC mechanisms function correctly.",
       "controles": "Applications must avoid using deprecated file modes such as MODE_WORLD_WRITEABLE and MODE_WORLD_READABLE for IPC files to prevent uncontrolled access to sensitive data. Additionally, sensitive IPC must not rely on localhost network ports, which can be accessed by other apps on the device.",
       "Flags": [
-        "has_ipc_bindservice_secure"
+        "has_ipc_bindservice_secure",
+        "has_stores_pii_in_plaintext"
       ]
     },
     {
@@ -10861,8 +10921,8 @@
       "Validation criteria": "Salt Generation Verification:\nTest: Inspect the application’s password hashing logic to confirm that random salts are generated for each password.\nExpected Result: Every password hash includes a unique, randomly generated salt.\nSecure Hashing Algorithm Validation:\nTest: Ensure the use of secure cryptographic hash functions such as bcrypt, Argon2, or PBKDF2.\nExpected Result: Passwords are hashed using secure, industry-recommended algorithms.\nSalt Storage Review:\nTest: Examine how salts are stored and associated with their respective password hashes.\nExpected Result: Salts are securely stored and readily available for authentication processes without compromising security.\nAccess Control Audit:\nTest: Verify that access controls are applied to files or databases containing salted password hashes.\nExpected Result: Authentication data is accessible only to authorized processes and users.\nPassword Collision Testing:\nTest: Test scenarios where multiple users create identical passwords.\nExpected Result: Hashes for identical passwords are unique due to distinct salts, preventing collisions.",
       "controles": "The application must implement salting for all password hashing processes, using strong and unique random salts for each password. Salts must be securely generated and stored alongside cryptographic hash values, ensuring robust protection against precomputed or rainbow table attacks.",
       "Flags": [
-        "has_password_hashing_uses_salts",
-        "has_password_hashing_uses_kdf"
+        "has_stores_keys_in_plaintext",
+        "has_stores_auth_tokens_in_plaintext"
       ]
     },
     {
@@ -10884,7 +10944,8 @@
       "Validation criteria": "Algorithm Verification:\nTest: Inspect the application code to confirm the use of PBKDF2, bcrypt, or scrypt for password hashing.\nExpected Result: Password hashing processes are implemented using one of the specified KDFs.\nIteration Count Testing:\nTest: Verify that the KDF includes a high iteration count to slow down hashing operations for attackers.\nExpected Result: Iteration counts meet industry-recommended thresholds (e.g., 100,000+ iterations for PBKDF2).\nAdaptive Mechanism Review:\nTest: Evaluate whether the KDF supports adaptive mechanisms to allow adjustment of work factors over time.\nExpected Result: The system can increase computational work as processing power advances.\nSecure Key Output Validation:\nTest: Ensure the output of the KDF is cryptographically strong and suitable for secure storage or encryption.\nExpected Result: Derived keys are robust and meet security requirements.\nBrute-Force Resistance Testing:\nTest: Simulate a brute-force attack against hashed passwords to assess resistance.\nExpected Result: Password hashing resists brute-force attacks within acceptable security thresholds.",
       "controles": "The application must employ Key Derivation Functions (KDFs), such as PBKDF2, bcrypt, or scrypt, for password hashing. These functions must include mechanisms like iteration counts and adaptive work factors to enhance security against brute-force attacks and ensure secure derivation of cryptographic keys from user passwords.",
       "Flags": [
-        "has_password_hashing_uses_kdf"
+        "has_stores_keys_in_plaintext",
+        "has_stores_auth_tokens_in_plaintext"
       ]
     },
     {
@@ -10908,7 +10969,8 @@
       "Flags": [
         "has_org_requires_fips_validated_crypto_for_sensitive_data",
         "has_cert_uses_sha1_signature_algorithm",
-        "has_cert_signed_with_debug_certificate"
+        "has_cert_signed_with_debug_certificate",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -10957,7 +11019,8 @@
         "has_org_requires_fips_validated_crypto_for_sensitive_data",
         "has_cert_signed_with_debug_certificate",
         "has_cert_uses_sha1_signature_algorithm",
-        "has_os_secure_key_storage"
+        "has_os_secure_key_storage",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -11006,9 +11069,6 @@
       "Validation criteria": "Encryption Verification:\nTest: Verify that messages containing privacy data tied to the SessionIndex are encrypted using strong encryption algorithms.\nExpected Result: All messages associated with privacy data are encrypted before transmission.\nSessionIndex Validation:\nTest: Inspect the implementation to confirm that the SessionIndex is accurately identified when tied to privacy data.\nExpected Result: The system correctly identifies and flags SessionIndex instances that require encryption.\nTransmission Monitoring:\nTest: Simulate data transmission and inspect network traffic for unencrypted messages linked to the SessionIndex.\nExpected Result: No unencrypted messages containing privacy data are observed in the network traffic.\nDecryption Testing:\nTest: Attempt to decrypt the encrypted messages using the authorized decryption process.\nExpected Result: Decryption succeeds only with the correct cryptographic keys and authorized processes.\nCompliance Audit:\nTest: Assess the encryption implementation against regulatory standards for protecting privacy data during transmission.\nExpected Result: The encryption approach complies with applicable privacy regulations and standards.",
       "controles": "The application must encrypt all messages when the SessionIndex is associated with privacy data to safeguard sensitive information during transmission and mitigate risks of unauthorized access or interception.",
       "Flags": [
-        "has_saml_based_sso",
-        "has_soap_api_usage",
-        "has_soap_message_level_encryption",
         "has_uses_xml_encryption"
       ]
     },
@@ -11031,12 +11091,9 @@
       "Validation criteria": "Certificate Validation:\nTest: Verify the application's ability to validate certificates against trusted certificate authorities.\nExpected Result: Certificates are validated and rejected if not issued by a trusted authority or if they are expired or revoked.\nDigital Signature Verification:\nTest: Test the application’s ability to verify the integrity of messages using digital signatures.\nExpected Result: Only messages with valid digital signatures are processed.\nAuthentication Challenge Testing:\nTest: Simulate an unauthorized party attempting to authenticate in the encryption process.\nExpected Result: Unauthorized attempts are rejected, and the system logs the event.\nMechanism Robustness Assessment:\nTest: Inspect all validation and authentication mechanisms for adherence to industry best practices and standards, such as FIPS or NIST guidelines.\nExpected Result: Mechanisms comply with recognized security standards and perform reliably under all conditions.\nDynamic Testing for Validation Flow:\nTest: Perform runtime testing to ensure validation and authentication processes execute securely during live operations.\nExpected Result: The system securely validates and authenticates all encryption-related operations without performance degradation or failure.",
       "controles": "The application must implement robust validation and authentication mechanisms to verify the integrity and authenticity of all parties involved in the encryption process.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented",
-        "has_ssl_pinning_findings_severity_good",
-        "has_android_ssl_pinning_present",
         "has_manifest_allow_clear_text_traffic_true",
-        "has_endpoint_requires_user_authentication"
+        "has_insecure_http_based_webview_communication",
+        "has_approved_ports_and_protocols"
       ]
     },
     {
@@ -11106,7 +11163,8 @@
         "has_permissions_protected_with_signature_level",
         "has_manifest_custom_permission_defined",
         "has_exported_broadcast_receivers_without_permission",
-        "has_manifest_exports_components_insecurely"
+        "has_manifest_exports_components_insecurely",
+        "has_defined_privilege_management_policy"
       ]
     },
     {
@@ -11250,7 +11308,8 @@
       "Flags": [
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -11295,7 +11354,8 @@
       "Validation criteria": "Random Number Source Validation:\nTest: Inspect the application's random number generation methods to ensure the use of a secure generator like SecureRandom.\nExpected Result: The application consistently uses secure random number generators for all cryptographic operations.\nEntropy Verification:\nTest: Evaluate the entropy of generated random values using statistical tests to ensure high randomness.\nExpected Result: Random values exhibit high entropy and do not follow predictable patterns.\nKey Generation Audit:\nTest: Verify that all cryptographic keys are initialized using a secure random number generator.\nExpected Result: Keys are securely generated with no predictable or reused values.\nToken Security Test:\nTest: Analyze generated tokens or nonces for randomness and resistance to replay or guessing attacks.\nExpected Result: Tokens are unpredictable and unique for each session or operation.\nPenetration Testing for Randomness Weakness:\nTest: Conduct security testing to identify potential weaknesses in the application’s random value generation process.\nExpected Result: The application demonstrates resilience to attacks targeting randomness vulnerabilities.\nLogging and Monitoring of Randomness Failures:\nTest: Verify that the application logs and alerts on any detected failures in random number generation.\nExpected Result: Failures or abnormalities in randomness generation are logged and trigger security alerts.",
       "controles": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
       "Flags": [
-        "has_android_insecure_random_rng"
+        "has_android_insecure_random_rng",
+        "has_auth_keys_stored_in_secure_hardware"
       ]
     },
     {
@@ -11317,7 +11377,8 @@
       "Validation criteria": "Randomness Audit:\nTest: Verify that IVs or counters are generated using secure random number generators, such as SecureRandom.\nExpected Result: Generated IVs and counters exhibit cryptographic randomness and high entropy.\nReplay Attack Simulation:\nTest: Simulate a replay attack to ensure the application does not accept reused IVs or counters.\nExpected Result: The application rejects reused IVs or counters, ensuring data integrity.\nCode Review for Counter Reuse:\nTest: Conduct a thorough review of the codebase to ensure no instances of counter reuse exist.\nExpected Result: All counters and IVs are unique and securely generated for each operation.\nDynamic Encryption Testing:\nTest: Perform runtime testing of the encryption module to observe IV/counter generation during operations.\nExpected Result: Encryption consistently generates unique, random IVs or counters without reuse.\nIntegrity Validation Post-Encryption:\nTest: Verify the integrity and security of encrypted data when processed using CTR mode with generated IVs/counters.\nExpected Result: Data remains secure and resistant to cryptographic analysis or attacks.",
       "controles": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
       "Flags": [
-        "has_android_insecure_random_rng"
+        "has_android_insecure_random_rng",
+        "has_sensitive_data_encrypted_with_os_keystore"
       ]
     }
   ]

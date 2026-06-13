@@ -1,26 +1,14 @@
 package org.openmrs.mobile.utilities
 
-import android.content.Context
+import android.app.Activity
 import android.os.Build
 import android.os.Process
 import com.openmrs.android_sdk.library.OpenMRSLogger
 import com.openmrs.android_sdk.library.OpenmrsAndroid
-import javax.inject.Inject
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.InputStreamReader
-import java.io.PrintWriter
-import java.io.StringWriter
+import java.io.*
 import kotlin.system.exitProcess
 
-class ForceClose @Inject constructor(private val context: Context) : Thread.UncaughtExceptionHandler {
-
-    @Inject
-    lateinit var mOpenMRSLogger: OpenMRSLogger
-
+class ForceClose(private val myContext: Activity) : Thread.UncaughtExceptionHandler {
     companion object {
         private const val LINE_SEPARATOR = "\n"
     }
@@ -59,15 +47,16 @@ class ForceClose @Inject constructor(private val context: Context) : Thread.Unca
         errorReport.append(LINE_SEPARATOR)
         errorReport.append("\n************ APP LOGS ************\n")
         errorReport.append(getLogs())
-        val i = context.packageManager.getLaunchIntentForPackage("org.openmrs.mobile")
+        val i = myContext.packageManager.getLaunchIntentForPackage("org.openmrs.mobile")
         i?.putExtra("flag", true)
         i?.putExtra("error", errorReport.toString())
-        context.startActivity(i)
+        myContext.startActivity(i)
         Process.killProcess(Process.myPid())
         exitProcess(10)
     }
 
     fun getLogs(): String? {
+        val mOpenMRSLogger = OpenMRSLogger()
         var textLogs: String? = ""
         val filename = "${OpenmrsAndroid.getOpenMRSDir()}${File.separator}${mOpenMRSLogger.logFilename}"
         try {

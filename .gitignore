@@ -7,7 +7,6 @@ pom.xml.releaseBackup
 pom.xml.next
 release.properties
 
-
 #android project
 tests/*.iml
 !.idea/codeStyles
@@ -30,6 +29,10 @@ modules/odk.collect/gen/*
 modules/odk.collect/bin/*
 modules/odk.collect/android/*
 
+# Built application files
+*.apk
+*.ap_
+*.aab
 
 # Files for the ART/Dalvik VM
 *.dex
@@ -149,4 +152,3 @@ output.json
 *.ear
 .idea_modules/
 atlassian-ide-plugin.xmlv
-/.idea/jarRepositories.xml

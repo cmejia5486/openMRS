@@ -14,12 +14,13 @@
 package org.openmrs.mobile.activities.activevisits
 
 import android.os.Bundle
-import dagger.hilt.android.AndroidEntryPoint
+import android.view.Menu
+import androidx.appcompat.widget.SearchView
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
 
-@AndroidEntryPoint
 class ActiveVisitsActivity : ACBaseActivity() {
+    private var mPresenter: ActiveVisitsContract.Presenter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,5 +40,32 @@ class ActiveVisitsActivity : ACBaseActivity() {
             addFragmentToActivity(supportFragmentManager,
                     activeVisitsFragment, R.id.activeVisitContentFrame)
         }
+        // Create the presenter
+        mPresenter = ActiveVisitPresenter(activeVisitsFragment)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        super.onCreateOptionsMenu(menu)
+        menuInflater.inflate(R.menu.find_visits_menu, menu)
+        val findVisitView: SearchView
+        val mFindVisitItem = menu.findItem(R.id.actionSearchLocalVisits)
+        findVisitView = mFindVisitItem.actionView as SearchView
+
+        findVisitView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String): Boolean {
+                findVisitView.clearFocus()
+                return true
+            }
+
+            override fun onQueryTextChange(query: String): Boolean {
+                if (query.isNotEmpty()) {
+                    mPresenter?.updateVisitsInDatabaseList(query)
+                } else {
+                    mPresenter?.updateVisitsInDatabaseList()
+                }
+                return true
+            }
+        })
+        return true
     }
 }

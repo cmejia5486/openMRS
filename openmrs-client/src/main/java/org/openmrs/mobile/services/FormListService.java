@@ -10,15 +10,14 @@
 
 package org.openmrs.mobile.services;
 
-import javax.inject.Inject;
-import java.util.List;
-
-import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Response;
 import android.app.IntentService;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.RestServiceBuilder;
 import com.openmrs.android_sdk.library.dao.EncounterTypeRoomDAO;
 import com.openmrs.android_sdk.library.dao.FormResourceDAO;
 import com.openmrs.android_sdk.library.databases.AppDatabase;
@@ -28,12 +27,15 @@ import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
-@AndroidEntryPoint
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class FormListService extends IntentService {
-    @Inject
-    RestApi apiService;
-    @Inject
-    AppDatabase appDatabase;
+    private final RestApi apiService = RestServiceBuilder.createService(RestApi.class);
+    private List<FormResourceEntity> formresourcelist;
 
     public FormListService() {
         super("Sync Form List");
@@ -41,34 +43,47 @@ public class FormListService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (!NetworkUtils.isOnline()) return;
-        // Refresh forms
-        FormResourceDAO formResourceDAO = appDatabase.formResourceDAO();
-        Response<Results<FormResourceEntity>> response = null;
-        try {
-            response = apiService.getForms().execute();
-            if (!response.isSuccessful()) ToastUtil.error(response.message());
-            formResourceDAO.deleteAllForms();
-            List<FormResourceEntity> formResourceList = response.body().getResults();
-            for (FormResourceEntity formResourceEntity : formResourceList) {
-                formResourceDAO.addFormResource(formResourceEntity);
-            }
-        } catch (Exception e) {
-            ToastUtil.error(response.message());
-        }
-        // Refresh encounter types
-        EncounterTypeRoomDAO encounterTypeRoomDAO = appDatabase.encounterTypeRoomDAO();
-        Response<Results<EncounterType>> response2 = null;
-        try {
-            response2 = apiService.getEncounterTypes().execute();
-            if (!response2.isSuccessful()) ToastUtil.error(response2.message());
-            encounterTypeRoomDAO.deleteAllEncounterTypes();
-            List<EncounterType> encounterTypeList = response2.body().getResults();
-            for (EncounterType encounterType : encounterTypeList) {
-                encounterTypeRoomDAO.addEncounterType(encounterType);
-            }
-        } catch (Exception e) {
-            ToastUtil.error(response2.message());
+        FormResourceDAO formResourceDAO = AppDatabase.getDatabase(OpenmrsAndroid.getInstance().getApplicationContext()).formResourceDAO();
+        EncounterTypeRoomDAO encounterTypeRoomDAO = AppDatabase.getDatabase(OpenmrsAndroid.getInstance().getApplicationContext()).encounterTypeRoomDAO();
+        if (NetworkUtils.isOnline()) {
+
+            Call<Results<FormResourceEntity>> call = apiService.getForms();
+            call.enqueue(new Callback<Results<FormResourceEntity>>() {
+                @Override
+                public void onResponse(@NonNull Call<Results<FormResourceEntity>> call, @NonNull Response<Results<FormResourceEntity>> response) {
+                    if (response.isSuccessful()) {
+                        formResourceDAO.deleteAllForms();
+                        formresourcelist = response.body().getResults();
+                        int size = formresourcelist.size();
+                        for (int i = 0; i < size; i++) {
+                            formResourceDAO.addFormResource(formresourcelist.get(i));
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<Results<FormResourceEntity>> call, @NonNull Throwable t) {
+                    ToastUtil.error(t.getMessage());
+                }
+            });
+
+            Call<Results<EncounterType>> call2 = apiService.getEncounterTypes();
+            call2.enqueue(new Callback<Results<EncounterType>>() {
+                @Override
+                public void onResponse(@NonNull Call<Results<EncounterType>> call, @NonNull Response<Results<EncounterType>> response) {
+                    if (response.isSuccessful()) {
+                        encounterTypeRoomDAO.deleteAllEncounterTypes();
+                        Results<EncounterType> encounterTypeList = response.body();
+                        for (EncounterType encounterType : encounterTypeList.getResults())
+                            encounterTypeRoomDAO.addEncounterType(encounterType);
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<Results<EncounterType>> call, @NonNull Throwable t) {
+                    ToastUtil.error(t.getMessage());
+                }
+            });
         }
     }
 }

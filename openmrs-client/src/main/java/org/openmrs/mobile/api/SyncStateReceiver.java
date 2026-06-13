@@ -6,7 +6,6 @@
  *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
- *
  */
 
 package org.openmrs.mobile.api;
@@ -18,7 +17,7 @@ import android.content.Intent;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.services.EncounterService;
+import com.openmrs.android_sdk.library.api.services.EncounterService;
 import org.openmrs.mobile.services.PatientService;
 
 public class SyncStateReceiver extends BroadcastReceiver {

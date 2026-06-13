@@ -10,46 +10,38 @@
 
 package org.openmrs.mobile.services;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-
-import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Response;
 import android.app.IntentService;
 import android.content.Intent;
 import android.util.Log;
 
 import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.RestServiceBuilder;
 import com.openmrs.android_sdk.library.api.repository.PatientRepository;
 import com.openmrs.android_sdk.library.dao.PatientDAO;
 import com.openmrs.android_sdk.library.models.Module;
 import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.library.models.PatientDto;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.ModuleUtils;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.PatientAndMatchingPatients;
-import com.openmrs.android_sdk.utilities.PatientComparator;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.matchingpatients.MatchingPatientsActivity;
+import org.openmrs.mobile.utilities.ModuleUtils;
 import org.openmrs.mobile.utilities.PatientAndMatchesWrapper;
+import org.openmrs.mobile.utilities.PatientComparator;
 
-@AndroidEntryPoint
+import java.io.IOException;
+import java.util.List;
+import java.util.ListIterator;
+
+import retrofit2.Call;
+import retrofit2.Response;
+
 public class PatientService extends IntentService {
     public static final String PATIENT_SERVICE_TAG = "PATIENT_SERVICE";
     private boolean calculatedLocally = false;
-
-    @Inject
-    PatientRepository patientRepository;
-    @Inject
-    RestApi restApi;
 
     public PatientService() {
         super("Register Patients");
@@ -79,6 +71,7 @@ public class PatientService extends IntentService {
     }
 
     private void fetchSimilarPatients(final Patient patient, final PatientAndMatchesWrapper patientAndMatchesWrapper) {
+        RestApi restApi = RestServiceBuilder.createService(RestApi.class);
         Call<Results<Module>> moduleCall = restApi.getModules(ApplicationConstants.API.FULL);
         try {
             Response<Results<Module>> moduleResp = moduleCall.execute();
@@ -98,24 +91,22 @@ public class PatientService extends IntentService {
 
     private void fetchPatientsAndCalculateLocally(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws IOException {
         calculatedLocally = true;
-        Call<Results<PatientDto>> patientCall = restApi.getPatientsDto(patient.getName().getGivenName(), ApplicationConstants.API.FULL);
-        Response<Results<PatientDto>> resp = patientCall.execute();
+        RestApi restApi = RestServiceBuilder.createService(RestApi.class);
+        Call<Results<Patient>> patientCall = restApi.getPatients(patient.getName().getGivenName(), ApplicationConstants.API.FULL);
+        Response<Results<Patient>> resp = patientCall.execute();
         if (resp.isSuccessful()) {
-            List<Patient> patientList = new ArrayList<>();
-            for(PatientDto p : resp.body().getResults()){
-                patientList.add(p.getPatient());
-            }
-            List<Patient> similarPatient = new PatientComparator().findSimilarPatient(patientList, patient);
+            List<Patient> similarPatient = new PatientComparator().findSimilarPatient(resp.body().getResults(), patient);
             if (!similarPatient.isEmpty()) {
                 patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatient));
             } else {
-                patientRepository.syncPatient(patient);
+                new PatientRepository().syncPatient(patient);
             }
         }
     }
 
     private void fetchSimilarPatientsFromServer(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws IOException {
         calculatedLocally = false;
+        RestApi restApi = RestServiceBuilder.createService(RestApi.class);
         Call<Results<Patient>> patientCall = restApi.getSimilarPatients(patient.toMap());
         Response<Results<Patient>> patientsResp = patientCall.execute();
         if (patientsResp.isSuccessful()) {
@@ -123,7 +114,7 @@ public class PatientService extends IntentService {
             if (!patientList.isEmpty()) {
                 patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, patientList));
             } else {
-                patientRepository.syncPatient(patient);
+                new PatientRepository().syncPatient(patient);
             }
         }
     }

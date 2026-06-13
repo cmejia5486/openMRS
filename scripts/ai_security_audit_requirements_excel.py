@@ -237,12 +237,12 @@ def parse_summary_normalized(summary: Any) -> str:
         return "YES"
     if v_up in ("NO", "N"):
         return "NO"
-    if v_up in ("NA", "N/A"):
+    if v_up in ("NA", "N/A", "UNKNOWN", "NOT_APPLICABLE", "NOTAPPLICABLE"):
         return "NA"
-    m = re.search(r"\b(YES|NO|NA|N/A)\b", s.upper())
+    m = re.search(r"\b(YES|NO|NA|N/A|UNKNOWN|NOT_APPLICABLE)\b", s.upper())
     if m:
         tok = m.group(1)
-        return "NA" if tok in ("NA", "N/A") else tok
+        return "NA" if tok in ("NA", "N/A", "UNKNOWN", "NOT_APPLICABLE") else tok
     return "NA"
 
 
