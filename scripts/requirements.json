@@ -170,7 +170,10 @@
         "has_ssl_cert_pinning_implemented",
         "has_cert_signed_with_debug_certificate",
         "has_cert_v1_signature_present_janus_risk",
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_cert_x509_subject_android_debug",
+        "has_cert_uses_sha1_signature_algorithm",
+        "has_manifest_debuggable_true"
       ]
     },
     {
@@ -194,7 +197,10 @@
       "Flags": [
         "has_cert_signed_with_debug_certificate",
         "has_cert_v1_signature_present_janus_risk",
-        "has_manifest_debuggable_true"
+        "has_manifest_debuggable_true",
+        "has_android_debuggable_enabled",
+        "has_cert_x509_subject_android_debug",
+        "has_cert_uses_sha1_signature_algorithm"
       ]
     },
     {
@@ -478,7 +484,8 @@
         "has_uses_encrypted_filesystem_storage",
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -799,7 +806,9 @@
         "has_sca_medium_vulnerabilities",
         "has_sca_low_vulnerabilities",
         "has_sca_fixable_vulnerabilities",
-        "has_sca_security_sensitive_outdated_libraries"
+        "has_sca_security_sensitive_outdated_libraries",
+        "has_sca_dependency_inventory",
+        "has_sca_license_inventory"
       ]
     },
     {
@@ -862,7 +871,9 @@
         "has_sca_medium_vulnerabilities",
         "has_sca_low_vulnerabilities",
         "has_sca_fixable_vulnerabilities",
-        "has_sca_security_sensitive_outdated_libraries"
+        "has_sca_security_sensitive_outdated_libraries",
+        "has_sca_dependency_inventory",
+        "has_sca_license_inventory"
       ]
     },
     {
@@ -938,7 +949,10 @@
         "has_sca_critical_vulnerabilities",
         "has_sca_high_vulnerabilities",
         "has_sca_fixable_vulnerabilities",
-        "has_sca_security_sensitive_outdated_libraries"
+        "has_sca_security_sensitive_outdated_libraries",
+        "has_sca_dependency_inventory",
+        "has_sca_license_inventory",
+        "has_sca_medium_vulnerabilities"
       ]
     },
     {
@@ -1131,7 +1145,8 @@
         "has_protection_against_tampered_executables",
         "has_collects_telemetry_for_security_events",
         "has_logs_offloaded_to_secure_siem",
-        "has_audit_failure_alerting"
+        "has_audit_failure_alerting",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -1154,7 +1169,8 @@
       "controles": "The application shall enter into a mode of operation that is considered to be a safe state upon detection of conditions that cause the application to enter into a safe state per information defined in CCI-0002856 (CP-12), per the guidance in CCI-0002857 (CP-12).",
       "Flags": [
         "has_safe_mode_degraded_functionality_design",
-        "has_org_has_incident_response_plan_for_app"
+        "has_org_has_incident_response_plan_for_app",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -1179,7 +1195,8 @@
         "has_safe_mode_degraded_functionality_design",
         "has_approved_ports_and_protocols",
         "has_controls_protecting_temporary_compiled_data",
-        "has_temporary_compiled_data_securely_deleted"
+        "has_temporary_compiled_data_securely_deleted",
+        "has_runtime_global_kill_switch_for_security_incidents"
       ]
     },
     {
@@ -3119,7 +3136,8 @@
       "controles": "The application must purge credentials or keys from memory immediately after use to minimize exposure, using explicit memory management rather than relying on automatic garbage collection.",
       "Flags": [
         "has_clears_local_session_data_on_logout",
-        "has_clears_auth_data_on_logout"
+        "has_clears_auth_data_on_logout",
+        "has_clears_ui_on_background"
       ]
     },
     {
@@ -3979,7 +3997,8 @@
         "has_server_side_authz_enforced",
         "has_server_side_authz_for_sensitive_actions",
         "has_backend_token_validation",
-        "has_backend_rbac_enforcement"
+        "has_backend_rbac_enforcement",
+        "has_token_based_auth"
       ]
     },
     {
@@ -4229,7 +4248,8 @@
       "Flags": [
         "has_clears_local_session_data_on_logout",
         "has_clears_cookies_on_logout",
-        "has_clears_local_data_on_logout_or_switch_user"
+        "has_clears_local_data_on_logout_or_switch_user",
+        "has_clears_ui_on_background"
       ]
     },
     {
@@ -4487,7 +4507,8 @@
       "controles": "The application must enforce IP-based and service-level restrictions on API key usage, associating keys with specific mobile applications, certificates, or platforms to prevent unauthorized access and misuse.",
       "Flags": [
         "has_backend_token_validation",
-        "has_rbac_enforced_on_api"
+        "has_rbac_enforced_on_api",
+        "has_token_based_auth"
       ]
     },
     {
@@ -5388,7 +5409,9 @@
       "Flags": [
         "has_soap_api_usage",
         "has_soap_message_level_signatures",
-        "has_uses_xml_signatures"
+        "has_uses_xml_signatures",
+        "has_proper_ws_security_headers",
+        "has_soap_message_level_encryption"
       ]
     },
     {
@@ -7328,7 +7351,8 @@
       "Validation criteria": "Static Code Analysis for Integer Vulnerabilities\nTest: Perform a static code analysis to identify potential integer overflow or wraparound vulnerabilities in the codebase.\nExpected result: No vulnerabilities related to integer operations are detected.\nBoundary Condition Testing\nTest: Test integer inputs at their upper and lower boundaries to evaluate the app's behavior during extreme values.\nExpected result: The application handles boundary inputs securely without errors or unexpected behaviors.\nSafe Arithmetic Operation Validation\nTest: Verify that all arithmetic operations involving integers use safe methods or are wrapped in overflow detection mechanisms.\nExpected result: All integer operations are securely implemented, with checks for overflow or wraparound.\nDynamic Testing with Malformed Inputs\nTest: Introduce intentionally malformed inputs to stress-test the app's integer handling mechanisms.\nExpected result: The application maintains stable and secure operation under stress conditions.\nThird-Party Library Audit\nTest: Assess all third-party libraries used in the app to ensure they do not introduce integer overflow vulnerabilities.\nExpected result: All third-party libraries are verified as safe from integer overflow risks.",
       "controles": "The mobile health application must ensure that all calculations and operations involving integers are securely implemented to prevent integer overflows or wraparounds. This includes validating input ranges and employing safe arithmetic operations to mitigate risks.",
       "Flags": [
-        "has_integer_arithmetic_vulnerabilities"
+        "has_integer_arithmetic_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7351,7 +7375,8 @@
       "controles": "The mobile health application must prevent vulnerabilities arising from race conditions by implementing proper synchronization mechanisms. All shared resources accessed by concurrent processes or threads must be protected to ensure consistency and integrity during execution.",
       "Flags": [
         "has_race_condition_vulnerabilities",
-        "has_ensures_atomic_updates_to_clinical_records"
+        "has_ensures_atomic_updates_to_clinical_records",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7374,7 +7399,8 @@
       "controles": "The mobile health application must implement strict bounds checking for all memory operations to prevent out-of-bounds reads and writes. This includes validating buffer sizes, performing pointer arithmetic safely, and avoiding memory access outside the allocated boundaries. Proper error handling and memory management practices must also be enforced to prevent memory corruption vulnerabilities.",
       "Flags": [
         "has_out_of_bounds_vulnerabilities",
-        "has_memory_corruption_vulnerabilities"
+        "has_memory_corruption_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7440,7 +7466,8 @@
       "Validation criteria": "Static Analysis for Arithmetic Errors\nTest: Use static analysis tools to identify potential integer arithmetic vulnerabilities, including overflows and underflows, in the application code.\nExpected result: No integer arithmetic vulnerabilities are detected.\nBoundary Condition Testing\nTest: Test the application with maximum and minimum values for all integer operations, such as resource allocation, counters, and input fields.\nExpected result: The application handles edge cases gracefully without arithmetic errors.\nCode Review for Safe Arithmetic Practices\nTest: Conduct a manual code review to verify the use of safe arithmetic functions and appropriate data types for calculations.\nExpected result: Code uses safe arithmetic operations and proper typecasting where necessary to prevent overflows or wraparounds.\nDynamic Testing for Runtime Behavior\nTest: Use runtime monitoring tools to simulate extreme conditions and observe integer arithmetic operations during execution.\nExpected result: The application operates correctly under stress without runtime arithmetic issues.\nCompliance with Secure Coding Standards\nTest: Ensure adherence to secure coding standards, such as CERT C or OWASP recommendations for integer handling.\nExpected result: The application complies with secure coding standards, avoiding integer arithmetic vulnerabilities.",
       "controles": "The mobile health application must implement safeguards to prevent vulnerabilities related to integer arithmetic, such as integer overflows, underflows, or wraparounds. These issues can lead to incorrect calculations, resource mismanagement, or security vulnerabilities.",
       "Flags": [
-        "has_integer_arithmetic_vulnerabilities"
+        "has_integer_arithmetic_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -7626,7 +7653,8 @@
       "Flags": [
         "has_out_of_bounds_vulnerabilities",
         "has_memory_corruption_vulnerabilities",
-        "has_integer_arithmetic_vulnerabilities"
+        "has_integer_arithmetic_vulnerabilities",
+        "has_buffer_overflow_vulnerabilities"
       ]
     },
     {
@@ -8131,7 +8159,10 @@
       "controles": "The application must support dynamic permission management, enabling content providers to grant or revoke data access case-by-case and allowing secure, runtime permission additions when necessary.",
       "Flags": [
         "has_supports_runtime_permission_management",
-        "has_permissions_protected_with_signature_level"
+        "has_permissions_protected_with_signature_level",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage",
+        "has_requests_only_minimum_permissions"
       ]
     },
     {
@@ -8228,7 +8259,7 @@
       "controles": "The mobile health application must utilize ports and protocols in alignment with organizational and DoD Ports, Protocols, and Services Management (DoD PPSM) guidelines.",
       "Flags": [
         "has_approved_ports_and_protocols",
-		"has_https_with_cert_pinning"
+        "has_https_with_cert_pinning"
       ]
     },
     {
@@ -9863,7 +9894,8 @@
       "Flags": [
         "has_clears_local_data_on_uninstall",
         "has_android_read_write_external_storage",
-        "has_uses_encrypted_filesystem_storage"
+        "has_uses_encrypted_filesystem_storage",
+        "has_android_extra_risky_permissions_present"
       ]
     },
     {
@@ -9910,7 +9942,8 @@
         "has_uses_encrypted_shared_preferences",
         "has_sensitive_data_encrypted_with_os_keystore",
         "has_os_secure_key_storage",
-        "has_org_requires_fips_validated_crypto_for_sensitive_data"
+        "has_org_requires_fips_validated_crypto_for_sensitive_data",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -10056,7 +10089,8 @@
         "has_clears_ui_on_background",
         "has_clears_local_data_on_uninstall",
         "has_clears_local_data_on_logout_or_switch_user",
-        "has_clears_local_session_data_on_logout"
+        "has_clears_local_session_data_on_logout",
+        "has_blocks_screenshots_flag_secure"
       ]
     },
     {
@@ -10146,7 +10180,9 @@
       "controles": "Ensure the mobile application does not write data to persistent memory that is accessible to other applications to prevent unauthorized data access or leakage.",
       "Flags": [
         "has_requests_only_minimum_permissions",
-        "has_stores_pii_in_plaintext"
+        "has_stores_pii_in_plaintext",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10215,7 +10251,9 @@
       "controles": "Sensitive data must never be stored in publicly accessible locations, as external storage is globally readable, writable, and modifiable by other applications.",
       "Flags": [
         "has_requests_only_minimum_permissions",
-        "has_stores_pii_in_plaintext"
+        "has_stores_pii_in_plaintext",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10239,7 +10277,9 @@
       "Flags": [
         "has_collects_telemetry_for_security_events",
         "has_requests_only_minimum_permissions",
-        "has_stores_pii_in_plaintext"
+        "has_stores_pii_in_plaintext",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10382,7 +10422,8 @@
       "controles": "Permissions must align with the principle of least privilege, ensuring access is limited to the minimum necessary for the task. Additional permissions may be extended only when explicitly required.",
       "Flags": [
         "has_requests_only_minimum_permissions",
-        "has_android_extra_risky_permissions_present"
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10430,7 +10471,8 @@
       "controles": "Mobile health applications must not retain sensitive data in memory for longer than necessary. Sensitive data must be explicitly cleared from memory after its use to reduce the risk of unauthorized access or memory dumps.",
       "Flags": [
         "has_clears_ui_on_background",
-        "has_clears_auth_data_on_logout"
+        "has_clears_auth_data_on_logout",
+        "has_blocks_screenshots_flag_secure"
       ]
     },
     {
@@ -10480,7 +10522,8 @@
       "Flags": [
         "has_encrypted_local_caching_of_ephi",
         "has_uses_encrypted_shared_preferences",
-        "has_https_with_cert_pinning"
+        "has_https_with_cert_pinning",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -10532,7 +10575,8 @@
         "has_hardcoded_credentials",
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_auth_keys_stored_in_secure_hardware"
+        "has_auth_keys_stored_in_secure_hardware",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {
@@ -10654,7 +10698,9 @@
       "controles": "Applications must prioritize the use of platform-provided framework functionalities, such as Android Content Providers, for data sharing. Avoid using file system permissions or custom access schemes for managing shared data.",
       "Flags": [
         "has_permissions_protected_with_signature_level",
-        "has_requests_only_minimum_permissions"
+        "has_requests_only_minimum_permissions",
+        "has_android_extra_risky_permissions_present",
+        "has_android_read_write_external_storage"
       ]
     },
     {
@@ -10867,7 +10913,8 @@
       "Flags": [
         "has_org_requires_fips_validated_crypto_for_sensitive_data",
         "has_cert_uses_sha1_signature_algorithm",
-        "has_cert_signed_with_debug_certificate"
+        "has_cert_signed_with_debug_certificate",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -10916,7 +10963,8 @@
         "has_org_requires_fips_validated_crypto_for_sensitive_data",
         "has_cert_signed_with_debug_certificate",
         "has_cert_uses_sha1_signature_algorithm",
-        "has_os_secure_key_storage"
+        "has_os_secure_key_storage",
+        "has_cert_x509_subject_android_debug"
       ]
     },
     {
@@ -11205,7 +11253,8 @@
       "Flags": [
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
-        "has_hardcoded_credentials"
+        "has_hardcoded_credentials",
+        "has_client_side_crypto_for_sensitive_data"
       ]
     },
     {

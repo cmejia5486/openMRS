@@ -1,108 +1,156 @@
-[![Logo](http://i.imgur.com/fpVkTZk.png)](http://www.openmrs.org)
+# 🇼 UgandaEMR Mobile App
 
-OpenMRS Android Client and SDK
-==============================
+**UgandaEMR Mobile** is an Android application built to support **offline FHIR-based data collection**, patient management, and encounter recording in healthcare facilities across Uganda. The app uses the [Android FHIR SDK](https://github.com/google/android-fhir) to enable standards-based interoperability and integrates with the [UgandaEMR](https://ugandaemr.org) backend via [OpenMRS FHIR](https://wiki.openmrs.org/display/projects/FHIR+Module).
 
-[![Build Status Travis](https://travis-ci.org/openmrs/openmrs-contrib-android-client.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-contrib-android-client) [![Build Status AppVeyor](https://ci.appveyor.com/api/projects/status/github/openmrs/openmrs-contrib-android-client?branch=master&svg=true)](https://ci.appveyor.com/project/AvijitGhosh82/openmrs-contrib-android-client) [![Demo Server](https://img.shields.io/badge/demo-online-green.svg)](http://devtest04.openmrs.org:8080/openmrs) [![GitHub version](https://d25lcipzij17d.cloudfront.net/badge.svg?id=gh&type=6&v=2.8.1&x2=0)](https://github.com/openmrs/openmrs-contrib-android-client/releases/latest) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/37fa8e86a3cb4256a3b7ffcc644f13c6)](https://www.codacy.com/app/marzeion-tomasz/openmrs-contrib-android-client?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=openmrs/openmrs-contrib-android-client&amp;utm_campaign=Badge_Grade) [![codecov](https://codecov.io/gh/openmrs/openmrs-contrib-android-client/branch/master/graph/badge.svg)](https://codecov.io/gh/f4ww4z/openmrs-contrib-android-client) [![IRC](https://img.shields.io/badge/IRC-%23openmrs-1e72ff.svg?style=flat)](http://irc.openmrs.org)
+---
 
-## Table of Contents
-- [OpenMRS Android Client](#OpenMRS-Android-Client)
-   - [Table of Contents](#Table-of-Contents)
-- [Description](#Description)
-         - [Key Features](#Key-Features)
-- [Screenshots](#Screenshots)
-- [Demo Server](#Demo-Server)
-            - [Demo Username: admin](#Demo-Username-admin)
-            - [Demo Password: Admin123](#Demo-Password-Admin123)
-- [Releasing [Collaborators only]](#Releasing-Collaborators-only)
-- [License](#License)
-- [Resources](#Resources)
+## 📲 Features
 
-# Description
-* The purpose of this project is to provide an OpenMRS client for Android devices. The app is designed to cover most of the functionality currently on the web application.
-The app communicates with OpenMRS instances using REST. It supports working offline (without a network connection). The database on the device is encrypted and password-protected to secure patient data.
-* In addition to the OpenMRS-Android-Client, this repository also has openmrs-android-sdk package which serves as an sdk which helps to build custom UI on top of the core functionality it provides.
+* ✅ FHIR-based Patient registration, visits, and encounters
+* ✅ Form rendering using [FHIR SDC](https://build.fhir.org/ig/HL7/sdc/) questionnaires
+* ✅ Offline-first with encrypted local FHIR storage
+* ✅ Secure user authentication and session management
+* ✅ Data synchronization with OpenMRS-compatible FHIR server
+* ✅ Modular, testable codebase with modern Android architecture
 
-# Development
-* We use JIRA to track issues and monitor project development. Refer to this link to view all issues and project summary: [Android Client JIRA](https://issues.openmrs.org/browse/AC). 
-To get started contributing, try working on [introductory issues](https://issues.openmrs.org/issues/?filter=17165) in JIRA and check out [OpenMRS Pull Request Tips](https://wiki.openmrs.org/display/docs/Pull+Request+Tips).
-Also, before creating a pull request, please run code review tools (Lint) and all tests.
+---
 
-* There is a detailed guide for setting up the OpenMRS-Android-Client locally, before starting to contribute to the project [here](CONTRIBUTING.md).
+## 🏗️ Architecture Overview
 
-#### 1. openmrs-android-sdk package
-* There was a need to make the app extendable without forking it out, instead just adding it as a dependency in any android application which wants to use the functionality but with a custom UI on top of it.
-* We can add the implementation    
-``` 
-    dependencies 
-    {
-        implementation 'com.github.openmrs:openmrs-contrib-android-client:deploy-android-sdk-SNAPSHOT'
-    } 
+The app follows **Clean Architecture** and integrates the **Android FHIR SDK**:
+
 ```
-as a dependency in the app module build.gradle to get the functionality provided by openmrs-android-sdk.
-* The openmrs-android-sdk exposes the functionality through, methods present in various repository classes which just need to be plugged in with the UI and view-Model.
-* An simple example of the usage would be [this demo application](https://github.com/LuGO0/Test-Application), a more complex application depicting the usage would be the openmrs-client package itself. There is a confluence article [here](
-https://wiki.openmrs.org/display/docs/Getting+Started+with+openmrs-android-sdk) which will take you through the creation and usage of the test Application mentioned above.
-* The JavaDocs for the openmrs-android-sdk can be generated by running the Gradle command ./gradle dokkaHtml which will generate an HTML interface with documentation inside the openmrs-android-sdk/build directory.
+UI (Jetpack Compose)
+   ↓
+ViewModel (StateFlow)
+   ↓
+UseCase (Business logic)
+   ↓
+FHIRRepository (Data layer)
+   ↓
+Android FHIR Engine (local store) + Remote FHIR API (OpenMRS)
+```
 
-#### 2. openmrs-client package
-* This package was earlier used as the sole package containing all the code for the OpenMRS-Android-Client now a part of it has been encapsulated in the form of openmrs-android-sdk and published on Jitpack from where it can simply be added as a dependency to any other app.
-* This package uses the methods exposed by the openmrs-android-sdk and builds UI on top of it, which can be used as an example to implement UI on top of openmrs-android-sdk.
-* The app is also published on PlayStore just to get used to the functionalities it provides and can be tested on local OpenMRS server or Demo OpenMRS Server.
+### 🔧 Tech Stack
 
-#### Key Features
-- Connect to OpenMRS server and sync all data
-- Register and Edit patients
-- Record Visits and Encounters
-- View patient data (Details, Diagnoses, Visits, and Vitals)
-- Allergies Module
-- Provider Module
-- Offline access (specific modules like provider, patient and some functionalities of allergy module)
+* 🧱 Jetpack Compose (UI)
+* 🏧 MVVM + Use Cases + Hilt
+* 📦 Android FHIR Engine (SDK)
+* 🌐 OpenMRS FHIR API (DSTU3/R4)
+* 📂 Encrypted SharedPreferences + DataStore
+* 📲 WorkManager (sync)
+* 🔐 Secure local FHIR storage
 
-# Screenshots
-<img src="https://user-images.githubusercontent.com/45125121/82362785-804c2800-9a2a-11ea-9bb1-f1b778c70de5.jpg" width="280" height="520" alt="Login page" >  <img src="http://i.imgur.com/KmaWzNv.png" width="280" height="520"> <img src="http://i.imgur.com/hiCNNIx.png" width="280" height="520">
- 
-# Demo Server
+---
 
-The demo test server dedicated to the client is (https://demo.openmrs.org/openmrs/).
-In case the demo server fails to respond, you can use other alternate servers provided [here.](https://wiki.openmrs.org/display/ISM/OpenMRS+environments)
-##### Demo Username: admin
-##### Password: Admin123
-<br/>
- 
- 
- 
-# Releasing [Collaborators only]
+## 🧹 Modules
 
-### 1. OpenMRS-Android-Client to PlayStore
-We follow the sprint model for development. Read more about it here: [OpenMRS Sprints](https://wiki.openmrs.org/display/RES/Development+Sprints).
-To release the application, make sure to do these steps **in order**:
+| Module            | Description                                     |
+| ----------------- | ----------------------------------------------- |
+| `app`             | Main navigation & entry point                   |
+| `core-fhir`       | FHIR engine config, DAO wrappers                |
+| `core-ui`         | Shared UI components, theme, typography         |
+| `core-network`    | FHIR REST client config                         |
+| `core-domain`     | Use cases, models, validators                   |
+| `feature-auth`    | Login & token management                        |
+| `feature-patient` | Patient list, search, registration (FHIR-based) |
+| `feature-form`    | SDC Questionnaire rendering + response mapping  |
+| `feature-sync`    | Background sync, sync status                    |
 
-1. Update the [version variable in versions.gradle](https://github.com/openmrs/openmrs-contrib-android-client/blob/master/openmrs-client/versions.gradle#L6) prior to the release.
-3. Update the [Release notes](releaseNotes.md) file.
-4. Update the [release notes text file](https://github.com/openmrs/openmrs-contrib-android-client/blob/master/openmrs-client/src/main/play/release-notes/en-US/default.txt) to publish in the Play store. Ideally, change the wording so that normal end users understand.
-5. Now commit with the title `Release <version number here>` to the master branch.
-6. Tag the commit, using the version as the tag name. Make sure CI is green!
-7. Go to [the releases page](https://github.com/openmrs/openmrs-contrib-android-client/releases) and click the [Draft a new release](https://github.com/openmrs/openmrs-contrib-android-client/releases/new) button. It will create a new version tag in the repository and build the app. The tag name will be used as the version number for this. Be sure to bump unfinished issues to the next due version.
-8. Go to [JIRA's releases page](https://issues.openmrs.org/projects/AC?selectedItem=com.atlassian.jira.jira-projects-plugin:release-page), click on the three-dots on the right, and hit **Release**.
-9. Post a new Talk thread and describe what is changed or improved in the release.
+---
 
-### 2. openmrs-android-sdk to jitpack
-1. The Openmrs-Android-sdk gets published to the Jitpack library so that it can be added as a dependency in various projects.
-2. Due to some issues with the release build configuration of the app is explained in detail [here](https://stackoverflow.com/questions/68420822/handling-release-keystore-while-uploading-android-library-to-jitpack) we are not able to do jitpack releases from the master branch.
-3. There is a dedicated branch for this purpose that has got only the debug variant of the android application. So that the jitpack build passes.
-4. For now until the issue gets resolved or we write a script for it, To release the latest code improvements in the openmrs-android-sdk package to the jitpack, we need to copy the whole package from master to branch deploy-android-sdk.
-5. After getting the latest code changes to branch deploy-android-sdk, we publish a snapshot of the branch to jitpack. So that the tag of jitpack published looks exactly like `deploy-android-sdk-SNAPSHOT`.
+## ⚙️ Getting Started
 
-# License
-This project is licensed under the OpenMRS Public License, see the [copyright](copyright/copyright) file for details.
+### ✅ Prerequisites
 
-# Resources
-- [User Guide](https://github.com/openmrs/openmrs-android-client-user-guide)
-- [Contribution Guidelines](https://github.com/openmrs/openmrs-contrib-android-client/blob/master/CONTRIBUTING.md)
-- [JIRA](https://issues.openmrs.org/browse/AC/?selectedTab=com.atlassian.jira.jira-projects-plugin:summary-panel)
-- [Sprint board](https://issues.openmrs.org/secure/RapidBoard.jspa?rapidView=60)
-- [Dashboard](https://issues.openmrs.org/secure/Dashboard.jspa?selectPageId=12851)
-- [CI](https://travis-ci.org/openmrs/openmrs-contrib-android-client)
-- [Google Play](https://play.google.com/store/apps/details?id=org.openmrs.mobile)
-- [Release Notes](releaseNotes.md)
+* Android Studio Hedgehog or later
+* JDK 11
+* Kotlin 1.9+
+* Gradle 8+
+* FHIR-compatible OpenMRS server
+
+### 🚀 Setup
+
+```bash
+git clone https://github.com/your-org/ugandaemr-mobile.git
+cd ugandaemr-mobile
+./gradlew sync
+```
+
+Open in Android Studio and run the `app` module on an emulator or device.
+
+---
+
+## 🧪 Testing
+
+Run unit tests:
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+Run UI tests:
+
+```bash
+./gradlew connectedDebugAndroidTest
+```
+
+---
+
+## 🔐 Security
+
+* FHIR data is stored in the **encrypted local FHIR database**
+* All credentials are securely handled via `EncryptedSharedPreferences`
+* HTTPS enforced using `network_security_config.xml`
+
+---
+
+## 🔄 Sync & Versioning
+
+* Uses **WorkManager** for scheduled sync jobs
+* `versionCode` = Git commit count
+* `versionName` = latest Git tag (e.g. `v1.0.3`)
+
+Example tagging:
+
+```bash
+git tag v1.3.0
+git push origin v1.3.0
+```
+
+---
+
+## 📒 FHIR-Specific Details
+
+* ✅ SDC-compliant forms rendered via `QuestionnaireFragment`
+* ✅ QuestionnaireResponse mapped to FHIR resources before submission
+* ✅ Uses `DefaultResourceMapper` and `QuestionnaireViewModelFactory`
+* ✅ Custom mappings supported via extensions or transformers
+* ✅ Offline-first using `FhirEngine.getInstance(context)`
+
+---
+
+## 📟 Documentation
+
+* [Android FHIR SDK Docs](https://github.com/google/android-fhir)
+* [OpenMRS FHIR Module](https://wiki.openmrs.org/display/projects/FHIR+Module)
+* [HL7 SDC IG](https://build.fhir.org/ig/HL7/sdc/)
+* [Jetpack Compose](https://developer.android.com/jetpack/compose)
+
+---
+
+## 🧑🏾‍💻 Contributing
+
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and coding guidelines.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## 👥 Maintained by
+
+> METS Program - Uganda
