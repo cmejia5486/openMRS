@@ -14,6 +14,13 @@
 
 package org.openmrs.mobile.activities.lastviewedpatients;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import dagger.hilt.android.EntryPointAccessors;
+import rx.android.schedulers.AndroidSchedulers;
 import android.app.Activity;
 import android.content.res.ColorStateList;
 import android.view.ActionMode;
@@ -24,7 +31,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -32,63 +38,65 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.openmrs.android_sdk.library.api.repository.PatientRepository;
+import com.openmrs.android_sdk.library.api.repository.VisitRepository;
+import com.openmrs.android_sdk.library.dao.PatientDAO;
+import com.openmrs.android_sdk.library.di.entrypoints.RepositoryEntryPoint;
+import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.utilities.DateUtils;
+import com.openmrs.android_sdk.utilities.ToastUtil;
+
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.api.repository.PatientRepository;
-import org.openmrs.mobile.api.repository.VisitRepository;
-import org.openmrs.mobile.dao.PatientDAO;
-import org.openmrs.mobile.listeners.retrofit.DownloadPatientCallbackListener;
-import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.utilities.DateUtils;
-import org.openmrs.mobile.utilities.FontsUtil;
-import org.openmrs.mobile.utilities.ToastUtil;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import rx.android.schedulers.AndroidSchedulers;
 
 class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
     private final int VIEW_TYPE_ITEM = 0;
     private final int VIEW_TYPE_LOADING = 1;
-
     private Activity mContext;
-    private List<Patient> patients;
+    private ArrayList<Patient> patients;
     private Set<Integer> selectedPatientPositions;
     private boolean isAllSelected = false;
     private boolean isLongClicked = false;
     private boolean enableDownload = true;
     private ActionMode actionMode;
-    private LastViewedPatientsContract.View view;
+    private LastViewedPatientsFragment view;
+    private final PatientRepository patientRepository;
+    private final VisitRepository visitRepository;
 
-    LastViewedPatientRecyclerViewAdapter(Activity context, List<Patient> items, LastViewedPatientsContract.View view) {
+    LastViewedPatientRecyclerViewAdapter(Activity context, List<Patient> items, LastViewedPatientsFragment view) {
         this.mContext = context;
-        this.patients = items;
+        this.patients = (ArrayList<Patient>) items;
         this.selectedPatientPositions = new HashSet<>();
         this.view = view;
+        this.patientRepository = EntryPointAccessors.fromApplication(mContext, RepositoryEntryPoint.class).providePatientRepository();
+        this.visitRepository = EntryPointAccessors.fromApplication(mContext, RepositoryEntryPoint.class).provideVisitRepository();
     }
 
     public List<Patient> getPatients() {
         return patients;
     }
 
-    public Set<Integer> getSelectedPatientPositions() {
-        return selectedPatientPositions;
+    public void showLoadingMore() {
+        if (patients.isEmpty() || patients.get(getItemCount() - 1) != null) {
+            patients.add(null);
+            notifyItemInserted(getItemCount() - 1);
+        }
     }
 
-    public void setSelectedPatientPositions(Set<Integer> selectedPatientPositions) {
-        this.selectedPatientPositions = selectedPatientPositions;
+    public void hideLoadingMore() {
+        if (!patients.isEmpty() && patients.get(getItemCount() - 1) == null) {
+            patients.remove(getItemCount() - 1);
+            notifyItemRemoved(getItemCount());
+        }
     }
 
-    public void addPatients(List<Patient> patients) {
+    public void addMoreToList(List<Patient> patients) {
         this.patients.addAll(patients);
         notifyDataSetChanged();
     }
 
-    public void deleteLastItem() {
-        patients.remove(getItemCount() - 1);
-        notifyItemRemoved(getItemCount());
+    public void updateList(List<Patient> patients) {
+        this.patients = (ArrayList<Patient>) patients;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -96,11 +104,9 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == VIEW_TYPE_ITEM) {
             View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_find_last_viewed_patients, parent, false);
-            FontsUtil.setFont((ViewGroup) itemView);
             return new PatientViewHolder(itemView);
         } else {
             View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progressbar_item, parent, false);
-            FontsUtil.setFont((ViewGroup) itemView);
             return new ProgressBarViewHolder(itemView);
         }
     }
@@ -118,12 +124,12 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
             ((PatientViewHolder) holder).setSelected(isPatientSelected(position));
             if (null != patient.getIdentifier()) {
                 String patientIdentifier = String.format(mContext.getResources().getString(R.string.patient_identifier),
-                        patient.getIdentifier().getIdentifier());
+                    patient.getIdentifier().getIdentifier());
                 ((PatientViewHolder) holder).mIdentifier.setText(patientIdentifier);
             }
             if (null != patient.getName()) {
                 ((PatientViewHolder) holder).mDisplayName.setText(patient.getName().getNameString());
-            } else if(null != patient.getDisplay()){
+            } else if (null != patient.getDisplay()) {
                 /* if name is null, then we can get the name from 'display' which contains the ID and name
                 separated by a hyphen( - ). */
                 String patientName = patient.getDisplay().split("-")[1];
@@ -161,7 +167,6 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
             ((PatientViewHolder) holder).clearAnimation();
         }
     }
-
 
     @Override
     public int getItemCount() {
@@ -204,8 +209,9 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
 
         private void setSelected(boolean select) {
             if (select) {
-                if (!enableDownload)
+                if (!enableDownload) {
                     toggleDownloadButton();
+                }
                 selectedPatientPositions.add(getAdapterPosition());
                 this.mRowLayout.setSelected(true);
                 mRowLayout.setCardBackgroundColor(mContext.getResources().getColor(R.color.selected_card));
@@ -235,7 +241,6 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
     }
 
     class ProgressBarViewHolder extends RecyclerView.ViewHolder {
-
         private ProgressBar progressBar;
 
         public ProgressBarViewHolder(View itemView) {
@@ -252,8 +257,9 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
             }
         }
         selectedPatientPositions = newSet;
-        if (selectedPatientPositions.size() == 0 && isLongClicked && enableDownload)
+        if (selectedPatientPositions.size() == 0 && isLongClicked && enableDownload) {
             toggleDownloadButton();
+        }
     }
 
     private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
@@ -276,8 +282,9 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
                 case R.id.action_select_all:
                     if (isAllSelected) {
                         unselectAll();
-                    } else
+                    } else {
                         selectAll();
+                    }
                     break;
                 case R.id.action_download:
                     downloadSelectedPatients();
@@ -332,7 +339,6 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
         notifyDataSetChanged();
     }
 
-
     public void downloadSelectedPatients() {
         ToastUtil.showShortToast(mContext, ToastUtil.ToastType.NOTICE, R.string.download_started);
         for (Integer selectedPatientPosition : selectedPatientPositions) {
@@ -359,37 +365,22 @@ class LastViewedPatientRecyclerViewAdapter extends RecyclerView.Adapter<Recycler
     }
 
     private void downloadPatient(final Patient patient, final Boolean showSnackBar) {
-        new PatientRepository().downloadPatientByUuid(patient.getUuid(), new DownloadPatientCallbackListener() {
-            @Override
-            public void onPatientDownloaded(Patient newPatient) {
-                new PatientDAO().savePatient(newPatient)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(id -> {
-                            new VisitRepository().syncVisitsData(newPatient);
-                            new VisitRepository().syncLastVitals(newPatient.getUuid());
-                            patients.remove(patient);
-                            notifyDataSetChanged();
-                            if (showSnackBar) {
-                                view.showOpenPatientSnackbar(newPatient.getId());
-                            }
-                        });
-            }
-
-            @Override
-            public void onPatientPhotoDownloaded(Patient patient) {
-                new PatientDAO().updatePatient(patient.getId(), patient);
-            }
-
-            @Override
-            public void onResponse() {
-                // This method is intentionally empty
-            }
-
-            @Override
-            public void onErrorResponse(String errorMessage) {
-                ToastUtil.error("Failed to fetch patient data");
-            }
-        });
+       patientRepository.downloadPatientByUuid(patient.getUuid())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        newPatient -> new PatientDAO().savePatient(newPatient)
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(id -> {
+                                    visitRepository.syncVisitsData(newPatient);
+                                    visitRepository.syncLastVitals(newPatient.getUuid());
+                                    patients.remove(patient);
+                                    notifyDataSetChanged();
+                                    if (showSnackBar && view.isActive()) {
+                                        view.showOpenPatientSnackbar(id);
+                                    }
+                                }),
+                        throwable -> ToastUtil.error(mContext.getString(R.string.failed_fetching_patient_data_error_message))
+                );
     }
 
     public void disableCheckBox(PatientViewHolder holder) {

@@ -14,6 +14,13 @@
 
 package org.openmrs.mobile.services;
 
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import android.app.ActivityManager;
 import android.app.Service;
 import android.content.ComponentName;
@@ -22,49 +29,39 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-import org.openmrs.mobile.activities.login.LoginActivity;
-import org.openmrs.mobile.api.RestApi;
-import org.openmrs.mobile.api.RestServiceBuilder;
-import org.openmrs.mobile.application.OpenMRS;
-import org.openmrs.mobile.databases.OpenMRSDBOpenHelper;
-import org.openmrs.mobile.models.Session;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.NetworkUtils;
-import org.openmrs.mobile.utilities.ToastUtil;
-
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import androidx.annotation.NonNull;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.RestServiceBuilder;
+import com.openmrs.android_sdk.library.models.Session;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
+import com.openmrs.android_sdk.utilities.NetworkUtils;
+import com.openmrs.android_sdk.utilities.ToastUtil;
+
+import org.openmrs.mobile.R;
+import org.openmrs.mobile.application.OpenMRS;
 
 public class AuthenticateCheckService extends Service {
-
-
     private IBinder mBinder = new SocketServerBinder();
-    private Timer mTimer;
     private boolean mRunning = false;
     private OpenMRS mOpenMRS = OpenMRS.getInstance();
 
     @Override
     public void onCreate() {
         super.onCreate();
-        mTimer = new Timer();
+        Timer mTimer = new Timer();
         mTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (mRunning) {
-                    String username = mOpenMRS.getUsername();
-                    String password = mOpenMRS.getPassword();
+                    String username = OpenmrsAndroid.getUsername();
+                    String password = OpenmrsAndroid.getPassword();
                     if ((!username.equals(ApplicationConstants.EMPTY_STRING)) &&
                             (!password.equals(ApplicationConstants.EMPTY_STRING))) {
                         Log.e("Service Task ", "Running");
                         authenticateCheck(username, password);
                     }
-
                 }
             }
         }, 10000, 100000);
@@ -98,7 +95,7 @@ public class AuthenticateCheckService extends Service {
                     if (response.isSuccessful()) {
                         Session session = response.body();
                         if (session.isAuthenticated()) {
-                            Log.e("Service Task ", "user authenticated");
+                            Log.i("Service Task ", "user authenticated");
                         } else {
                             Log.e("Service Task ", "User Credentials Changed");
                             if (isForeground(OpenMRS.getInstance().getPackageName())) {
@@ -106,19 +103,18 @@ public class AuthenticateCheckService extends Service {
                                 broadcastIntent.setAction(ApplicationConstants.BroadcastActions.AUTHENTICATION_CHECK_BROADCAST_ACTION);
                                 sendBroadcast(broadcastIntent);
                             } else {
-                                OpenMRSDBOpenHelper.getInstance().closeDatabases();
-                                mOpenMRS.clearUserPreferencesData();
-                                mOpenMRS.clearCurrentLoggedInUserInfo();
+                                OpenmrsAndroid.clearUserPreferencesData();
+                                OpenmrsAndroid.clearCurrentLoggedInUserInfo();
                             }
                         }
                     } else {
-                        ToastUtil.error("Error in AuthenticateCheckService Response");
+                        ToastUtil.error(getString(R.string.authenticate_check_service_error_response_message));
                     }
                 }
 
                 @Override
                 public void onFailure(@NonNull Call<Session> call, @NonNull Throwable t) {
-                    ToastUtil.error("Error in AuthenticateCheckService");
+                    ToastUtil.error(getString(R.string.authenticate_service_error_message));
                 }
             });
         } else {
@@ -134,11 +130,8 @@ public class AuthenticateCheckService extends Service {
     }
 
     public class SocketServerBinder extends Binder {
-
         public AuthenticateCheckService getService() {
             return AuthenticateCheckService.this;
         }
-
     }
-
 }

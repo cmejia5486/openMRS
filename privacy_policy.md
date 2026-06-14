@@ -1,6 +1,6 @@
 ﻿# Privacy Policy
 
-OpenMRS built the OpenMRS Android client app as an Open Source app. This service is provided by OpenMRS at no cost and is intended for use as is.
+OpenMRS built the OpenMRS Android client app as an Open Source app. This service is provided by OpenMRS at no cost and is intended for use as is
 
 This page is used to inform visitors regarding our policies with the collection, use, and disclosure of personal information if anyone decided to use our service.
 

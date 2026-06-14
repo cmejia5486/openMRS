@@ -14,16 +14,34 @@
 
 package org.openmrs.mobile.test;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import retrofit2.Call;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.ContentObserver;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
-import com.activeandroid.Cache;
-import com.activeandroid.TableInfo;
-import com.activeandroid.content.ContentProvider;
+import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
+import com.openmrs.android_sdk.library.models.Allergen;
+import com.openmrs.android_sdk.library.models.Allergy;
+import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.library.models.PatientIdentifier;
+import com.openmrs.android_sdk.library.models.Person;
+import com.openmrs.android_sdk.library.models.PersonAddress;
+import com.openmrs.android_sdk.library.models.PersonAttribute;
+import com.openmrs.android_sdk.library.models.PersonName;
+import com.openmrs.android_sdk.library.models.Provider;
+import com.openmrs.android_sdk.library.models.Resource;
+import com.openmrs.android_sdk.library.models.Results;
+import com.openmrs.android_sdk.library.models.Visit;
+import com.openmrs.android_sdk.library.models.VisitType;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -32,34 +50,17 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.models.PatientIdentifier;
-import org.openmrs.mobile.models.Person;
-import org.openmrs.mobile.models.PersonAddress;
-import org.openmrs.mobile.models.PersonName;
-import org.openmrs.mobile.models.Provider;
-import org.openmrs.mobile.models.Results;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import retrofit2.Call;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.doNothing;
-
-@PrepareForTest({ Cache.class, TableInfo.class, Context.class,
-        ContentResolver.class, ContentProvider.class, ContentValues.class })
+@PrepareForTest({Context.class,
+        ContentResolver.class, ContentValues.class})
 @RunWith(PowerMockRunner.class)
 @SuppressStaticInitializationFor("com.activeandroid.content.ContentProvider")
-public abstract class ACUnitTestBase {
+public abstract class
+ACUnitTestBase {
 
     @Rule
     public MockitoRule rule = MockitoJUnit.rule().silent();
@@ -70,13 +71,9 @@ public abstract class ACUnitTestBase {
     }
 
     protected void mockActiveAndroidContext() {
-        PowerMockito.mockStatic(Cache.class);
-        PowerMockito.mockStatic(ContentProvider.class);
-        TableInfo tableInfo = PowerMockito.mock(TableInfo.class);
-        Context context = PowerMockito.mock(Context.class);
-        ContentResolver resolver = PowerMockito.mock(ContentResolver.class);
-        SQLiteDatabase sqliteDb = PowerMockito.mock(SQLiteDatabase.class);
-        ContentValues vals = PowerMockito.mock(ContentValues.class);
+        Context context = Mockito.mock(Context.class);
+        ContentResolver resolver = Mockito.mock(ContentResolver.class);
+        ContentValues vals = Mockito.mock(ContentValues.class);
 
         try {
             PowerMockito.whenNew(ContentValues.class).withNoArguments().thenReturn(vals);
@@ -84,22 +81,15 @@ public abstract class ACUnitTestBase {
             e.printStackTrace();
         }
 
-        Mockito.lenient().when(Cache.openDatabase()).thenReturn(sqliteDb);
         Mockito.lenient().when(context.getContentResolver()).thenReturn(resolver);
         doNothing().when(resolver).notifyChange(any(Uri.class), any(ContentObserver.class));
-        Mockito.lenient().when(tableInfo.getFields()).thenReturn(new ArrayList<>());
-        Mockito.lenient().when(tableInfo.getTableName()).thenReturn("TestTable");
-        Mockito.lenient().when(Cache.getTableInfo(any(Class.class))).thenReturn(tableInfo);
-        Mockito.lenient().when(Cache.getContext()).thenReturn(context);
-        Mockito.lenient().when(ContentProvider.createUri(anyObject(), anyLong())).thenReturn(null);
     }
 
     protected Patient createPatient(Long id) {
-        Patient patient = new Patient();
-        patient.setId(id);
-        patient.setUuid("patient_one_uuid"+id);
-        updatePatientData(id,patient);
-        patient.setIdentifiers(Collections.singletonList(createIdentifier(id)));
+        Patient patient = new Patient(id, "",
+                Collections.singletonList(createIdentifier(id)));
+        patient.setUuid("patient_one_uuid" + id);
+        updatePatientData(id, patient);
         return patient;
     }
 
@@ -114,6 +104,8 @@ public abstract class ACUnitTestBase {
         patient.setAddresses(Collections.singletonList(createPersonAddress(id)));
         patient.setGender("M");
         patient.setBirthdate("25-02-2016");
+        patient.setDeceased(false);
+        patient.setCauseOfDeath(new Resource());
         return patient;
     }
 
@@ -146,23 +138,59 @@ public abstract class ACUnitTestBase {
     }
 
     protected Person createPerson(Long id) {
-        Person person = new Person();
-        person.setNames(Collections.singletonList(createPersonName(id)));
-        person.setAddresses(Collections.singletonList(createPersonAddress(id)));
-        person.setGender("M");
-        person.setBirthdate("25-02-2016");
-        return person;
+        return new Person(Collections.singletonList(createPersonName(id)), "M", "25-02-2016", false, Collections.singletonList(createPersonAddress(id)), Collections.singletonList(createPersonAttributes(id)), null, new Resource(), false);
     }
 
-    protected Provider createProvider(Long id, String identifier){
+    private PersonAttribute createPersonAttributes(Long id) {
+        PersonAttribute personAttribute = new PersonAttribute();
+        personAttribute.setValue("value");
+        return personAttribute;
+    }
+
+    protected Provider createProvider(Long id, String identifier) {
         Provider provider = new Provider();
         provider.setPerson(createPerson(id));
         provider.setId(id);
         provider.setUuid(id.toString());
         provider.setRetired(false);
         provider.setIdentifier(identifier);
+        provider.setDisplay(identifier);
 
         return provider;
+    }
+
+    protected Allergy createAllergy(Long id, String display) {
+        Allergy allergy = new Allergy();
+        allergy.setId(id);
+        allergy.setUuid("uuid");
+        allergy.setDisplay(display);
+
+        allergy.setComment("comment");
+        Allergen allergen = new Allergen();
+        Resource resource = new Resource("uuid", display, new ArrayList<>(), id);
+        allergen.setCodedAllergen(resource);
+        allergy.setAllergen(allergen);
+        allergy.setReactions(new ArrayList<>());
+        allergy.setSeverity(null);
+
+        return allergy;
+    }
+
+    protected List<Visit> createVisitList() {
+        ArrayList<Visit> visits = new ArrayList();
+        visits.add(createVisit("visit1", 1L));
+        visits.add(createVisit("visit2", 2L));
+        return visits;
+    }
+
+    protected Visit createVisit(String display, long patientId) {
+        Visit visit = new Visit();
+        visit.location = new LocationEntity(display);
+        VisitType visitType = new VisitType();
+        visitType.setDisplay(display);
+        visit.visitType = visitType;
+        visit.patient = createPatient(patientId);
+        return visit;
     }
 
     protected <T> Call<Results<T>> mockSuccessCall(List<T> list) {
@@ -170,11 +198,11 @@ public abstract class ACUnitTestBase {
     }
 
 
-    protected  <T> Call<T> mockSuccessCall(T object) {
+    protected <T> Call<T> mockSuccessCall(T object) {
         return new MockSuccessResponse<>(object);
     }
 
-    protected <T> Call<T> mockErrorCall(int code){
+    protected <T> Call<T> mockErrorCall(int code) {
         return new MockErrorResponse<>(code);
     }
 

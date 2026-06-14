@@ -28,36 +28,32 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.utilities.DateUtils;
+import com.openmrs.android_sdk.utilities.ToastUtil;
 import com.google.common.base.Objects;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.models.Patient;
-import org.openmrs.mobile.utilities.DateUtils;
-import org.openmrs.mobile.utilities.FontsUtil;
-import org.openmrs.mobile.utilities.ToastUtil;
 
 import java.util.List;
 
 public class MergePatientsRecycleViewAdapter extends RecyclerView.Adapter<MergePatientsRecycleViewAdapter.PatientViewHolder> {
-
     private List<Patient> patientList;
     private Patient newPatient;
     private Activity mContext;
-    private MatchingPatientsContract.Presenter mPresenter;
     private int selectedPosition = -1;
+    protected Patient selectedPatient = null;
 
-    public MergePatientsRecycleViewAdapter(Activity mContext, MatchingPatientsContract.Presenter presenter, List<Patient> patientList, Patient patient) {
+    public MergePatientsRecycleViewAdapter(Activity mContext,List<Patient> patientList, Patient patient) {
         this.newPatient = patient;
         this.patientList = patientList;
         this.mContext = mContext;
-        this.mPresenter = presenter;
     }
 
     @NonNull
     @Override
     public PatientViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_similar_patient, parent, false);
-        FontsUtil.setFont((ViewGroup) itemView);
         return new PatientViewHolder(itemView);
     }
 
@@ -76,8 +72,15 @@ public class MergePatientsRecycleViewAdapter extends RecyclerView.Adapter<MergeP
         return patientList.size();
     }
 
-    public class PatientViewHolder extends RecyclerView.ViewHolder {
+    public void updateList(Patient patient, List<Patient> patientList){
+        this.newPatient = patient;
+        this.patientList = patientList;
+        selectedPosition = -1;
+        selectedPatient = null;
+        notifyDataSetChanged();
+    }
 
+    public class PatientViewHolder extends RecyclerView.ViewHolder {
         private TextView mGivenName;
         private TextView mMiddleName;
         private TextView mFamilyName;
@@ -100,21 +103,20 @@ public class MergePatientsRecycleViewAdapter extends RecyclerView.Adapter<MergeP
             mCity = itemView.findViewById(R.id.patientCity);
             mCountry = itemView.findViewById(R.id.patientCountry);
             itemView.setOnClickListener(view -> {
-                CardView cardView = view.findViewById(R.id.cardView);
+                CardView cardView = view.findViewById(R.id.patientsCardView);
                 if (selectedPosition == -1) {
-                    selectedPosition = getAdapterPosition();
-                    mPresenter.setSelectedPatient(patientList.get(selectedPosition));
+                    selectedPosition = getBindingAdapterPosition();
+                    selectedPatient = patientList.get(selectedPosition);
                     cardView.setCardBackgroundColor(ContextCompat.getColor(mContext, R.color.patient_selected_highlight));
-                } else if (selectedPosition == getAdapterPosition()) {
+                } else if (selectedPosition == getBindingAdapterPosition()) {
                     selectedPosition = -1;
-                    mPresenter.removeSelectedPatient();
+                    selectedPatient = null;
                     cardView.setCardBackgroundColor(Color.WHITE);
                 } else {
-                    ToastUtil.notify("You can select only one similar patient");
+                    ToastUtil.notify(mContext.getString(R.string.only_one_patient_can_be_selected_notification_message));
                 }
             });
         }
-
     }
 
     private void setBirthdate(PatientViewHolder holder, Patient patient) {

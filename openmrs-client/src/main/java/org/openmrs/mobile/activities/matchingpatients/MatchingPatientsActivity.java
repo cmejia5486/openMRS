@@ -14,6 +14,7 @@
 
 package org.openmrs.mobile.activities.matchingpatients;
 
+import dagger.hilt.android.AndroidEntryPoint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -21,32 +22,36 @@ import android.view.Menu;
 
 import androidx.appcompat.widget.Toolbar;
 
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
+import com.openmrs.android_sdk.utilities.ToastUtil;
+
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 import org.openmrs.mobile.application.OpenMRS;
-import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.databinding.ActivityMatchingPatientsBinding;
 import org.openmrs.mobile.utilities.PatientAndMatchesWrapper;
-import org.openmrs.mobile.utilities.ToastUtil;
 
+@AndroidEntryPoint
 public class MatchingPatientsActivity extends ACBaseActivity {
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_matching_patients);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        ActivityMatchingPatientsBinding binding = ActivityMatchingPatientsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        Toolbar toolbar = binding.toolbar;
 
         if (toolbar != null) {
             toolbar.setTitle(getString(R.string.matching_patients_toolbar_title));
             setSupportActionBar(toolbar);
         }
-
         // Create fragment
         MatchingPatientsFragment matchingPatientsFragment =
                 (MatchingPatientsFragment) getSupportFragmentManager().findFragmentById(R.id.matchingPatientsContentFrame);
         if (matchingPatientsFragment == null) {
-            matchingPatientsFragment = MatchingPatientsFragment.newInstance();
+            PatientAndMatchesWrapper patientAndMatchesWrapper = (PatientAndMatchesWrapper) getIntent().getSerializableExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES);
+            matchingPatientsFragment = MatchingPatientsFragment.Companion.newInstance(patientAndMatchesWrapper.getMatchingPatients());
         }
         if (!matchingPatientsFragment.isAdded()) {
             addFragmentToActivity(getSupportFragmentManager(),
@@ -57,10 +62,6 @@ public class MatchingPatientsActivity extends ACBaseActivity {
             showToast(getString(R.string.registration_core_info));
         }
 
-        PatientAndMatchesWrapper patientAndMatchesWrapper = (PatientAndMatchesWrapper) getIntent().getSerializableExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES);
-
-        // Create the presenter
-        new MatchingPatientsPresenter(matchingPatientsFragment, patientAndMatchesWrapper.getMatchingPatients());
     }
 
     private void showToast(String message) {
@@ -80,5 +81,4 @@ public class MatchingPatientsActivity extends ACBaseActivity {
         editor.putBoolean("sync", false);
         editor.apply();
     }
-
 }

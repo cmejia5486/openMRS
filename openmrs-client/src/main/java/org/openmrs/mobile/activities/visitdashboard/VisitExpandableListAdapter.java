@@ -14,6 +14,9 @@
 
 package org.openmrs.mobile.activities.visitdashboard;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -25,22 +28,18 @@ import android.widget.BaseExpandableListAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.openmrs.android_sdk.library.models.Encounter;
+import com.openmrs.android_sdk.library.models.EncounterType;
+import com.openmrs.android_sdk.library.models.Observation;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
+import com.openmrs.android_sdk.utilities.ImageUtils;
+
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.application.OpenMRSInflater;
-import org.openmrs.mobile.models.Encounter;
-import org.openmrs.mobile.models.EncounterType;
-import org.openmrs.mobile.models.Observation;
-import org.openmrs.mobile.utilities.ApplicationConstants;
-import org.openmrs.mobile.utilities.ImageUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
-
     private static final int LEFT = 0;
     private static final int RIGHT = 1;
-
     private Context mContext;
     private List<Encounter> mEncounters;
     private List<ViewGroup> mChildLayouts;
@@ -51,6 +50,11 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
         this.mEncounters = encounters;
         this.mBitmapCache = new SparseArray<>();
         this.mChildLayouts = generateChildLayouts();
+    }
+
+    public void updateList(List<Encounter> encounters) {
+        mEncounters = encounters;
+        notifyDataSetChanged();
     }
 
     private List<ViewGroup> generateChildLayouts() {
@@ -77,20 +81,31 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
                         } else if (obs.getDiagnosisOrder() != null && obs.getShortDiagnosisCertainty() != null && obs.getDiagnosisList() != null) {
                             //if the observation is a Diagnosis Order
                             convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDiagnosisOrder(),
-                                    "(" + obs.getShortDiagnosisCertainty() + ") " + obs.getDiagnosisList());
+                                "(" + obs.getShortDiagnosisCertainty() + ") " + obs.getDiagnosisList());
                         } else if (obs.getDisplay() != null && obs.getDisplayValue() != null) {
-                            //miscellaneous, for all other cases that have a Display - Value pair
-                            convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(), obs.getDisplayValue());
+                            if (obs.getDisplay().contains(mContext.getString(R.string.hiv_yes))) {
+                                convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(),
+                                    mContext.getString(R.string.hiv_yes));
+                            } else if (obs.getDisplay().contains(mContext.getString(R.string.hiv_no))) {
+                                convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(),
+                                    mContext.getString(R.string.hiv_no));
+                            } else if (obs.getDisplay().contains(mContext.getString(R.string.hiv_unknown))) {
+                                convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(),
+                                    mContext.getString(R.string.hiv_unknown));
+                            } else {
+                                //miscellaneous, for all other cases that have a Display - Value pair
+                                convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(), obs.getDisplayValue());
+                            }
                         }
                     }
                     layouts.add(convertView);
                     break;
                 case EncounterType.DISCHARGE:
-                    convertView = openMRSInflater.addSingleStringView(contentLayout, mContext.getString(R.string.list_item_encounter_no_notes));
+                    convertView = openMRSInflater.addSingleStringView(contentLayout, mContext.getString(R.string.discharge_location_in_list, encounter.getLocation().getDisplay()));
                     layouts.add(convertView);
                     break;
                 case EncounterType.ADMISSION:
-                    convertView = openMRSInflater.addSingleStringView(contentLayout, mContext.getString(R.string.list_item_encounter_no_notes));
+                    convertView = openMRSInflater.addSingleStringView(contentLayout, mContext.getString(R.string.admission_location_in_list, encounter.getLocation().getDisplay()));
                     layouts.add(convertView);
                     break;
                 default:
@@ -108,7 +123,7 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public int getChildrenCount(int groupPosition) {
-        return  1;
+        return 1;
     }
 
     @Override
@@ -193,13 +208,13 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
     private void bindDrawableResources(int drawableID, TextView textView, int direction) {
         final float scale = mContext.getResources().getDisplayMetrics().density;
         Drawable image = mContext.getResources().getDrawable(drawableID);
-        if(direction == LEFT) {
-            image.setBounds(0, 0, (int)(40 * scale + 0.5f), (int)(40 * scale + 0.5f));
-            textView.setCompoundDrawablePadding((int)(13 * scale + 0.5f));
+        if (direction == LEFT) {
+            image.setBounds(0, 0, (int) (40 * scale + 0.5f), (int) (40 * scale + 0.5f));
+            textView.setCompoundDrawablePadding((int) (13 * scale + 0.5f));
             textView.setCompoundDrawables(image, null, null, null);
-        }else {
+        } else {
             image.setBounds(0, 0, image.getIntrinsicWidth(), image.getIntrinsicHeight());
-            textView.setCompoundDrawablePadding((int)(10 * scale + 0.5f));
+            textView.setCompoundDrawablePadding((int) (10 * scale + 0.5f));
             textView.setCompoundDrawables(null, null, image, null);
         }
     }
@@ -207,7 +222,7 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
     private void createImageBitmap(Integer key, ViewGroup.LayoutParams layoutParams) {
         if (mBitmapCache.get(key) == null) {
             mBitmapCache.put(key, ImageUtils.decodeBitmapFromResource(mContext.getResources(), key,
-                    layoutParams.width, layoutParams.height));
+                layoutParams.width, layoutParams.height));
         }
     }
 }

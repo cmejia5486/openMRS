@@ -15,7 +15,8 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ScrollView
         android:id="@+id/svLogs"
@@ -28,7 +29,8 @@
             android:id="@+id/tvLogs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textIsSelectable="true" />
+            android:textIsSelectable="true"
+            android:padding="@dimen/button_margin"/>
     </ScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -39,6 +41,6 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:layout_margin="20dp"
-        android:src="@drawable/ic_copy" />
+        app:srcCompat="@drawable/ic_copy" />
 
 </RelativeLayout>

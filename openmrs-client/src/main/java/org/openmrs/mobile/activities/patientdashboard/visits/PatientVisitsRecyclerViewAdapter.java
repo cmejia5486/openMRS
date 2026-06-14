@@ -18,24 +18,22 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.openmrs.android_sdk.library.models.Visit;
+import com.openmrs.android_sdk.utilities.DateUtils;
+
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.models.Visit;
-import org.openmrs.mobile.utilities.DateUtils;
-import org.openmrs.mobile.utilities.FontsUtil;
 
 import java.util.List;
 
 public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<PatientVisitsRecyclerViewAdapter.VisitViewHolder> {
     private PatientVisitsFragment mContext;
     private List<Visit> mVisits;
-
 
     public PatientVisitsRecyclerViewAdapter(PatientVisitsFragment context, List<Visit> items) {
         this.mContext = context;
@@ -46,7 +44,6 @@ public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
     @Override
     public VisitViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_patient_visit, parent, false);
-        FontsUtil.setFont((ViewGroup) itemView);
         return new VisitViewHolder(itemView);
     }
 
@@ -85,6 +82,11 @@ public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
     @Override
     public int getItemCount() {
         return mVisits.size();
+    }
+
+    public void updateList(List<Visit> visits) {
+        mVisits = visits;
+        notifyDataSetChanged();
     }
 
     class VisitViewHolder extends RecyclerView.ViewHolder {
