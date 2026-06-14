@@ -14,39 +14,37 @@
 
 package org.openmrs.mobile.listeners.watcher;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.junit.Assert.assertEquals;
-
 import android.content.Context;
 import android.text.TextWatcher;
 import android.widget.EditText;
 
-import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.LargeTest;
-
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
+
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class PatientBirthdateValidatorWatcherTest {
 
-    private final Context context = ApplicationProvider.getApplicationContext();
     private EditText mMonthEditText;
     private EditText mYearEditText;
 
     @Before
     public void setUp() {
+        Context context = getInstrumentation().getContext();
         EditText birthdateEditText = new EditText(context);
         mMonthEditText = new EditText(context);
         mYearEditText = new EditText(context);
 
-        TextWatcher textWatcher = new PatientBirthdateValidatorWatcher(context, birthdateEditText,
-                mMonthEditText, mYearEditText);
+        TextWatcher textWatcher = new PatientBirthdateValidatorWatcher(
+                birthdateEditText, mMonthEditText, mYearEditText);
 
         mMonthEditText.addTextChangedListener(textWatcher);
         mYearEditText.addTextChangedListener(textWatcher);

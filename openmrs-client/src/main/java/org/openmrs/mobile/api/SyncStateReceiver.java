@@ -6,7 +6,6 @@
  *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
- *
  */
 
 package org.openmrs.mobile.api;
@@ -15,19 +14,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.openmrs.android_sdk.utilities.ToastUtil;
+import org.openmrs.mobile.utilities.ToastUtil;
 
-import org.openmrs.mobile.R;
-import org.openmrs.mobile.services.EncounterService;
-import org.openmrs.mobile.services.PatientService;
-
-public class SyncStateReceiver extends BroadcastReceiver {
+public class SyncStateReceiver extends BroadcastReceiver{
     @Override
     public void onReceive(Context context, Intent intent) {
-        ToastUtil.notify(context.getString(R.string.patent_and_form_data_sync_resumed));
-        Intent i = new Intent(context, PatientService.class);
+        ToastUtil.notify("Syncing switched on, attempting to sync patients and form data");
+        Intent i=new Intent(context,PatientService.class);
         context.startService(i);
-        Intent i1 = new Intent(context, EncounterService.class);
+        Intent i1=new Intent(context,EncounterService.class);
         context.startService(i1);
     }
 }

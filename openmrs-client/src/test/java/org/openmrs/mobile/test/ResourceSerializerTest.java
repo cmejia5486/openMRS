@@ -14,29 +14,29 @@
 
 package org.openmrs.mobile.test;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
-import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
-import com.openmrs.android_sdk.library.models.IdentifierType;
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.library.models.PatientIdentifier;
-import com.openmrs.android_sdk.library.models.PersonName;
-import com.openmrs.android_sdk.utilities.DateUtils;
-import com.openmrs.android_sdk.utilities.ResourceSerializer;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.openmrs.mobile.models.IdentifierType;
+import org.openmrs.mobile.models.Location;
+import org.openmrs.mobile.models.Patient;
+import org.openmrs.mobile.models.PatientIdentifier;
+import org.openmrs.mobile.models.PersonName;
+import org.openmrs.mobile.utilities.DateUtils;
+import org.openmrs.mobile.utilities.ResourceSerializer;
+
+import java.util.Arrays;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNot.not;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ResourceSerializerTest {
@@ -81,7 +81,7 @@ public class ResourceSerializerTest {
 
     private Patient updatePatientDetails(Patient patient) {
         patient.setBirthdate(DateUtils.convertTime(System.currentTimeMillis()));
-        PersonName personName = new PersonName();
+        PersonName  personName = new PersonName();
         personName.setFamilyName("family");
         personName.setGivenName("given");
         personName.setMiddleName("middle");
@@ -95,7 +95,7 @@ public class ResourceSerializerTest {
         IdentifierType identifierType = new IdentifierType();
         identifierType.setUuid("identifierTypeUUID");
         patientIdentifier.setIdentifierType(identifierType);
-        LocationEntity location = new LocationEntity("display");
+        Location location = new Location();
         location.setUuid("locationUUID");
         patientIdentifier.setLocation(location);
         patientIdentifier.setUuid("patientIdentifierUUID");

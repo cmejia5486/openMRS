@@ -1,4 +1,5 @@
 buildscript {
+
     repositories {
         jcenter()
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
@@ -14,21 +15,13 @@ plugins {
     id 'com.github.triplet.play' version '2.2.1'
     id 'kotlin-android'
     id 'kotlin-android-extensions'
-    id 'kotlin-kapt'
-    id 'dagger.hilt.android.plugin'
-
-    // TODO AC-861
-    //id 'jacoco-android'
-    id 'com.hiya.jacoco-android'
+    id 'jacoco-android'
 }
-apply from: './versions.gradle'
-apply plugin: "androidx.navigation.safeargs"
 
-def version = versions.appVersion
-def GOOGLE_PLACE_API_KEY = System.getenv('GOOGLE_PLACE_API_KEY') ?: "YOUR_API_KEY"
+def version = "2.8.0"
 
 android {
-    compileSdkVersion versions.compileSdk
+    compileSdkVersion 28
 
     def travisBuildNumber = System.getenv("TRAVIS_BUILD_NUMBER")
     def buildNumber = (travisBuildNumber) ? (travisBuildNumber as int) : 1
@@ -43,22 +36,17 @@ android {
         versionCode buildNumber
         multiDexEnabled true
 
-        minSdkVersion versions.minSdk
-        targetSdkVersion versions.targetSdk
+        minSdkVersion 16
+        targetSdkVersion 28
 
         testApplicationId "org.openmrs.mobile.test"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
-        vectorDrawables.useSupportLibrary = true
-
         javaCompileOptions {
             annotationProcessorOptions {
-                arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
-        manifestPlaceholders = [
-                GOOGLE_PLACE_API_KEY: GOOGLE_PLACE_API_KEY
-        ]
     }
 
     configurations.all {
@@ -76,9 +64,16 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             signingConfig signingConfigs.release
+            applicationVariants.all { variant ->
+                variant.outputs.each { output ->
+                    def relativeRootDir = output.packageApplication.outputDirectory.toPath()
+                            .relativize(rootDir.toPath()).toFile()
+                    output.outputFileName = new File("$relativeRootDir/openmrs-client/release/",output.outputFile.name)
+                }
+            }
         }
         debug {
             testCoverageEnabled true
@@ -96,16 +91,12 @@ android {
         exclude 'META-INF/DEPENDENCIES.txt'
         exclude 'META-INF/NOTICE'
         exclude 'META-INF/NOTICE.txt'
-        exclude 'META-INF/rxjava.properties'
+
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
     }
 
     testOptions {
@@ -114,14 +105,10 @@ android {
             includeAndroidResources = true
         }
     }
-
-    buildFeatures {
-        viewBinding = true
-    }
 }
 
 repositories {
-    maven { url 'https://yanzm.github.io/MaterialTabHost/repository' }
+    maven { url 'http://yanzm.github.io/MaterialTabHost/repository' }
     mavenCentral()
     jcenter()
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
@@ -129,115 +116,66 @@ repositories {
 }
 
 dependencies {
+    def support_version = '1.0.0-beta01'
+    def room_version = "2.1.0-alpha04"
 
-    // Android sdk library dependency
-    implementation project(path: ':openmrs-android-sdk')
-
-    implementation "androidx.appcompat:appcompat:${versions.material}"
-    implementation "com.google.android.material:material:${versions.material}"
-    implementation "androidx.legacy:legacy-support-v13:${versions.supportVersion}"
-    implementation "androidx.gridlayout:gridlayout:${versions.supportVersion}"
-    implementation "androidx.recyclerview:recyclerview:${versions.recyclerView}"
-    implementation "androidx.cardview:cardview:${versions.supportVersion}"
-    implementation "androidx.constraintlayout:constraintlayout:${versions.constraintlayout}"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "androidx.fragment:fragment-ktx:${versions.fragment}"
-    implementation "androidx.activity:activity-ktx:${versions.activity}"
-
-    // Networking and Processing
-    implementation "com.squareup.retrofit2:retrofit:${versions.retrofit}"
-    implementation "com.squareup.retrofit2:converter-gson:${versions.retrofitConverter}"
-    implementation "com.google.code.gson:gson:${versions.gson}"
-
-    //Navigation Component
-    implementation "androidx.navigation:navigation-fragment-ktx:${versions.navfragment}"
-    implementation "androidx.navigation:navigation-ui-ktx:${versions.navui}"
-
-    // Rx Java dependency
-    implementation "io.reactivex.rxjava2:rxjava:${versions.rxjava}"
-    implementation "io.reactivex.rxjava2:rxandroid:${versions.rxandroid}"
-    implementation "com.jakewharton.rxbinding:rxbinding:${versions.rxbinding}"
-
-    // Database components
-    implementation "androidx.room:room-runtime:${versions.roomRuntime}"
-    implementation "android.arch.persistence.room:rxjava2:${versions.roomPersistence}"
-
-    // Noinspection GradleDependency
-    annotationProcessor "androidx.room:room-compiler:${versions.roomCompiler}"
-
-    // Work Manager
-    implementation "androidx.work:work-runtime:${versions.workManager}"
-
-    // http request Chucker Library
-    testImplementation "com.github.chuckerteam.chucker:library:${versions.chuckerLibrary}"
-    debugImplementation "com.github.chuckerteam.chucker:library:${versions.chuckerLibrary}"
-    releaseImplementation "com.github.chuckerteam.chucker:library-no-op:${versions.chuckerLibrary}"
-
-    // Third Party UI Libraries
-    implementation "org.adw.library:discrete-seekbar:${versions.seekbar}"
-    implementation "com.github.PhilJay:MPAndroidChart:${versions.MPAndroidChart}"
-    implementation "com.github.amlcurran.showcaseview:library:${versions.showcaseview}"
-    implementation "org.mindrot:jbcrypt:${versions.jbcrypt}"
-    implementation "com.hbb20:ccp:${versions.countryCodePicker}"
-    implementation "com.github.AppIntro:AppIntro:${versions.AppIntro}"
-    implementation 'com.github.yalantis:ucrop:2.2.5'
-    implementation "com.github.permissions-dispatcher:permissionsdispatcher-ktx:${versions.permissionsdispatcher}"
-    implementation "androidx.multidex:multidex:${versions.multidex}"
-    implementation "joda-time:joda-time:${versions.jodaTime}"
-    implementation "net.sf.kxml:kxml2:${versions.kxml2}"
-    implementation "commons-codec:commons-codec:${versions.codec}"
-    implementation "org.jdeferred:jdeferred-android-aar:${versions.jdeferred}"
-    implementation "com.google.guava:guava:${versions.guava}"
-
-    // Google place api
-    implementation "com.google.android.libraries.places:places:${versions.placesAPI}"
-
-    // Hilt Dependency Injection
-    implementation "com.google.dagger:hilt-android:${versions.hilt}"
-    kapt "com.google.dagger:hilt-compiler:${versions.hilt}"
-    implementation("androidx.hilt:hilt-work:1.0.0")
-    kapt("androidx.hilt:hilt-compiler:1.0.0") /* Use it for Kotlin Workers */
-    annotationProcessor("androidx.hilt:hilt-compiler:1.0.0") /* Use it for Java Workers */
-
-    // ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${versions.lifecycle_version}")
-    // LiveData
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:${versions.lifecycle_version}")
-
-    // Test Implementations
+    implementation 'com.google.code.gson:gson:2.8.5'
     androidTestImplementation(
-            'androidx.test.ext:junit:1.1.1',
+            'junit:junit:4.12',
+            'androidx.test.ext:junit:1.0.0',
             'androidx.test.espresso:espresso-core:3.1.0',
             'androidx.test:rules:1.1.0-alpha4',
             'androidx.test:runner:1.1.0-alpha4',
-            'org.mockito:mockito-core:2.8.9',
+            'org.mockito:mockito-core:2.8.9+',
             'com.google.dexmaker:dexmaker-mockito:1.2',
             'com.google.dexmaker:dexmaker:1.2',
-            'com.jayway.android.robotium:robotium-solo:4.2',
-            'androidx.arch.core:core-testing:2.0.0'
+            'com.jayway.android.robotium:robotium-solo:4.2'
     )
+
+    androidTestImplementation files('libs/the-missing-android-xml-junit-test-runner-release-1.3_2.jar')
+    debugImplementation 'com.github.jainsahab:Snooper-Okhttp:1.5.4'
+    releaseImplementation 'com.github.jainsahab:Snooper-Okhttp-No-Op:1.5.4'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.google.guava:guava:23.0'
+    implementation "androidx.appcompat:appcompat:$support_version"
+    implementation "androidx.gridlayout:gridlayout:$support_version"
+    implementation "androidx.recyclerview:recyclerview:$support_version"
+    implementation "androidx.cardview:cardview:$support_version"
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation "com.google.android.material:material:$support_version"
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
+    implementation 'commons-codec:commons-codec:1.10'
+    implementation 'net.zetetic:android-database-sqlcipher:4.1.3@aar'
+    implementation 'org.jdeferred:jdeferred-android-aar:1.2.4'
+    implementation "androidx.legacy:legacy-support-v13:$support_version"
+    implementation 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.8.0'
+    implementation 'androidx.multidex:multidex:2.0.0'
+    implementation 'joda-time:joda-time:2.0'
+    implementation 'net.sf.kxml:kxml2:2.3.0'
+    implementation 'io.reactivex:rxjava:1.3.4'
+    implementation 'io.reactivex:rxandroid:1.2.1'
+    implementation 'com.jakewharton.rxbinding:rxbinding:1.0.0'
+    implementation 'com.github.hotchemi:permissionsdispatcher:2.3.1'
+    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:2.3.1'
+    implementation 'org.adw.library:discrete-seekbar:1.0.1'
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.0.2'
+    implementation 'com.github.amlcurran.showcaseview:library:5.4.3'
+    implementation 'org.mindrot:jbcrypt:0.4'
+    implementation 'com.hbb20:ccp:2.2.7'
     testImplementation(
             'org.mockito:mockito-core:2.8.9',
-            'org.mockito:mockito-inline:2.13.0',
-            "org.mockito.kotlin:mockito-kotlin:4.0.0",
             'junit:junit:4.12',
-            "org.junit.jupiter:junit-jupiter:5.8.2",
             'org.powermock:powermock-api-mockito2:2.0.2',
-            'org.powermock:powermock-module-junit4:2.0.2',
-            "com.google.dagger:hilt-android-testing:${versions.hilt}",
-            "androidx.arch.core:core-testing:${versions.arch_version}"
+            'org.powermock:powermock-module-junit4:2.0.2'
     )
-    testImplementation "android.arch.core:core-testing:${versions.coreTesting}"
-    kaptTest "com.google.dagger:hilt-compiler:${versions.hilt}"
-
-    // Leak Canary
-    debugImplementation "com.squareup.leakcanary:leakcanary-android:${versions.leakcanary}"
-    // Debug database
-    debugImplementation 'com.amitshekhar.android:debug-db:1.0.6'
-}
-
-kapt {
-    correctErrorTypes true
+    testImplementation 'android.arch.core:core-testing:1.1.1'
+    // Room components
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    // Swipe reveal layout
+    implementation 'com.chauthai.swipereveallayout:swipe-reveal-layout:1.4.1'
 }
 
 play {

@@ -14,17 +14,15 @@
 
 package org.openmrs.mobile.activities.syncedpatients;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -32,19 +30,24 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.DateUtils;
-
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
+import org.openmrs.mobile.models.Patient;
+import org.openmrs.mobile.utilities.ApplicationConstants;
+import org.openmrs.mobile.utilities.DateUtils;
+import org.openmrs.mobile.utilities.FontsUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<SyncedPatientsRecyclerViewAdapter.PatientViewHolder> {
     private SyncedPatientsFragment mContext;
     private List<Patient> mItems;
     private boolean multiSelect = false;
     private ArrayList<Patient> selectedItems = new ArrayList<>();
+
     private androidx.appcompat.view.ActionMode.Callback actionModeCallbacks = new androidx.appcompat.view.ActionMode.Callback() {
         @Override
         public boolean onCreateActionMode(androidx.appcompat.view.ActionMode mode, Menu menu) {
@@ -60,7 +63,7 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
 
         @Override
         public boolean onActionItemClicked(androidx.appcompat.view.ActionMode mode, MenuItem item) {
-            ((ACBaseActivity) mContext.requireActivity()).showMultiDeletePatientDialog(selectedItems);
+            ((ACBaseActivity) Objects.requireNonNull(mContext.getActivity())).showMultiDeletePatientDialog(selectedItems);
             return true;
         }
 
@@ -72,22 +75,16 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
         }
     };
 
-    public SyncedPatientsRecyclerViewAdapter(SyncedPatientsFragment context, List<Patient> items) {
+    public SyncedPatientsRecyclerViewAdapter(SyncedPatientsFragment context, List<Patient> items){
         this.mContext = context;
         this.mItems = items;
-    }
-
-    public void updateList(List<Patient> patientList) {
-        this.mItems = patientList;
-        this.selectedItems = new ArrayList();
-        this.multiSelect = false;
-        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public SyncedPatientsRecyclerViewAdapter.PatientViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_find_synced_patients, parent, false);
+        FontsUtil.setFont((ViewGroup) itemView);
         return new PatientViewHolder(itemView);
     }
 
@@ -106,22 +103,13 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
             holder.mDisplayName.setText(patient.getName().getNameString());
         }
         if (null != patient.getGender()) {
-            if (patient.getPhoto() != null) {
-                holder.mGender.setImageBitmap(patient.getPhoto());
-            } else {
-                if (patient.getGender().equals(ApplicationConstants.MALE)) {
-                    holder.mGender.setImageResource(R.drawable.patient_male);
-                } else {
-                    holder.mGender.setImageResource(R.drawable.patient_female);
-                }
-            }
+            holder.mGender.setText(patient.getGender());
         }
-        if (patient.isDeceased()) {
-            holder.mRowLayout.setCardBackgroundColor(mContext.getResources().getColor(R.color.deceased_red));
-        }
-        try {
+        try{
             holder.mBirthDate.setText(DateUtils.convertTime(DateUtils.convertTime(patient.getBirthdate())));
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             holder.mBirthDate.setText("");
         }
     }
@@ -135,7 +123,8 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
         private CardView mRowLayout;
         private TextView mIdentifier;
         private TextView mDisplayName;
-        private ImageView mGender;
+        private TextView mGender;
+        private TextView mAge;
         private TextView mBirthDate;
         private ColorStateList cardBackgroundColor;
 
@@ -145,6 +134,7 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
             mIdentifier = itemView.findViewById(R.id.syncedPatientIdentifier);
             mDisplayName = itemView.findViewById(R.id.syncedPatientDisplayName);
             mGender = itemView.findViewById(R.id.syncedPatientGender);
+            mAge = itemView.findViewById(R.id.syncedPatientAge);
             mBirthDate = itemView.findViewById(R.id.syncedPatientBirthDate);
 
             cardBackgroundColor = mRowLayout.getCardBackgroundColor();
@@ -169,7 +159,7 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
                 mRowLayout.setCardBackgroundColor(cardBackgroundColor);
             }
             itemView.setOnLongClickListener(view -> {
-                ((AppCompatActivity) mContext.requireActivity()).startSupportActionMode(actionModeCallbacks);
+                ((AppCompatActivity) view.getContext()).startSupportActionMode(actionModeCallbacks);
                 selectItem(value);
                 return true;
             });
@@ -181,6 +171,7 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
                 } else {
                     selectItem(value);
                 }
+
             });
         }
     }

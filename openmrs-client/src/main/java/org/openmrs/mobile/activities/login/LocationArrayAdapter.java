@@ -19,15 +19,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-import org.openmrs.mobile.R;
-
-import androidx.annotation.NonNull;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+
 public class LocationArrayAdapter extends ArrayAdapter<String> {
+
     public LocationArrayAdapter(Context context, List<String> objects) {
-        super(context, R.layout.spinner_item, objects);
+        super(context, android.R.layout.simple_spinner_item, objects);
         setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
     }
 
@@ -44,7 +44,8 @@ public class LocationArrayAdapter extends ArrayAdapter<String> {
             tv.setHeight(0);
             tv.setVisibility(View.GONE);
             v = tv;
-        } else {
+        }
+        else {
             v = super.getDropDownView(position, null, parent);
         }
         parent.setVerticalScrollBarEnabled(false);

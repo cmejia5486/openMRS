@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   ~ The contents of this file are subject to the OpenMRS Public License
   ~ Version 1.0 (the "License"); you may not use this file except in
   ~ compliance with the License. You may obtain a copy of the License at
@@ -13,23 +14,30 @@
   -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/vitalList"
+    <!--<ExpandableListView android:id="@+id/vitalExpList"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:dividerHeight="1dp"-->
+        <!--android:divider="@null"-->
+        <!--android:childDivider="@drawable/exp_list_divider"/>-->
+
+    <ListView android:id="@+id/vitalList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:dividerHeight="1dp"
+        android:divider="@null"
+       />
 
-    <TextView
-        android:id="@+id/vitalEmpty"
+    <TextView android:id="@+id/vitalEmpty"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:gravity="center"
-        android:text="@string/no_vitals_recorded"
         android:textSize="18sp"
-        android:textStyle="bold" />
+        android:text="@string/no_vitals_recorded"/>
 
 </LinearLayout>
