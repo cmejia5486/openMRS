@@ -236,6 +236,12 @@ class AIRuntime:
         if max_output_tokens:
             kwargs["max_tokens"] = int(max_output_tokens)
 
+        response_format = self.config.get("response_format")
+        if isinstance(response_format, dict) and response_format:
+            kwargs["response_format"] = response_format
+        elif str(response_format or "").strip() == "json_object":
+            kwargs["response_format"] = {"type": "json_object"}
+
         temperature = self.config.get("temperature")
         if temperature is not None:
             kwargs["temperature"] = temperature
@@ -294,6 +300,12 @@ class AIRuntime:
         if max_output_tokens:
             kwargs["max_tokens"] = int(max_output_tokens)
 
+        response_format = self.config.get("response_format")
+        if isinstance(response_format, dict) and response_format:
+            kwargs["response_format"] = response_format
+        elif str(response_format or "").strip() == "json_object":
+            kwargs["response_format"] = {"type": "json_object"}
+
         temperature = self.config.get("temperature")
         if temperature is not None:
             kwargs["temperature"] = temperature
@@ -308,7 +320,14 @@ class AIRuntime:
 
         output_text = extract_output_text(resp)
         if self._debug:
-            print(f"[AI_RUNTIME] response_text_len={len(output_text)}")
+            finish_reason = ""
+            try:
+                choices = getattr(resp, "choices", None) or []
+                if choices:
+                    finish_reason = str(getattr(choices[0], "finish_reason", "") or "")
+            except Exception:
+                finish_reason = ""
+            print(f"[AI_RUNTIME] response_text_len={len(output_text)} finish_reason={finish_reason}")
 
         return AIResponse(output_text=output_text, raw_response=resp)
 

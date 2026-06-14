@@ -1011,6 +1011,44 @@ def _write_run_metrics_raw_xlsx(
     print(f"[OK] Run metrics workbook generated: {RUN_METRICS_XLSX_PATH}", flush=True)
 
 
+
+def _coerce_justification_map(obj: Any, expected_ids: List[str]) -> Dict[str, str]:
+    expected_set = set(expected_ids)
+    out: Dict[str, str] = {}
+
+    if not isinstance(obj, dict):
+        return out
+
+    items_obj = obj.get("items", [])
+    if not isinstance(items_obj, list):
+        return out
+
+    for it in items_obj:
+        if not isinstance(it, dict):
+            continue
+
+        item_id = str(it.get("id") or "").strip()
+        justification = str(it.get("justification") or "").strip()
+
+        if not item_id or item_id not in expected_set:
+            continue
+        if not justification:
+            continue
+
+        out[item_id] = justification
+
+    return out
+
+
+def _missing_expected_ids(out: Dict[str, str], expected_ids: List[str]) -> List[str]:
+    return [item_id for item_id in expected_ids if not (out.get(item_id, "") or "").strip()]
+
+
+def _extra_returned_ids(out: Dict[str, str], expected_ids: List[str]) -> List[str]:
+    expected_set = set(expected_ids)
+    return [item_id for item_id in out if item_id not in expected_set]
+
+
 def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[str, str]:
     client = openai_client()
     if client is None or BaseModel is None:
@@ -1022,7 +1060,17 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
 
     model = os.getenv("OPENAI_MODEL", "gpt-5.4").strip() or "gpt-5.4"
     effort = os.getenv("OPENAI_REASONING_EFFORT", "medium").strip() or "medium"
-    max_tokens = env_int("OPENAI_MAX_OUTPUT_TOKENS", 2000)
+    configured_max_tokens = env_int("OPENAI_MAX_OUTPUT_TOKENS", 2000)
+    local_endpoint = is_local_openai_compatible_endpoint()
+
+    # For local 4B-class models, extremely large generation budgets can make JSON
+    # completion less predictable. Keep the budget proportional to the requested
+    # items while still honoring the configured upper bound.
+    if local_endpoint:
+        max_tokens = min(configured_max_tokens, max(1800, len(batch_ctx) * 500))
+    else:
+        max_tokens = configured_max_tokens
+
     supports_parse = should_use_structured_parse(client)
 
     class JustificationItem(BaseModel):
@@ -1036,31 +1084,50 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
     system = str(contract.get("system_prompt_transcript") or contract.get("system_prompt") or "")
     if not system:
         raise RuntimeError("P-AIX-001 system prompt is empty in scripts/prompt_contracts.json")
-    user_payload = {"batch": batch_ctx}
-    expected_schema = contract.get("required_output_schema_object") or {"items": [{"id": "<exact requirement PUID>", "justification": "<one short English sentence>"}]}
+
+    expected_schema = contract.get("required_output_schema_object") or {
+        "items": [
+            {
+                "id": "<exact requirement PUID>",
+                "justification": "<one short English sentence>",
+            }
+        ]
+    }
     prompt_id = str(contract.get("prompt_id") or "P-AIX-001")
     prompt_name = str(contract.get("prompt_name") or "Requirement justification")
     prompt_scope = str(contract.get("prompt_scope") or "audit_matrix")
     prompt_category = str(contract.get("prompt_category") or "primary_audit_prompt")
-    ids = [str(item.get("id") or "") for item in batch_ctx if isinstance(item, dict)]
-    print(
-        f"[AI] Justification request prepared: items={len(batch_ctx)} "
-        f"| ids={','.join(ids[:5])}{'...' if len(ids) > 5 else ''} "
-        f"| model={model} | max_tokens={max_tokens} | parse={supports_parse} "
-        f"| local_endpoint={is_local_openai_compatible_endpoint()}",
-        flush=True,
-    )
 
+    original_ids = [str(item.get("id") or "") for item in batch_ctx if isinstance(item, dict)]
+    final_out: Dict[str, str] = {}
+    pending_ctx: List[Dict[str, Any]] = list(batch_ctx)
     last_err: Optional[Exception] = None
     call_started_at = time.time()
     attempts_used = 0
+
+    print(
+        f"[AI] Justification request prepared: items={len(batch_ctx)} "
+        f"| ids={','.join(original_ids[:5])}{'...' if len(original_ids) > 5 else ''} "
+        f"| model={model} | max_tokens={max_tokens} | parse={supports_parse} "
+        f"| local_endpoint={local_endpoint}",
+        flush=True,
+    )
+
     for attempt in range(1, 4):
         attempts_used = attempt
         attempt_started_at = time.time()
+        pending_ids = [str(item.get("id") or "") for item in pending_ctx if isinstance(item, dict)]
+        user_payload = {
+            "expected_count": len(pending_ids),
+            "expected_ids": pending_ids,
+            "batch": pending_ctx,
+        }
+
         print(
-            f"[AI] Justification attempt {attempt}/3 started: items={len(batch_ctx)}",
+            f"[AI] Justification attempt {attempt}/3 started: items={len(pending_ctx)}",
             flush=True,
         )
+
         try:
             if supports_parse:
                 resp = client.responses.parse(
@@ -1074,78 +1141,41 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                     reasoning={"effort": effort},
                 )
                 parsed = getattr(resp, "output_parsed", None)
-                if parsed is not None:
-                    out = {it.id: it.justification.strip() for it in parsed.items}
-                    print(
-                        f"[AI] Justification attempt {attempt}/3 succeeded via parse: "
-                        f"received={len(out)}/{len(batch_ctx)} "
-                        f"| elapsed={time.time() - attempt_started_at:.1f}s",
-                        flush=True,
-                    )
-                    prompt_call_id = record_prompt_call(
-                        prompt_id=prompt_id,
-                        prompt_name=prompt_name,
-                        prompt_scope=prompt_scope,
-                        prompt_category=prompt_category,
-                        source_file="scripts/ai_security_audit_requirements_excel.py",
-                        source_function="generate_justifications_via_openai",
-                        section_name="justification",
-                        system_prompt=system,
-                        user_payload=user_payload,
-                        expected_schema=expected_schema,
-                        model=model,
-                        provider=os.getenv("AI_PROVIDER", ""),
-                        max_output_tokens=max_tokens,
-                        reasoning_effort=effort,
-                        attempt_count=attempts_used,
-                        retry_count=max(0, attempts_used - 1),
-                        expected_items=len(batch_ctx),
-                        received_items=len(out),
-                        json_valid=True,
-                        schema_valid=True,
-                        traceability_ok=set(out).issubset(set(ids)),
-                        elapsed_s=time.time() - call_started_at,
-                    )
-                    _record_llm_call(
-                        call_type="justification",
-                        expected_items=len(batch_ctx),
-                        received_items=len(out),
-                        json_valid=True,
-                        schema_valid=True,
-                        retry_count=max(0, attempts_used - 1),
-                        elapsed_s=time.time() - call_started_at,
-                        model=model,
-                        max_tokens=max_tokens,
-                        parse_route=True,
-                        prompt_call_id=prompt_call_id,
-                        prompt_id=prompt_id,
-                        prompt_scope=prompt_scope,
-                        prompt_category=prompt_category,
-                    )
-                    return out
+                if parsed is None:
+                    raise ValueError("Structured parser returned no parsed payload")
+                attempt_out = {
+                    str(it.id).strip(): str(it.justification or "").strip()
+                    for it in parsed.items
+                    if str(it.id or "").strip() in set(pending_ids) and str(it.justification or "").strip()
+                }
+                parse_route = True
+                json_valid = True
+                schema_valid = True
+            else:
+                resp = client.responses.create(
+                    model=model,
+                    input=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+                    ],
+                    max_output_tokens=max_tokens,
+                    reasoning={"effort": effort},
+                )
+                txt = (getattr(resp, "output_text", "") or "").strip()
+                obj = extract_json_object_from_model_output(txt)
+                attempt_out = _coerce_justification_map(obj, pending_ids)
+                parse_route = False
+                json_valid = True
+                schema_valid = isinstance(obj.get("items", []) if isinstance(obj, dict) else None, list)
 
-            resp = client.responses.create(
-                model=model,
-                input=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-                ],
-                max_output_tokens=max_tokens,
-                reasoning={"effort": effort},
-            )
-            txt = (getattr(resp, "output_text", "") or "").strip()
-            obj = extract_json_object_from_model_output(txt)
-            out: Dict[str, str] = {}
-            items_obj = obj.get("items", []) if isinstance(obj, dict) else []
-            for it in items_obj:
-                if isinstance(it, dict) and "id" in it and "justification" in it:
-                    out[str(it["id"])] = str(it.get("justification") or "").strip()
-            print(
-                f"[AI] Justification attempt {attempt}/3 succeeded via robust JSON extraction: "
-                f"received={len(out)}/{len(batch_ctx)} "
-                f"| elapsed={time.time() - attempt_started_at:.1f}s",
-                flush=True,
-            )
+            missing = _missing_expected_ids(attempt_out, pending_ids)
+            extra = _extra_returned_ids(attempt_out, pending_ids)
+            complete = not missing and not extra and len(attempt_out) == len(pending_ids)
+
+            for item_id, justification in attempt_out.items():
+                if item_id in set(pending_ids):
+                    final_out[item_id] = justification
+
             prompt_call_id = record_prompt_call(
                 prompt_id=prompt_id,
                 prompt_name=prompt_name,
@@ -1163,30 +1193,60 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
                 reasoning_effort=effort,
                 attempt_count=attempts_used,
                 retry_count=max(0, attempts_used - 1),
-                expected_items=len(batch_ctx),
-                received_items=len(out),
-                json_valid=True,
-                schema_valid=isinstance(items_obj, list),
-                traceability_ok=set(out).issubset(set(ids)),
+                expected_items=len(pending_ids),
+                received_items=len(attempt_out),
+                json_valid=json_valid,
+                schema_valid=schema_valid and complete,
+                traceability_ok=complete,
                 elapsed_s=time.time() - call_started_at,
+                error="" if complete else f"partial response: missing={missing}; extra={extra}",
             )
             _record_llm_call(
                 call_type="justification",
-                expected_items=len(batch_ctx),
-                received_items=len(out),
-                json_valid=True,
-                schema_valid=isinstance(items_obj, list),
+                expected_items=len(pending_ids),
+                received_items=len(attempt_out),
+                json_valid=json_valid,
+                schema_valid=schema_valid and complete,
                 retry_count=max(0, attempts_used - 1),
                 elapsed_s=time.time() - call_started_at,
                 model=model,
                 max_tokens=max_tokens,
-                parse_route=False,
+                parse_route=parse_route,
                 prompt_call_id=prompt_call_id,
                 prompt_id=prompt_id,
                 prompt_scope=prompt_scope,
                 prompt_category=prompt_category,
+                error="" if complete else f"partial response: missing={missing}; extra={extra}",
             )
-            return out
+
+            if complete:
+                print(
+                    f"[AI] Justification attempt {attempt}/3 succeeded: "
+                    f"received={len(attempt_out)}/{len(pending_ids)} "
+                    f"| elapsed={time.time() - attempt_started_at:.1f}s",
+                    flush=True,
+                )
+                break
+
+            print(
+                f"[WARN] Justification attempt {attempt}/3 produced partial JSON: "
+                f"received={len(attempt_out)}/{len(pending_ids)} "
+                f"| missing={len(missing)} | extra={len(extra)} "
+                f"| retrying only missing items "
+                f"| elapsed={time.time() - attempt_started_at:.1f}s",
+                file=sys.stderr,
+                flush=True,
+            )
+
+            missing_set = set(missing)
+            pending_ctx = [
+                item for item in pending_ctx
+                if str(item.get("id") or "") in missing_set
+            ]
+
+            if not pending_ctx:
+                break
+
         except Exception as e:
             last_err = e
             print(
@@ -1197,56 +1257,63 @@ def generate_justifications_via_openai(batch_ctx: List[Dict[str, Any]]) -> Dict[
             )
             time.sleep(0.6 * attempt)
 
-    print(
-        f"[WARN] AI justification generation failed after retries: {last_err}; "
-        "deterministic fallback will be used for this batch.",
-        file=sys.stderr,
-        flush=True,
-    )
-    prompt_call_id = record_prompt_call(
-        prompt_id=prompt_id,
-        prompt_name=prompt_name,
-        prompt_scope=prompt_scope,
-        prompt_category=prompt_category,
-        source_file="scripts/ai_security_audit_requirements_excel.py",
-        source_function="generate_justifications_via_openai",
-        section_name="justification",
-        system_prompt=system,
-        user_payload=user_payload,
-        expected_schema=expected_schema,
-        model=model,
-        provider=os.getenv("AI_PROVIDER", ""),
-        max_output_tokens=max_tokens,
-        reasoning_effort=effort,
-        attempt_count=attempts_used,
-        retry_count=max(0, attempts_used - 1),
-        expected_items=len(batch_ctx),
-        received_items=0,
-        json_valid=False,
-        schema_valid=False,
-        traceability_ok=False,
-        fallback_used=True,
-        elapsed_s=time.time() - call_started_at,
-        error=str(last_err or "justification generation failed"),
-    )
-    _record_llm_call(
-        call_type="justification",
-        expected_items=len(batch_ctx),
-        received_items=0,
-        json_valid=False,
-        schema_valid=False,
-        retry_count=max(0, attempts_used - 1),
-        elapsed_s=time.time() - call_started_at,
-        model=model,
-        max_tokens=max_tokens,
-        parse_route=supports_parse,
-        error=str(last_err or "justification generation failed"),
-        prompt_call_id=prompt_call_id,
-        prompt_id=prompt_id,
-        prompt_scope=prompt_scope,
-        prompt_category=prompt_category,
-    )
-    return {}
+    missing_final = _missing_expected_ids(final_out, original_ids)
+
+    if missing_final:
+        print(
+            f"[WARN] AI justification generation incomplete after retries: "
+            f"received={len(final_out)}/{len(original_ids)} "
+            f"| missing={missing_final}; deterministic fallback will be used for missing items.",
+            file=sys.stderr,
+            flush=True,
+        )
+
+        prompt_call_id = record_prompt_call(
+            prompt_id=prompt_id,
+            prompt_name=prompt_name,
+            prompt_scope=prompt_scope,
+            prompt_category=prompt_category,
+            source_file="scripts/ai_security_audit_requirements_excel.py",
+            source_function="generate_justifications_via_openai",
+            section_name="justification",
+            system_prompt=system,
+            user_payload={"expected_count": len(original_ids), "expected_ids": original_ids, "batch": batch_ctx},
+            expected_schema=expected_schema,
+            model=model,
+            provider=os.getenv("AI_PROVIDER", ""),
+            max_output_tokens=max_tokens,
+            reasoning_effort=effort,
+            attempt_count=attempts_used,
+            retry_count=max(0, attempts_used - 1),
+            expected_items=len(original_ids),
+            received_items=len(final_out),
+            json_valid=False if last_err else True,
+            schema_valid=False,
+            traceability_ok=False,
+            fallback_used=True,
+            elapsed_s=time.time() - call_started_at,
+            error=str(last_err or f"missing justifications: {missing_final}"),
+        )
+        _record_llm_call(
+            call_type="justification",
+            expected_items=len(original_ids),
+            received_items=len(final_out),
+            json_valid=False if last_err else True,
+            schema_valid=False,
+            retry_count=max(0, attempts_used - 1),
+            elapsed_s=time.time() - call_started_at,
+            model=model,
+            max_tokens=max_tokens,
+            parse_route=supports_parse,
+            error=str(last_err or f"missing justifications: {missing_final}"),
+            prompt_call_id=prompt_call_id,
+            prompt_id=prompt_id,
+            prompt_scope=prompt_scope,
+            prompt_category=prompt_category,
+        )
+
+    return {item_id: final_out[item_id] for item_id in original_ids if item_id in final_out}
+
 
 def deterministic_justification(req: RequirementAudit, flag_evidences: List[FlagEvidence], meta: Dict[str, Any]) -> str:
     def _note_hint(fe: FlagEvidence) -> str:
