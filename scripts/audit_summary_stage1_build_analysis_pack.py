@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple, Iterable
 
 import pandas as pd
+import openpyxl
 
 
 DEFAULT_SHEET = "audit"
@@ -52,6 +53,7 @@ def _env_path(env_name: str, default_filename: str) -> Path:
 
 DEFAULT_EXCEL = str(_env_path("AUDIT_EXCEL_PATH", "security_audit_requirements.xlsx"))
 DEFAULT_OUT = str(_env_path("AUDIT_ANALYSIS_JSON_PATH", "audit_summary_analysis_pack.json"))
+DEFAULT_RUN_METRICS = str(_env_path("RUN_METRICS_XLSX_PATH", "run-metrics.xlsx"))
 
 
 def _candidate_config_paths() -> List[str]:
@@ -3065,10 +3067,62 @@ def build_technical_evidence() -> Dict[str, Any]:
 
 
 
+def _read_xlsx_rows(path: str, sheet_name: str) -> List[Dict[str, Any]]:
+    if not path or not os.path.isfile(path):
+        return []
+    try:
+        wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    except Exception:
+        return []
+    if sheet_name not in wb.sheetnames:
+        return []
+    ws = wb[sheet_name]
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return []
+    headers = [str(h or "").strip() for h in rows[0]]
+    out: List[Dict[str, Any]] = []
+    for row in rows[1:]:
+        item: Dict[str, Any] = {}
+        for idx, header in enumerate(headers):
+            if header:
+                item[header] = row[idx] if idx < len(row) else None
+        if any(v not in (None, "") for v in item.values()):
+            out.append(item)
+    return out
+
+
+def _load_adjudication_diagnostics(run_metrics_path: str) -> Dict[str, Any]:
+    if not run_metrics_path or not os.path.isfile(run_metrics_path):
+        return {"available": False, "run_metrics_path": run_metrics_path, "summary": {}, "by_requirement_sample": [], "by_flag_sample": []}
+    summary_rows = _read_xlsx_rows(run_metrics_path, "adjudication_summary")
+    by_requirement = _read_xlsx_rows(run_metrics_path, "adjudication_by_requirement")
+    by_flag = _read_xlsx_rows(run_metrics_path, "adjudication_by_flag")
+    summary = {str(r.get("key") or r.get("metric") or ""): r.get("value") for r in summary_rows if (r.get("key") or r.get("metric")) not in (None, "")}
+    if not summary and by_requirement:
+        summary = {
+            "adjudicated_requirement_count": len(by_requirement),
+            "adjudicated_flag_reference_count": len(by_flag),
+            "contradictory_requirement_count": sum(1 for r in by_requirement if str(r.get("contradictory_requirement") or "").lower() == "true"),
+            "contradictory_flag_reference_count": sum(1 for r in by_flag if str(r.get("outcome") or "") == "CONTRADICT"),
+            "risk_precedence_count": sum(1 for r in by_requirement if str(r.get("risk_precedence_applied") or "").lower() == "true"),
+            "partial_evidence_requirement_count": sum(1 for r in by_requirement if str(r.get("partial_evidence") or "").lower() == "true"),
+        }
+    return {
+        "available": bool(summary or by_requirement or by_flag),
+        "run_metrics_path": run_metrics_path,
+        "summary": summary,
+        "by_requirement_sample": by_requirement[:100],
+        "by_flag_sample": by_flag[:200],
+        "method_note": "Adjudication diagnostics are copied from run-metrics. They do not modify requirement results; they expose contradictions, risk-precedence decisions, and partial evidence boundaries.",
+    }
+
+
 def main() -> None:
     excel_path = os.getenv("AUDIT_EXCEL_PATH", DEFAULT_EXCEL)
     sheet = os.getenv("AUDIT_SHEET", DEFAULT_SHEET)
     out_path = os.getenv("AUDIT_ANALYSIS_JSON_PATH", DEFAULT_OUT)
+    run_metrics_path = os.getenv("RUN_METRICS_XLSX_PATH", DEFAULT_RUN_METRICS)
 
     if not os.path.isfile(excel_path):
         raise SystemExit(f"[ERROR] Excel not found: {excel_path}")
@@ -3196,6 +3250,7 @@ def main() -> None:
     )
 
     treatment_plan = _build_treatment_plan(non, pattern_summary, technical_evidence)
+    adjudication_diagnostics = _load_adjudication_diagnostics(run_metrics_path)
 
     out: Dict[str, Any] = {
         "generated_at_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
@@ -3212,6 +3267,7 @@ def main() -> None:
             },
             "config_json_path": runtime_config["config_path"],
             "technical_artifact_dirs": technical_evidence.get("artifact_dirs", {}),
+            "run_metrics_path": run_metrics_path,
         },
         "app_metadata": app_metadata,
         "actors": actors,
@@ -3227,7 +3283,9 @@ def main() -> None:
             "non_compliant": non_compliant,
             "not_applicable": not_applicable,
             "overall_compliance_pct": overall_compliance_pct,
+            "adjudication_summary": adjudication_diagnostics.get("summary", {}),
         },
+        "adjudication_diagnostics": adjudication_diagnostics,
         "category_metrics": cat_stats,
         "likelihood_rubric": LIKELIHOOD_RUBRIC,
         "positive_controls_candidates": positive_controls[:12],  # cap

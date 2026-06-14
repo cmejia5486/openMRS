@@ -1,0 +1,837 @@
+name: AI Requirements Audit (Excel)
+
+on:
+  workflow_call:
+    secrets:
+      OPENAI_API_KEY:
+        required: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_INPUT: "1"
+  PIP_DEFAULT_TIMEOUT: "120"
+  PIP_RETRIES: "10"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  ai_requirements_excel:
+    name: AI audit -> security_audit_requirements.xlsx
+    runs-on: self-hosted
+    timeout-minutes: 600
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AI_TASK: ai_requirements_excel
+      AI_PROFILE: ${{ vars.AI_PROFILE }}
+      AI_PYTHON_VERSION: ${{ vars.AI_PYTHON_VERSION }}
+      AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure portable runtime paths on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $dataDir = Join-Path $env:RUNNER_TEMP "vision360-data"
+          $bundleDir = Join-Path $env:RUNNER_TEMP "vision360-bundle"
+          $fingerprintPath = Join-Path $dataDir "vision360_fingerprint.json"
+          $requisitesPath = Join-Path $dataDir "requisites.json"
+          $requirementsSourcePath = Join-Path $PWD "scripts\requirements.json"
+          $xlsxPath = Join-Path $dataDir "security_audit_requirements.xlsx"
+          $runMetricsPath = Join-Path $dataDir "run-metrics.xlsx"
+          $promptTelemetryPath = Join-Path $dataDir "prompt-telemetry-ai-requirements.jsonl"
+          $runMetricsPackageDir = Join-Path $dataDir "run-metrics"
+
+          New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
+          New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
+
+          "VISION360_DATA_DIR=$dataDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VISION360_BUNDLE_DIR=$bundleDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VISION360_FINGERPRINT_PATH=$fingerprintPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "REQUISITES_PATH=$requisitesPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "REQUISITES_SOURCE_PATH=$requirementsSourcePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SECURITY_AUDIT_XLSX_PATH=$xlsxPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_XLSX_PATH=$runMetricsPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PROMPT_TELEMETRY_PATH=$promptTelemetryPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+          if (Test-Path $xlsxPath) {
+            Remove-Item -LiteralPath $xlsxPath -Force
+          }
+          if (Test-Path $runMetricsPath) {
+            Remove-Item -LiteralPath $runMetricsPath -Force
+          }
+          if (Test-Path $promptTelemetryPath) {
+            Remove-Item -LiteralPath $promptTelemetryPath -Force
+          }
+          if (Test-Path $runMetricsPackageDir) {
+            Remove-Item -LiteralPath $runMetricsPackageDir -Recurse -Force
+          }
+          New-Item -ItemType Directory -Force -Path $runMetricsPackageDir | Out-Null
+
+          Write-Host "[PATH] VISION360_DATA_DIR=$dataDir"
+          Write-Host "[PATH] VISION360_BUNDLE_DIR=$bundleDir"
+          Write-Host "[PATH] REQUISITES_SOURCE_PATH=$requirementsSourcePath"
+          Write-Host "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsxPath"
+          Write-Host "[PATH] RUN_METRICS_XLSX_PATH=$runMetricsPath"
+          Write-Host "[PATH] PROMPT_TELEMETRY_PATH=$promptTelemetryPath"
+          Write-Host "[PATH] RUN_METRICS_PACKAGE_DIR=$runMetricsPackageDir"
+
+      - name: Configure portable runtime paths on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          data_dir="$RUNNER_TEMP/vision360-data"
+          bundle_dir="$RUNNER_TEMP/vision360-bundle"
+          fingerprint_path="$data_dir/vision360_fingerprint.json"
+          requisites_path="$data_dir/requisites.json"
+          requirements_source_path="$PWD/scripts/requirements.json"
+          xlsx_path="$data_dir/security_audit_requirements.xlsx"
+          run_metrics_path="$data_dir/run-metrics.xlsx"
+          prompt_telemetry_path="$data_dir/prompt-telemetry-ai-requirements.jsonl"
+          run_metrics_package_dir="$data_dir/run-metrics"
+
+          mkdir -p "$data_dir" "$bundle_dir" "$run_metrics_package_dir"
+          rm -f "$xlsx_path" "$run_metrics_path" "$prompt_telemetry_path"
+          rm -rf "$run_metrics_package_dir"
+          mkdir -p "$run_metrics_package_dir"
+
+          {
+            echo "VISION360_DATA_DIR=$data_dir"
+            echo "VISION360_BUNDLE_DIR=$bundle_dir"
+            echo "VISION360_FINGERPRINT_PATH=$fingerprint_path"
+            echo "REQUISITES_PATH=$requisites_path"
+            echo "REQUISITES_SOURCE_PATH=$requirements_source_path"
+            echo "SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
+            echo "RUN_METRICS_XLSX_PATH=$run_metrics_path"
+            echo "PROMPT_TELEMETRY_PATH=$prompt_telemetry_path"
+            echo "RUN_METRICS_PACKAGE_DIR=$run_metrics_package_dir"
+          } >> "$GITHUB_ENV"
+
+          echo "[PATH] VISION360_DATA_DIR=$data_dir"
+          echo "[PATH] VISION360_BUNDLE_DIR=$bundle_dir"
+          echo "[PATH] REQUISITES_SOURCE_PATH=$requirements_source_path"
+          echo "[PATH] SECURITY_AUDIT_XLSX_PATH=$xlsx_path"
+          echo "[PATH] RUN_METRICS_XLSX_PATH=$run_metrics_path"
+          echo "[PATH] PROMPT_TELEMETRY_PATH=$prompt_telemetry_path"
+          echo "[PATH] RUN_METRICS_PACKAGE_DIR=$run_metrics_package_dir"
+
+      - name: Set up shared Python environment on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $versions = @("$env:AI_PYTHON_VERSION", "3.12", "3.11", "3.10") | Where-Object { $_ -and $_.Trim() -ne "" } | Select-Object -Unique
+          $selected = $null
+          foreach ($version in $versions) {
+            Write-Host "[PY] Trying py -$version"
+            & py -$version -c "import sys, venv; print(sys.executable); print(sys.version); print('venv module OK')"
+            if ($LASTEXITCODE -eq 0) {
+              $selected = (& py -$version -c "import sys; print(sys.executable)").Trim().Split("`n")[-1]
+              break
+            }
+          }
+          if (-not $selected) {
+            Write-Host "[PY] Trying python"
+            & python -c "import sys, venv; print(sys.executable); print(sys.version); print('venv module OK')"
+            if ($LASTEXITCODE -eq 0) { $selected = (& python -c "import sys; print(sys.executable)").Trim().Split("`n")[-1] }
+          }
+          if (-not $selected) { throw "No usable Python interpreter was found." }
+
+          $pyKey = (& $selected -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')").Trim()
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($pyKey)) { throw "Could not determine Python version key." }
+          Write-Host "[PY] Selected Python: $selected"
+          Write-Host "[PY] Python cache key: $pyKey"
+
+          $requirementsList = @(
+            "openai==1.109.1",
+            "litellm==1.80.0",
+            "pydantic>=2.7.0",
+            "openpyxl>=3.1.0",
+            "pandas",
+            "python-docx",
+            "matplotlib",
+            "requests",
+            "pyyaml",
+            "jsonschema",
+            "reportlab>=4.0.0"
+          )
+          $requirements = $requirementsList -join "`n"
+
+          $venvRoot = "C:\mosfScan\venvs"
+          New-Item -ItemType Directory -Force -Path $venvRoot | Out-Null
+          $venv = Join-Path $venvRoot "security-audit-py$pyKey"
+          $pythonExe = Join-Path $venv "Scripts\python.exe"
+          $hashPath = Join-Path $venv ".requirements.hash"
+          $reqFile = Join-Path $venvRoot "security-audit-requirements-py$pyKey.txt"
+          $lockDir = Join-Path $venvRoot "security-audit-py$pyKey.lock"
+
+          $manifest = "python=$pyKey`n$requirements`n"
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes($manifest)
+          $currentHash = ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") }) -join ""
+
+          $lockAcquired = $false
+          for ($i = 1; $i -le 120; $i++) {
+            try {
+              New-Item -ItemType Directory -Path $lockDir -ErrorAction Stop | Out-Null
+              $lockAcquired = $true
+              break
+            } catch {
+              Write-Host "[PY] Waiting for shared venv lock: $lockDir"
+              Start-Sleep -Seconds 5
+            }
+          }
+          if (-not $lockAcquired) { throw "Timed out waiting for shared Python environment lock: $lockDir" }
+
+          try {
+            $needsRebuild = $true
+            if ((Test-Path $pythonExe) -and (Test-Path $hashPath)) {
+              $existingHash = (Get-Content -LiteralPath $hashPath -Raw).Trim()
+              if ($existingHash -eq $currentHash) {
+                $needsRebuild = $false
+                Write-Host "[PY] Reusing shared Python environment: $venv"
+              }
+            }
+
+            if (-not $needsRebuild) {
+              & $pythonExe -m pip check
+              if ($LASTEXITCODE -ne 0) {
+                Write-Host "[PY] Existing shared environment failed pip check. Rebuilding."
+                $needsRebuild = $true
+              }
+            }
+
+            if ($needsRebuild) {
+              Write-Host "[PY] Building shared Python environment: $venv"
+              if (Test-Path $venv) { Remove-Item -Recurse -Force $venv }
+              & $selected -m venv $venv
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              if (-not (Test-Path $pythonExe)) { throw "Virtualenv Python not found at $pythonExe" }
+              Set-Content -LiteralPath $reqFile -Value $requirements -Encoding UTF8
+              & $pythonExe -m pip install --upgrade pip
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $pythonExe -m pip install --retries 10 --timeout 720 --prefer-binary -r $reqFile
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $pythonExe -m pip check
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              Set-Content -LiteralPath $hashPath -Value $currentHash -Encoding UTF8
+              Write-Host "[PY] Shared Python environment ready: $venv"
+            }
+          } finally {
+            if (Test-Path $lockDir) { Remove-Item -Recurse -Force $lockDir -ErrorAction SilentlyContinue }
+          }
+
+          "PYTHON_EXE=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "AI_VENV_DIR=$venv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "[PY] Using Python: $pythonExe"
+
+      - name: Set up shared Python environment on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python_version="${AI_PYTHON_VERSION:-}"
+          selected=""
+          if [ -n "$python_version" ] && command -v "python$python_version" >/dev/null 2>&1; then
+            selected="python$python_version"
+          elif command -v python3 >/dev/null 2>&1; then
+            selected="python3"
+          elif command -v python >/dev/null 2>&1; then
+            selected="python"
+          else
+            echo "No usable Python interpreter was found."
+            exit 1
+          fi
+
+          "$selected" -c "import sys, venv; print(sys.executable); print(sys.version); print('venv module OK')"
+          py_key="$("$selected" -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
+          echo "[PY] Selected Python: $selected"
+          echo "[PY] Python cache key: $py_key"
+
+          requirements="$(printf '%s\n' \
+            "openai==1.109.1" \
+            "litellm==1.80.0" \
+            "pydantic>=2.7.0" \
+            "openpyxl>=3.1.0" \
+            "pandas" \
+            "python-docx" \
+            "matplotlib" \
+            "requests" \
+            "pyyaml" \
+            "jsonschema" \
+            "reportlab>=4.0.0" \
+          )"
+
+          venv_root="${SECURITY_AUDIT_VENV_ROOT:-$HOME/.cache/security-audit-venvs}"
+          mkdir -p "$venv_root"
+          venv_dir="$venv_root/security-audit-py$py_key"
+          python_exe="$venv_dir/bin/python"
+          hash_path="$venv_dir/.requirements.hash"
+          req_file="$venv_root/security-audit-requirements-py$py_key.txt"
+          lock_dir="$venv_root/security-audit-py$py_key.lock"
+          current_hash="$(printf 'python=%s\n%s\n' "$py_key" "$requirements" | sha256sum | awk '{print $1}')"
+
+          lock_acquired="false"
+          for attempt in $(seq 1 120); do
+            if mkdir "$lock_dir" 2>/dev/null; then
+              lock_acquired="true"
+              break
+            fi
+            echo "[PY] Waiting for shared venv lock: $lock_dir"
+            sleep 5
+          done
+          if [ "$lock_acquired" != "true" ]; then
+            echo "Timed out waiting for shared Python environment lock: $lock_dir"
+            exit 1
+          fi
+
+          cleanup_lock() {
+            rmdir "$lock_dir" 2>/dev/null || true
+          }
+          trap cleanup_lock EXIT
+
+          needs_rebuild="true"
+          if [ -x "$python_exe" ] && [ -f "$hash_path" ] && [ "$(cat "$hash_path" | tr -d '\r\n')" = "$current_hash" ]; then
+            needs_rebuild="false"
+            echo "[PY] Reusing shared Python environment: $venv_dir"
+          fi
+
+          if [ "$needs_rebuild" = "false" ]; then
+            if ! "$python_exe" -m pip check; then
+              echo "[PY] Existing shared environment failed pip check. Rebuilding."
+              needs_rebuild="true"
+            fi
+          fi
+
+          if [ "$needs_rebuild" = "true" ]; then
+            echo "[PY] Building shared Python environment: $venv_dir"
+            rm -rf "$venv_dir"
+            "$selected" -m venv "$venv_dir"
+            if [ ! -x "$python_exe" ]; then
+              echo "Virtual environment Python executable was not created: $python_exe"
+              exit 1
+            fi
+            printf '%s\n' "$requirements" > "$req_file"
+            "$python_exe" -m pip install --upgrade pip
+            "$python_exe" -m pip install --retries 10 --timeout 720 --prefer-binary -r "$req_file"
+            "$python_exe" -m pip check
+            printf '%s\n' "$current_hash" > "$hash_path"
+            echo "[PY] Shared Python environment ready: $venv_dir"
+          fi
+
+          "$python_exe" --version
+          "$python_exe" -c "import sys; print(sys.executable)"
+          echo "PYTHON_EXE=$python_exe" >> "$GITHUB_ENV"
+          echo "AI_VENV_DIR=$venv_dir" >> "$GITHUB_ENV"
+
+      - name: Verify AI imports on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (Test-Path "scripts/openai") {
+            throw "Local package scripts/openai shadows the real OpenAI SDK. Remove scripts/openai to use provider-based AIRuntime correctly."
+          }
+
+          $py = @'
+          import sys
+          import importlib.util
+          import openai
+          import litellm
+
+          print("python:", sys.executable)
+          print("openai version:", getattr(openai, "__version__", "unknown"))
+          print("openai file:", getattr(openai, "__file__", "unknown"))
+          print("openai._models spec:", importlib.util.find_spec("openai._models"))
+          print("litellm version:", getattr(litellm, "__version__", "unknown"))
+          print("litellm file:", getattr(litellm, "__file__", "unknown"))
+
+          if importlib.util.find_spec("openai._models") is None:
+              raise SystemExit("openai._models is not importable in this venv")
+          '@
+
+          $py | & $env:PYTHON_EXE -
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Verify AI imports on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          set -euo pipefail
+
+          if [ -d "scripts/openai" ]; then
+            echo "Local package scripts/openai shadows the real OpenAI SDK. Remove scripts/openai to use provider-based AIRuntime correctly."
+            exit 1
+          fi
+
+          "$PYTHON_EXE" - <<'PY'
+          import sys
+          import importlib.util
+          import openai
+          import litellm
+
+          print("python:", sys.executable)
+          print("openai version:", getattr(openai, "__version__", "unknown"))
+          print("openai file:", getattr(openai, "__file__", "unknown"))
+          print("openai._models spec:", importlib.util.find_spec("openai._models"))
+          print("litellm version:", getattr(litellm, "__version__", "unknown"))
+          print("litellm file:", getattr(litellm, "__file__", "unknown"))
+
+          if importlib.util.find_spec("openai._models") is None:
+              raise SystemExit("openai._models is not importable in this venv")
+          PY
+
+      - name: Resolve AI config on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $env:PYTHONPATH = Join-Path $PWD "scripts"
+
+          $py = @'
+          import json
+          import os
+          from pathlib import Path
+          from lib.ai_config import resolve_config, resolved_api_base, resolved_api_key, resolved_api_version, resolved_litellm_model
+
+          task = os.environ.get("AI_TASK", "").strip()
+          cfg = resolve_config(task_name=task or None)
+          exports = {
+              "AI_TASK": task,
+              "AI_PROFILE": str(cfg.get("resolved_profile") or ""),
+              "AI_PROVIDER": str(cfg.get("provider") or "openai"),
+              "AI_MODEL": str(cfg.get("model") or ""),
+              "AI_LITELLM_MODEL": resolved_litellm_model(cfg),
+              "AI_API_BASE": resolved_api_base(cfg),
+              "AI_API_VERSION": resolved_api_version(cfg),
+              "AI_API_KEY_ENV_VAR": str(cfg.get("api_key_env_var") or "OPENAI_API_KEY"),
+              "AI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "AI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "AI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "AI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "OPENAI_MODEL": str(cfg.get("model") or ""),
+              "OPENAI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "OPENAI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "OPENAI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "OPENAI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "AI_KEY_PRESENT": "1" if resolved_api_key(cfg) else "0",
+          }
+
+          env_path = Path(os.environ["GITHUB_ENV"])
+          with env_path.open("a", encoding="utf-8") as fh:
+              for key, value in exports.items():
+                  fh.write(f"{key}={value}\n")
+          print(json.dumps(exports, indent=2, ensure_ascii=False))
+          '@
+
+          $py | & $env:PYTHON_EXE -
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Resolve AI config on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          set -euo pipefail
+
+          PYTHONPATH="$PWD/scripts" "$PYTHON_EXE" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from lib.ai_config import resolve_config, resolved_api_base, resolved_api_key, resolved_api_version, resolved_litellm_model
+
+          task = os.environ.get("AI_TASK", "").strip()
+          cfg = resolve_config(task_name=task or None)
+          exports = {
+              "AI_TASK": task,
+              "AI_PROFILE": str(cfg.get("resolved_profile") or ""),
+              "AI_PROVIDER": str(cfg.get("provider") or "openai"),
+              "AI_MODEL": str(cfg.get("model") or ""),
+              "AI_LITELLM_MODEL": resolved_litellm_model(cfg),
+              "AI_API_BASE": resolved_api_base(cfg),
+              "AI_API_VERSION": resolved_api_version(cfg),
+              "AI_API_KEY_ENV_VAR": str(cfg.get("api_key_env_var") or "OPENAI_API_KEY"),
+              "AI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "AI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "AI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "AI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "OPENAI_MODEL": str(cfg.get("model") or ""),
+              "OPENAI_REASONING_EFFORT": str(cfg.get("reasoning_effort") or ""),
+              "OPENAI_MAX_OUTPUT_TOKENS": str(cfg.get("max_output_tokens") or ""),
+              "OPENAI_BATCH_SIZE": str(cfg.get("batch_size") or ""),
+              "OPENAI_TIMEOUT_S": str(cfg.get("timeout_s") or ""),
+              "AI_KEY_PRESENT": "1" if resolved_api_key(cfg) else "0",
+          }
+
+          env_path = Path(os.environ["GITHUB_ENV"])
+          with env_path.open("a", encoding="utf-8") as fh:
+              for key, value in exports.items():
+                  fh.write(f"{key}={value}\n")
+          print(json.dumps(exports, indent=2, ensure_ascii=False))
+          PY
+
+      - name: Verify AI runtime route on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          Write-Host "AI_PROFILE=$env:AI_PROFILE"
+          Write-Host "AI_PROVIDER=$env:AI_PROVIDER"
+          Write-Host "AI_MODEL=$env:AI_MODEL"
+          Write-Host "AI_API_BASE=$env:AI_API_BASE"
+          Write-Host "AI_BATCH_SIZE=$env:AI_BATCH_SIZE"
+          Write-Host "AI_MAX_OUTPUT_TOKENS=$env:AI_MAX_OUTPUT_TOKENS"
+          Write-Host "AI_TIMEOUT_S=$env:AI_TIMEOUT_S"
+          Write-Host "AI_KEY_PRESENT=$env:AI_KEY_PRESENT"
+          Write-Host "VISION360_DATA_DIR=$env:VISION360_DATA_DIR"
+          Write-Host "REQUISITES_SOURCE_PATH=$env:REQUISITES_SOURCE_PATH"
+          Write-Host "SECURITY_AUDIT_XLSX_PATH=$env:SECURITY_AUDIT_XLSX_PATH"
+
+          if ([string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
+            throw "OPENAI_API_KEY is empty."
+          }
+
+          $env:PYTHONPATH = Join-Path $PWD "scripts"
+          $py = @'
+          from lib.ai_runtime import AIRuntime, OpenAI, completion
+          rt = AIRuntime(task="ai_requirements_excel")
+          print("provider:", rt.provider)
+          print("model:", rt.model)
+          print("litellm_model:", rt.litellm_model)
+          print("api_base:", rt.api_base)
+          print("OpenAI available:", OpenAI is not None)
+          print("LiteLLM completion available:", completion is not None)
+          print("uses direct OpenAI:", rt._use_direct_openai())
+          if rt.provider == "openai_compatible" and not rt._use_direct_openai():
+              raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
+          '@
+          $py | & $env:PYTHON_EXE -
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Verify AI runtime route on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          set -euo pipefail
+
+          echo "AI_PROFILE=${AI_PROFILE:-}"
+          echo "AI_PROVIDER=${AI_PROVIDER:-}"
+          echo "AI_MODEL=${AI_MODEL:-}"
+          echo "AI_API_BASE=${AI_API_BASE:-}"
+          echo "AI_BATCH_SIZE=${AI_BATCH_SIZE:-}"
+          echo "AI_MAX_OUTPUT_TOKENS=${AI_MAX_OUTPUT_TOKENS:-}"
+          echo "AI_TIMEOUT_S=${AI_TIMEOUT_S:-}"
+          echo "AI_KEY_PRESENT=${AI_KEY_PRESENT:-}"
+          echo "VISION360_DATA_DIR=${VISION360_DATA_DIR:-}"
+          echo "REQUISITES_SOURCE_PATH=${REQUISITES_SOURCE_PATH:-}"
+          echo "SECURITY_AUDIT_XLSX_PATH=${SECURITY_AUDIT_XLSX_PATH:-}"
+
+          if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "OPENAI_API_KEY is empty."
+            exit 1
+          fi
+
+          PYTHONPATH="$PWD/scripts" "$PYTHON_EXE" - <<'PY'
+          from lib.ai_runtime import AIRuntime, OpenAI, completion
+          rt = AIRuntime(task="ai_requirements_excel")
+          print("provider:", rt.provider)
+          print("model:", rt.model)
+          print("litellm_model:", rt.litellm_model)
+          print("api_base:", rt.api_base)
+          print("OpenAI available:", OpenAI is not None)
+          print("LiteLLM completion available:", completion is not None)
+          print("uses direct OpenAI:", rt._use_direct_openai())
+          if rt.provider == "openai_compatible" and not rt._use_direct_openai():
+              raise SystemExit("openai_compatible provider must use direct OpenAI SDK route")
+          PY
+
+      - name: Validate prompt registry on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          & $env:PYTHON_EXE scripts/validate_prompt_registry.py --repo-root . --strict
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate prompt registry on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$PYTHON_EXE" scripts/validate_prompt_registry.py --repo-root . --strict
+
+      - name: Download VISION360 bundle artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: vision360-bundle
+          path: ${{ runner.temp }}/vision360-bundle
+
+      - name: Ensure inputs at portable paths on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $py = @'
+          import json
+          import os
+          import shutil
+          import sys
+          import zipfile
+          from pathlib import Path
+
+          src = Path(os.environ["REQUISITES_SOURCE_PATH"])
+          if not src.is_file():
+              raise SystemExit(f"scripts/requirements.json not found at {src}")
+
+          requisites_path = Path(os.environ["REQUISITES_PATH"])
+          requisites_path.parent.mkdir(parents=True, exist_ok=True)
+
+          raw = src.read_text(encoding="utf-8", errors="replace")
+          s = raw.lstrip()
+          if not s.strip():
+              data = []
+          else:
+              if s.startswith("{{"):
+                  raw = raw.replace("{{", "{", 1)
+              data = json.loads(raw)
+
+          if isinstance(data, dict) and isinstance(data.get("requirements"), list):
+              data = data["requirements"]
+
+          if not isinstance(data, list):
+              print("scripts/requirements.json must be a JSON array or an object with a requirements array.", file=sys.stderr)
+              raise SystemExit(1)
+
+          requisites_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+          bundle_dir = Path(os.environ["VISION360_BUNDLE_DIR"])
+          data_dir = Path(os.environ["VISION360_DATA_DIR"])
+          fingerprint_path = Path(os.environ["VISION360_FINGERPRINT_PATH"])
+          fingerprint_path.parent.mkdir(parents=True, exist_ok=True)
+
+          direct_fingerprint = bundle_dir / "vision360_fingerprint.json"
+          bundle_zip = bundle_dir / "vision360_bundle.zip"
+
+          if direct_fingerprint.is_file():
+              shutil.copy2(direct_fingerprint, fingerprint_path)
+          elif bundle_zip.is_file():
+              with zipfile.ZipFile(bundle_zip) as zf:
+                  zf.extractall(data_dir)
+          else:
+              raise SystemExit("vision360_fingerprint.json or vision360_bundle.zip not found in vision360-bundle.")
+
+          if not fingerprint_path.is_file():
+              extracted = data_dir / "vision360_fingerprint.json"
+              if extracted.is_file():
+                  shutil.copy2(extracted, fingerprint_path)
+
+          if not fingerprint_path.is_file():
+              raise SystemExit(f"vision360_fingerprint.json was not prepared at {fingerprint_path}")
+
+          print(f"[OK] requirements source -> {src}")
+          print(f"[OK] requisites runtime copy -> {requisites_path}")
+          print(f"[OK] fingerprint -> {fingerprint_path}")
+          '@
+
+          $py | & $env:PYTHON_EXE -
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Ensure inputs at portable paths on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          PYTHONNOUSERSITE: "1"
+        run: |
+          set -euo pipefail
+
+          "$PYTHON_EXE" - <<'PY'
+          import json
+          import os
+          import shutil
+          import sys
+          import zipfile
+          from pathlib import Path
+
+          src = Path(os.environ["REQUISITES_SOURCE_PATH"])
+          if not src.is_file():
+              raise SystemExit(f"scripts/requirements.json not found at {src}")
+
+          requisites_path = Path(os.environ["REQUISITES_PATH"])
+          requisites_path.parent.mkdir(parents=True, exist_ok=True)
+
+          raw = src.read_text(encoding="utf-8", errors="replace")
+          s = raw.lstrip()
+          if not s.strip():
+              data = []
+          else:
+              if s.startswith("{{"):
+                  raw = raw.replace("{{", "{", 1)
+              data = json.loads(raw)
+
+          if isinstance(data, dict) and isinstance(data.get("requirements"), list):
+              data = data["requirements"]
+
+          if not isinstance(data, list):
+              print("scripts/requirements.json must be a JSON array or an object with a requirements array.", file=sys.stderr)
+              raise SystemExit(1)
+
+          requisites_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+          bundle_dir = Path(os.environ["VISION360_BUNDLE_DIR"])
+          data_dir = Path(os.environ["VISION360_DATA_DIR"])
+          fingerprint_path = Path(os.environ["VISION360_FINGERPRINT_PATH"])
+          fingerprint_path.parent.mkdir(parents=True, exist_ok=True)
+
+          direct_fingerprint = bundle_dir / "vision360_fingerprint.json"
+          bundle_zip = bundle_dir / "vision360_bundle.zip"
+
+          if direct_fingerprint.is_file():
+              shutil.copy2(direct_fingerprint, fingerprint_path)
+          elif bundle_zip.is_file():
+              with zipfile.ZipFile(bundle_zip) as zf:
+                  zf.extractall(data_dir)
+          else:
+              raise SystemExit("vision360_fingerprint.json or vision360_bundle.zip not found in vision360-bundle.")
+
+          if not fingerprint_path.is_file():
+              extracted = data_dir / "vision360_fingerprint.json"
+              if extracted.is_file():
+                  shutil.copy2(extracted, fingerprint_path)
+
+          if not fingerprint_path.is_file():
+              raise SystemExit(f"vision360_fingerprint.json was not prepared at {fingerprint_path}")
+
+          print(f"[OK] requirements source -> {src}")
+          print(f"[OK] requisites runtime copy -> {requisites_path}")
+          print(f"[OK] fingerprint -> {fingerprint_path}")
+          PY
+
+      - name: Run AI audit on Windows
+        if: runner.os == 'Windows'
+        env:
+          USE_OPENAI_JUSTIFICATIONS: "1"
+          STRICT_ENGLISH_OUTPUT: "1"
+          PYTHONNOUSERSITE: "1"
+          PYTHONUNBUFFERED: "1"
+          AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          & $env:PYTHON_EXE scripts/ai_security_audit_requirements_excel.py
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          if (-not (Test-Path $env:SECURITY_AUDIT_XLSX_PATH)) {
+            throw "security_audit_requirements.xlsx was not created at $env:SECURITY_AUDIT_XLSX_PATH"
+          }
+          if (-not (Test-Path $env:RUN_METRICS_XLSX_PATH)) {
+            throw "run-metrics.xlsx was not created at $env:RUN_METRICS_XLSX_PATH"
+          }
+
+      - name: Run AI audit on Unix
+        if: runner.os != 'Windows'
+        env:
+          USE_OPENAI_JUSTIFICATIONS: "1"
+          STRICT_ENGLISH_OUTPUT: "1"
+          PYTHONNOUSERSITE: "1"
+          PYTHONUNBUFFERED: "1"
+          AI_RUNTIME_DEBUG: ${{ vars.AI_RUNTIME_DEBUG }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          "$PYTHON_EXE" scripts/ai_security_audit_requirements_excel.py
+          test -f "$SECURITY_AUDIT_XLSX_PATH"
+          test -f "$RUN_METRICS_XLSX_PATH"
+
+      - name: Build run metrics package on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          & $env:PYTHON_EXE scripts/build_run_metrics_package.py `
+            --raw-metrics $env:RUN_METRICS_XLSX_PATH `
+            --out-dir $env:RUN_METRICS_PACKAGE_DIR `
+            --prompt-telemetry $env:PROMPT_TELEMETRY_PATH `
+            --vision360-bundle $env:VISION360_BUNDLE_DIR
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics.xlsx"))) {
+            throw "run-metrics.xlsx was not prepared in $env:RUN_METRICS_PACKAGE_DIR"
+          }
+          if (-not (Test-Path (Join-Path $env:RUN_METRICS_PACKAGE_DIR "run-metrics-methodology.pdf"))) {
+            throw "run-metrics-methodology.pdf was not prepared in $env:RUN_METRICS_PACKAGE_DIR"
+          }
+
+      - name: Build run metrics package on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          "$PYTHON_EXE" scripts/build_run_metrics_package.py \
+            --raw-metrics "$RUN_METRICS_XLSX_PATH" \
+            --out-dir "$RUN_METRICS_PACKAGE_DIR" \
+            --prompt-telemetry "$PROMPT_TELEMETRY_PATH" \
+            --vision360-bundle "$VISION360_BUNDLE_DIR"
+          test -f "$RUN_METRICS_PACKAGE_DIR/run-metrics.xlsx"
+          test -f "$RUN_METRICS_PACKAGE_DIR/run-metrics-methodology.pdf"
+
+      - name: Upload Excel output
+        uses: actions/upload-artifact@v6
+        with:
+          name: security-audit-excel
+          if-no-files-found: error
+          path: ${{ runner.temp }}/vision360-data/security_audit_requirements.xlsx
+
+      - name: Upload run metrics package
+        uses: actions/upload-artifact@v6
+        with:
+          name: run-metrics
+          if-no-files-found: error
+          path: ${{ runner.temp }}/vision360-data/run-metrics/**

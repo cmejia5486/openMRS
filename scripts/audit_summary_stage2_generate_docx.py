@@ -3918,6 +3918,7 @@ def main() -> None:
     likelihood_rubric = pack.get("likelihood_rubric", {})
     technical = _technical_evidence(pack)
     treatment_plan = _treatment_plan(pack)
+    adjudication_diagnostics = _as_dict(pack.get("adjudication_diagnostics"))
     report_title = _app_report_title(app)
 
     audit_dt = datetime.now(timezone.utc).date()
@@ -4272,6 +4273,30 @@ def main() -> None:
     doc.add_page_break()
     add_nav_heading("Appendix H - Software Composition Analysis inventory", 1)
     _render_sca_inventory_appendix(doc, technical)
+
+    if adjudication_diagnostics.get("available"):
+        doc.add_page_break()
+        add_nav_heading("Appendix I - Evidence adjudication diagnostics", 1)
+        _add_body_paragraph(doc, "This appendix reports deterministic adjudication diagnostics copied from run-metrics. These counters do not change audit results; they document contradictory mapped signals, risk-precedence decisions, and partial or unknown evidence boundaries.")
+        adj_summary = _as_dict(adjudication_diagnostics.get("summary"))
+        if adj_summary:
+            _add_table_caption(doc, "Adjudication diagnostic summary")
+            _add_table(doc, ["Metric", "Value"], [[k, v] for k, v in adj_summary.items()], max_rows=30)
+        req_rows = [r for r in _as_list(adjudication_diagnostics.get("by_requirement_sample")) if isinstance(r, dict)]
+        if req_rows:
+            _add_table_caption(doc, "Requirement-level adjudication diagnostics sample")
+            _add_table(doc, ["PUID", "Result", "Basis", "Contradictory", "Risk precedence", "Partial evidence", "Contradict flags"], [
+                [
+                    r.get("puid", ""),
+                    r.get("result", ""),
+                    r.get("decision_basis", ""),
+                    r.get("contradictory_requirement", ""),
+                    r.get("risk_precedence_applied", ""),
+                    r.get("partial_evidence", ""),
+                    r.get("contradict_flag_ids", ""),
+                ]
+                for r in req_rows[:40]
+            ], max_rows=40)
 
     _render_clickable_toc(toc_placeholder, toc_entries)
     _enable_update_fields_on_open(doc)

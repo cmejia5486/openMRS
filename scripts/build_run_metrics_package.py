@@ -351,6 +351,65 @@ METRIC_DEFINITIONS = [
 for _metric_def in METRIC_DEFINITIONS:
     _metric_def.setdefault("numeric_decision_rule", _metric_decision_rule(_metric_def.get("metric")))
 
+
+METRIC_DEFINITIONS.extend([
+    {
+        "metric": "contradictory_requirement_count",
+        "plain_language_question": "How many requirements had at least one mapped signal contradicting the expected secure posture?",
+        "purpose": "Documents evidence conflicts handled by deterministic adjudication.",
+        "formula": "COUNTROWS(adjudication_by_requirement where contradictory_requirement=true)",
+        "numerator": "Requirements with at least one contradictory non-applicability flag",
+        "denominator": "Not applicable",
+        "source_sheet": "adjudication_by_requirement and adjudication_summary",
+        "interpretation": "A contradiction does not indicate workflow failure; it indicates that risk evidence was present and must be handled conservatively.",
+        "numeric_decision_rule": "Tracked for transparency. Any value > 0 should be reviewable through adjudication_by_requirement and adjudication_by_flag.",
+        "single_run": "yes",
+        "stability_analysis": "yes",
+    },
+    {
+        "metric": "contradictory_flag_reference_count",
+        "plain_language_question": "How many mapped flag references contradicted the expected posture?",
+        "purpose": "Counts contradictory flag-level evidence references across all requirements.",
+        "formula": "COUNTROWS(adjudication_by_flag where outcome=CONTRADICT)",
+        "numerator": "Contradictory flag references",
+        "denominator": "All adjudicated flag references",
+        "source_sheet": "adjudication_by_flag and adjudication_summary",
+        "interpretation": "Used to explain how frequently risk signals overrode positive or inconclusive signals.",
+        "numeric_decision_rule": "Tracked for transparency and cross-run stability; inspect affected PUIDs when non-zero.",
+        "single_run": "yes",
+        "stability_analysis": "yes",
+    },
+    {
+        "metric": "risk_precedence_count",
+        "plain_language_question": "How many requirement decisions applied the conservative risk-precedence rule?",
+        "purpose": "Shows when a non-compliant result was caused by mapped risk evidence.",
+        "formula": "COUNTROWS(adjudication_by_requirement where risk_precedence_applied=true)",
+        "numerator": "Requirements resolved by risk precedence",
+        "denominator": "Not applicable",
+        "source_sheet": "adjudication_by_requirement and adjudication_summary",
+        "interpretation": "When risk precedence is applied, positive or absent evidence from other sources does not neutralize the mapped risk signal.",
+        "numeric_decision_rule": "Tracked for auditability. Stability across repeated runs should be assessed.",
+        "single_run": "yes",
+        "stability_analysis": "yes",
+    },
+    {
+        "metric": "partial_evidence_requirement_count",
+        "plain_language_question": "How many requirements had partial, missing, or unknown evidence without a direct contradiction?",
+        "purpose": "Documents non-conclusive evidence boundaries.",
+        "formula": "COUNTROWS(adjudication_by_requirement where partial_evidence=true)",
+        "numerator": "Requirements with partial or unknown evidence",
+        "denominator": "Not applicable",
+        "source_sheet": "adjudication_by_requirement and adjudication_summary",
+        "interpretation": "These cases should not be reported as compliant unless additional evidence is collected.",
+        "numeric_decision_rule": "Tracked for transparency. High counts indicate evidence gaps or need for manual review.",
+        "single_run": "yes",
+        "stability_analysis": "yes",
+    },
+])
+
+for _metric_def in METRIC_DEFINITIONS:
+    _metric_def.setdefault("numeric_decision_rule", _metric_decision_rule(_metric_def.get("metric")))
+
 PACKAGE_COMPONENTS = [
     {
         "component": "run-metrics.xlsx",
@@ -554,6 +613,9 @@ def _compute_base_metrics(wb: Any) -> Dict[str, Any]:
     compliance = _read_rows(wb, "compliance_export") or _read_rows(wb, "Appendix_Requirement_Rows")
     llm_calls = _read_rows(wb, "llm_calls") or _read_rows(wb, "Appendix_LLM_Calls")
     llm_items = _read_rows(wb, "llm_items") or _read_rows(wb, "Appendix_LLM_Items")
+    adjudication_summary = _read_kv(wb, "adjudication_summary") or _read_kv(wb, "Adjudication_Summary")
+    adjudication_by_requirement = _read_rows(wb, "adjudication_by_requirement") or _read_rows(wb, "Adjudication_By_Requirement")
+    adjudication_by_flag = _read_rows(wb, "adjudication_by_flag") or _read_rows(wb, "Adjudication_By_Flag")
     counts = Counter(_result_value(r) for r in compliance if _result_value(r))
     num_requirements = len(compliance) or _safe_int(summary.get("num_requirements"), 0)
     json_valid_count = sum(1 for r in llm_calls if _to_bool(r.get("json_valid")))
@@ -575,11 +637,25 @@ def _compute_base_metrics(wb: Any) -> Dict[str, Any]:
         if puid:
             row_hashes.append((puid, rh))
     compliance_matrix_hash = summary.get("compliance_matrix_hash") or _stable_hash(row_hashes)
+    if not adjudication_summary and adjudication_by_requirement:
+        adjudication_summary = {
+            "adjudicated_requirement_count": len(adjudication_by_requirement),
+            "adjudicated_flag_reference_count": len(adjudication_by_flag),
+            "contradictory_requirement_count": sum(1 for r in adjudication_by_requirement if _to_bool(r.get("contradictory_requirement"))),
+            "contradictory_flag_reference_count": sum(1 for r in adjudication_by_flag if str(r.get("outcome") or "") == "CONTRADICT"),
+            "risk_precedence_count": sum(1 for r in adjudication_by_requirement if _to_bool(r.get("risk_precedence_applied"))),
+            "partial_evidence_requirement_count": sum(1 for r in adjudication_by_requirement if _to_bool(r.get("partial_evidence"))),
+            "unknown_flag_reference_count": sum(1 for r in adjudication_by_flag if str(r.get("outcome") or "") == "UNKNOWN"),
+            "missing_flag_reference_count": sum(1 for r in adjudication_by_flag if str(r.get("outcome") or "") == "MISSING"),
+        }
     return {
         "summary": summary,
         "compliance": compliance,
         "llm_calls": llm_calls,
         "llm_items": llm_items,
+        "adjudication_summary": adjudication_summary,
+        "adjudication_by_requirement": adjudication_by_requirement,
+        "adjudication_by_flag": adjudication_by_flag,
         "num_requirements": num_requirements,
         "counts": {"yes": counts.get("yes", 0), "no": counts.get("no", 0), "n/a": counts.get("n/a", counts.get("na", 0))},
         "num_llm_calls": len(llm_calls),
@@ -1013,7 +1089,7 @@ def _write_kv(wb: Any, name: str, rows: List[Tuple[str, Any]]) -> None:
 
 def _style_workbook(wb: Any) -> None:
     order = [
-        "user_guide", "metric_definitions", "run_summary", "package_contents", "input_evidence", "prompt_contracts", "prompt_control_breakdown", "prompt_run_results", "llm_validation_summary", "stability_readiness", "Appendix_Requirement_Rows", "Appendix_LLM_Calls", "Appendix_LLM_Items", "Appendix_Prompt_Calls", "Appendix_Discovery", "Appendix_Package_Manifest"
+        "user_guide", "metric_definitions", "run_summary", "adjudication_summary", "adjudication_by_requirement", "adjudication_by_flag", "package_contents", "input_evidence", "prompt_contracts", "prompt_control_breakdown", "prompt_run_results", "llm_validation_summary", "stability_readiness", "Appendix_Requirement_Rows", "Appendix_LLM_Calls", "Appendix_LLM_Items", "Appendix_Prompt_Calls", "Appendix_Discovery", "Appendix_Package_Manifest"
     ]
     for idx, name in enumerate(reversed(order)):
         if name in wb.sheetnames:
@@ -1113,7 +1189,7 @@ def _write_manifest_json(path: Path, out_dir: Path, summary: Dict[str, Any], fil
 def _build_user_guide() -> List[Tuple[str, Any]]:
     return [
         ("what_this_workbook_is", "This workbook documents one audit execution. It explains the run, the inputs, the LLM prompt contracts, how outputs were controlled and validated, and which data can later be aggregated across repeated executions."),
-        ("recommended_reading_order", "Read user_guide first, then metric_definitions, run_summary, input_evidence, prompt_contracts, prompt_control_breakdown, prompt_run_results, llm_validation_summary, and stability_readiness. Appendix sheets preserve raw evidence."),
+        ("recommended_reading_order", "Read user_guide first, then metric_definitions, run_summary, adjudication_summary, adjudication_by_requirement, adjudication_by_flag, input_evidence, prompt_contracts, prompt_control_breakdown, prompt_run_results, llm_validation_summary, and stability_readiness. Appendix sheets preserve raw evidence."),
         ("appendix_policy", "Appendix sheets are technical backup. They are not the starting point for interpretation, but they allow reconstruction of requirement rows, LLM calls, item-level validation, prompt calls, discovery warnings and file hashes."),
         ("what_the_llm_can_do", "The LLM can generate controlled text such as justifications, narratives, pattern writeups and treatment-plan wording from supplied evidence."),
         ("what_the_llm_cannot_do", "The LLM does not compute or change yes/no/n/a compliance results, does not decide flags and must not invent evidence, scanner findings, files, CVEs, packages or versions."),
@@ -1229,7 +1305,7 @@ def _generate_pdf(path: Path, metrics: Dict[str, Any], rows: Dict[str, List[Dict
     b.h1("1. How to read this package")
     b.para("The package documents one audit execution. It is not an alternative audit engine. The compliance results yes, no and n/a are computed by the audit workflow and recorded here. LLM metrics document controlled text generation, JSON/schema validation, traceability checks, retries, repairs and fallback. They do not grant the LLM authority to change deterministic compliance outcomes.")
     b.table("Run Metrics package contents", ["Component", "Type", "Purpose"], [[r["component"], r["type"], r["purpose"]] for r in rows["package_contents"]], widths=[0.28,0.18,0.54], max_rows=10)
-    b.table("Visible workbook reading order", ["Sheet", "What the user should learn"], [["user_guide", "How to read the workbook and which sheets are primary or Appendix."], ["metric_definitions", "Plain-language definition, formula and interpretation for each metric."], ["run_summary", "Current execution identity, counts and hashes."], ["input_evidence", "Inputs, generated outputs, telemetry and package components with hashes."], ["prompt_contracts", "Prompt IDs, exact prompt transcripts, required schemas and validation mechanisms."], ["prompt_control_breakdown", "Each control clause mapped to a validation mechanism and metric."], ["prompt_run_results", "Prompt-level outcome for this execution."], ["llm_validation_summary", "Aggregated LLM-control metrics."], ["stability_readiness", "Whether this run contains the fields needed for repeated-run comparison."], ["Appendix_*", "Raw evidence preserved for reconstruction and traceability."]], widths=[0.28,0.72], max_rows=12)
+    b.table("Visible workbook reading order", ["Sheet", "What the user should learn"], [["user_guide", "How to read the workbook and which sheets are primary or Appendix."], ["metric_definitions", "Plain-language definition, formula and interpretation for each metric."], ["run_summary", "Current execution identity, counts and hashes."], ["adjudication_summary", "Contradiction, risk-precedence and partial-evidence counters."], ["adjudication_by_requirement", "Requirement-level evidence adjudication diagnostics."], ["adjudication_by_flag", "Flag-level support, contradiction, unknown and missing evidence roles."], ["input_evidence", "Inputs, generated outputs, telemetry and package components with hashes."], ["prompt_contracts", "Prompt IDs, exact prompt transcripts, required schemas and validation mechanisms."], ["prompt_control_breakdown", "Each control clause mapped to a validation mechanism and metric."], ["prompt_run_results", "Prompt-level outcome for this execution."], ["llm_validation_summary", "Aggregated LLM-control metrics."], ["stability_readiness", "Whether this run contains the fields needed for repeated-run comparison."], ["Appendix_*", "Raw evidence preserved for reconstruction and traceability."]], widths=[0.28,0.72], max_rows=12)
     b.h1("2. Metrics used")
     b.table("Metric formulas, thresholds and interpretation", ["Metric", "Question", "Formula", "Numeric decision rule", "Interpretation"], [[r["metric"], r["plain_language_question"], r["formula"], r.get("numeric_decision_rule", _metric_decision_rule(r["metric"])), r["interpretation"]] for r in METRIC_DEFINITIONS], widths=[0.16,0.24,0.18,0.24,0.18], max_rows=20)
     b.table("Numeric decision thresholds for single-run metrics", ["Metric family", "Target or acceptable", "Review-required", "Critical"], [["Positive LLM validation rates: json_valid_rate, schema_valid_rate, completion_rate, traceability_ok_rate, prompt_success_rate", ">= 0.950", ">= 0.900 and < 0.950", "< 0.900"], ["fallback_rate", "<= 0.050", "> 0.050 and <= 0.100", "> 0.100"], ["retry_rate", "<= 0.200", "> 0.200 and <= 0.500", "> 0.500"], ["failed_prompt_call_count", "0", "1", ">= 2"]], widths=[0.40,0.20,0.22,0.18], max_rows=8)
@@ -1245,13 +1321,60 @@ def _generate_pdf(path: Path, metrics: Dict[str, Any], rows: Dict[str, List[Dict
         vals.append(0 if value == "not_applicable" else _safe_float(value))
     _make_bar_chart(validation_chart, ["JSON", "schema", "completion", "traceability"], vals, "LLM output validation rates", "Rate", percent=True)
     b.fig(validation_chart, "LLM output validation rates", "This figure shows whether LLM outputs were machine-readable, structurally valid, complete, and traceable where traceability applies.")
-    b.h1("4. Input evidence and hash controls")
+
+    b.h1("4. Evidence adjudication diagnostics")
+    b.para("This section documents how the deterministic compliance layer handled mapped evidence before any narrative LLM stage. These diagnostics do not change the yes/no/n/a matrix. They explain whether a requirement was supported, contradicted by mapped risk evidence, limited by partial evidence, or affected by missing or unknown flag evidence.")
+    b.table("Deterministic adjudication policy", ["Evidence situation", "How it is handled", "Where to inspect it"], [
+        ["Mapped risk signal contradicts the expected secure posture", "Risk precedence is applied and the requirement cannot be reported as compliant.", "adjudication_by_requirement and adjudication_by_flag"],
+        ["All relevant non-applicability flags support the expected posture", "The requirement can be reported as compliant when no contradictory signal is present.", "adjudication_by_requirement"],
+        ["Evidence is missing, unknown, or only partially supports the criterion", "The result is treated as non-conclusive or not applicable according to the requirement context; it is not used to assert compliance.", "adjudication_summary and adjudication_by_requirement"],
+        ["Multiple equivalent findings support the same flag", "They may increase evidence_count and traceability, but do not multiply the compliance decision.", "adjudication_by_flag and source evidence rows"],
+    ], widths=[0.28,0.42,0.30], max_rows=6)
+    adj_summary = metrics.get("adjudication_summary", {}) or {}
+    if adj_summary:
+        adj_meanings = {
+            "contradictory_requirement_count": "Requirements with at least one mapped signal contradicting the expected secure posture.",
+            "contradictory_flag_reference_count": "PUID-to-flag references whose observed value contradicted the expected posture.",
+            "risk_precedence_count": "Requirements where the conservative risk-precedence rule was applied.",
+            "partial_evidence_requirement_count": "Requirements with partial, missing, or unknown evidence without a direct contradiction.",
+            "unknown_flag_reference_count": "Mapped flag references evaluated as unknown or non-conclusive.",
+            "missing_flag_reference_count": "Mapped flag references declared by requirements but absent from the fingerprint.",
+            "adjudicated_requirement_count": "Requirements for which adjudication diagnostics were recorded.",
+            "adjudicated_flag_reference_count": "Total PUID-to-flag references inspected by the diagnostics layer.",
+        }
+        preferred_adj_keys = [
+            "adjudicated_requirement_count",
+            "adjudicated_flag_reference_count",
+            "contradictory_requirement_count",
+            "contradictory_flag_reference_count",
+            "risk_precedence_count",
+            "partial_evidence_requirement_count",
+            "unknown_flag_reference_count",
+            "missing_flag_reference_count",
+        ]
+        adj_rows = []
+        for key in preferred_adj_keys:
+            if key in adj_summary:
+                adj_rows.append([key, adj_summary.get(key), adj_meanings.get(key, "Adjudication diagnostic metric.")])
+        for key, value in adj_summary.items():
+            if key not in preferred_adj_keys:
+                adj_rows.append([key, value, adj_meanings.get(key, "Additional adjudication diagnostic metric.")])
+        b.table("Adjudication counters recorded in this run", ["Metric", "Value", "Meaning"], adj_rows, widths=[0.34,0.14,0.52], max_rows=12)
+    else:
+        b.para("No adjudication diagnostic sheets were found in the input workbook. This is expected for older run-metrics workbooks generated before the adjudication-diagnostics patch.", "Body")
+    b.table("Adjudication traceability sheets", ["Sheet", "Purpose"], [
+        ["adjudication_summary", "Global counters for contradictory evidence, risk precedence, partial evidence, unknown flags and missing flags."],
+        ["adjudication_by_requirement", "One row per requirement with decision basis, support count, contradiction count, unknown count, missing count and whether risk precedence was applied."],
+        ["adjudication_by_flag", "One row per PUID-to-flag relation with flag classification, observed value, expected value and support, contradiction, unknown or missing outcome."],
+    ], widths=[0.30,0.70], max_rows=6)
+
+    b.h1("5. Input evidence and hash controls")
     b.table("Input evidence and package hashes", ["Name", "Role", "Availability", "SHA-256"], [[r.get("input_name"), r.get("evidence_role"), r.get("availability"), r.get("sha256")] for r in rows["input_evidence"]], widths=[0.25,0.20,0.15,0.40], max_rows=16)
-    b.h1("5. Role of the LLM and prompt contracts")
+    b.h1("6. Role of the LLM and prompt contracts")
     b.para("Each registered prompt has a stable prompt_id. Each runtime invocation receives a prompt_call_id. The workbook records the exact prompt transcript or contract, expected output schema, control clauses, prompt hash, schema hash, payload hash and observed validation result. Dynamic user payloads are not fully duplicated in the visible sheets to avoid an unreadable workbook; they are represented by payload_hash and raw JSONL telemetry.")
     b.table("Prompt roles and execution in this run", ["Prompt", "Scope", "Calls", "Role"], [[r.get("prompt_id"), r.get("prompt_scope"), r.get("call_count"), r.get("role_in_workflow")] for r in rows["prompt_contracts"]], widths=[0.14,0.18,0.10,0.58], max_rows=12)
     b.table("Prompt output-control summary", ["Prompt", "JSON", "Schema", "Identifier", "Grounding", "No invention", "No result change"], [[r.get("prompt_id"), r.get("json_required"), r.get("schema_required"), r.get("identifier_preservation_required"), r.get("grounding_required"), r.get("no_invent_evidence_required"), r.get("no_result_change_required")] for r in rows["prompt_controls"]], widths=[0.15,0.10,0.12,0.15,0.15,0.17,0.16], max_rows=12)
-    b.h1("6. Prompt validation results in this execution")
+    b.h1("7. Prompt validation results in this execution")
     b.para("This section reports the formulas used for the current run. Rates are calculated directly from the runtime telemetry rows, not estimated from the narrative text.")
     b.table("Prompt-level success summary", ["Prompt", "Executed", "Calls", "Success", "JSON", "Schema", "Traceability", "Conclusion"], [[r.get("prompt_id"), r.get("executed_in_this_run"), r.get("call_count"), r.get("prompt_success_rate"), r.get("json_valid_rate"), r.get("schema_valid_rate"), r.get("traceability_ok_rate"), r.get("run_conclusion")] for r in rows["prompt_run_results"]], widths=[0.13,0.10,0.08,0.10,0.10,0.10,0.13,0.26], max_rows=12)
     b.table("Prompt-level formulas", ["Metric", "Formula", "How to read it"], _prompt_level_formula_rows(), widths=[0.20,0.40,0.40], max_rows=12)
@@ -1262,11 +1385,11 @@ def _generate_pdf(path: Path, metrics: Dict[str, Any], rows: Dict[str, List[Dict
     _make_bar_chart(scope_chart, list(scope_counts.keys()) or ["none"], [float(v) for v in (scope_counts.values() or [0])], "Prompt calls by scope", "Prompt calls")
     b.table("Prompt scope definitions", ["Scope", "Meaning"], _prompt_scope_definition_rows(), widths=[0.25,0.75], max_rows=6)
     b.fig(scope_chart, "Prompt calls by scope", "The chart counts executed prompt calls by scope. audit_matrix is the requirement-level justification stage. audit_summary is the report narrative stage. audit_summary_repair is an auxiliary repair scope and appears only when a repair prompt is invoked.")
-    b.h1("7. How stability-analysis.xlsx is generated")
+    b.h1("8. How stability-analysis.xlsx is generated")
     b.para("The package includes tools/build_stability_analysis.py. The user extracts each run-metrics.zip into a folder such as runs/run_01, runs/run_02, ..., runs/run_n. Then the user runs: python tools/build_stability_analysis.py --input-dir runs --output stability-analysis.xlsx. The script reads each run-metrics.xlsx, verifies comparability and produces metrics, tables and Appendix evidence for n repeated executions.")
     b.table("Inputs consumed by build_stability_analysis.py", ["Input", "Required", "Purpose"], [["runs/run_*/run-metrics.xlsx", "yes", "Primary source for run identity, matrix hash, prompt inventory hash, validation rates and requirement rows."], ["run-metrics-manifest.json", "optional", "File integrity reference when present."], ["telemetry/*.jsonl", "optional", "Raw prompt-call reconstruction when a future version chooses to re-derive prompt rows." ]], widths=[0.34,0.13,0.53], max_rows=10)
     b.table("Stability-analysis detailed formulas", ["Metric", "Formula", "Interpretation"], _stability_formula_rows(), widths=[0.22,0.48,0.30], max_rows=20)
-    b.h1("8. Interpretation limits")
+    b.h1("9. Interpretation limits")
     b.para("The package records what the workflow observed. Missing technical artifacts are marked as missing rather than inferred. Prompts not executed are documented as registered but not executed. Stability statistics are generated by tools/build_stability_analysis.py from n repeated run-metrics workbooks; they are not invented from a single execution.")
     b.build()
 
@@ -1331,9 +1454,15 @@ def build(args: argparse.Namespace) -> None:
         "executed_prompt_contract_count": sum(1 for r in prompt_contracts if r.get("executed_in_this_run") == "true"),
         "successful_prompt_call_count": sum(1 for r in prompt_calls if r.get("prompt_success") == "true"),
     })
+    for key, value in metrics.get("adjudication_summary", {}).items():
+        summary.setdefault(str(key), value)
     _write_kv(wb, "user_guide", _build_user_guide())
     _write_rows(wb, "metric_definitions", METRIC_DEFINITIONS, ["metric", "plain_language_question", "purpose", "formula", "numerator", "denominator", "source_sheet", "interpretation", "numeric_decision_rule", "single_run", "stability_analysis"])
     _write_kv(wb, "run_summary", list(summary.items()))
+    adj_summary_rows = [{"metric": k, "value": v} for k, v in metrics.get("adjudication_summary", {}).items()]
+    _write_rows(wb, "adjudication_summary", adj_summary_rows, ["metric", "value"])
+    _write_rows(wb, "adjudication_by_requirement", metrics.get("adjudication_by_requirement", []), sorted(set().union(*(r.keys() for r in metrics.get("adjudication_by_requirement", [])))) if metrics.get("adjudication_by_requirement") else ["puid", "result", "decision_basis"])
+    _write_rows(wb, "adjudication_by_flag", metrics.get("adjudication_by_flag", []), sorted(set().union(*(r.keys() for r in metrics.get("adjudication_by_flag", [])))) if metrics.get("adjudication_by_flag") else ["puid", "flag_id", "outcome"])
     _write_rows(wb, "package_contents", package_contents, ["component", "type", "included", "reader_priority", "purpose", "duplication_policy"])
     _write_rows(wb, "input_evidence", input_evidence, ["input_name", "evidence_group", "evidence_role", "artifact_type", "path", "file_count", "sha256", "availability", "purpose", "used_for_stability_comparability"])
     _write_rows(wb, "prompt_contracts", prompt_contracts, ["prompt_id", "prompt_name", "prompt_scope", "prompt_category", "source_file", "source_function", "registration_status", "executed_in_this_run", "call_count", "role_in_workflow", "system_prompt_transcript", "user_payload_contract", "required_output_schema", "control_clauses", "validation_mechanism", "prompt_contract_hash", "observed_prompt_hashes", "observed_schema_hashes"])

@@ -92,6 +92,8 @@ RUN_METRICS_XLSX_PATH = _resolve_path("RUN_METRICS_XLSX_PATH", "run-metrics.xlsx
 RUN_METRICS: Dict[str, List[Dict[str, Any]]] = {
     "llm_calls": [],
     "llm_items": [],
+    "adjudication_by_requirement": [],
+    "adjudication_by_flag": [],
 }
 
 NEGATIVE_RISK_TOKENS = [
@@ -383,6 +385,141 @@ def audit_requirement(puid: str, desc: str, flag_ids: List[str], flags_by_id: Di
 
     meta = dict(prohibitive=prohibitive, conditional=conditional, override_used=override_used, override_scenario_activated=override_scenario_activated, gate_flags=[ge.id for ge in gate_flags], conditional_scenario_activated=conditional_scenario_activated)
     return result, flag_evs, meta
+
+
+def _bool_metric(value: bool) -> str:
+    return "true" if bool(value) else "false"
+
+
+def _join_ids(items: List[FlagEvidence]) -> str:
+    return ", ".join(fe.id for fe in items if fe and fe.id)
+
+
+def _adjudication_decision_basis(result: str, flag_evs: List[FlagEvidence], meta: Dict[str, Any]) -> str:
+    non_app = [fe for fe in flag_evs if fe.classification != "APPLICABILITY"]
+    any_contradict = any(fe.outcome == "CONTRADICT" for fe in non_app)
+    any_unknown = any(fe.outcome in ("UNKNOWN", "MISSING") for fe in non_app)
+    all_support = bool(non_app) and all(fe.outcome == "SUPPORT" for fe in non_app)
+    if any_contradict:
+        return "risk_precedence"
+    if meta.get("override_used") and meta.get("override_scenario_activated") is False:
+        return "override_scope_not_activated"
+    if meta.get("conditional") and meta.get("conditional_scenario_activated") is False:
+        return "conditional_not_activated"
+    if result == "yes" and all_support and not any_unknown:
+        return "full_support"
+    if any_unknown or any(fe.classification == "APPLICABILITY" for fe in flag_evs):
+        return "partial_or_unknown"
+    if not non_app:
+        return "no_mapped_non_applicability_flags"
+    return "default_rule"
+
+
+def _record_adjudication_diagnostics(
+    *,
+    puid: str,
+    result: str,
+    flag_ids: List[str],
+    flag_evs: List[FlagEvidence],
+    meta: Dict[str, Any],
+) -> None:
+    """Record requirement-level and flag-level adjudication diagnostics.
+
+    These diagnostics are transparency metrics for auditability. They do not
+    alter the deterministic yes/no/n/a result. A contradiction here means a
+    mapped non-applicability flag observed a value incompatible with the secure
+    posture expected for that requirement. The risk-precedence rule is already
+    the existing audit behavior: any contradictory mapped signal prevents a
+    compliant result.
+    """
+    non_app = [fe for fe in flag_evs if fe.classification != "APPLICABILITY"]
+    support = [fe for fe in non_app if fe.outcome == "SUPPORT"]
+    contradict = [fe for fe in non_app if fe.outcome == "CONTRADICT"]
+    unknown = [fe for fe in non_app if fe.outcome == "UNKNOWN"]
+    missing = [fe for fe in non_app if fe.outcome == "MISSING"]
+    applicability = [fe for fe in flag_evs if fe.classification == "APPLICABILITY"]
+    evidence_total = sum(int(fe.evidence_count or 0) for fe in flag_evs)
+    decision_basis = _adjudication_decision_basis(result, flag_evs, meta)
+    contradictory_requirement = bool(contradict)
+    risk_precedence_applied = bool(result == "no" and contradictory_requirement)
+    partial_evidence = bool(not contradictory_requirement and (unknown or missing) and result in {"n/a", "no"})
+
+    RUN_METRICS["adjudication_by_requirement"].append({
+        "puid": puid,
+        "result": result,
+        "decision_basis": decision_basis,
+        "total_mapped_flags": len(flag_ids),
+        "support_flag_count": len(support),
+        "contradict_flag_count": len(contradict),
+        "unknown_flag_count": len(unknown),
+        "missing_flag_count": len(missing),
+        "applicability_flag_count": len(applicability),
+        "evidence_count_total": evidence_total,
+        "contradictory_requirement": _bool_metric(contradictory_requirement),
+        "risk_precedence_applied": _bool_metric(risk_precedence_applied),
+        "partial_evidence": _bool_metric(partial_evidence),
+        "conditional": _bool_metric(bool(meta.get("conditional"))),
+        "conditional_scenario_activated": "" if meta.get("conditional_scenario_activated") is None else _bool_metric(bool(meta.get("conditional_scenario_activated"))),
+        "override_used": _bool_metric(bool(meta.get("override_used"))),
+        "override_scenario_activated": "" if meta.get("override_scenario_activated") is None else _bool_metric(bool(meta.get("override_scenario_activated"))),
+        "support_flag_ids": _join_ids(support),
+        "contradict_flag_ids": _join_ids(contradict),
+        "unknown_flag_ids": _join_ids(unknown),
+        "missing_flag_ids": _join_ids(missing),
+        "applicability_flag_ids": _join_ids(applicability),
+    })
+
+    for fe in flag_evs:
+        if fe.classification == "APPLICABILITY":
+            role = "applicability_gate"
+        elif fe.outcome == "SUPPORT":
+            role = "supports_expected_posture"
+        elif fe.outcome == "CONTRADICT":
+            role = "contradicts_expected_posture"
+        elif fe.outcome == "MISSING":
+            role = "missing_from_fingerprint"
+        else:
+            role = "unknown_or_non_conclusive"
+        RUN_METRICS["adjudication_by_flag"].append({
+            "puid": puid,
+            "requirement_result": result,
+            "flag_id": fe.id,
+            "flag_title": fe.title,
+            "classification": fe.classification,
+            "expected_summary_norm": fe.expected or "",
+            "observed_summary_norm": fe.summary_norm,
+            "outcome": fe.outcome,
+            "decision_role": role,
+            "state": fe.state,
+            "evidence_count": fe.evidence_count,
+            "notes_excerpt": (fe.notes or "")[:500],
+        })
+
+
+def _adjudication_summary_rows() -> List[Tuple[str, Any]]:
+    rows = RUN_METRICS.get("adjudication_by_requirement", [])
+    flag_rows = RUN_METRICS.get("adjudication_by_flag", [])
+    total_requirements = len(rows)
+    contradictory_requirement_count = sum(1 for r in rows if str(r.get("contradictory_requirement", "")).lower() == "true")
+    risk_precedence_count = sum(1 for r in rows if str(r.get("risk_precedence_applied", "")).lower() == "true")
+    partial_evidence_requirement_count = sum(1 for r in rows if str(r.get("partial_evidence", "")).lower() == "true")
+    contradictory_flag_reference_count = sum(1 for r in flag_rows if str(r.get("outcome", "")) == "CONTRADICT")
+    unknown_flag_reference_count = sum(1 for r in flag_rows if str(r.get("outcome", "")) == "UNKNOWN")
+    missing_flag_reference_count = sum(1 for r in flag_rows if str(r.get("outcome", "")) == "MISSING")
+    support_flag_reference_count = sum(1 for r in flag_rows if str(r.get("outcome", "")) == "SUPPORT")
+    applicability_flag_reference_count = sum(1 for r in flag_rows if str(r.get("classification", "")) == "APPLICABILITY")
+    return [
+        ("adjudicated_requirement_count", total_requirements),
+        ("adjudicated_flag_reference_count", len(flag_rows)),
+        ("support_flag_reference_count", support_flag_reference_count),
+        ("contradictory_requirement_count", contradictory_requirement_count),
+        ("contradictory_flag_reference_count", contradictory_flag_reference_count),
+        ("risk_precedence_count", risk_precedence_count),
+        ("partial_evidence_requirement_count", partial_evidence_requirement_count),
+        ("unknown_flag_reference_count", unknown_flag_reference_count),
+        ("missing_flag_reference_count", missing_flag_reference_count),
+        ("applicability_flag_reference_count", applicability_flag_reference_count),
+    ]
 
 
 class _ResponsesCompat:
@@ -696,6 +833,9 @@ def _style_run_metrics_workbook(wb: Any) -> None:
         "run_summary": theme_navy,
         "input_hashes": "5B9BD5",
         "compliance_export": "70AD47",
+        "adjudication_summary": "FFC000",
+        "adjudication_by_requirement": "FFC000",
+        "adjudication_by_flag": "FFC000",
         "llm_calls": "ED7D31",
         "llm_items": "A5A5A5",
     }
@@ -819,6 +959,9 @@ def _write_run_metrics_raw_xlsx(
         ("num_yes", counts.get("yes", 0)),
         ("num_no", counts.get("no", 0)),
         ("num_na", counts.get("n/a", 0)),
+    ]
+    run_summary_rows.extend(_adjudication_summary_rows())
+    run_summary_rows.extend([
         ("batch_size", batch_size),
         ("num_batches", (total_requirements + batch_size - 1) // batch_size if batch_size else 0),
         ("use_openai_justifications", str(bool(use_openai_justifications))),
@@ -829,7 +972,7 @@ def _write_run_metrics_raw_xlsx(
         ("compliance_matrix_hash", compliance_matrix_hash),
         ("output_xlsx_path", str(OUTPUT_XLSX_PATH)),
         ("run_metrics_xlsx_path", str(RUN_METRICS_XLSX_PATH)),
-    ]
+    ])
     for key, value in llm_snapshot.items():
         run_summary_rows.append((f"config.{key}", value))
 
@@ -839,6 +982,21 @@ def _write_run_metrics_raw_xlsx(
     _append_kv_sheet(wb, "run_summary", run_summary_rows)
     _append_dict_rows_sheet(wb, "input_hashes", input_hash_rows, ["input_name", "path", "sha256"])
     _append_dict_rows_sheet(wb, "compliance_export", compliance_rows, ["puid", "result", "flags_used", "flags_count", "justification_length_chars", "row_hash"])
+    _append_kv_sheet(wb, "adjudication_summary", _adjudication_summary_rows())
+    _append_dict_rows_sheet(wb, "adjudication_by_requirement", RUN_METRICS["adjudication_by_requirement"], [
+        "puid", "result", "decision_basis", "total_mapped_flags", "support_flag_count",
+        "contradict_flag_count", "unknown_flag_count", "missing_flag_count",
+        "applicability_flag_count", "evidence_count_total", "contradictory_requirement",
+        "risk_precedence_applied", "partial_evidence", "conditional",
+        "conditional_scenario_activated", "override_used", "override_scenario_activated",
+        "support_flag_ids", "contradict_flag_ids", "unknown_flag_ids", "missing_flag_ids",
+        "applicability_flag_ids",
+    ])
+    _append_dict_rows_sheet(wb, "adjudication_by_flag", RUN_METRICS["adjudication_by_flag"], [
+        "puid", "requirement_result", "flag_id", "flag_title", "classification",
+        "expected_summary_norm", "observed_summary_norm", "outcome", "decision_role",
+        "state", "evidence_count", "notes_excerpt",
+    ])
     _append_dict_rows_sheet(wb, "llm_calls", RUN_METRICS["llm_calls"], [
         "llm_call_id", "prompt_call_id", "prompt_id", "prompt_scope", "prompt_category", "call_type",
         "expected_items", "received_items", "json_valid", "schema_valid", "retry_count", "elapsed_s",
@@ -1140,6 +1298,8 @@ def main() -> None:
     run_started_at = time.time()
     RUN_METRICS["llm_calls"] = []
     RUN_METRICS["llm_items"] = []
+    RUN_METRICS["adjudication_by_requirement"] = []
+    RUN_METRICS["adjudication_by_flag"] = []
     strict_english = env_bool("STRICT_ENGLISH_OUTPUT", True)
 
     print(f"[PATH] DATA_DIR={DATA_DIR}", flush=True)
@@ -1227,6 +1387,7 @@ def main() -> None:
                 continue
             desc_en = desc_en_by_puid.get(puid, "(missing description)")
             result, flag_evs, meta = audit_requirement(puid, desc_en, flag_ids, flags_by_id)
+            _record_adjudication_diagnostics(puid=puid, result=result, flag_ids=flag_ids, flag_evs=flag_evs, meta=meta)
             req_audit = RequirementAudit(puid=puid, description_en=desc_en, result=result, flags_used=flag_ids, justification_en="")
             batch_results.append((req_audit, flag_evs, meta))
 
