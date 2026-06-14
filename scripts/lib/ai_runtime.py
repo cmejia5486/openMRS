@@ -133,16 +133,116 @@ def extract_json_object(text: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    match = re.search(r"\{.*\}\s*$", text, flags=re.DOTALL)
-    if not match:
-        raise ValueError("No JSON object found in model output")
+    fenced = re.search(
+        r"```(?:json)?\s*(\{.*?\})\s*```",
+        text,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    if fenced:
+        obj = json.loads(fenced.group(1))
+        if isinstance(obj, dict):
+            return obj
 
-    obj = json.loads(match.group(0))
-    if not isinstance(obj, dict):
-        raise ValueError("JSON output root must be an object")
+    cleaned = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+    try:
+        obj = json.loads(cleaned)
+        if isinstance(obj, dict):
+            return obj
+    except Exception:
+        pass
 
-    return obj
+    start = text.find("{")
+    if start < 0:
+        preview = text[:500].replace("\n", "\\n")
+        raise ValueError(f"No JSON object found in model output. Preview: {preview}")
 
+    depth = 0
+    in_string = False
+    escape = False
+
+    for i in range(start, len(text)):
+        ch = text[i]
+
+        if escape:
+            escape = False
+            continue
+
+        if ch == "\\":
+            escape = True
+            continue
+
+        if ch == '"':
+            in_string = not in_string
+            continue
+
+        if in_string:
+            continue
+
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                obj = json.loads(text[start:i + 1])
+                if isinstance(obj, dict):
+                    return obj
+                raise ValueError("JSON output root must be an object")
+
+    preview = text[start:start + 500].replace("\n", "\\n")
+    raise ValueError(f"No complete JSON object found in model output. Preview: {preview}")
+
+
+def _default_json_schema_response_format() -> Dict[str, Any]:
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "vision360_json_object",
+            "schema": {
+                "type": "object",
+                "additionalProperties": True,
+            },
+            "strict": False,
+        },
+    }
+
+
+def _normalized_response_format(value: Any) -> Optional[Dict[str, Any]]:
+    """Normalize response_format values safely for LM Studio/OpenAI-compatible servers.
+
+    LM Studio's OpenAI-compatible chat endpoint rejects the legacy OpenAI
+    value {"type": "json_object"} in some versions and returns:
+    "response_format.type must be json_schema or text". To avoid that hard
+    failure, json_object is upgraded to a permissive json_schema. Empty values
+    disable response_format and rely on prompt-level JSON plus parser checks.
+    """
+    if value is None or value == "":
+        return None
+
+    if isinstance(value, str):
+        mode = value.strip().lower()
+        if not mode:
+            return None
+        if mode == "json_object":
+            return _default_json_schema_response_format()
+        if mode == "json_schema":
+            return _default_json_schema_response_format()
+        if mode == "text":
+            return {"type": "text"}
+        return None
+
+    if isinstance(value, dict):
+        mode = str(value.get("type") or "").strip().lower()
+        if not mode:
+            return None
+        if mode == "json_object":
+            return _default_json_schema_response_format()
+        if mode == "json_schema":
+            return value
+        if mode == "text":
+            return {"type": "text"}
+
+    return None
 
 class AIRuntime:
     def __init__(
@@ -236,11 +336,9 @@ class AIRuntime:
         if max_output_tokens:
             kwargs["max_tokens"] = int(max_output_tokens)
 
-        response_format = self.config.get("response_format")
-        if isinstance(response_format, dict) and response_format:
+        response_format = _normalized_response_format(self.config.get("response_format"))
+        if response_format:
             kwargs["response_format"] = response_format
-        elif str(response_format or "").strip() == "json_object":
-            kwargs["response_format"] = {"type": "json_object"}
 
         temperature = self.config.get("temperature")
         if temperature is not None:
@@ -300,11 +398,9 @@ class AIRuntime:
         if max_output_tokens:
             kwargs["max_tokens"] = int(max_output_tokens)
 
-        response_format = self.config.get("response_format")
-        if isinstance(response_format, dict) and response_format:
+        response_format = _normalized_response_format(self.config.get("response_format"))
+        if response_format:
             kwargs["response_format"] = response_format
-        elif str(response_format or "").strip() == "json_object":
-            kwargs["response_format"] = {"type": "json_object"}
 
         temperature = self.config.get("temperature")
         if temperature is not None:
@@ -316,7 +412,21 @@ class AIRuntime:
                 f"model={selected_model} api_base={self.api_base}"
             )
 
-        resp = client.chat.completions.create(**kwargs)
+        try:
+            resp = client.chat.completions.create(**kwargs)
+        except Exception as exc:
+            msg = str(exc)
+            if "response_format" in kwargs and "response_format" in msg:
+                fallback_kwargs = dict(kwargs)
+                fallback_kwargs.pop("response_format", None)
+                if self._debug:
+                    print(
+                        "[AI_RUNTIME][WARN] response_format rejected by endpoint; "
+                        "retrying once without response_format"
+                    )
+                resp = client.chat.completions.create(**fallback_kwargs)
+            else:
+                raise
 
         output_text = extract_output_text(resp)
         if self._debug:
